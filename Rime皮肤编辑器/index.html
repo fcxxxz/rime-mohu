@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rime 皮肤编辑器 - 晴</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div>
+          <h1>Rime 皮肤编辑器</h1>
+          <p id="supportStatus">正在检测浏览器能力...</p>
+        </div>
+        <div class="author-info" aria-label="作者信息">
+          <div class="author-lines">
+            <span>作者：晴</span>
+            <span>QQ 810439322</span>
+            <span>晴跟打免费加群下载：715187175</span>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button id="chooseFolderButton" class="primary">选择 Rime 配置文件夹</button>
+          <span id="folderName" class="folder-name">尚未选择</span>
+        </div>
+      </header>
+
+      <section id="blockedPanel" class="blocked hidden">
+        <h2>当前浏览器不能直接编辑本地 Rime 配置</h2>
+        <p id="blockedReason"></p>
+        <p>请使用 Chrome、Edge 或 Opera 等支持本地文件夹读写的浏览器打开本页面。</p>
+      </section>
+
+      <main id="workspace" class="workspace hidden">
+        <aside class="sidebar">
+          <section class="panel">
+            <h2>平台</h2>
+            <div class="segmented">
+              <button id="squirrelTab" data-platform="squirrel">鼠须管</button>
+              <button id="weaselTab" data-platform="weasel">小狼毫</button>
+            </div>
+            <p id="platformHint" class="hint"></p>
+          </section>
+
+          <section class="panel skin-panel">
+            <div class="panel-title-row">
+              <h2>皮肤</h2>
+              <div class="inline-actions">
+                <button id="newSkinButton" class="small">新建</button>
+                <button id="duplicateSkinButton" class="small">复制</button>
+                <button id="deleteSkinButton" class="small">删除</button>
+                <button id="importSkinButton" class="small">导入</button>
+                <button id="exportSkinButton" class="small">导出</button>
+              </div>
+            </div>
+            <div id="skinList" class="skin-list"></div>
+            <input id="skinImportFile" class="visually-hidden" type="file" accept=".json,application/json">
+          </section>
+        </aside>
+
+        <section class="editor">
+          <section class="preview-panel">
+            <div class="panel-title-row">
+              <h2>预览</h2>
+              <span id="previewPlatform" class="badge">未选择</span>
+            </div>
+            <div id="previewStage" class="preview-stage">
+              <div id="candidatePreview" class="candidate-preview">
+                <div id="previewPreedit" class="preview-preedit" hidden></div>
+                <div class="candidate-row"></div>
+              </div>
+            </div>
+            <details class="preview-settings" open>
+              <summary>预览设置</summary>
+              <div class="preview-tools">
+                <label>
+                  <span>缩放</span>
+                  <input id="previewScale" type="range" min="75" max="500" step="25" value="100">
+                  <output id="previewScaleValue">100%</output>
+                </label>
+                <label>
+                  <span>编码</span>
+                  <input id="previewCode" type="text" value="u">
+                </label>
+                <label class="preview-candidates-field">
+                  <span class="label-with-help">
+                    候选
+                    <span class="help-dot" tabindex="0" title="每行一个候选。只写词条则不显示注释；词条和注释可用 Tab、竖线 |、英文逗号 , 或两个以上空格分隔。例如：你好|常用。">?</span>
+                  </span>
+                  <textarea id="previewCandidates" rows="4">是	{{quick_code}}
+试	{{quick_code}}
+说
+谁
+上</textarea>
+                </label>
+                <button id="resetPreviewSettingsButton" type="button">恢复默认设置</button>
+              </div>
+            </details>
+          </section>
+
+          <details class="panel controls" open>
+            <summary>颜色</summary>
+            <div id="colorControls" class="control-grid"></div>
+          </details>
+
+          <details class="panel controls" open>
+            <summary>文字与编号</summary>
+            <div class="control-grid">
+              <label>
+                <span>排列</span>
+                <select id="layoutMode">
+                  <option value="linear">横排</option>
+                  <option value="stacked">竖排</option>
+                </select>
+              </label>
+              <label>
+                <span>字体</span>
+                <select id="fontFace"></select>
+              </label>
+              <label>
+                <span>编号字体</span>
+                <select id="labelFontFace"></select>
+              </label>
+              <label>
+                <span>注释字体</span>
+                <select id="commentFontFace"></select>
+              </label>
+              <p id="fontHint" class="hint" hidden></p>
+              <label>
+                <span>编号样式</span>
+                <select id="numberStyle">
+                  <option value="dot">1.</option>
+                  <option value="plain">1</option>
+                  <option value="paren">1)</option>
+                  <option value="bracket">[1]</option>
+                  <option value="circledIdeograph">㊀ ㊁ ㊂</option>
+                  <option value="circledNumber">① ② ③</option>
+                  <option value="filledCircledNumber">❶ ❷ ❸</option>
+                  <option value="doubleCircledNumber">⓵ ⓶ ⓷</option>
+                  <option value="parenthesizedIdeograph">㈠ ㈡ ㈢</option>
+                  <option value="mahjongNumber">🀇 🀈 🀉</option>
+                  <option value="romanUpper">Ⅰ Ⅱ Ⅲ</option>
+                  <option value="romanLower">ⅰ ⅱ ⅲ</option>
+                  <option value="alphaUpper">Ⓐ Ⓑ Ⓒ</option>
+                  <option value="alphaLower">ⓐ ⓑ ⓒ</option>
+                  <option value="customLabels">自定义编号...</option>
+                </select>
+              </label>
+              <label>
+                <span>编号间隔</span>
+                <select id="numberSeparator">
+                  <option value="normal">常规</option>
+                  <option value="tight">紧凑</option>
+                  <option value="wide">较宽</option>
+                  <option value="__custom_separator__">自定义...</option>
+                </select>
+              </label>
+              <label id="candidateMarkerField">
+                <span>候选标记</span>
+                <select id="candidateMarker">
+                  <option value="">无</option>
+                  <option value="▌">竖杠</option>
+                  <option value="▏">细竖杠</option>
+                  <option value="-">短横</option>
+                  <option value="•">圆点</option>
+                  <option value="__custom_marker__">自定义...</option>
+                </select>
+              </label>
+              <label>
+                <span>编码行</span>
+                <select id="preeditVisibility">
+                  <option value="auto">跟随配置</option>
+                  <option value="show">显示</option>
+                  <option value="hide">隐藏</option>
+                </select>
+              </label>
+              <label>
+                <span>字号</span>
+                <input id="fontPoint" type="range" min="10" max="28" step="1">
+                <input id="fontPointNumber" type="number" min="10" max="28" step="1">
+                <output id="fontPointValue"></output>
+              </label>
+              <label>
+                <span>编号字号</span>
+                <input id="labelFontPoint" type="range" min="8" max="28" step="1">
+                <input id="labelFontPointNumber" type="number" min="8" max="28" step="1">
+                <output id="labelFontPointValue"></output>
+              </label>
+              <label>
+                <span>注释字号</span>
+                <input id="commentFontPoint" type="range" min="8" max="28" step="1">
+                <input id="commentFontPointNumber" type="number" min="8" max="28" step="1">
+                <output id="commentFontPointValue"></output>
+              </label>
+            </div>
+          </details>
+
+          <details class="panel controls" open>
+            <summary>窗口贴合</summary>
+            <div class="control-grid">
+              <label>
+                <span>外框圆角</span>
+                <input id="cornerRadius" type="range" min="0" max="24" step="1">
+                <input id="cornerRadiusNumber" type="number" min="0" max="24" step="1">
+                <output id="cornerRadiusValue"></output>
+              </label>
+              <label>
+                <span>高亮圆角</span>
+                <input id="hilitedCornerRadius" type="range" min="0" max="24" step="1">
+                <input id="hilitedCornerRadiusNumber" type="number" min="0" max="24" step="1">
+                <output id="hilitedCornerRadiusValue"></output>
+              </label>
+              <label>
+                <span>左右内距</span>
+                <input id="marginX" type="range" min="0" max="32" step="1">
+                <input id="marginXNumber" type="number" min="0" max="32" step="1">
+                <output id="marginXValue"></output>
+              </label>
+              <label>
+                <span>上下内距</span>
+                <input id="marginY" type="range" min="0" max="32" step="1">
+                <input id="marginYNumber" type="number" min="0" max="32" step="1">
+                <output id="marginYValue"></output>
+              </label>
+              <label>
+                <span>边框宽度</span>
+                <input id="borderWidth" type="range" min="0" max="16" step="1">
+                <input id="borderWidthNumber" type="number" min="0" max="16" step="1">
+                <output id="borderWidthValue"></output>
+              </label>
+              <label>
+                <span>边框高度</span>
+                <input id="borderHeight" type="range" min="0" max="16" step="1">
+                <input id="borderHeightNumber" type="number" min="0" max="16" step="1">
+                <output id="borderHeightValue"></output>
+              </label>
+              <label>
+                <span>候选间距</span>
+                <input id="candidateSpacing" type="range" min="0" max="28" step="1">
+                <input id="candidateSpacingNumber" type="number" min="0" max="28" step="1">
+                <output id="candidateSpacingValue"></output>
+              </label>
+              <label>
+                <span>高亮间距</span>
+                <input id="hiliteSpacing" type="range" min="0" max="28" step="1">
+                <input id="hiliteSpacingNumber" type="number" min="0" max="28" step="1">
+                <output id="hiliteSpacingValue"></output>
+              </label>
+              <label>
+                <span>行间距</span>
+                <input id="lineSpacing" type="range" min="0" max="28" step="1">
+                <input id="lineSpacingNumber" type="number" min="0" max="28" step="1">
+                <output id="lineSpacingValue"></output>
+              </label>
+              <label>
+                <span>高亮内距</span>
+                <input id="hilitePadding" type="range" min="0" max="20" step="1">
+                <input id="hilitePaddingNumber" type="number" min="0" max="20" step="1">
+                <output id="hilitePaddingValue"></output>
+              </label>
+              <label>
+                <span>高亮左右内距</span>
+                <input id="hilitePaddingX" type="range" min="0" max="32" step="1">
+                <input id="hilitePaddingXNumber" type="number" min="0" max="32" step="1">
+                <output id="hilitePaddingXValue"></output>
+              </label>
+              <label>
+                <span>高亮上下内距</span>
+                <input id="hilitePaddingY" type="range" min="0" max="32" step="1">
+                <input id="hilitePaddingYNumber" type="number" min="0" max="32" step="1">
+                <output id="hilitePaddingYValue"></output>
+              </label>
+              <label>
+                <span>最小宽度</span>
+                <input id="minWidth" type="range" min="0" max="320" step="1">
+                <input id="minWidthNumber" type="number" min="0" max="320" step="1">
+                <output id="minWidthValue"></output>
+              </label>
+              <label>
+                <span>最小高度</span>
+                <input id="minHeight" type="range" min="0" max="160" step="1">
+                <input id="minHeightNumber" type="number" min="0" max="160" step="1">
+                <output id="minHeightValue"></output>
+              </label>
+              <label>
+                <span>阴影模糊</span>
+                <input id="shadowSize" type="range" min="0" max="24" step="1">
+                <input id="shadowSizeNumber" type="number" min="0" max="24" step="1">
+                <output id="shadowSizeValue"></output>
+              </label>
+              <label>
+                <span>阴影 X</span>
+                <input id="shadowOffsetX" type="range" min="-24" max="24" step="1">
+                <input id="shadowOffsetXNumber" type="number" min="-24" max="24" step="1">
+                <output id="shadowOffsetXValue"></output>
+              </label>
+              <label>
+                <span>阴影 Y</span>
+                <input id="shadowOffsetY" type="range" min="-24" max="24" step="1">
+                <input id="shadowOffsetYNumber" type="number" min="-24" max="24" step="1">
+                <output id="shadowOffsetYValue"></output>
+              </label>
+            </div>
+          </details>
+        </section>
+
+        <aside class="inspector">
+          <details id="schemaSettingsPanel" class="panel" open hidden>
+            <summary>方案设置</summary>
+            <div class="schema-toolbar">
+              <label>
+                <span>输入方案</span>
+                <select id="schemaSelect"></select>
+              </label>
+              <button id="refreshSchemasButton" class="icon-button" type="button" title="重新扫描方案" aria-label="重新扫描方案">↻</button>
+            </div>
+            <div id="schemaSettingsControls" class="control-grid"></div>
+            <button id="saveSchemaSettingsButton" type="button">保存方案设置</button>
+          </details>
+
+          <details class="panel" open>
+            <summary>当前皮肤</summary>
+            <label>
+              <span>显示名称</span>
+              <input id="displayName" type="text">
+            </label>
+            <label>
+              <span>作者</span>
+              <input id="author" type="text">
+            </label>
+            <details>
+              <summary>高级</summary>
+              <label>
+                <span>皮肤 ID</span>
+                <input id="skinId" type="text">
+              </label>
+            </details>
+          </details>
+
+          <details class="panel action-panel" open>
+            <summary>操作</summary>
+            <button id="setActiveButton">设为当前皮肤</button>
+            <button id="saveButton" class="primary">保存并备份</button>
+            <button id="copyButton">复制到另一平台</button>
+            <button id="reloadBackupsButton">刷新备份</button>
+            <p id="deployHint" class="hint">本地启动器可在保存后自动应用；浏览器模式需要手动部署。</p>
+          </details>
+
+          <details class="panel backups">
+            <summary>备份回退</summary>
+            <div id="backupList" class="backup-list"></div>
+          </details>
+
+          <details class="panel log-panel" open>
+            <summary>状态</summary>
+            <div id="messageLog" class="message-log"></div>
+          </details>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./src/core.js"></script>
+    <script src="./src/preview-model.js"></script>
+    <script src="./src/schema-settings.js"></script>
+    <script src="./src/app.js"></script>
+  </body>
+</html>

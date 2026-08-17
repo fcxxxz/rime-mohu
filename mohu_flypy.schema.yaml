@@ -1,0 +1,361 @@
+schema:
+  schema_id: mohu_flypy
+  name: 魔虎·小鹤
+  version: "20260814"
+  author:
+    - 小鹤双拼方案：鹤氏
+    - 方案制作：ksqsf
+  description: |
+    基于小鹤双拼和虎码最长主码前两码的智能整句输入方案，保留固顶简快码。
+  dependencies:
+    - mohu_flypy_fixed
+    - mohu_flypy_sentence
+    - mohu_charset
+    - tiger
+
+switches:
+  - name: ascii_mode
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
+  - name: extended_charset
+    states: [ 常用字, 全字集 ]
+  - name: inflexible
+    states: [ 动词, 固词 ] # 「固词」表示「固顶词」
+    # 默认情况下，输入 4 码时，会禁止码表输出（「动词」模式）。
+    # 这是因为码表最大码长为 4，可能会产生较低频的多字词，覆盖过用户自造的常用词语。
+    # 当固词模式启动后，输入 4 码时会优先输出码表中的二字词，这些输出带有「⚡️」标记。
+  - name: chaifen
+    states: [ 不拆, 扌斥 ]
+  - name: pinyinhint
+    states: [ 🔇, 🔊 ]
+  - name: unicode_comment
+    states: [ U关, U开 ]
+  - name: contextual_order
+    reset: 0
+    states: [ 静态排序, 上下文调频 ]
+  - name: quick_code_hint
+    reset: 0
+    states: [ 简码提示关, 简码提示 ]
+  - name: aux_hint
+    reset: 0
+    states: [ 辅助码提示关, 辅助码提示 ]
+  - name: multi_short_code
+    reset: 0
+    states: [ 多重简字, 唯一简字 ]
+  - name: candidate_override_management
+    states: [ 常规, 候选管理 ]
+    reset: 0
+
+engine:
+  processors:
+    - lua_processor@*mohu_skin_command
+    - lua_processor@*mohu_candidate_manager*manager_processor
+    - lua_processor@*mohu_candidate_override*override_processor
+    - lua_processor@*mohu_pin*pin_processor
+    - key_binder
+    - ascii_composer
+    - lua_processor@*mohu_processor
+    - recognizer
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - matcher@recognizer_emoji
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - lua_translator@*mohu_symbol_hint
+    - lua_translator@*mohu_candidate_manager*manager_translator
+    - punct_translator
+    - reverse_lookup_translator@reverse_tiger
+    - table_translator@custom_phrase       # 自定义短语
+    - lua_translator@*mohu_express_translator@with_reorder # 翻译器
+    - lua_translator@*mohu_shijian        # 日期orq 节气ojq 星期oxq 时间osj
+    - lua_translator@*mohu_number         # 数字转大写, 大写S引导, 如 S123
+    - lua_translator@*mohu_unicode        # Unicode输入, 大写U引导, 如 U9b54
+    - lua_translator@*mohu_pin*panacea_translator
+  filters:
+    - lua_filter@*mohu_charset_filter
+    - lua_filter@*mohu_pin*pin_filter
+    - lua_filter@*mohu_reorder_filter
+    - lua_filter@*mohu_candidate_override*override_order_filter
+    - lua_filter@*mohu_candidate_override*override_filter
+    - lua_filter@*mohu_ijrq_filter
+    - lua_filter@*mohu_hint_filter
+    - simplifier@emoji
+    - lua_filter@*mohu_charset_filter@post_conversion
+    - simplifier@chaifen
+    - simplifier@pinyinhint
+    - lua_filter@*mohu_charset_comment_filter  # Unicode 区位提示
+    - lua_filter@*mohu_unicode_display_filter  # Unicode 编码提示
+    - uniquifier
+
+navigator:
+  # 在音节跳转时，跳过音节末尾的分隔符 ' ，设为 after_delimiter 恢复 Rime 默认行为
+  syllable_jump_position: before_delimiter
+
+speller:
+  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\=;'
+  delimiter: " '"
+  auto_select: true
+  auto_select_pattern: ^;(\w+|;)
+  algebra:
+    __patch:
+      - mohu:/algebra/user_force_top?
+      - mohu:/algebra/generate_code
+      - mohu:/algebra/user_sentence_bottom?
+      - mohu:/algebra/user_force_bottom?
+
+smart:         # 整句输入模式设置，在 top_translator 中被调用
+  dictionary: mohu_flypy.extended
+  user_dict: mohu_flypy_tiger_prefix2
+  prism: mohu_flypy
+  initial_quality: 5
+  max_homophones: 7
+  spelling_hints: 3
+  contextual_suggestions: true
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  max_sentences: 2
+
+smart_static:
+  dictionary: mohu_flypy.extended
+  user_dict: mohu_flypy_tiger_prefix2
+  prism: mohu_flypy
+  initial_quality: 5
+  max_homophones: 7
+  spelling_hints: 3
+  contextual_suggestions: false
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  max_sentences: 2
+
+fixed:         # 固顶输入模式设置，在 top_translator 中被调用
+  dictionary: mohu_flypy_fixed
+  initial_quality: 100
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false
+  enable_encoder: false
+  encode_commit_history: true
+
+fixed_legacy:
+  dictionary: mohu_flypy_fixed_legacy
+  initial_quality: 100
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false
+  enable_encoder: false
+  encode_commit_history: true
+
+translator_legacy:
+  dictionary: mohu_flypy_fixed_legacy
+
+custom_phrase: # 自定义短语
+  dictionary: ""
+  user_dict: mohu_flypy_custom_phrases
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+  initial_quality: 1000
+
+chaifen:
+  option_name: chaifen
+  opencc_config: mohu_chaifen.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    - "xform/-/ /"
+    - "xform/〕〔/｜/"
+
+pinyinhint:
+  option_name: pinyinhint
+  opencc_config: mohu_pinyinhint.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    __include: :/chaifen/comment_format
+
+emoji:
+  opencc_config: mohu_emoji.json
+  option_name: emoji
+  tips: none
+  tags: [has_emoji]
+
+reverse_format:
+  target: smart
+  comment_format:
+    - xform/(\w\w);(\w\w)/$1[$2]/
+  preedit_format:
+    - xform/^o(lf|bh|cj|vy|hm)//
+
+reverse_tiger:
+  tag: reverse_tiger
+  dictionary: tiger
+  enable_completion: true
+  prefix: "ohm"
+  tips: 〔虎码〕
+  __include: reverse_format
+
+punctuator:
+  import_preset: symbols
+
+key_binder:
+  import_preset: default
+  custom_bindings:
+    __append:
+      # 在这里添加只在本方案中生效的按键绑定，如
+      # - { when: has_menu, accept: apostrophe, send: '3' }  # 单引号3选
+  bindings:
+    __patch:
+      - :/key_binder/custom_bindings?
+      - mohu:/key_bindings/mohu_tab
+      - mohu:/key_bindings/mohu_switches
+      - mohu:/key_bindings/mohu_keypad
+      - mohu:/key_bindings/mohu_toggle_inflexible
+      # 大写字母追加辅助码到上一音节
+      # 该功能可使用 Shift-tab 替代
+      # - mohu:/key_bindings/mohu_capital_for_last_syllable
+
+recognizer:
+  import_preset: default
+  patterns:
+    candidate_manager: '^\\gl[hopwlu]?[a-z]*$'
+
+    unicode: "^U[a-fA-F0-9]+"
+    number: "^S[0-9\\.]+"
+    shijian: "^N[0-9]+"
+    uppercase: "[A-Z][-_+.'A-Za-z]*$"
+    punct: '^\\([0-9]0?|[A-Za-z]*)$'
+
+    # 反查
+    reverse_tiger: "^ohm[a-z]+$"
+    # ojp 引导日语输入
+
+recognizer_emoji:
+  patterns:
+    # CAVEAT: 分号快符由码表自动上屏
+    # CAVEAT: ^o 只保留 ^ou 和 ^o$，避免反查被干扰
+    has_emoji: '(^[a-np-z][a-z\\]*$)|(^[a-z]$)|(^ou[a-z\\]*$)'
+
+mohu:
+  candidate_manager:
+    __include: mohu:/candidate_manager
+    memory_namespace: smart
+
+  # 简快码提示符
+  # 修改为 "" 可取消提示符
+  # 建议在熟悉简码后再取消
+  quick_code_indicator: "⚡️"
+
+  # 在造词/造句选字过程中亦使用固顶简快码，默认开启
+  # 若设为 false，则造词时过程中完全不使用简码
+  # 通常来说，不应该禁用该选项。如果你有禁用它的理由，请告知开发者，以免该选项在未来被删除。
+  quick_code_in_sentence_making: true
+
+  # 词辅功能
+  # 当输入二字或三字词时，允许词末输入 *一位* 辅助码筛选词语。
+  # 例如输入 lmjxz 得到「连接」，输入 lmjxj 得到「链接」。
+  # 但是与字辅输入方法不同，词辅在生效后 *不能* 在句末继续输入形成整
+  # 句——这个功能仅用于「词语筛选」。本方案默认开启，未匹配的第五码
+  # 仍按下一音节处理。
+  #
+  # 开启后，词辅筛选的词语会带有辅助码提示，例如「链接」后会有「jf」，
+  # 意思是输入 j *或* f 都可以定位到这个词，而不是说要同时输入 jf 两个码
+  # （相反，同时输入 jf 两码后反而无法得到该选项）。
+  enable_word_filter: true
+  # 重设词辅匹配提示符为其他字符串。
+  # 即输入 lmjxz 时被词辅匹配的候选「连接」的提示符，不影响辅助码提示功能的输出。
+  # 设为 "" 完全取消提示。
+  # 设为 {} 表示不重设词辅提示符。
+  word_filter_match_indicator: {}
+
+  # 「出简让全」相关设置
+  # 当一个字具有简码时，打其全码（不论是 yyxx 还是 yyxxo）都会导致该
+  # 字让出首位，而被推迟到后位。
+  ijrq:
+    enable: true       # 是否启用单字的出简让全？
+    #defer: 5          # 延迟多少位？若不设置该项，或值小于等于 0，则推迟到第二页的首选
+    show_hint: true    # 若让全，则提示简码打法
+    suffix: "o"        # YYXX + suffix 的单字码会被让全；如需以反斜杠输入单字，可改为 "\\"
+
+    # 词语级「让全」，对二、三、四字词有效
+    # 例：假设 lmjx 的输出是 1.连接 2.链接
+    # 想要「链接」时，增加 f ，但是由于这两个候选仍然共享 lmjxf 编码，因此顺序不变。
+    # 若开启词语级让全，则 lmjxf 的首选会被调整为「链接」
+    enable_word: false
+    # 延迟候选个数。必须是大于等于 1 的整数才有效果。
+    enable_word_defer: 1
+    # 仅在设定 *毫秒* 之后，才有词语级让全效果
+    # 该值可以设定为「检视候选发现错误 -> 然后补充辅助码」的时长
+    #     （根据个人情况设定，一般为 200 上下）
+    # （仅 librime >= 1.14 可用）
+    enable_word_delay: 0
+
+  # 单字或词辅的辅助码提示，由方案菜单中的「辅助码提示」开关控制
+  # 
+  # 单字辅助码会显示出所有可能的辅助码，且不显示拆分
+  # 建议使用 Ctrl+i 切换辅助码拆分提示功能
+  #
+  # 词辅助码提示仅在开启 enable_word_filter 时生效
+  # 具体提示格式请参考上面「词辅功能」的说明
+  # 简快码提示（包括字和词）
+  # 例如 输入 yy te er 英特尔 会提示「⚡yte」，即使用 yte 可以打出这个词
+  # 默认值 null 表示使用 quick_code_indicator 提示简快码，若有需要可重设为其他提示符或 ""
+  quick_code_hint_indicator: null
+  # 取消单字的简快码提示
+  quick_code_hint_skip_chars: false
+
+  # 输入四码时，如果固顶码表中含有对应条目，则注入到首选之后。
+  inject_fixed_chars: true    # 是否输出固顶码表单字，例：输入 cisa 时，首屏显示「词」
+  inject_fixed_words: true    # 是否输出简码码表词语，例：输入 lmsd 时，次选为「两面三刀」
+  # (仅*动词模式*) 是否优先输出单字或词组
+  inject_prioritize: "any"    # char 优先单字, word 优先词组，其他取值理解为按码表顺序
+
+  # 内置候选调序、软删除与恢复。
+  candidate_override:
+    __include: mohu:/candidate_override
+
+  pin:
+    __include: mohu:/pin
+
+  # 「常用字」字符集设置
+  # 不影响「全字集」：全字集仍显示*所有*字符
+  #
+  # both: 允许繁体和简体同时显示
+  # simp: 只显示简化字
+  # trad: 只显示繁体字
+  charset: simp
+
+  # 重复略码功能
+  # 一些输入中存在字词重复，如「好不好」「看了看」「想一想」。
+  # 略码提供了替代的输入方法，在输入完一些字后，按对应 Shift+<对应键> 调用响应功能。
+  # 默认提供的略码有：
+  # B: 输入 hkB 直接上屏「好不好」。
+  # L: 输入 kjL 直接上屏「看了看」。
+  # Y: 输入 xdY 直接上屏「想一想」。
+  # V: 输入 uoV 直接上屏「说着说着」。
+  # Q: 输入 pkQ 直接上屏「跑来跑去」。
+  # （如需要自定义/增加/删除略码，请编辑 mohu_processor.lua 中的 shorthands 定义。）
+  shorthands: false
+
+# 默认启用语言模型
+__include: mohu:/octagram/enable_for_sentence
+# 若要禁用，可直接删掉上面的 __include，或在 custom 文件中写入：
+# patch:
+#   __include: mohu:/octagram/disable
+ 

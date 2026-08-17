@@ -1,0 +1,230 @@
+schema:
+  schema_id: mohu_zrm_sentence
+  name: 整句·魔虎·自然码
+  version: "20260814"
+  author:
+    - 自然码发明人：周志农
+    - 方案制作：ksqsf
+  description: |
+    使用自然码双拼和虎码最长主码前两码、无简快码的纯粹整句输入方案。
+  dependencies:
+    - mohu_zrm_fixed
+    - mohu_charset
+    - tiger
+
+switches:
+  - name: ascii_mode
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
+  - name: extended_charset
+    states: [ 常用字, 全字集 ]
+  - name: chaifen
+    states: [ 不拆, 扌斥 ]
+  - name: pinyinhint
+    states: [ 🔇, 🔊 ]
+  - name: unicode_comment
+    states: [ U开, U关 ]
+  - name: contextual_order
+    reset: 0
+    states: [ 静态排序, 上下文调频 ]
+  - name: quick_code_hint
+    reset: 0
+    states: [ 简码提示关, 简码提示 ]
+  - name: aux_hint
+    reset: 0
+    states: [ 辅助码提示关, 辅助码提示 ]
+  - name: multi_short_code
+    reset: 0
+    states: [ 多重简字, 唯一简字 ]
+  - name: candidate_override_management
+    states: [ 常规, 候选管理 ]
+    reset: 0
+
+engine:
+  processors:
+    - lua_processor@*mohu_skin_command
+    - lua_processor@*mohu_candidate_manager*manager_processor
+    - lua_processor@*mohu_candidate_override*override_processor
+    - lua_processor@*mohu_pin*pin_processor
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - lua_translator@*mohu_symbol_hint
+    - lua_translator@*mohu_candidate_manager*manager_translator
+    - punct_translator
+    - reverse_lookup_translator@reverse_tiger
+    - table_translator@custom_phrase       # 自定义短语
+    - lua_translator@*mohu_contextual_translator
+    - lua_translator@*mohu_pin*panacea_translator
+    - lua_translator@*mohu_shijian        # 日期orq 节气ojq 星期oxq 时间osj
+    - lua_translator@*mohu_number         # 数字转大写, 大写S引导, 如 S123
+    - lua_translator@*mohu_unicode        # Unicode输入, 大写U引导, 如 U9b54
+  filters:
+    - lua_filter@*mohu_hint_filter
+    - lua_filter@*mohu_charset_filter     # 字集过滤需要去掉本行开头的 # 符号
+    - lua_filter@*mohu_pin*pin_filter
+    - lua_filter@*mohu_candidate_override*override_order_filter
+    - lua_filter@*mohu_candidate_override*override_filter
+    - simplifier@emoji
+    - lua_filter@*mohu_charset_filter@post_conversion
+    - simplifier@chaifen
+    - simplifier@pinyinhint
+    - lua_filter@*mohu_charset_comment_filter  # Unicode 区位提示
+    - lua_filter@*mohu_unicode_display_filter  # Unicode 编码提示
+    - uniquifier
+
+navigator:
+  # 在音节跳转时，跳过音节末尾的分隔符 ' ，设为 after_delimiter 恢复 Rime 默认行为
+  syllable_jump_position: before_delimiter
+
+speller:
+  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\=;'
+  delimiter: " '"
+  algebra:
+    __patch:
+      - mohu:/algebra/user_force_top?
+      - mohu:/algebra/user_sentence_top?
+      - mohu:/algebra/generate_code
+      - mohu:/algebra/user_sentence_bottom?
+      - mohu:/algebra/user_force_bottom?
+
+translator:
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_sentence_tiger_prefix2
+  prism: mohu_zrm
+  initial_quality: 5
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  contextual_suggestions: true
+
+translator_static:
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_sentence_tiger_prefix2
+  prism: mohu_zrm
+  initial_quality: 5
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  contextual_suggestions: false
+
+custom_phrase: # 自定义短语
+  dictionary: ""
+  user_dict: mohu_zrm_custom_phrases
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+  initial_quality: 10
+
+chaifen:
+  option_name: chaifen
+  opencc_config: mohu_chaifen.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    - "xform/-/ /"
+    - "xform/〕〔/｜/"
+
+emoji:
+  opencc_config: mohu_emoji.json
+  option_name: emoji
+  tips: all
+
+pinyinhint:
+  option_name: pinyinhint
+  opencc_config: mohu_pinyinhint.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    __include: :/chaifen/comment_format
+
+reverse_format:
+  comment_format:
+    - xform/(\w\w);(\w\w)/$1[$2]/
+  preedit_format:
+    - xform/^o(lf|bh|cj|vy|hm)//
+
+reverse_tiger:
+  tag: reverse_tiger
+  dictionary: tiger
+  enable_completion: true
+  prefix: "ohm"
+  tips: 〔虎码〕
+  __include: reverse_format
+
+punctuator:
+  import_preset: symbols
+
+key_binder:
+  import_preset: default
+  custom_bindings:
+    __append:
+      # 在这里添加只在本方案中生效的按键绑定
+  bindings:
+    __patch:
+      - :/key_binder/custom_bindings?
+      - mohu:/key_bindings/mohu_tab
+      - mohu:/key_bindings/mohu_semicolon_for_2
+      - mohu:/key_bindings/mohu_switches
+      - mohu:/key_bindings/mohu_keypad
+      # 大写字母追加辅助码到上一音节
+      # 该功能可使用 Shift-tab 替代
+      # - mohu:/key_bindings/mohu_capital_for_last_syllable
+
+recognizer:
+  import_preset: default
+  patterns:
+    candidate_manager: '^\\gl[hopwlu]?[a-z]*$'
+
+    unicode: "^U[a-fA-F0-9]+"
+    number: "^S[0-9]+"
+    shijian: "^N[0-9]+"
+    uppercase: "[A-Z][-_+.'A-Za-z]*$"
+    punct: '^\\([0-9]0?|[A-Za-z]*)$'
+
+    reverse_tiger: "^ohm[a-z]+$"
+    panacea: "^[a-z]*\\\\{1,2}[a-z']*$"
+
+mohu:
+  quick_code_hint_dictionary: mohu_zrm_fixed
+  inject_fixed_words: true
+
+  candidate_manager:
+    __include: mohu:/candidate_manager
+
+  # 内置候选调序、软删除与恢复。
+  candidate_override:
+    __include: mohu:/candidate_override
+
+  pin:
+    __include: mohu:/pin
+
+  # 「常用字」字符集设置
+  # 不影响「全字集」：全字集仍显示*所有*字符
+  #
+  # both: 允许繁体和简体同时显示
+  # simp: 只显示简化字
+  # trad: 只显示繁体字
+  charset: simp
+
+# 默认启用语言模型
+__include: mohu:/octagram/enable_for_sentence

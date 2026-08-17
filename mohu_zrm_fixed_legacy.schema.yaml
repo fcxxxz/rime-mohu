@@ -1,0 +1,20 @@
+schema:
+  schema_id: mohu_zrm_fixed_legacy
+  name: 魔虎自然码多重简字编译依赖
+  version: "20260815"
+  description: |
+    仅用于编译多重简字码表，不加入方案菜单。
+
+engine:
+  translators:
+    - table_translator@translator
+
+speller:
+  alphabet: abcdefghijklmnopqrstuvwxyz
+  max_code_length: 4
+
+translator:
+  dictionary: mohu_zrm_fixed_legacy
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false

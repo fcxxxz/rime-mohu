@@ -1,0 +1,19 @@
+# Rime dictionary
+# encoding: utf-8
+
+---
+name: mohu_zrm.extended
+version: "20240616"
+sort: by_weight
+use_preset_vocabulary: false
+import_tables:
+  - mohu_zrm.chars      # 自然码单字表
+  - mohu_zrm.base       # 基础词库
+  - mohu_zrm.words      # 本方案补充词
+  - mohu_zrm.tencent    # 腾讯词库
+  - mohu_zrm.computer   # 计算机术语
+  - mohu_zrm.moe
+...
+
+# 用户自定义词库
+# 此处可无码加词

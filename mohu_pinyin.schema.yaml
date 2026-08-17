@@ -1,0 +1,12 @@
+schema:
+  schema_id: mohu_pinyin
+  name: 勿用·全拼反查
+  version: "1.0"
+
+engine:
+  translators:
+    - table_translator
+
+translator:
+  dictionary: mohu_pinyin
+  enable_user_dict: false

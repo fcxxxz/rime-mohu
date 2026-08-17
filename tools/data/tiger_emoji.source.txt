@@ -1,0 +1,3 @@
+rime-tiger commit: 2c9f9dfb4a882e1a99b08a359d859e7d2b110538
+source: opencc/emoji.txt
+sha256: f9151b98683caac6a62af2426c94b21e8a019a8b3812f108e2a193920d09f89d

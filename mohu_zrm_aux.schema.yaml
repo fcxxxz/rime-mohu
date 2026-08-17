@@ -1,0 +1,360 @@
+schema:
+  schema_id: mohu_zrm_aux
+  name: 辅筛·魔虎·自然码
+  version: "20260814"
+  author:
+    - 自然码发明人：周志农
+    - 方案制作：ksqsf
+  description: |
+    输入完整一句自然码双拼后，可用虎码最长主码前两码筛选候选项。
+  dependencies:
+    - tiger
+    - mohu_charset
+    - mohu_zrm_fixed
+
+switches:
+  - name: ascii_mode
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
+  - name: extended_charset
+    states: [ 常用字, 全字集 ]
+  - name: chaifen
+    states: [ 不拆, 扌斥 ]
+  - name: pinyinhint
+    states: [ 🔇, 🔊 ]
+  - name: unicode_comment
+    states: [ U关, U开 ]
+  - name: contextual_order
+    reset: 0
+    states: [ 静态排序, 上下文调频 ]
+  - name: quick_code_hint
+    reset: 0
+    states: [ 简码提示关, 简码提示 ]
+  - name: aux_hint
+    reset: 0
+    states: [ 辅助码提示关, 辅助码提示 ]
+  - name: multi_short_code
+    reset: 0
+    states: [ 多重简字, 唯一简字 ]
+  - name: candidate_override_management
+    states: [ 常规, 候选管理 ]
+    reset: 0
+
+engine:
+  processors:
+    - lua_processor@*mohu_skin_command
+    - lua_processor@*mohu_candidate_manager*manager_processor
+    - lua_processor@*mohu_candidate_override*override_processor
+    - lua_processor@*mohu_pin*pin_processor
+    - key_binder
+    - ascii_composer
+    - recognizer
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - lua_translator@*mohu_symbol_hint
+    - lua_translator@*mohu_candidate_manager*manager_translator
+    - punct_translator
+    - reverse_lookup_translator@reverse_tiger
+    - table_translator@custom_phrase        # 自定义短语
+    - lua_translator@*mohu_aux_translator
+    - lua_translator@*mohu_shijian        # 日期orq 节气ojq 星期oxq 时间osj
+    - lua_translator@*mohu_number         # 数字转大写, 大写S引导, 如 S123
+    - lua_translator@*mohu_unicode        # Unicode输入, 大写U引导, 如 U9b54
+    - lua_translator@*mohu_pin*panacea_translator
+  filters:
+    - lua_filter@*mohu_hint_filter@auxfilter
+    - lua_filter@*mohu_charset_filter
+    - lua_filter@*mohu_fix_filter
+    - lua_filter@*mohu_pin*pin_filter
+    - lua_filter@*mohu_reorder_filter
+    - lua_filter@*mohu_candidate_override*override_order_filter
+    - lua_filter@*mohu_candidate_override*override_filter
+    - simplifier@emoji
+    - lua_filter@*mohu_charset_filter@post_conversion
+    - simplifier@chaifen
+    - simplifier@pinyinhint
+    - lua_filter@*mohu_charset_comment_filter  # Unicode 区位提示
+    - lua_filter@*mohu_unicode_display_filter  # Unicode 编码提示
+    - uniquifier
+
+speller:
+  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\=;'
+  delimiter: " '"
+  aux_algebra:
+    __append:
+      - derive/^(.*);(\w)(\w)$/$1/
+  algebra:
+    __patch:
+      - mohu:/algebra/user_force_top?
+      - mohu:/algebra/user_sentence_top?
+      - :/speller/aux_algebra
+      - mohu:/algebra/user_sentence_bottom?
+      - mohu:/algebra/user_force_bottom?
+
+translator:
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_aux_tiger_prefix2
+  prism: mohu_zrm_aux
+  initial_quality: 5
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  contextual_suggestions: true
+
+translator_static:
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_aux_tiger_prefix2
+  prism: mohu_zrm_aux
+  initial_quality: 5
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  contextual_suggestions: false
+
+custom_phrase: # 自定义短语
+  dictionary: ""
+  user_dict: mohu_zrm_custom_phrases
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+  initial_quality: 10
+
+# 固顶和挂接设置
+fixed:
+  dictionary: mohu_zrm_fixed
+  initial_quality: 10
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false
+  enable_encoder: false
+  encode_commit_history: true
+
+fixed_legacy:
+  dictionary: mohu_zrm_fixed_legacy
+  initial_quality: 10
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false
+  enable_encoder: false
+  encode_commit_history: true
+
+translator_legacy:
+  dictionary: mohu_zrm_fixed_legacy
+
+emoji:
+  opencc_config: mohu_emoji.json
+  option_name: emoji
+  tips: all
+
+chaifen:
+  option_name: chaifen
+  opencc_config: mohu_chaifen.json
+  tips: char
+  show_in_comment: true
+  inherit_comment: true
+  comment_format:
+    - "xform/-/ /"
+    - "xform/〕〔/｜/"
+
+pinyinhint:
+  option_name: pinyinhint
+  opencc_config: mohu_pinyinhint.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    __include: :/chaifen/comment_format
+
+reverse_format:
+  comment_format:
+    - xform/(\w\w);(\w\w)/$1[$2]/
+  preedit_format:
+    - xform/^o(lf|bh|cj|vy|hm)//
+
+reverse_tiger:
+  tag: reverse_tiger
+  dictionary: tiger
+  enable_completion: true
+  prefix: "ohm"
+  tips: 〔虎码〕
+  __include: reverse_format
+
+punctuator:
+  import_preset: symbols
+
+key_binder:
+  import_preset: default
+  custom_bindings:
+    __append:
+      # 在这里添加只在本方案中生效的按键绑定
+  bindings:
+    __patch:
+      - :/key_binder/custom_bindings?
+      - mohu:/key_bindings/mohu_switches
+      - mohu:/key_bindings/mohu_tab
+      - mohu:/key_bindings/mohu_semicolon_for_2
+      - mohu:/key_bindings/mohu_keypad
+
+recognizer:
+  import_preset: default
+  patterns:
+    candidate_manager: '^\\gl[hopwlu]?[a-z]*$'
+
+    unicode: "^U[a-fA-F0-9]+"
+    number: "^S[0-9]+"
+    shijian: "^N[0-9]+"
+    uppercase: "[A-Z][-_+.'A-Za-z]*$"
+    punct: '^\\([0-9]0?|[A-Za-z]*)$'
+
+    # 反查
+    reverse_tiger: "^ohm[a-z]+$"
+
+mohu:
+  inject_fixed_words: true
+
+  candidate_manager:
+    __include: mohu:/candidate_manager
+
+  # 预取个数
+  # 设置为小于等于 0 的数相当于无限制。
+  # 设置为正数时：数字越小，速度越快，被辅到的字越少；
+  #               数字越大，速度越慢，能被辅到字就越多。
+  # 一般的文本录入需求可设为 100~200。
+  # 如果在某些性能较低的设备上使用时感到卡顿，可以设置为 50 或更小的数字。
+  # 如果感到被辅生僻字过多，也可以考虑设置为较小的数字。
+  # 设为较小正数且确需输入生僻字的情况，可用反查功能。
+  prefetch: 150
+
+  # 固定简码。
+  quick_code_indicator: "⚡"
+  fix:
+    # 使用挂接码表中的字词？
+    # 若使用，则下面指定的 fix 设置失效。
+    use_dict: false
+    # 最大输入几码时可以插入
+    # 若设为 3，则输入 4 码以上时不会插入任何码表候选
+    # 若设为 4，则相当于挂接用法
+    use_dict_max_length: 3
+
+    # 若不使用挂接码表，可手动指定一、二级简码。
+    # 若需固顶大量候选，请使用 use_dict: true。
+    # **仅在 mohu/fix/use_dict: false 时生效**
+    d: 的
+    l: 了
+    j: 就
+    hk: 好
+
+  # 首选固定为句子，使得在输入长句时，首选的长度不会跳变
+  # 例如，输入「不太理解」输入到 "bu tl l" 时，
+  # 若为 false，则首选可能是「郶」（l 辅助码生效）
+  # 若为 true，则首选是「不太冷」（bu tl l 被视作双拼），次选可能是「郶」（l 辅助码生效）
+  sentence_priority: true
+  # 句子优先的生效长度
+  # 只有在句子输出大于该长度时，句子才会被前置。
+  # 例如，要输入「哪个」时输入 nagek，首先被尝试理解为 na'ge'k，输出三个字。
+  # 若设为 4，就可以保证 nagek 的首选出现「哪个」，而不是三个字的候选。
+  # 若设为 0，则表示不加限制、永远开启。
+  sentence_priority_length: 0
+
+  # 四码时是否优先单字
+  # ※ 该设置优先级高于 word_over_char_tolerance
+  #    若本选项为 true，即使 word_over_char_tolerance 大于 0，四码仍然是单字优先。
+  char_priority: false
+
+  # 允许多少词出现在被辅候选之前，影响输入长度为偶数的情况
+  # 被辅单字太多的情况下，例如 ji'dj li'hl 等，允许一些词出现在这些字之前。
+  # 若设为 0，相当于被辅候选永远在最前，输入 xibk 时首选会是「兮」而不是细胞。
+  # 若设为 1，相当于被辅候选会出现在次选。
+  # 必须是正整数。
+  #
+  # ※ 该设置优先级低于 single_char_input_len。
+  #    如果本设置大于 0，而 single_char_input_len=4 ，则
+  word_over_char_tolerance: 2
+  # 是否允许被辅候选和插入词语之间调频
+  # 仅在当 word_over_char_tolerance > 0 时有效
+  # 如 doxx 存在「多谢」和「多」两个候选，具体顺序依据用户使用频率而定。
+  # 若设置为 true，「多谢」可能出现在「多」之前，也可能出现在「多」之后。
+  # 若设置为 false，则词语无条件出现在被辅候选之前。
+  word_over_char_adaptive: true
+
+  # 输入辅助码时，原来匹配的首选后移
+  # ※ 该选项也对词语生效。
+  #
+  # 例如，假设输入 he 的首选是「喝」，
+  # 如果进一步输入 k，有很大可能意味着我们想找一个不是「喝」的字。
+  # 那么「喝」应该被延迟到若干选项之后。
+  #
+  # 注意，该功能不影响仅输入一码或二码时的行为，
+  # 即若 h 的首选是「喝」，则输入 he 的首选依然是「喝」。
+  # 若需要改变此行为，可以参照上方的一二级简码设置。
+  #
+  # 若为 true，则原来匹配的候选被延迟到若干选项之后。
+  # （延迟候选的个数由 aux_priority_defer 指定。）
+  # 若为 false，则 hek 一定仍然是「喝」。
+  aux_priority: true
+  # 延迟多少位
+  aux_priority_defer: 2
+  # 设定 aux_priority 作用时的辅助码长度
+  # 若为 1，表示允许 he -> hek 时降权「喝」字，即从二码输入一码到三码时。
+  # 若为 2，表示允许 hek -> hekh 时降权「喝」字，即从三码输入一码到四码时。
+  # 其他任何数字都是无效输入。
+  aux_priority_length: 1
+  # 如果候选被后移，增加一个提示符。
+  aux_priority_indicator: "▾"
+
+  # 辅助码作用位置
+  # 注：辅筛模式无论如何都是在 *首个词语* 上进行筛选。
+  # 本配置只影响取用哪个辅助码
+  # first：首字
+  # last：末字
+  # any：任意字
+  aux_position: any
+
+  # 辅助码提示，由方案菜单中的「辅助码提示」开关控制
+  # 格式为：<匹配的辅助码> ¦ <词典中的辅助码>
+  # 该功能不显示拆分，建议使用 Ctrl+i 显示单字拆分
+  # 内置候选调序、软删除与恢复。
+  candidate_override:
+    __include: mohu:/candidate_override
+
+  pin:
+    __include: mohu:/pin
+
+  # 「常用字」字符集设置
+  # 不影响「全字集」：全字集仍显示*所有*字符
+  #
+  # both: 允许繁体和简体同时显示
+  # simp: 只显示简化字
+  # trad: 只显示繁体字
+  charset: simp
+
+  # 重复略码功能
+  # 一些输入中存在字词重复，如「好不好」「看了看」「想一想」。
+  # 略码提供了替代的输入方法，在输入完一些字后，按对应 Shift+<对应键> 调用响应功能。
+  # 默认提供的略码有：
+  # B: 输入 hkB 直接上屏「好不好」。
+  # L: 输入 kjL 直接上屏「看了看」。
+  # Y: 输入 xdY 直接上屏「想一想」。
+  # V: 输入 uoV 直接上屏「说着说着」。
+  # Q: 输入 pkQ 直接上屏「跑来跑去」。
+  # （如需要自定义/增加/删除略码，请编辑 mohu_processor.lua 中的 shorthands 定义。）
+  shorthands: false
+
+# 默认启用语言模型
+__include: mohu:/octagram/enable_for_sentence

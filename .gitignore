@@ -1,0 +1,51 @@
+#######################
+# Generated artifacts #
+#######################
+moran.chars.dict.yaml
+zrlf.dict.yaml
+opencc/*.ocd2
+opencc/moran_chaifen.txt
+lua/zrmdb.txt
+dist/
+dazhu*.txt
+moran.mdd
+moran.mdx
+
+##############
+# Rime stuff #
+##############
+sync/
+/*.txt
+!mohu_zrm_custom_phrases.txt
+*.userdb/
+*.custom.yaml
+installation.yaml
+user.yaml
+
+###############
+# Development #
+###############
+.venv/
+.idea/
+.ruff_cache/
+__pycache__/
+.worktrees/
+.mimosa/
+/research/
+/docs/superpowers/specs/
+**/[Pp][Ll][Aa][Nn]*/
+**/[Ss][Pp][Ee][Cc]*/
+**/*[Pp][Ll][Aa][Nn]*.[Mm][Dd]
+**/*[Ss][Pp][Ee][Cc]*.[Mm][Dd]
+**/[Tt][Ee][Ss][Tt]*/
+**/[Tt][Ee][Ss][Tt]_*
+**/*_[Tt][Ee][Ss][Tt].*
+**/*.[Tt][Ee][Ss][Tt].*
+/MEMORY.md
+
+###########
+# Garbage #
+###########
+**/.DS_Store
+build/
+trash/

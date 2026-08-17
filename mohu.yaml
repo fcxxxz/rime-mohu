@@ -1,0 +1,165 @@
+# 拼写运算
+algebra:
+  # 任何编码都会经过演算式的运算转变为用户直接输入的编码。
+  # 优先级顺序为：
+  #    user_force_top
+  # -> user_sentence_top
+  # -> generate_code
+  # -> user_sentence_bottom
+  # -> user_force_bottom
+
+  # 用户自定义演算式，这部分演算式会注入到所有方案的开头和结尾，包括字词模式
+  # 用例：手机上的模糊键盘映射
+  user_force_top:
+  user_force_bottom:
+    # __append:
+    #   __patch:
+    #     - mohu_defs:/keyboard19
+
+  # 用户自定义演算式，这部分演算式会注入到类整句方案的开头和结尾，不包括字词模式
+  # 用例：实现模糊音、将自然码双拼映射为别的双拼方案等
+  user_sentence_top:
+    __append:
+      __patch:
+        - mohu_defs:/fly/qx_qo  # ZRM-SPECIFIC
+        - mohu_defs:/fly/xq_xo  # ZRM-SPECIFIC
+        - mohu_defs:/fly/wz_wk  # ZRM-SPECIFIC
+        # 模糊音设置
+        # - mohu_defs:/bufen/z_zh
+        # - mohu_defs:/bufen/c_ch
+        # - mohu_defs:/bufen/s_sh
+        # - mohu_defs:/bufen/en_eng
+  user_sentence_bottom:
+
+  # 用于生成用户输入码的核心演算式
+  generate_code:
+    __append:
+      - derive|^(.+);(\w)(\w)$|$1$2$3o| # 全码 YYXXo
+      - derive|^(.+);(\w)(\w)$|$1$2$3\\| # 全码 YYXX\
+      - derive|^(.+);(\w)(\w)$|$1$2\\|   # 三码筛单字 YYX\ （实验性）
+      - abbrev/^(.+);(\w)(\w)$/$1$2$3/  # 降低 YYXX 优先级
+      - derive/^(.+);(\w)(\w)$/$1$2/    # 构词可以用 YYX
+      - derive/^(.+);(\w)(\w)$/$1/      # 构词可以用 YY
+      - erase/^pp$/                     # ZRM-SPECIFIC
+      - erase/^(.+);(.+)$/              # 删除原始编码以加速检索
+
+# 内置候选的用户级调序与软删除。
+candidate_override:
+  enable: true
+  db_name: mohu_candidate_override
+  max_candidates: 50
+  reordered_indicator: "↕"
+  hidden_comment: "🗑 Shift+Delete 恢复"
+
+# 全局候选管理器。输入前缀仅供内部导航使用。
+candidate_manager:
+  enable: true
+  prefix: "\\gl"
+  memory_namespace: translator
+
+# 候选置顶与加词。
+pin:
+  enable: true
+  indicator: "📌"
+  panacea:
+    prompt: "〔加词〕"
+    infix: "\\\\"
+    # 可用「目标编码 + Ctrl+;」或「目标编码\\ + 空格」进入加词；选词后按 Enter 保存。
+    freestyle: true
+
+key_bindings:
+  # 分号用于次选
+  # ※ 注意，默认模式（mohu.schema.yaml）的分号次选功能由 mohu_processor.lua 提供，不使用该配置。
+  mohu_semicolon_for_2:
+    __append:
+      - { when: has_menu, accept: semicolon, send: "2" }
+
+  # 使用 tab 在不同音节间跳转
+  mohu_tab:
+    __append:
+      - { when: has_menu, accept: "Tab", send: "Control+Right" }
+      - { when: composing, accept: "Tab", send: "Control+Right" }
+
+  # 一些功能的开关键
+  mohu_switches:
+    __append:
+      - { when: has_menu, accept: "Control+u", toggle: unicode_comment }
+      - { when: has_menu, accept: "Control+q", toggle: emoji }
+      - { when: composing, accept: "Control+x", toggle: extended_charset }
+      - { when: has_menu, accept: "Control+i", toggle: chaifen }
+      - { when: has_menu, accept: "Control+period", toggle: pinyinhint }
+
+  # 使用大写字母追加输入到上一个音节末尾
+  mohu_capital_for_last_syllable:
+    __append:
+      - { when: has_menu, accept: Shift+A, send_sequence: "{Control+Left}a{Control+Right}" }
+      - { when: has_menu, accept: Shift+B, send_sequence: "{Control+Left}b{Control+Right}" }
+      - { when: has_menu, accept: Shift+C, send_sequence: "{Control+Left}c{Control+Right}" }
+      - { when: has_menu, accept: Shift+D, send_sequence: "{Control+Left}d{Control+Right}" }
+      - { when: has_menu, accept: Shift+E, send_sequence: "{Control+Left}e{Control+Right}" }
+      - { when: has_menu, accept: Shift+F, send_sequence: "{Control+Left}f{Control+Right}" }
+      - { when: has_menu, accept: Shift+G, send_sequence: "{Control+Left}g{Control+Right}" }
+      - { when: has_menu, accept: Shift+H, send_sequence: "{Control+Left}h{Control+Right}" }
+      - { when: has_menu, accept: Shift+I, send_sequence: "{Control+Left}i{Control+Right}" }
+      - { when: has_menu, accept: Shift+J, send_sequence: "{Control+Left}j{Control+Right}" }
+      - { when: has_menu, accept: Shift+K, send_sequence: "{Control+Left}k{Control+Right}" }
+      - { when: has_menu, accept: Shift+L, send_sequence: "{Control+Left}l{Control+Right}" }
+      - { when: has_menu, accept: Shift+M, send_sequence: "{Control+Left}m{Control+Right}" }
+      - { when: has_menu, accept: Shift+N, send_sequence: "{Control+Left}n{Control+Right}" }
+      - { when: has_menu, accept: Shift+O, send_sequence: "{Control+Left}o{Control+Right}" }
+      - { when: has_menu, accept: Shift+P, send_sequence: "{Control+Left}p{Control+Right}" }
+      - { when: has_menu, accept: Shift+Q, send_sequence: "{Control+Left}q{Control+Right}" }
+      - { when: has_menu, accept: Shift+R, send_sequence: "{Control+Left}r{Control+Right}" }
+      - { when: has_menu, accept: Shift+S, send_sequence: "{Control+Left}s{Control+Right}" }
+      - { when: has_menu, accept: Shift+T, send_sequence: "{Control+Left}t{Control+Right}" }
+      - { when: has_menu, accept: Shift+U, send_sequence: "{Control+Left}u{Control+Right}" }
+      - { when: has_menu, accept: Shift+V, send_sequence: "{Control+Left}v{Control+Right}" }
+      - { when: has_menu, accept: Shift+W, send_sequence: "{Control+Left}w{Control+Right}" }
+      - { when: has_menu, accept: Shift+X, send_sequence: "{Control+Left}x{Control+Right}" }
+      - { when: has_menu, accept: Shift+Y, send_sequence: "{Control+Left}y{Control+Right}" }
+      - { when: has_menu, accept: Shift+Z, send_sequence: "{Control+Left}z{Control+Right}" }
+      - { when: has_menu, accept: Shift+BackSpace, send_sequence: "{Control+Left}{BackSpace}{Control+Right}" }
+
+  # 支持小键盘数字键、回车键和小数点
+  mohu_keypad:
+    __append:
+      - { when: composing, accept: KP_Enter, send: Return }
+      - { when: composing, accept: KP_0, send: '0' }
+      - { when: composing, accept: KP_1, send: '1' }
+      - { when: composing, accept: KP_2, send: '2' }
+      - { when: composing, accept: KP_3, send: '3' }
+      - { when: composing, accept: KP_4, send: '4' }
+      - { when: composing, accept: KP_5, send: '5' }
+      - { when: composing, accept: KP_6, send: '6' }
+      - { when: composing, accept: KP_7, send: '7' }
+      - { when: composing, accept: KP_8, send: '8' }
+      - { when: composing, accept: KP_9, send: '9' }
+      - { when: composing, accept: KP_Decimal, send: '.' }
+
+  # 切换固词
+  mohu_toggle_inflexible:
+    __append:
+      - { when: has_menu, accept: Control+Shift+G, toggle: inflexible }
+
+octagram:
+  disable:
+    __patch:
+      grammar: {}
+  enable_for_sentence:
+    __patch:
+      grammar:
+        language: zh-hans-t-essay-bgw
+        collocation_max_length: 4
+        collocation_min_length: 3
+  enable_for_fixed:
+    __patch:
+      grammar:
+        language: zh-hans-t-essay-bgc
+        collocation_max_length: 4
+        collocation_min_length: 2
+      fixed/+:
+        contextual_suggestions: true
+        max_homographs: 7
+      translator/+:
+        contextual_suggestions: true
+        max_homographs: 7

@@ -648,6 +648,7 @@ def allocate_compatibility_codes(
     candidates_by_code: dict[str, list[tuple[int, int, SourceEntry | TableEntry]]] = (
         defaultdict(list)
     )
+    input_entries: dict[tuple[str, str], SourceEntry | TableEntry] = {}
     edges_by_text: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for source_order, entry in enumerate(compatibility_entries):
@@ -660,11 +661,13 @@ def allocate_compatibility_codes(
         if (
             entry.text not in visible
             or value in seen
-            or occupied[entry.code]
             or has_shorter_path
         ):
             continue
         seen.add(value)
+        input_entries[value] = entry
+        if occupied[entry.code]:
+            continue
         candidates_by_code[entry.code].append(
             (visible_rank[entry.text], source_order, entry)
         )
@@ -742,6 +745,25 @@ def allocate_compatibility_codes(
                 source=entry.source,
             )
         )
+    fallback_entries = {
+        value: entry
+        for value, entry in input_entries.items()
+        if value[0] in unresolved_set and value not in selected_entries
+    }
+    for text, code in sorted(
+        fallback_entries,
+        key=lambda value: (value[1], visible_rank[value[0]]),
+    ):
+        entry = fallback_entries[(text, code)]
+        rows.append(
+            TableEntry(
+                text,
+                code,
+                0.0,
+                len(rows),
+                source="pinyin_fallback",
+            )
+        )
     return rank_candidates(rows)
 
 
@@ -788,7 +810,11 @@ def audit_full_code_collisions(
                 scoped_order,
             )
             for row in allocated_rows:
-                if row.text in visible and (row.text, row.code) not in baseline_pairs:
+                if (
+                    row.text in visible
+                    and (row.text, row.code) not in baseline_pairs
+                    and row.source != "pinyin_fallback"
+                ):
                     rescued_paths[row.text].add(row.code[:-2])
 
         characters_by_code: dict[str, set[str]] = defaultdict(set)

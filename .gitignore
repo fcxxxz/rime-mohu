@@ -7,6 +7,8 @@ opencc/*.ocd2
 opencc/moran_chaifen.txt
 lua/zrmdb.txt
 dist/
+dist-zrm/
+dist-flypy/
 dazhu*.txt
 moran.mdd
 moran.mdx

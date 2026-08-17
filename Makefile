@@ -1,4 +1,6 @@
 DESTDIR ?= $(abspath ./dist)
+ZRM_DESTDIR ?= $(abspath ./dist-zrm)
+FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
 
 quick: tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
@@ -79,6 +81,7 @@ clean:
 	rm -rf mdict-out
 	rm -f mohu.mdd mohu.mdx
 	rm -rf dist
+	rm -rf dist-zrm dist-flypy
 	rm -f $(chars_output)
 	rm -f $(tiger_rank_output)
 	rm -f dazhu*.txt
@@ -106,6 +109,12 @@ dist: quick
 	cp -a opencc/mohu_TSPhrases.txt $(DESTDIR)/opencc
 
 	rm -rf dist/*.userdb  # Just in case
+
+dist-zrm: quick
+	uv run tools/build_split_dist.py zrm "$(ZRM_DESTDIR)"
+
+dist-flypy: quick
+	uv run tools/build_split_dist.py flypy "$(FLYPY_DESTDIR)"
 
 test: dist
 	uv run python -m unittest tests.test_tiger_aux -v
@@ -150,4 +159,4 @@ test: dist
 	mira -C /tmp/mira-cache tests/mohu_candidate_override_fixed.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist test lint-python
+.PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist dist-zrm dist-flypy test lint-python

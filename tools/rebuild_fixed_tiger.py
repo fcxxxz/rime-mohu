@@ -10,6 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from fixed_tiger_allocation import (  # noqa: E402
+    DoublePinyin,
+    SourceEntry,
+    TableEntry,
+    build_source_entries,
+    load_original_character_entries,
+    rank_candidates,
+    select_records,
+)
 from flypyify import flypyify1  # noqa: E402
 from modern_readings import load_modern_readings  # noqa: E402
 from tiger_aux import (  # noqa: E402
@@ -19,29 +28,14 @@ from tiger_aux import (  # noqa: E402
 )
 from zrmify import unzrmify1, zrmify  # noqa: E402
 
-from research.tiger_aux.experiment import (  # noqa: E402
-    DoublePinyin,
-    SourceEntry,
-    TableEntry,
-    build_source_entries,
-    load_original_character_entries,
-    rank_candidates,
-    select_records,
-)
-
 VERSION = "20260816"
 LOWERCASE_CODE = re.compile(r"[a-z]+")
 EXPECTED_TIGER_CHARACTER_COUNT = 83951
-CODE_LENGTH_REPORT = (
-    ROOT / "research/tiger_aux/output/tiger_zrm_prefix2_all_code_lengths.tsv"
-)
-FLYPY_CODE_LENGTH_REPORT = (
-    ROOT / "research/tiger_aux/output/tiger_flypy_prefix2_all_code_lengths.tsv"
-)
+RESEARCH_OUTPUT_DIR = ROOT / "research/tiger_aux/output"
+CODE_LENGTH_REPORT = RESEARCH_OUTPUT_DIR / "tiger_zrm_prefix2_all_code_lengths.tsv"
+FLYPY_CODE_LENGTH_REPORT = RESEARCH_OUTPUT_DIR / "tiger_flypy_prefix2_all_code_lengths.tsv"
 TIGER_RANK_PATH = ROOT / "lua/tiger_rank.txt"
-SIMPLIFIED_READING_AUDIT_PATH = (
-    ROOT / "research/tiger_aux/output/simplified_reading_compatibility.tsv"
-)
+SIMPLIFIED_READING_AUDIT_PATH = RESEARCH_OUTPUT_DIR / "simplified_reading_compatibility.tsv"
 FIXED_CHAR_CODE_OVERRIDES_PATH = (
     ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
 )
@@ -907,37 +901,41 @@ def main() -> int:
                     "mohu_flypy_tiger_fixed_legacy", flypy_legacy_dictionary_rows
                 ),
             ),
-            (
-                CODE_LENGTH_REPORT,
-                render_code_length_report(
-                    tiger_order,
-                    zrm_rows,
-                    zrm_full_rows,
-                    weights,
-                ),
-            ),
-            (
-                FLYPY_CODE_LENGTH_REPORT,
-                render_code_length_report(
-                    flypy_order,
-                    flypy_rows,
-                    flypy_full_rows,
-                    flypy_weights,
-                ),
-            ),
             (TIGER_RANK_PATH, render_tiger_rank(tiger_order)),
-            (
-                SIMPLIFIED_READING_AUDIT_PATH,
-                render_simplified_reading_audit(
-                    tiger_order,
-                    load_reading_evidence(chars_path),
-                    modern_readings,
-                    zrm_rows,
-                    load_auxiliary_tsv(auxiliary_path),
-                ),
-            ),
         )
     )
+    research_outputs = (
+        (
+            CODE_LENGTH_REPORT,
+            render_code_length_report(
+                tiger_order,
+                zrm_rows,
+                zrm_full_rows,
+                weights,
+            ),
+        ),
+        (
+            FLYPY_CODE_LENGTH_REPORT,
+            render_code_length_report(
+                flypy_order,
+                flypy_rows,
+                flypy_full_rows,
+                flypy_weights,
+            ),
+        ),
+        (
+            SIMPLIFIED_READING_AUDIT_PATH,
+            render_simplified_reading_audit(
+                tiger_order,
+                load_reading_evidence(chars_path),
+                modern_readings,
+                zrm_rows,
+                load_auxiliary_tsv(auxiliary_path),
+            ),
+        ),
+    )
+    if RESEARCH_OUTPUT_DIR.is_dir():
+        outputs.extend(research_outputs)
 
     return 0 if all(write_or_check(path, text, args.check) for path, text in outputs) else 1
 

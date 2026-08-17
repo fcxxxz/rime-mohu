@@ -883,12 +883,6 @@ local function reorder_direction(key_event)
         return nil
     end
     local keycode = key_event.keycode
-    if keycode == 0xff52 or keycode == 0xff51 then
-        return -1
-    end
-    if keycode == 0xff54 or keycode == 0xff53 then
-        return 1
-    end
     if keycode == 0x2d or keycode == 0xffad then
         return -1
     end

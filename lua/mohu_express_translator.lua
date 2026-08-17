@@ -256,7 +256,6 @@ function top.func(input, seg, env)
     end
 
     -- 词辅在正常输出之前，以提高其优先级
-    local word_filter_matched = false
     if env.enable_word_filter and (input_len == 5 or input_len == 7) then
         local real_input = input:sub(1, input_len - 1)
         local user_ac = input:sub(input_len, input_len)
@@ -266,7 +265,6 @@ function top.func(input, seg, env)
             local idx = len_match and cand.comment:find(user_ac)
             local only_sp = (cand.preedit:sub(3,3) == ' ') and (#cand.preedit < 6 or cand.preedit:sub(6,6) == ' ')
             if only_sp and idx then
-                word_filter_matched = true
                 cand._end = cand._end + 1
                 cand.preedit = input
                 top.apply_word_filter_hint(cand, aux_hint, env.word_filter_match_indicator)
@@ -274,19 +272,6 @@ function top.func(input, seg, env)
             end
             if #cand.preedit <= 2 then
                 break
-            end
-        end
-    end
-
-    -- 第五码没有命中词辅时，它才是下一音节的开头。
-    if input_len == 5 and not word_filter_matched and not is_sentence_making then
-        local prefix_res = contextual.get_runtime(env):query(input:sub(1, 4), seg)
-        if prefix_res ~= nil then
-            for cand in prefix_res:iter() do
-                if utf8.len(cand.text) == 2 then
-                    cand:get_genuine().comment = ""
-                    top.output(env, cand)
-                end
             end
         end
     end

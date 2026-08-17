@@ -910,7 +910,7 @@ function pin_processor.init(env)
     if not env.pin_enable then
         return
     end
-    env.infix = env.engine.schema.config:get_string("mohu/pin/panacea/infix") or "\\"
+    env.infix = env.engine.schema.config:get_string("mohu/pin/panacea/infix") or "//"
     env.freestyle = env.engine.schema.config:get_bool("mohu/pin/panacea/freestyle") or false
     env.select_keys = env.engine.schema.config:get_string("menu/alternative_select_keys") or "1234567890"
     env.pin_acquired = user_db.acquire()
@@ -1169,7 +1169,7 @@ function panacea_translator.init(env)
     if not env.pin_enable then
         return
     end
-    env.infix = env.engine.schema.config:get_string("mohu/pin/panacea/infix") or '\\'
+    env.infix = env.engine.schema.config:get_string("mohu/pin/panacea/infix") or '//'
     env.escaped_infix = string.gsub(env.infix, "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1")
     env.prompt = env.engine.schema.config:get_string("mohu/pin/panacea/prompt") or "〔加词〕"
     env.indicator = env.engine.schema.config:get_string("mohu/pin/indicator") or "📌"

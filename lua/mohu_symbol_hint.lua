@@ -39,7 +39,7 @@ local function starts_with(text, prefix)
 end
 
 local function translator(input, seg)
-  if input:sub(1, 1) ~= "\\" then
+  if input:sub(1, 1) ~= "/" then
     return
   end
 
@@ -48,7 +48,7 @@ local function translator(input, seg)
   for _, item in ipairs(hints) do
     if prefix ~= item.code and (prefix == "" or starts_with(item.code, prefix)) then
       count = count + 1
-      local text = "\\" .. item.code .. " " .. item.label
+      local text = "/" .. item.code .. " " .. item.label
       local candidate = Candidate("symbol_hint", seg.start, seg._end, text, "继续输入 " .. item.code)
       candidate.quality = -1000 - count
       yield(candidate)

@@ -503,11 +503,11 @@ import_tables:
 拽	vk		45251
 嗲	dx		2018
 耨	nz		629
-扽	df		81
-挼	rx		426
-欻	ix		418
-𤭢	cw		1000
-𰻝	bl		1
+𤭢	cwz		0
+欻	ixc		0
+挼	rxu		0
+扽	dfu		0
+𰻝	ble		0
 吖	aad		160000
 腌	aav		310
 锕	aaz		144
@@ -19221,6 +19221,7 @@ C语言	cyy
 抵罪	dizv
 大碴子味	dizw
 到处走走	dizz
+大家	dj
 东京爱情故事	djau
 打击报复	djbf
 点击播放	djbf
@@ -30287,6 +30288,7 @@ G盘	gyj
 各人自扫门前雪	grzx
 个人自由	grzy
 惯贼	grzw
+公司	gs
 公安	gsan
 工本	gsbf
 工笔	gsbi
@@ -31844,6 +31846,7 @@ G盘	gyj
 观音坐莲	gyzl
 怪罪	gkzv
 公约组织	gyzv
+工作	gz
 工作安排	gzap
 工作报告	gzbg
 裹足不前	gzbq
@@ -32387,6 +32390,8 @@ G盘	gyj
 获此殊荣	hcur
 何错之有	hcvy
 花残月缺	hcyq
+很多	hd
+回答	hd
 磺胺	hlan
 黑道白道	hdbd
 好歹不分	hdbf
@@ -49268,6 +49273,7 @@ JK制服	jkvf
 看透一切	ktyq
 课堂作业	ktzy
 开脱罪责	ktzz
+开始	ku
 酷爱	kuai
 开始按钮	kuan
 苦熬	kuao
@@ -53258,6 +53264,7 @@ JK制服	jkvf
 路途遥远	ltyy
 流通资金	ltzj
 略作	ltzo
+老师	lu
 老鼠爱大米	luam
 凌霜傲雪	luax
 路霸	luba
@@ -73588,6 +73595,7 @@ P站	pvj
 同父异母	tfym
 天方夜谭	tfyt
 同分异构体	tfyt
+通过	tg
 疼爱	tgai
 同工不同酬	tgbi
 藤编	tgbm
@@ -77235,6 +77243,7 @@ T恤衫	txuj
 体育总局	tyzj
 挺早	tkzc
 统一组织	tyzv
+投资	tz
 天自安排	tzap
 兔子不吃窝边草	tzbc
 投资比例	tzbl
@@ -106721,6 +106730,7 @@ U盘	uyj
 曾祖	zgzu
 载歌载舞	zgzw
 自给自足	zgzz
+最后	zh
 藏獒	zhao
 最好不过	zhbg
 再好不过	zhbg
@@ -110613,7 +110623,6 @@ U盘	uyj
 搬迁户	bqh
 不清楚	bqi
 闭区间	bqj
-比起来	bql
 冰淇淋	bql
 并且能	bqn
 比丘尼	bqn

@@ -95,7 +95,7 @@ navigator:
   syllable_jump_position: before_delimiter
 
 speller:
-  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\=;'
+  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/=;'
   delimiter: " '"
   algebra:
     __patch:
@@ -192,16 +192,16 @@ key_binder:
 recognizer:
   import_preset: default
   patterns:
-    candidate_manager: '^\\gl[hopwlu]?[a-z]*$'
+    candidate_manager: "^==[hopwlu]?[a-z]*$"
 
     unicode: "^U[a-fA-F0-9]+"
     number: "^S[0-9]+"
     shijian: "^N[0-9]+"
     uppercase: "[A-Z][-_+.'A-Za-z]*$"
-    punct: '^\\([0-9]0?|[A-Za-z]*)$'
+    punct: '^/([0-9]0?|[A-Za-z]*)$'
 
     reverse_tiger: "^ohm[a-z]+$"
-    panacea: "^[a-z]*\\\\{1,2}[a-z']*$"
+    panacea: "^[a-z]*/{1,2}[a-z']*$"
 
 mohu:
   quick_code_hint_dictionary: mohu_flypy_fixed

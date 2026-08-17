@@ -35,8 +35,8 @@ algebra:
   generate_code:
     __append:
       - derive|^(.+);(\w)(\w)$|$1$2$3o| # 全码 YYXXo
-      - derive|^(.+);(\w)(\w)$|$1$2$3\\| # 全码 YYXX\
-      - derive|^(.+);(\w)(\w)$|$1$2\\|   # 三码筛单字 YYX\ （实验性）
+      - derive|^(.+);(\w)(\w)$|$1$2$3/| # 全码 YYXX/
+      - derive|^(.+);(\w)(\w)$|$1$2/|   # 三码筛单字 YYX/ （实验性）
       - abbrev/^(.+);(\w)(\w)$/$1$2$3/  # 降低 YYXX 优先级
       - derive/^(.+);(\w)(\w)$/$1$2/    # 构词可以用 YYX
       - derive/^(.+);(\w)(\w)$/$1/      # 构词可以用 YY
@@ -54,7 +54,7 @@ candidate_override:
 # 全局候选管理器。输入前缀仅供内部导航使用。
 candidate_manager:
   enable: true
-  prefix: "\\gl"
+  prefix: "=="
   memory_namespace: translator
 
 # 候选置顶与加词。
@@ -63,8 +63,8 @@ pin:
   indicator: "📌"
   panacea:
     prompt: "〔加词〕"
-    infix: "\\\\"
-    # 可用「目标编码 + Ctrl+;」或「目标编码\\ + 空格」进入加词；选词后按 Enter 保存。
+    infix: "//"
+    # 可用「目标编码 + Ctrl+;」或「目标编码// + 空格」进入加词；选词后按 Enter 保存。
     freestyle: true
 
 key_bindings:

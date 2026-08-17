@@ -69,6 +69,7 @@ engine:
     - punct_translator
     - reverse_lookup_translator@reverse_tiger
     - table_translator@custom_phrase       # 自定义短语
+    - lua_translator@*mohu_contextual_translator*fixed_static_selector
     - lua_translator@*mohu_contextual_translator*fixed_selector
     - table_translator@zkci
     - history_translator@repeat
@@ -86,7 +87,7 @@ engine:
     - uniquifier
 
 speller:
-  alphabet: 'abcdefghijklmnopqrstuvwxyz\=;'
+  alphabet: 'abcdefghijklmnopqrstuvwxyz/=;'
   delimiter: " '"
   max_code_length: 4
   auto_select: true
@@ -132,6 +133,12 @@ fixed_legacy:
 
 translator_legacy:
   dictionary: mohu_flypy_fixed_legacy
+  db_class: tabledb
+  enable_charset_filter: false
+  enable_sentence: false
+  enable_completion: false
+  enable_user_dict: false
+  initial_quality: 100000
 
 custom_phrase: # 自定义短语
   dictionary: ""
@@ -173,11 +180,11 @@ recognizer:
   import_preset: default
   patterns:
     reverse_tiger: "^ohm[a-z]+$"
-    candidate_manager: '^\\gl[hopwlu]?[a-z]*$'
+    candidate_manager: "^==[hopwlu]?[a-z]*$"
 
     zkci: "^[a-z]*'[a-z']*$"
-    panacea: "^[a-z]*\\\\{1,2}[a-z']*$"
-    punct: '^\\([0-9]0?|[A-Za-z]*)$'
+    panacea: "^[a-z]*/{1,2}[a-z']*$"
+    punct: '^/([0-9]0?|[A-Za-z]*)$'
 
 
 reverse_tiger:

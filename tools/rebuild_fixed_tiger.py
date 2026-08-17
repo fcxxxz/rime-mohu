@@ -29,7 +29,7 @@ from research.tiger_aux.experiment import (  # noqa: E402
     select_records,
 )
 
-VERSION = "20260815"
+VERSION = "20260816"
 LOWERCASE_CODE = re.compile(r"[a-z]+")
 EXPECTED_TIGER_CHARACTER_COUNT = 83951
 CODE_LENGTH_REPORT = (
@@ -42,12 +42,14 @@ TIGER_RANK_PATH = ROOT / "lua/tiger_rank.txt"
 SIMPLIFIED_READING_AUDIT_PATH = (
     ROOT / "research/tiger_aux/output/simplified_reading_compatibility.tsv"
 )
+FIXED_CHAR_CODE_OVERRIDES_PATH = (
+    ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
+)
 EXPECTED_SIMPLIFIED_READING_CATEGORIES = {
-    "all-modern": 5980,
-    "mixed": 2139,
+    "all-modern": 8119,
     "all-compat": 75832,
 }
-EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 97586
+EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 94847
 LEGACY_MULTI_SHORT_CODE_MAX_LENGTH = 2
 MULTI_CASCADE_CODE_LENGTHS = (3, 4)
 GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
@@ -205,6 +207,68 @@ def load_reading_evidence(
     return dict(result)
 
 
+def load_fixed_char_code_overrides(
+    path: Path,
+    double_pinyin: DoublePinyin,
+) -> dict[str, str]:
+    if double_pinyin not in {"zrm", "flypy"}:
+        raise ValueError(f"unsupported double-pinyin scheme: {double_pinyin}")
+
+    records: dict[str, tuple[str, str]] = {}
+    code_owners: dict[str, dict[str, str]] = {"zrm": {}, "flypy": {}}
+    for line_number, raw_line in enumerate(
+        path.read_text(encoding="utf-8-sig").splitlines(),
+        1,
+    ):
+        if not raw_line.strip() or raw_line.startswith("#"):
+            continue
+        fields = [field.strip() for field in raw_line.split("\t")]
+        if len(fields) != 3:
+            raise ValueError(
+                f"invalid fixed character override at {path}:{line_number}: "
+                "expected character, natural code, and Flypy code"
+            )
+        text, zrm_code, flypy_code = fields
+        if len(text) != 1:
+            raise ValueError(
+                f"invalid fixed character override at {path}:{line_number}: "
+                "character must contain exactly one code point"
+            )
+        if text in records:
+            raise ValueError(f"duplicate character override at {path}:{line_number}: {text}")
+        for scheme, code in (("zrm", zrm_code), ("flypy", flypy_code)):
+            if re.fullmatch(r"[a-z]{3}", code) is None:
+                raise ValueError(
+                    f"invalid {scheme} override at {path}:{line_number}: "
+                    "code must contain exactly three lowercase letters"
+                )
+            if code in code_owners[scheme]:
+                raise ValueError(
+                    f"duplicate {scheme} code at {path}:{line_number}: {code} "
+                    f"({code_owners[scheme][code]} and {text})"
+                )
+            code_owners[scheme][code] = text
+        records[text] = (zrm_code, flypy_code)
+
+    index = 0 if double_pinyin == "zrm" else 1
+    return {text: codes[index] for text, codes in records.items()}
+
+
+def validate_fixed_char_codes(
+    fixed_codes: dict[str, str],
+    full_codes: dict[str, list[str]],
+    allowed: set[str],
+) -> None:
+    for text, code in fixed_codes.items():
+        if text not in allowed:
+            raise ValueError(f"fixed character override is outside Tiger order: {text}")
+        if not any(full_code.startswith(code) for full_code in full_codes[text]):
+            raise ValueError(
+                f"fixed character override does not prefix a current full code: "
+                f"{text} {code}"
+            )
+
+
 def build_tiger_character_order(
     tiger_path: Path,
     pinyin_table: dict[str, list[tuple[str, float]]],
@@ -260,8 +324,12 @@ def allocate_reading_ordered_codes(
     entries: list[SourceEntry],
     tiger_order: list[str],
     legacy_entries: list[SourceEntry] | None = None,
+    *,
+    fixed_codes: dict[str, str] | None = None,
 ) -> list[TableEntry]:
-    occupied: dict[str, str] = {}
+    fixed_codes = fixed_codes or {}
+    blocked_codes = {code[:2] for code in fixed_codes.values()}
+    occupied: dict[str, str] = {code: "<fixed-word-slot>" for code in blocked_codes}
     encoded: dict[str, list[str]] = defaultdict(list)
     rows: list[TableEntry] = []
     seen: set[tuple[str, str]] = set()
@@ -271,6 +339,14 @@ def allocate_reading_ordered_codes(
     for entry in entries:
         full_codes[entry.text].append(entry.code.strip().lower())
         weights[entry.text] = max(weights[entry.text], entry.weight)
+
+    tiger_chars = set(tiger_order)
+    validate_fixed_char_codes(fixed_codes, full_codes, tiger_chars)
+    for text, code in fixed_codes.items():
+        if code in occupied:
+            raise ValueError(f"fixed character override code is already occupied: {text} {code}")
+        occupied[code] = text
+        encoded[text].append(code)
 
     for entry in legacy_entries or []:
         code = entry.code.strip().lower()
@@ -308,7 +384,21 @@ def allocate_reading_ordered_codes(
             )
         )
 
-    tiger_chars = set(tiger_order)
+    for text, code in fixed_codes.items():
+        value = (text, code)
+        if value in seen:
+            continue
+        seen.add(value)
+        rows.append(
+            TableEntry(
+                text,
+                code,
+                weights[text],
+                len(rows),
+                source="original",
+            )
+        )
+
     for entry in entries:
         if entry.text not in tiger_chars:
             continue
@@ -344,6 +434,8 @@ def allocate_legacy_codes(
     legacy_entries: list[SourceEntry],
     legacy_full_entries: list[SourceEntry] | list[TableEntry] | None = None,
     fallback_rows: list[TableEntry] | None = None,
+    *,
+    fixed_codes: dict[str, str] | None = None,
 ) -> list[TableEntry]:
     """Keep legacy collisions, then cascade three- and four-key rows.
 
@@ -351,11 +443,16 @@ def allocate_legacy_codes(
     the existing unique-mode fallback rows. Longer rows use current full codes
     and skip characters already covered by a matching shorter prefix.
     """
+    fixed_codes = fixed_codes or {}
+    blocked_codes = {code[:2] for code in fixed_codes.values()}
     allowed = set(tiger_order)
     tiger_rank = {char: rank for rank, char in enumerate(tiger_order)}
     current_full_codes: dict[str, list[str]] = defaultdict(list)
+    weights: dict[str, float] = defaultdict(float)
     for entry in legacy_full_entries or cascade_entries:
         current_full_codes[entry.text].append(entry.code.strip().lower())
+        weights[entry.text] = max(weights[entry.text], entry.weight)
+    validate_fixed_char_codes(fixed_codes, current_full_codes, allowed)
     rows: list[TableEntry] = []
     assigned: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
@@ -367,6 +464,7 @@ def allocate_legacy_codes(
             or value in seen
             or not re.fullmatch(r"[a-z]+", code)
             or not 1 <= len(code) <= LEGACY_MULTI_SHORT_CODE_MAX_LENGTH
+            or code in blocked_codes
             or not any(
                 full_code.startswith(code)
                 for full_code in current_full_codes[entry.text]
@@ -395,6 +493,7 @@ def allocate_legacy_codes(
             or value in seen
             or not LOWERCASE_CODE.fullmatch(code)
             or not 1 <= len(code) <= LEGACY_MULTI_SHORT_CODE_MAX_LENGTH
+            or code in blocked_codes
             or not any(
                 full_code.startswith(code)
                 for full_code in current_full_codes[entry.text]
@@ -413,6 +512,22 @@ def allocate_legacy_codes(
             )
         )
 
+    for text, code in fixed_codes.items():
+        value = (text, code)
+        if value in seen:
+            continue
+        seen.add(value)
+        assigned[text].append(code)
+        rows.append(
+            TableEntry(
+                text,
+                code,
+                weights[text],
+                len(rows),
+                source="original",
+            )
+        )
+
     for length in MULTI_CASCADE_CODE_LENGTHS:
         candidates: dict[str, list[tuple[float, int, int, str]]] = defaultdict(list)
         for source_order, entry in enumerate(cascade_entries):
@@ -424,6 +539,8 @@ def allocate_legacy_codes(
             )
 
         for prefix in sorted(candidates):
+            if prefix in fixed_codes.values():
+                continue
             checked: set[str] = set()
             for negative_weight, _, source_order, text in sorted(candidates[prefix]):
                 if text in checked:
@@ -478,6 +595,7 @@ def build_full_character_allocation(
     legacy_path: Path | None = None,
     shortcut_readings: set[tuple[str, str]] | None = None,
     double_pinyin: DoublePinyin = "zrm",
+    fixed_codes: dict[str, str] | None = None,
 ) -> tuple[
     list[str],
     list[TableEntry],
@@ -534,6 +652,7 @@ def build_full_character_allocation(
         shortcut_source_entries,
         tiger_order,
         legacy_entries,
+        fixed_codes=fixed_codes,
     )
     multi_rows = allocate_legacy_codes(
         shortcut_source_entries,
@@ -541,6 +660,7 @@ def build_full_character_allocation(
         legacy_entries,
         legacy_full_entries=source_entries,
         fallback_rows=short_rows,
+        fixed_codes=fixed_codes,
     )
     full_rows = []
     for entry in source_entries:
@@ -693,6 +813,14 @@ def main() -> int:
     chars_path = ROOT / "tools/data/chars.txt"
     auxiliary_path = ROOT / "tools/data/tiger_aux.txt"
     modern_readings = load_modern_readings(ROOT / "tools/data/pinyin_simp.txt")
+    zrm_fixed_codes = load_fixed_char_code_overrides(
+        FIXED_CHAR_CODE_OVERRIDES_PATH,
+        "zrm",
+    )
+    flypy_fixed_codes = load_fixed_char_code_overrides(
+        FIXED_CHAR_CODE_OVERRIDES_PATH,
+        "flypy",
+    )
     tiger_order, zrm_rows, zrm_legacy_rows, zrm_full_rows, weights = (
         build_full_character_allocation(
             tiger_path,
@@ -701,6 +829,7 @@ def main() -> int:
             legacy_path=PARENT_TABLES[0][2],
             shortcut_readings=modern_readings,
             double_pinyin="zrm",
+            fixed_codes=zrm_fixed_codes,
         )
     )
     flypy_order, flypy_rows, flypy_legacy_rows, flypy_full_rows, flypy_weights = (
@@ -711,6 +840,7 @@ def main() -> int:
             legacy_path=PARENT_TABLES[0][2],
             shortcut_readings=modern_readings,
             double_pinyin="flypy",
+            fixed_codes=flypy_fixed_codes,
         )
     )
     if flypy_order != tiger_order or flypy_weights != weights:

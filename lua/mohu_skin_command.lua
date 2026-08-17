@@ -3,9 +3,9 @@ local kAccepted = 1
 local kNoop = 2
 
 local commands = {
-  ["\\skin"] = true,
-  ["\\pifu"] = true,
-  ["\\pfbj"] = true,
+  ["/skin"] = true,
+  ["/pifu"] = true,
+  ["/pfbj"] = true,
 }
 
 function M.func(key_event, env)

@@ -1,4 +1,9 @@
--- Runtime switch between contextual and context-free script translators.
+-- Runtime switch between contextual and context-free ordering.
+--
+-- 只使用一个 script_translator 实例：静态排序时动态关闭
+-- contextual_suggestions（语法模型上下文加权），而不另建实例。
+-- 若另建实例，其 Memory 不会参与提交记忆，导致用户词典停止
+-- 记录词频，表现为「固词」。
 
 local Module = {}
 
@@ -13,17 +18,11 @@ function Module.init_pair(env, name)
 end
 
 function Module.get(env)
-    if env.engine.context:get_option("contextual_order") then
-        return env.contextual_translator
+    local contextual = env.engine.context:get_option("contextual_order")
+    if env.contextual_translator.contextual_suggestions ~= contextual then
+        env.contextual_translator.contextual_suggestions = contextual
     end
-    if not env.static_translator then
-        env.static_translator = Component.Translator(
-            env.engine,
-            "",
-            "script_translator@" .. env.contextual_translator_name .. "_static"
-        )
-    end
-    return env.static_translator
+    return env.contextual_translator
 end
 
 function Module.fini_pair(env)
@@ -104,5 +103,32 @@ function fixed_selector.fini(env)
 end
 
 Module.fixed_selector = fixed_selector
+
+local fixed_static_selector = {}
+
+function fixed_static_selector.init(env)
+    Module.init_runtime_pair(
+        env,
+        "multi_short_code",
+        "table_translator@translator",
+        "table_translator@translator_legacy"
+    )
+end
+
+function fixed_static_selector.func(input, seg, env)
+    local translation = Module.get_runtime(env):query(input, seg)
+    if translation then
+        for candidate in translation:iter() do
+            yield(candidate)
+        end
+    end
+end
+
+function fixed_static_selector.fini(env)
+    Module.fini_runtime_pair(env)
+    collectgarbage()
+end
+
+Module.fixed_static_selector = fixed_static_selector
 
 return Module

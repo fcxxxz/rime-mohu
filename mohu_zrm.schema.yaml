@@ -105,7 +105,7 @@ navigator:
   syllable_jump_position: before_delimiter
 
 speller:
-  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\=;'
+  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/=;'
   delimiter: " '"
   auto_select: true
   auto_select_pattern: ^;(\w+|;)
@@ -235,13 +235,13 @@ key_binder:
 recognizer:
   import_preset: default
   patterns:
-    candidate_manager: '^\\gl[hopwlu]?[a-z]*$'
+    candidate_manager: "^==[hopwlu]?[a-z]*$"
 
     unicode: "^U[a-fA-F0-9]+"
     number: "^S[0-9\\.]+"
     shijian: "^N[0-9]+"
     uppercase: "[A-Z][-_+.'A-Za-z]*$"
-    punct: '^\\([0-9]0?|[A-Za-z]*)$'
+    punct: '^/([0-9]0?|[A-Za-z]*)$'
 
     # 反查
     reverse_tiger: "^ohm[a-z]+$"
@@ -251,7 +251,7 @@ recognizer_emoji:
   patterns:
     # CAVEAT: 分号快符由码表自动上屏
     # CAVEAT: ^o 只保留 ^ou 和 ^o$，避免反查被干扰
-    has_emoji: '(^[a-np-z][a-z\\]*$)|(^[a-z]$)|(^ou[a-z\\]*$)'
+    has_emoji: '(^[a-np-z][a-z/]*$)|(^[a-z]$)|(^ou[a-z/]*$)'
 
 mohu:
   candidate_manager:
@@ -292,8 +292,7 @@ mohu:
     enable: true       # 是否启用单字的出简让全？
     #defer: 5          # 延迟多少位？若不设置该项，或值小于等于 0，则推迟到第二页的首选
     show_hint: true    # 若让全，则提示简码打法
-    suffix: "o"        # YYXX + suffix 的单字码会被让全；如需以反斜杠输入单字，可改为 "\\"
-
+    suffix: "o"        # YYXX + suffix 的单字码会被让全；如需以斜杠输入单字，可改为 "/"
     # 词语级「让全」，对二、三、四字词有效
     # 例：假设 lmjx 的输出是 1.连接 2.链接
     # 想要「链接」时，增加 f ，但是由于这两个候选仍然共享 lmjxf 编码，因此顺序不变。

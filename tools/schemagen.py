@@ -437,11 +437,34 @@ def handle_update_compact_dict():
             [word, code, weight] = matches[0]
             weight = weight.strip()
 
+            # words 词库声明 columns: text, weight, code，行格式为 词<TAB>频<TAB>码。
+            # 上面的正则匹配不到这种行（code 为空），在此单独处理。
+            # 词中可含拉丁字母（如「哆啦A梦」「up主」）：
+            # - 拉丁字母无辅码定义，对应 token 保留原样；
+            # - 一个 token 对应多个拉丁字母时（如「PV师」的 PV）无法逐字重写，整行保留。
+            weighted = regex.match(r'^([^\t]+)\t(\d+)\t([a-z; A-Za-z]+)$', l)
+            if weighted:
+                [word, weight, code] = weighted.groups()
+                toks = code.split(' ')
+                if len(toks) != len(word):
+                    print(l)
+                    continue
+                newtoks = []
+                for zi, tok in zip(word, toks):
+                    # auxiliary_table 是 defaultdict(list)，查不到的字返回空列表而非 KeyError
+                    auxes = to_auxiliary_codes(zi)
+                    if auxes:
+                        newtoks.append(tok.split(';')[0] + ';' + auxes[0])
+                    else:
+                        newtoks.append(tok)
+                print(f'{word}\t{weight}\t' + ' '.join(newtoks))
+                continue
+
             # No code means auto code. Do nothing.
             if len(code) == 0:
                 print(l)
                 continue
-            
+
             sps = [fc.split(';')[0] for fc in code.split(' ')]
             acs = []
             for zi in word.replace("·", "").replace("，", ""):

@@ -4334,8 +4334,8 @@ columns:
 无语凝噎	1
 无遮无拦	1
 无边无涯	1
-无重	0	wu;rh is;pa
-无重码	0	wu;rh is;pa ma;um
+无重	0	wu;du is;ld
+无重码	0	wu;du is;ld ma;mn
 无关大体	1
 焦脆	1
 炼奶	1
@@ -6425,8 +6425,8 @@ columns:
 重排	1
 重归于好	1
 重测	1
-重码	100	is;pa ma;um
-重码率	100	is;pa ma;um lv;wu
+重码	100	is;ld ma;mn
+重码率	100	is;ld ma;mn lv;zi
 重复建设	1
 重连	1
 重钢	1
@@ -7077,13 +7077,13 @@ columns:
 呃呃	501
 额额	500
 甄嬛	1
-甄嬛传	0	vf;wt hr;nh vr;rv
-耙耙橘	0	pa;lb pa;lb ju;my
-耙耙柑	0	pa;lb pa;lb gj;mg
-丑橘	0	ib;yg ju;my
+甄嬛传	0	vf;vg hr;by vr;jm
+耙耙橘	0	pa;am pa;am ju;ei
+耙耙柑	0	pa;am pa;am gj;ez
+丑橘	0	ib;ag ju;ei
 充电宝	1
-鸡扒	0	ji;vx pa;fb
-扒鸡	0	pa;fb ji;vx
+鸡扒	0	ji;rx pa;uh
+扒鸡	0	pa;uh ji;rx
 阴上	1
 阳上	1
 阴去	1
@@ -7104,12 +7104,12 @@ columns:
 古无舌上音	1
 齁得慌	1
 过审	1
-栎阳	100	yt;ml yh;ey
+栎阳	100	yt;eb yh;to
 经人介绍	100
 常数倍	1
 常数倍数	1
 平均意义下	1
-摩挲	500	mo;um so;uu
+摩挲	500	mo;zu so;ky
 扒谱	300
 小红书	200
 回鹘	200
@@ -7129,8 +7129,8 @@ columns:
 起井	500
 吊机	500
 管够	500
-宇称	100	yu;by if;hr
-重绘	100	is;pa hv;sh
+宇称	100	yu;wf if;xx
+重绘	100	is;ld hv;ij
 双闪	100
 蜱虫	100
 积灰	100
@@ -8779,12 +8779,12 @@ columns:
 玫枫	1
 玫枫跟打器	1
 馨香馥郁	1
-五重	100	wu;aa is;pa
-六重	100	lq;wb is;pa
-七重	100	qi;aa is;pa
-八重	100	ba;pd is;pa
-九重	100	jq;py is;pa
-十重	100	ui;aa is;pa
+五重	100	wu;wu is;ld
+六重	100	lq;al is;ld
+七重	100	qi;rq is;ld
+八重	100	ba;hb is;ld
+九重	100	jq;kj is;ld
+十重	100	ui;ns is;ld
 倒反天罡	100
 彩虹屁	100
 过啦	100
@@ -8797,13 +8797,13 @@ columns:
 打偏了	1
 都认了	100
 都忍了	99
-王车易位	10	wh;aa ju;aa yi;ow wz;rl
-升变	10	ug;pc bm;ws
+王车易位	10	wh;nw ju;yc yi;on wz;ji
+升变	10	ug;tl bm;zc
 颚化	100
 张维为	10
 文白异读	100
 文读	100
-薄凉	100	bo;cf ld;dj
+薄凉	100	bo;lk ld;wg
 百试不爽	100
 草草草	10
 草草草草	10
@@ -8838,8 +8838,8 @@ columns:
 憋笑	100
 死全家	10
 活全家	10
-诶哟喂	80	ei;yy yb;ky wz;kw
-诶哟喂	80	ei;yy yo;ky wz;kw
+诶哟喂	80	ei;sk yb;di wz;dq
+诶哟喂	80	ei;sk yo;di wz;dq
 京爷	1
 沪爷	1
 工匠精神	100
@@ -8859,7 +8859,7 @@ columns:
 哲哲豆	1
 哲哲豆音形	1
 哲豆音形	1
-朱重八	1	vu;pw is;pa ba;pd
+朱重八	1	vu;ta is;ld ba;hb
 小心地滑	1
 体重称	1
 鸡肉卷	1
@@ -8905,7 +8905,7 @@ columns:
 冚家	1
 冚家铲	1
 士多啤梨	1
-攒机	100	cr;fz ji;mj
+攒机	100	cr;uq ji;eo
 爆金币	50
 星空二笔	10
 星空两笔	10
@@ -8993,8 +8993,8 @@ columns:
 意符链	1
 后设叙事	1
 能指浮动	1
-干昆	1	qm;uq kp;uk
-干昆智驾	1	qm;uq kp;uk vi;ov jw;mj
+干昆	1	qm;eg kp;ov
+干昆智驾	1	qm;eg kp;ov vi;od jw;sd
 调校	811
 物理机	100
 实体机	100
@@ -9143,8 +9143,8 @@ columns:
 介错	10
 德奥	10
 顷刻炼化	10
-调包侠	10	dc;yv bk;gs xw;rj
-卫藏	10	wz;xi zh;cg
+调包侠	10	dc;sm bk;nv xw;jh
+卫藏	10	wz;zf zh;ln
 电诈	10
 提拎	5
 怒退	10
@@ -9161,7 +9161,7 @@ columns:
 打斗云	1
 闪传	100
 教资	100
-叶音	100	xx;ku yn;lo
+叶音	100	xx;dn yn;xy
 下播	100
 上播	100
 主包	100
@@ -9242,7 +9242,7 @@ columns:
 智谱清言	100
 仲麻吕
 阿倍仲麻吕
-矧可射思	1	uf;uy ke;dk yi;uc si;xt
+矧可射思	1	uf;ob ke;zk yi;zk si;qh
 杀孽	5
 弑师	5
 审丑	10
@@ -9291,11 +9291,11 @@ columns:
 下位替代
 上位替代品
 下位替代品
-祇树	1	qi;uu uu;mc
-给孤独园	1	ji;sh gu;zg du;qu yr;ky
-祇树给孤独园	1	qi;uu uu;mc ji;sh gu;zg du;qu yr;ky
-祇园	1	qi;uu yr;ky
-祇陀林	1	qi;uu to;et ln;mm
+祇树	1	qi;fb uu;er
+给孤独园	1	ji;ij gu;hy du;mc yr;rm
+祇树给孤独园	1	qi;fb uu;er ji;ij gu;hy du;mc yr;rm
+祇园	1	qi;fb yr;rm
+祇陀林	1	qi;fb to;tw ln;ee
 后验	100
 无邪气	20
 会饮篇	1
@@ -9304,7 +9304,7 @@ columns:
 杰青	1
 优青	1
 青基	1
-着气	1	vo;yo qi;qm
+着气	1	vo;gq qi;vq
 天菜	10
 发圈束	1
 大肠发圈	1
@@ -24548,13 +24548,13 @@ MIDI键盘	1	midi jm;jj pj;mb
 龟井
 
 # 中西混合词
-哆啦A梦	100	do;kd la;kl A mg;cx
-哆啦A梦	100	do;kd la;kl aa mg;cx
-哆啦A梦	100	do;kd la;kl ei mg;cx
-U盘	100	U pj;mb
-U盘	100	yb pj;mb
-T恤	100	T xu;xx
-T恤	100	ti xu;xx
+哆啦A梦	100	do;dl la;du A mg;ee
+哆啦A梦	100	do;dl la;du aa mg;ee
+哆啦A梦	100	do;dl la;du ei mg;ee
+U盘	100	U pj;ia
+U盘	100	yb pj;ia
+T恤	100	T xu;ht
+T恤	100	ti xu;ht
 up主	100	up vu;dw
 QQ	100	QQ
 QQ群	100	QQ qp;yj
@@ -24566,106 +24566,106 @@ QQ号	100	qq hk;hk
 高ping	100	gk;wk py
 高ping	100	gk;dk py
 打call	10	da;fd kk
-K歌	10	K ge;qg
-K歌	10	kz ge;qg
+K歌	10	K ge;zz
+K歌	10	kz ge;zz
 卡拉OK	10	ka;ux la;fl OK
 卡拉OK	100	ka;bx la;fl ok
-卡拉OK	10	ka;ux la;fl ou kz
+卡拉OK	10	ka;yf la;ui ou kz
 OK	10	OK
 OK	10	ou kz
 CoCo都可	10	coco du;ev ke;dk
-A站	10	A vj;lv
-B站	10	B vj;lv
-C站	10	C vj;lv
-D站	10	D vj;lv
-E站	10	E vj;lv
-F站	10	F vj;lv
-G站	10	G vj;lv
-H站	10	H vj;lv
-I站	10	I vj;lv
-J站	10	J vj;lv
-K站	10	K vj;lv
-L站	10	L vj;lv
-M站	10	M vj;lv
-N站	10	N vj;lv
-O站	10	O vj;lv
-P站	10	P vj;lv
-Q站	10	Q vj;lv
-R站	10	R vj;lv
-S站	10	S vj;lv
-T站	10	T vj;lv
-U站	10	U vj;lv
-V站	10	V vj;lv
-W站	10	W vj;lv
-X站	10	X vj;lv
-Y站	10	Y vj;lv
-Z站	10	Z vj;lv
-A盘	10	A pj;mb
-B盘	10	B pj;mb
-C盘	10	C pj;mb
-D盘	10	D pj;mb
-E盘	10	E pj;mb
-F盘	10	F pj;mb
-G盘	10	G pj;mb
-H盘	10	H pj;mb
-I盘	10	I pj;mb
-J盘	10	J pj;mb
-K盘	10	K pj;mb
-L盘	10	L pj;mb
-M盘	10	M pj;mb
-N盘	10	N pj;mb
-O盘	10	O pj;mb
-P盘	10	P pj;mb
-Q盘	10	Q pj;mb
-R盘	10	R pj;mb
-S盘	10	S pj;mb
-T盘	10	T pj;mb
-U盘	10	U pj;mb
-V盘	10	V pj;mb
-W盘	10	W pj;mb
-X盘	10	X pj;mb
-Y盘	10	Y pj;mb
-Z盘	10	Z pj;mb
-A股	10	A gu;ou
-H股	10	H gu;ou
-K线	10	K xm;sq
-K线图	10	K xm;sq tu;kh
-大V	10	da;ad V
+A站	10	A vj;iy
+B站	10	B vj;iy
+C站	10	C vj;iy
+D站	10	D vj;iy
+E站	10	E vj;iy
+F站	10	F vj;iy
+G站	10	G vj;iy
+H站	10	H vj;iy
+I站	10	I vj;iy
+J站	10	J vj;iy
+K站	10	K vj;iy
+L站	10	L vj;iy
+M站	10	M vj;iy
+N站	10	N vj;iy
+O站	10	O vj;iy
+P站	10	P vj;iy
+Q站	10	Q vj;iy
+R站	10	R vj;iy
+S站	10	S vj;iy
+T站	10	T vj;iy
+U站	10	U vj;iy
+V站	10	V vj;iy
+W站	10	W vj;iy
+X站	10	X vj;iy
+Y站	10	Y vj;iy
+Z站	10	Z vj;iy
+A盘	10	A pj;ia
+B盘	10	B pj;ia
+C盘	10	C pj;ia
+D盘	10	D pj;ia
+E盘	10	E pj;ia
+F盘	10	F pj;ia
+G盘	10	G pj;ia
+H盘	10	H pj;ia
+I盘	10	I pj;ia
+J盘	10	J pj;ia
+K盘	10	K pj;ia
+L盘	10	L pj;ia
+M盘	10	M pj;ia
+N盘	10	N pj;ia
+O盘	10	O pj;ia
+P盘	10	P pj;ia
+Q盘	10	Q pj;ia
+R盘	10	R pj;ia
+S盘	10	S pj;ia
+T盘	10	T pj;ia
+U盘	10	U pj;ia
+V盘	10	V pj;ia
+W盘	10	W pj;ia
+X盘	10	X pj;ia
+Y盘	10	Y pj;ia
+Z盘	10	Z pj;ia
+A股	10	A gu;vr
+H股	10	H gu;vr
+K线	10	K xm;if
+K线图	10	K xm;if tu;rh
+大V	10	da;md V
 
 # 整句可用的无理码
-几	1	jo;yd
-几何	1	jo;yd he;rk
-几十	1	jo;yd ui;aa
-十几	1	ui;aa jo;yd
-未	1	we;ex
-并未	3193	by;qy we;ex
-从未	3193	cs;xv we;ex
-还未	2327	hl;zh we;ex
-均未	858	jp;ty we;ex
-仍未	1359	rg;rn we;ex
-虽未	737	sv;vs we;ex
-尚未	4460	uh;xk we;ex
-未按	788	we;ex an;fa
-未必	3584	we;ex bi;dd
-未便	407	we;ex bm;rg
-未曾	1409	we;ex cg;ob
-未定	960	we;ex dy;bp
-未付	508	we;ex fu;rc
-未婚	1452	we;ex hp;nh
-未尝	876	we;ex ih;xv
-未见	1372	we;ex jm;oe
-未接	610	we;ex jx;fq
-未经	3160	we;ex jy;sg
-未可	544	we;ex ke;dk
-未开	1	we;ex kl;mk
-未了	674	we;ex lc;aa
-未来	16677	we;ex ll;ad
-未满	877	we;ex mj;dr
-未免	1227	we;ex mm;de
-未能	3272	we;ex ng;sb
-未遂	892	we;ex sv;zu
-未知	2309	we;ex vi;uk
-未向	1	we;ex xd;pk
-未详	479	we;ex xd;yy
-暂未	969	zj;ov we;ex
+几	1	jo;oj
+几何	1	jo;oj he;jz
+几十	1	jo;oj ui;ns
+十几	1	ui;ns jo;oj
+未	1	we;aw
+并未	3193	by;hl we;aw
+从未	3193	cs;jj we;aw
+还未	2327	hl;cu we;aw
+均未	858	jp;gn we;aw
+仍未	1359	rg;jv we;aw
+虽未	737	sv;dc we;aw
+尚未	4460	uh;ss we;aw
+未按	788	we;aw an;uw
+未必	3584	we;aw bi;ht
+未便	407	we;aw bm;jf
+未曾	1409	we;aw cg;hr
+未定	960	we;aw dy;wt
+未付	508	we;aw fu;jk
+未婚	1452	we;aw hp;bb
+未尝	876	we;aw ih;sb
+未见	1372	we;aw jm;ej
+未接	610	we;aw jx;ui
+未经	3160	we;aw jy;ir
+未可	544	we;aw ke;zk
+未开	1	we;aw kl;fl
+未了	674	we;aw lc;rl
+未来	16677	we;aw ll;ah
+未满	877	we;aw mj;kl
+未免	1227	we;aw mm;wp
+未能	3272	we;aw ng;kv
+未遂	892	we;aw sv;hj
+未知	2309	we;aw vi;od
+未向	1	we;aw xd;tm
+未详	479	we;aw xd;sg
+暂未	969	zj;yt we;aw
 

@@ -285,7 +285,9 @@ class FixedDictionaryTest(unittest.TestCase):
 
     def test_compatibility_allocation_maximizes_unresolved_coverage(self):
         primary = [
+            rebuild_fixed_tiger.SourceEntry("丙", "aaxx", 40),
             rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            rebuild_fixed_tiger.SourceEntry("丁", "bbxx", 25),
             rebuild_fixed_tiger.SourceEntry("乙", "bbxx", 20),
         ]
         compatibility = [
@@ -295,7 +297,7 @@ class FixedDictionaryTest(unittest.TestCase):
         ]
 
         rows = rebuild_fixed_tiger.allocate_compatibility_codes(
-            [], primary, compatibility, ["甲", "乙"]
+            [], primary, compatibility, ["丙", "甲", "丁", "乙"]
         )
 
         self.assertEqual(
@@ -311,9 +313,12 @@ class FixedDictionaryTest(unittest.TestCase):
 
         rows = rebuild_fixed_tiger.allocate_compatibility_codes(
             [],
-            [rebuild_fixed_tiger.SourceEntry("莹", "yylw", 100)],
+            [
+                rebuild_fixed_tiger.SourceEntry("营", "yylw", 200),
+                rebuild_fixed_tiger.SourceEntry("莹", "yylw", 100),
+            ],
             compatibility,
-            ["莹"],
+            ["营", "莹"],
         )
 
         self.assertEqual(
@@ -326,9 +331,12 @@ class FixedDictionaryTest(unittest.TestCase):
 
         rows = rebuild_fixed_tiger.allocate_compatibility_codes(
             base,
-            [rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30)],
+            [
+                rebuild_fixed_tiger.SourceEntry("丙", "aaxx", 40),
+                rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            ],
             [rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30)],
-            ["甲", "乙"],
+            ["丙", "甲", "乙"],
         )
 
         pairs = {(row.text, row.code) for row in rows}
@@ -340,9 +348,12 @@ class FixedDictionaryTest(unittest.TestCase):
 
         rows = rebuild_fixed_tiger.allocate_compatibility_codes(
             base,
-            [rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30)],
+            [
+                rebuild_fixed_tiger.SourceEntry("丙", "aaxx", 40),
+                rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            ],
             [rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30)],
-            ["甲"],
+            ["丙", "甲"],
         )
 
         pairs = {(row.text, row.code) for row in rows}
@@ -351,7 +362,9 @@ class FixedDictionaryTest(unittest.TestCase):
 
     def test_higher_rank_wins_one_shared_compatibility_code(self):
         primary = [
+            rebuild_fixed_tiger.SourceEntry("丙", "aaxx", 40),
             rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            rebuild_fixed_tiger.SourceEntry("丁", "bbxx", 25),
             rebuild_fixed_tiger.SourceEntry("乙", "bbxx", 20),
         ]
         compatibility = [
@@ -360,12 +373,160 @@ class FixedDictionaryTest(unittest.TestCase):
         ]
 
         rows = rebuild_fixed_tiger.allocate_compatibility_codes(
-            [], primary, compatibility, ["甲", "乙"]
+            [], primary, compatibility, ["丙", "甲", "丁", "乙"]
         )
 
         self.assertEqual(
             {(row.text, row.code) for row in rows},
             {("甲", "ccca")},
+        )
+
+    def test_baseline_fixed_character_does_not_consume_compatibility_slots(self):
+        base = [rebuild_fixed_tiger.TableEntry("甲", "aaxx", 30, 0)]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            base,
+            [rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30)],
+            [rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30)],
+            ["甲"],
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("甲", "aaxx")},
+        )
+
+    def test_first_character_in_full_code_group_does_not_need_rescue(self):
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("丙", "aaxx", 40),
+            rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("丙", "cccp", 40),
+            rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            [], primary, compatibility, ["丙", "甲"]
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("甲", "ccca")},
+        )
+
+    def test_existing_full_code_owner_takes_priority_over_visible_rank(self):
+        base = [rebuild_fixed_tiger.TableEntry("甲", "aaxx", 30, 0)]
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("丙", "aaxx", 40),
+            rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("丙", "cccp", 40),
+            rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            base, primary, compatibility, ["丙", "甲"]
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("甲", "aaxx"), ("丙", "cccp")},
+        )
+
+    def test_production_compatibility_collision_audit(self):
+        modern_readings = load_modern_readings(
+            self.root / "tools/data/pinyin_simp.txt"
+        )
+        visible_order = rebuild_fixed_tiger.load_compatibility_order(
+            rebuild_fixed_tiger.COMPATIBILITY_CHARSET_PATH,
+            rebuild_fixed_tiger.COMPATIBILITY_PROFILE_PATH,
+        )
+        pinyin_table = rebuild_fixed_tiger.load_production_pinyin_table(
+            self.root / "tools/data/chars.txt"
+        )
+        modern_pinyin_table = {
+            char: [
+                (pinyin, weight)
+                for pinyin, weight in readings
+                if (char, pinyin) in modern_readings
+            ]
+            for char, readings in pinyin_table.items()
+        }
+        primary_entries = rebuild_fixed_tiger.build_source_entries(
+            visible_order,
+            modern_pinyin_table,
+            load_auxiliary_tsv(self.root / "tools/data/tiger_aux.txt"),
+        )
+        compatibility_entries = rebuild_fixed_tiger.build_source_entries(
+            visible_order,
+            modern_pinyin_table,
+            build_compatibility_auxiliary_map(self.root / "tiger.dict.yaml"),
+        )
+        _, _, baseline_rows, _, _ = (
+            rebuild_fixed_tiger.build_full_character_allocation(
+                self.root / "tiger.dict.yaml",
+                self.root / "tools/data/chars.txt",
+                self.root / "tools/data/tiger_aux.txt",
+                legacy_path=rebuild_fixed_tiger.PARENT_TABLES[0][2],
+                shortcut_readings=modern_readings,
+                fixed_codes=rebuild_fixed_tiger.load_fixed_char_code_overrides(
+                    rebuild_fixed_tiger.FIXED_CHAR_CODE_OVERRIDES_PATH,
+                    "zrm",
+                ),
+            )
+        )
+        thresholds = (1500, 3500, 6000, 8105)
+
+        before = rebuild_fixed_tiger.audit_full_code_collisions(
+            primary_entries,
+            baseline_rows,
+            [],
+            visible_order,
+            thresholds,
+        )
+        after = rebuild_fixed_tiger.audit_full_code_collisions(
+            primary_entries,
+            baseline_rows,
+            compatibility_entries,
+            visible_order,
+            thresholds,
+        )
+
+        self.assertEqual(
+            {
+                threshold: (audit.group_count, audit.non_first_count)
+                for threshold, audit in before.items()
+            },
+            {1500: (0, 0), 3500: (31, 44), 6000: (134, 188), 8105: (262, 354)},
+        )
+        self.assertEqual(
+            {
+                threshold: (audit.group_count, audit.non_first_count)
+                for threshold, audit in after.items()
+            },
+            {1500: (0, 0), 3500: (1, 1), 6000: (5, 5), 8105: (11, 11)},
+        )
+        self.assertEqual(after[8105].codeable_count, 8088)
+        self.assertEqual(
+            [
+                (group.code, "".join(group.characters), "".join(group.unresolved))
+                for group in after[8105].groups
+            ],
+            [
+                ("bilv", "芘荜", "荜"),
+                ("lixf", "厉励", "励"),
+                ("muqg", "牡睦", "睦"),
+                ("qiev", "栖杞桤", "桤"),
+                ("qifb", "祇郪", "郪"),
+                ("uijg", "侍仕", "仕"),
+                ("viuk", "执挚鸷贽絷", "絷"),
+                ("vuei", "杼术", "术"),
+                ("xico", "螅屃", "屃"),
+                ("yizc", "奕弈", "弈"),
+                ("zihh", "孜孖", "孖"),
+            ],
         )
 
     def test_full_allocation_accepts_natural_compatibility_inputs(self):
@@ -1072,6 +1233,10 @@ class FixedDictionaryTest(unittest.TestCase):
     def test_legacy_fixed_tables_preserve_moran_multi_short_code(self):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
+        expected_lengths = {
+            "zrm": {1: 42, 2: 435, 3: 4459, 4: 3789},
+            "flypy": {1: 42, 2: 435, 3: 4459, 4: 3222},
+        }
         for scheme in ("zrm", "flypy"):
             filename = f"mohu_{scheme}_tiger_fixed_legacy.dict.yaml"
             with self.subTest(filename=filename):
@@ -1101,7 +1266,7 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertTrue(all(1 <= len(code) <= 4 for _, code in pairs))
                 self.assertEqual(
                     Counter(len(fields[1]) for fields in rows),
-                    {1: 42, 2: 435, 3: 4459, 4: 3222},
+                    expected_lengths[scheme],
                 )
 
     def test_multi_fixed_table_recursively_advances_ci_candidates(self):
@@ -1386,6 +1551,9 @@ class DictionaryAuxiliaryInvariantTest(unittest.TestCase):
     def setUpClass(cls):
         cls.root = Path(__file__).resolve().parents[1]
         cls.auxiliary = load_auxiliary_tsv(cls.root / "tools/data/tiger_aux.txt")
+        cls.compatibility = build_compatibility_auxiliary_map(
+            cls.root / "tiger.dict.yaml"
+        )
 
     def test_every_explicit_auxiliary_segment_uses_tiger_prefix2(self):
         dictionaries = (
@@ -1417,10 +1585,13 @@ class DictionaryAuxiliaryInvariantTest(unittest.TestCase):
                     if len(parts) != 2 or not parts[0] or not parts[1]:
                         errors.append(f"{filename}:{line_number}: malformed {segment!r}")
                         continue
-                    if parts[1] not in self.auxiliary.get(char, ()):
+                    allowed = list(self.auxiliary.get(char, ()))
+                    if filename == "mohu_zrm.chars.dict.yaml":
+                        allowed.extend(self.compatibility.get(char, ()))
+                    if parts[1] not in allowed:
                         errors.append(
                             f"{filename}:{line_number}: {char} uses {parts[1]}, "
-                            f"expected {self.auxiliary.get(char)}"
+                            f"expected {allowed}"
                         )
                 if len(errors) >= 20:
                     break

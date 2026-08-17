@@ -5,6 +5,7 @@ import csv
 import re
 import sys
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,13 +23,13 @@ from fixed_tiger_allocation import (  # noqa: E402
 )
 from flypyify import flypyify1  # noqa: E402
 from modern_readings import load_modern_readings  # noqa: E402
-from tiger_compatibility import (  # noqa: E402
-    build_compatibility_auxiliary_map,
-)
 from tiger_aux import (  # noqa: E402
     TIGER_EQUIVALENTS,
     load_auxiliary_tsv,
     load_tiger_codes,
+)
+from tiger_compatibility import (  # noqa: E402
+    build_compatibility_auxiliary_map,
 )
 from zrmify import unzrmify1, zrmify  # noqa: E402
 
@@ -63,6 +64,27 @@ PARENT_TABLES = (
         ROOT / "tools/data/mohu_fixed_simp_legacy_chars.txt",
     ),
 )
+
+
+@dataclass(frozen=True)
+class CollisionGroup:
+    code: str
+    characters: tuple[str, ...]
+    unresolved: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CollisionAudit:
+    codeable_count: int
+    groups: tuple[CollisionGroup, ...]
+
+    @property
+    def group_count(self) -> int:
+        return len(self.groups)
+
+    @property
+    def non_first_count(self) -> int:
+        return sum(len(group.unresolved) for group in self.groups)
 
 
 def split_dictionary(text: str) -> tuple[str, list[str]]:
@@ -617,6 +639,11 @@ def allocate_compatibility_codes(
         base_by_text[row.text].append(row.code)
         if row.text in visible:
             occupied[row.code].add(row.text)
+    exact_owner_by_code = {
+        row.code: row.text
+        for row in base_rows
+        if len(row.code) == 4 and row.text in visible
+    }
 
     candidates_by_code: dict[str, list[tuple[int, int, SourceEntry | TableEntry]]] = (
         defaultdict(list)
@@ -625,7 +652,17 @@ def allocate_compatibility_codes(
     seen: set[tuple[str, str]] = set()
     for source_order, entry in enumerate(compatibility_entries):
         value = (entry.text, entry.code)
-        if entry.text not in visible or value in seen or occupied[entry.code]:
+        has_shorter_path = any(
+            len(fixed_code) < len(entry.code)
+            and entry.code.startswith(fixed_code)
+            for fixed_code in base_by_text.get(entry.text, [])
+        )
+        if (
+            entry.text not in visible
+            or value in seen
+            or occupied[entry.code]
+            or has_shorter_path
+        ):
             continue
         seen.add(value)
         candidates_by_code[entry.code].append(
@@ -633,15 +670,26 @@ def allocate_compatibility_codes(
         )
         edges_by_text[entry.text].append(entry.code)
 
+    remaining_by_code: dict[str, set[str]] = defaultdict(set)
+    for text, full_codes in primary_by_text.items():
+        for full_code in full_codes:
+            if any(
+                len(fixed_code) < len(full_code)
+                and full_code.startswith(fixed_code)
+                for fixed_code in base_by_text.get(text, [])
+            ):
+                continue
+            remaining_by_code[full_code].add(text)
+    unresolved_set = set()
+    for full_code, characters in remaining_by_code.items():
+        exact_owner = exact_owner_by_code.get(full_code)
+        if exact_owner is not None:
+            unresolved_set.update(characters - {exact_owner})
+            continue
+        ordered = sorted(characters, key=visible_rank.__getitem__)
+        unresolved_set.update(ordered[1:])
     unresolved = [
-        char
-        for char in visible_order
-        if primary_by_text.get(char)
-        and not any(
-            full_code.startswith(fixed_code)
-            for full_code in primary_by_text[char]
-            for fixed_code in base_by_text.get(char, [])
-        )
+        char for char in visible_order if char in unresolved_set
     ]
     owner_by_code: dict[str, str] = {}
 
@@ -661,7 +709,13 @@ def allocate_compatibility_codes(
 
     for code in sorted(candidates_by_code):
         if code not in owner_by_code:
-            owner_by_code[code] = min(candidates_by_code[code])[2].text
+            remaining = [
+                item
+                for item in candidates_by_code[code]
+                if item[2].text in unresolved_set
+            ]
+            if remaining:
+                owner_by_code[code] = min(remaining)[2].text
 
     selected_entries: dict[tuple[str, str], SourceEntry | TableEntry] = {}
     for code, text in owner_by_code.items():
@@ -689,6 +743,107 @@ def allocate_compatibility_codes(
             )
         )
     return rank_candidates(rows)
+
+
+def audit_full_code_collisions(
+    primary_entries: list[SourceEntry] | list[TableEntry],
+    baseline_rows: list[TableEntry],
+    compatibility_entries: list[SourceEntry] | list[TableEntry],
+    visible_order: list[str],
+    thresholds: tuple[int, ...],
+) -> dict[int, CollisionAudit]:
+    """Audit original full-code groups after shorter and compatibility exits."""
+    invalid_thresholds = [
+        threshold
+        for threshold in thresholds
+        if threshold < 0 or threshold > len(visible_order)
+    ]
+    if invalid_thresholds:
+        raise ValueError(f"invalid collision threshold: {invalid_thresholds[0]}")
+
+    baseline_pairs = {(row.text, row.code) for row in baseline_rows}
+    result = {}
+    for threshold in thresholds:
+        scoped_order = visible_order[:threshold]
+        visible_rank = {
+            char: rank for rank, char in enumerate(scoped_order)
+        }
+        visible = set(visible_rank)
+        baseline_by_text: dict[str, list[str]] = defaultdict(list)
+        exact_owner_by_code = {
+            row.code: row.text
+            for row in baseline_rows
+            if len(row.code) == 4 and row.text in visible
+        }
+        for row in baseline_rows:
+            if row.text in visible:
+                baseline_by_text[row.text].append(row.code)
+
+        rescued_paths: dict[str, set[str]] = defaultdict(set)
+        if compatibility_entries:
+            allocated_rows = allocate_compatibility_codes(
+                baseline_rows,
+                primary_entries,
+                compatibility_entries,
+                scoped_order,
+            )
+            for row in allocated_rows:
+                if row.text in visible and (row.text, row.code) not in baseline_pairs:
+                    rescued_paths[row.text].add(row.code[:-2])
+
+        characters_by_code: dict[str, set[str]] = defaultdict(set)
+        codeable = set()
+        for entry in primary_entries:
+            if entry.text not in visible:
+                continue
+            codeable.add(entry.text)
+            is_exact_owner = exact_owner_by_code.get(entry.code) == entry.text
+            has_shorter_path = any(
+                len(fixed_code) < len(entry.code)
+                and entry.code.startswith(fixed_code)
+                for fixed_code in baseline_by_text.get(entry.text, [])
+            )
+            if has_shorter_path and not is_exact_owner:
+                continue
+            characters_by_code[entry.code].add(entry.text)
+
+        groups = []
+        for code, characters in characters_by_code.items():
+            if len(characters) < 2:
+                continue
+            exact_owner = exact_owner_by_code.get(code)
+            owner = (
+                exact_owner
+                if exact_owner in characters
+                else min(characters, key=visible_rank.__getitem__)
+            )
+            losers = characters - {owner}
+            phonetic_path = code[:-2]
+            unresolved = tuple(
+                sorted(
+                    (
+                        char
+                        for char in losers
+                        if phonetic_path not in rescued_paths.get(char, set())
+                    ),
+                    key=visible_rank.__getitem__,
+                )
+            )
+            if not unresolved:
+                continue
+            ordered_characters = (
+                owner,
+                *sorted(losers, key=visible_rank.__getitem__),
+            )
+            groups.append(
+                CollisionGroup(code, ordered_characters, unresolved)
+            )
+        groups.sort(key=lambda group: group.code)
+        result[threshold] = CollisionAudit(
+            codeable_count=len(codeable),
+            groups=tuple(groups),
+        )
+    return result
 
 
 def convert_legacy_entries(

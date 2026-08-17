@@ -3,6 +3,7 @@
 import argparse
 
 from modern_readings import load_modern_readings, simplified_reading_weight
+from tiger_compatibility import build_compatibility_auxiliary_map
 from utils import *
 from zrmify import zrmify
 
@@ -13,9 +14,13 @@ args = parser.parse_args()
 if args.simplified:
     freq_table = freq_simp_table
     modern_readings = load_modern_readings(Path('tools/data/pinyin_simp.txt'))
+    compatibility_aux_table = build_compatibility_auxiliary_map(
+        Path('tiger.dict.yaml')
+    )
 else:
     freq_table = freq_trad_table
     modern_readings = None
+    compatibility_aux_table = {}
 
 print('# 自動生成，請勿編輯。')
 print("# AUTO-GENERATED. DO NOT EDIT.")
@@ -34,5 +39,8 @@ for ((char, py), w) in freq_table.items():
     if modern_readings is not None:
         w = simplified_reading_weight(char, py, w, modern_readings)
     sp = zrmify(py)
-    for aux in aux_table[char]:
+    auxiliaries = list(aux_table[char])
+    if modern_readings is not None and (char, py) in modern_readings:
+        auxiliaries.extend(compatibility_aux_table.get(char, []))
+    for aux in dict.fromkeys(auxiliaries):
         print(f'{char}\t{sp};{aux}\t{w}')

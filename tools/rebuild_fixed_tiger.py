@@ -40,9 +40,10 @@ RESEARCH_OUTPUT_DIR = ROOT / "research/tiger_aux/output"
 CODE_LENGTH_REPORT = RESEARCH_OUTPUT_DIR / "tiger_zrm_prefix2_all_code_lengths.tsv"
 FLYPY_CODE_LENGTH_REPORT = RESEARCH_OUTPUT_DIR / "tiger_flypy_prefix2_all_code_lengths.tsv"
 TIGER_RANK_PATH = ROOT / "lua/tiger_rank.txt"
+COMPATIBILITY_TARGETS_PATH = ROOT / "tools/data/tiger_compatibility_chars.txt"
 SIMPLIFIED_READING_AUDIT_PATH = RESEARCH_OUTPUT_DIR / "simplified_reading_compatibility.tsv"
 COMPATIBILITY_CHARSET_PATH = ROOT / "tools/data/simp_chars.txt"
-COMPATIBILITY_PROFILE_PATH = RESEARCH_OUTPUT_DIR / "race_profile.tsv"
+COMPATIBILITY_PROFILE_PATH = ROOT / "tools/data/tiger_race_profile.tsv"
 FIXED_CHAR_CODE_OVERRIDES_PATH = (
     ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
 )
@@ -620,6 +621,47 @@ def allocate_legacy_codes(
     return rank_candidates(rows)
 
 
+def find_compatibility_target_characters(
+    base_rows: list[TableEntry],
+    primary_entries: list[SourceEntry] | list[TableEntry],
+    visible_order: list[str],
+) -> list[str]:
+    """Find four-key collision losers without any one-to-three-key shortcut."""
+    visible_rank = {char: rank for rank, char in enumerate(visible_order)}
+    visible = set(visible_rank)
+    short_texts = {
+        row.text
+        for row in base_rows
+        if row.text in visible and 1 <= len(row.code) <= 3
+    }
+    exact_owner_by_code = {
+        row.code: row.text
+        for row in base_rows
+        if len(row.code) == 4 and row.text in visible
+    }
+    remaining_by_code: dict[str, set[str]] = defaultdict(set)
+    for entry in primary_entries:
+        if (
+            entry.text in visible
+            and entry.text not in short_texts
+            and len(entry.code) == 4
+        ):
+            remaining_by_code[entry.code].add(entry.text)
+
+    targets = set()
+    for full_code, characters in remaining_by_code.items():
+        if len(characters) < 2:
+            continue
+        exact_owner = exact_owner_by_code.get(full_code)
+        owner = (
+            exact_owner
+            if exact_owner in characters
+            else min(characters, key=visible_rank.__getitem__)
+        )
+        targets.update(characters - {owner})
+    return [char for char in visible_order if char in targets]
+
+
 def allocate_compatibility_codes(
     base_rows: list[TableEntry],
     primary_entries: list[SourceEntry] | list[TableEntry],
@@ -629,21 +671,14 @@ def allocate_compatibility_codes(
     """Append fixed Natural-code compatibility rows over a visible charset."""
     visible_rank = {char: rank for rank, char in enumerate(visible_order)}
     visible = set(visible_rank)
-    primary_by_text: dict[str, list[str]] = defaultdict(list)
-    base_by_text: dict[str, list[str]] = defaultdict(list)
     occupied: dict[str, set[str]] = defaultdict(set)
-    for entry in primary_entries:
-        if entry.text in visible and entry.code not in primary_by_text[entry.text]:
-            primary_by_text[entry.text].append(entry.code)
     for row in base_rows:
-        base_by_text[row.text].append(row.code)
         if row.text in visible:
             occupied[row.code].add(row.text)
-    exact_owner_by_code = {
-        row.code: row.text
-        for row in base_rows
-        if len(row.code) == 4 and row.text in visible
-    }
+    unresolved = find_compatibility_target_characters(
+        base_rows, primary_entries, visible_order
+    )
+    unresolved_set = set(unresolved)
 
     candidates_by_code: dict[str, list[tuple[int, int, SourceEntry | TableEntry]]] = (
         defaultdict(list)
@@ -653,15 +688,9 @@ def allocate_compatibility_codes(
     seen: set[tuple[str, str]] = set()
     for source_order, entry in enumerate(compatibility_entries):
         value = (entry.text, entry.code)
-        has_shorter_path = any(
-            len(fixed_code) < len(entry.code)
-            and entry.code.startswith(fixed_code)
-            for fixed_code in base_by_text.get(entry.text, [])
-        )
         if (
-            entry.text not in visible
+            entry.text not in unresolved_set
             or value in seen
-            or has_shorter_path
         ):
             continue
         seen.add(value)
@@ -673,27 +702,6 @@ def allocate_compatibility_codes(
         )
         edges_by_text[entry.text].append(entry.code)
 
-    remaining_by_code: dict[str, set[str]] = defaultdict(set)
-    for text, full_codes in primary_by_text.items():
-        for full_code in full_codes:
-            if any(
-                len(fixed_code) < len(full_code)
-                and full_code.startswith(fixed_code)
-                for fixed_code in base_by_text.get(text, [])
-            ):
-                continue
-            remaining_by_code[full_code].add(text)
-    unresolved_set = set()
-    for full_code, characters in remaining_by_code.items():
-        exact_owner = exact_owner_by_code.get(full_code)
-        if exact_owner is not None:
-            unresolved_set.update(characters - {exact_owner})
-            continue
-        ordered = sorted(characters, key=visible_rank.__getitem__)
-        unresolved_set.update(ordered[1:])
-    unresolved = [
-        char for char in visible_order if char in unresolved_set
-    ]
     owner_by_code: dict[str, str] = {}
 
     def augment(text: str, visited: set[str]) -> bool:
@@ -791,16 +799,16 @@ def audit_full_code_collisions(
             char: rank for rank, char in enumerate(scoped_order)
         }
         visible = set(visible_rank)
-        baseline_by_text: dict[str, list[str]] = defaultdict(list)
+        short_texts = {
+            row.text
+            for row in baseline_rows
+            if row.text in visible and 1 <= len(row.code) <= 3
+        }
         exact_owner_by_code = {
             row.code: row.text
             for row in baseline_rows
             if len(row.code) == 4 and row.text in visible
         }
-        for row in baseline_rows:
-            if row.text in visible:
-                baseline_by_text[row.text].append(row.code)
-
         rescued_paths: dict[str, set[str]] = defaultdict(set)
         if compatibility_entries:
             allocated_rows = allocate_compatibility_codes(
@@ -820,17 +828,13 @@ def audit_full_code_collisions(
         characters_by_code: dict[str, set[str]] = defaultdict(set)
         codeable = set()
         for entry in primary_entries:
-            if entry.text not in visible:
+            if (
+                entry.text not in visible
+                or entry.text in short_texts
+                or len(entry.code) != 4
+            ):
                 continue
             codeable.add(entry.text)
-            is_exact_owner = exact_owner_by_code.get(entry.code) == entry.text
-            has_shorter_path = any(
-                len(fixed_code) < len(entry.code)
-                and entry.code.startswith(fixed_code)
-                for fixed_code in baseline_by_text.get(entry.text, [])
-            )
-            if has_shorter_path and not is_exact_owner:
-                continue
             characters_by_code[entry.code].add(entry.text)
 
         groups = []
@@ -904,6 +908,7 @@ def build_full_character_allocation(
     fixed_codes: dict[str, str] | None = None,
     compatibility_auxiliary_codes: dict[str, list[str]] | None = None,
     compatibility_order: list[str] | None = None,
+    compatibility_targets_out: list[str] | None = None,
 ) -> tuple[
     list[str],
     list[TableEntry],
@@ -974,6 +979,7 @@ def build_full_character_allocation(
         raise ValueError(
             "compatibility auxiliary codes and order must be provided together"
         )
+    compatibility_targets = []
     if compatibility_auxiliary_codes is not None and compatibility_order is not None:
         compatibility_entries = build_source_entries(
             compatibility_order,
@@ -981,12 +987,19 @@ def build_full_character_allocation(
             compatibility_auxiliary_codes,
             double_pinyin=double_pinyin,
         )
+        compatibility_targets = find_compatibility_target_characters(
+            multi_rows,
+            shortcut_source_entries,
+            compatibility_order,
+        )
         multi_rows = allocate_compatibility_codes(
             multi_rows,
             shortcut_source_entries,
             compatibility_entries,
             compatibility_order,
         )
+    if compatibility_targets_out is not None:
+        compatibility_targets_out.extend(compatibility_targets)
     full_rows = []
     for entry in source_entries:
         full_rows.append(
@@ -1040,6 +1053,13 @@ def render_tiger_rank(tiger_order: list[str]) -> str:
     return "".join(
         f"{char}\t{rank}\n"
         for rank, char in enumerate(tiger_order, 1)
+    )
+
+
+def render_compatibility_targets(characters: list[str]) -> str:
+    return (
+        "# Generated by tools/rebuild_fixed_tiger.py. DO NOT EDIT.\n"
+        + "".join(f"{char}\n" for char in characters)
     )
 
 
@@ -1156,6 +1176,7 @@ def main() -> int:
         FIXED_CHAR_CODE_OVERRIDES_PATH,
         "flypy",
     )
+    compatibility_targets: list[str] = []
     tiger_order, zrm_rows, zrm_legacy_rows, zrm_full_rows, weights = (
         build_full_character_allocation(
             tiger_path,
@@ -1167,6 +1188,7 @@ def main() -> int:
             fixed_codes=zrm_fixed_codes,
             compatibility_auxiliary_codes=compatibility_auxiliary_codes,
             compatibility_order=compatibility_order,
+            compatibility_targets_out=compatibility_targets,
         )
     )
     flypy_order, flypy_rows, flypy_legacy_rows, flypy_full_rows, flypy_weights = (
@@ -1245,6 +1267,10 @@ def main() -> int:
                 ),
             ),
             (TIGER_RANK_PATH, render_tiger_rank(tiger_order)),
+            (
+                COMPATIBILITY_TARGETS_PATH,
+                render_compatibility_targets(compatibility_targets),
+            ),
         )
     )
     research_outputs = (

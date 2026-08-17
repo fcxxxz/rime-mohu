@@ -82,9 +82,14 @@ def get_modified_date(file_path):
 
 
 def get_chars_version():
-    chaidate = get_modified_date('tools/data/tiger_aux.txt')
-    charsdate = get_modified_date('tools/data/chars.txt')
-    return max(chaidate, charsdate).strftime('%Y%m%d')
+    source_dates = [
+        get_modified_date('tools/data/tiger_aux.txt'),
+        get_modified_date('tools/data/chars.txt'),
+    ]
+    compatibility_path = 'tools/data/tiger_compatibility_chars.txt'
+    if os.path.exists(compatibility_path):
+        source_dates.append(get_modified_date(compatibility_path))
+    return max(source_dates).strftime('%Y%m%d')
 
 
 ambiguous_chars = {

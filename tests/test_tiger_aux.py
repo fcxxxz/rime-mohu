@@ -5,6 +5,7 @@ import subprocess
 import sys
 import unittest
 from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -197,6 +198,22 @@ class TigerAuxRepositoryTest(unittest.TestCase):
         self.assertEqual(utils.aux_table["𖿲"], ["pe"])
         self.assertEqual(utils.aux_table["𖿳"], ["pp"])
 
+    def test_character_dictionary_version_includes_compatibility_targets(self):
+        version_inputs = (
+            self.root / "tools/data/chars.txt",
+            self.root / "tools/data/tiger_aux.txt",
+            self.root / "tools/data/tiger_compatibility_chars.txt",
+        )
+        expected = datetime.fromtimestamp(
+            max(path.stat().st_mtime for path in version_inputs)
+        ).strftime("%Y%m%d")
+
+        dictionary = (self.root / "mohu_zrm.chars.dict.yaml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(f'version: "{expected}"', dictionary)
+
     def test_generators_run_as_direct_scripts(self):
         for script in ("tools/gen_chars.py", "tools/gen_zrmdb.py"):
             with self.subTest(script=script):
@@ -374,6 +391,40 @@ class FixedDictionaryTest(unittest.TestCase):
             [("历", 1, 200), ("励", 2, 0)],
         )
 
+    def test_any_one_to_three_key_shortcut_blocks_compatibility_codes(self):
+        base = [rebuild_fixed_tiger.TableEntry("乙", "zz", 20, 0)]
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            rebuild_fixed_tiger.SourceEntry("乙", "aaxx", 20),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("乙", "ccca", 20),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            base, primary, compatibility, ["甲", "乙"]
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("乙", "zz")},
+        )
+
+    def test_three_key_collision_never_targets_compatibility_codes(self):
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("甲", "aaa", 30),
+            rebuild_fixed_tiger.SourceEntry("乙", "aaa", 20),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("乙", "cca", 20),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            [], primary, compatibility, ["甲", "乙"]
+        )
+
+        self.assertEqual(rows, [])
+
     def test_out_of_scope_fixed_owner_does_not_block_promotion(self):
         base = [rebuild_fixed_tiger.TableEntry("乙", "ccca", 20, 0)]
 
@@ -534,16 +585,16 @@ class FixedDictionaryTest(unittest.TestCase):
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in before.items()
             },
-            {1500: (0, 0), 3500: (31, 44), 6000: (134, 188), 8105: (262, 354)},
+            {1500: (0, 0), 3500: (29, 41), 6000: (119, 170), 8105: (242, 327)},
         )
         self.assertEqual(
             {
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in after.items()
             },
-            {1500: (0, 0), 3500: (1, 1), 6000: (5, 5), 8105: (11, 11)},
+            {1500: (0, 0), 3500: (1, 1), 6000: (5, 5), 8105: (10, 10)},
         )
-        self.assertEqual(after[8105].codeable_count, 8088)
+        self.assertEqual(after[8105].codeable_count, 3311)
         self.assertEqual(
             [
                 (group.code, "".join(group.characters), "".join(group.unresolved))
@@ -557,7 +608,6 @@ class FixedDictionaryTest(unittest.TestCase):
                 ("qifb", "祇郪", "郪"),
                 ("uijg", "侍仕", "仕"),
                 ("viuk", "执挚鸷贽絷", "絷"),
-                ("vuei", "杼术", "术"),
                 ("xico", "螅屃", "屃"),
                 ("yizc", "奕弈", "弈"),
                 ("zihh", "孜孖", "孖"),
@@ -647,6 +697,11 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertIn("萤\tyy;lc\t13116", rows)
         self.assertIn("莹\tyy;ln\t106488", rows)
         self.assertIn("莹\tyy;li\t106488", rows)
+        self.assertNotIn("的\tde;ui\t76938354", rows)
+        self.assertNotIn("的\tde;ud\t76938354", rows)
+        self.assertNotIn("蕉\tjc;lc\t9223", rows)
+        self.assertNotIn("蕉\tjc;lh\t9223", rows)
+        self.assertNotIn("件\tjm;jn\t935235", rows)
 
     def test_legacy_collisions_cascade_to_the_next_unique_prefix(self):
         entries = [
@@ -1278,7 +1333,7 @@ class FixedDictionaryTest(unittest.TestCase):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
         expected_lengths = {
-            "zrm": {1: 42, 2: 435, 3: 4459, 4: 3916},
+            "zrm": {1: 42, 2: 435, 3: 4459, 4: 3866},
             "flypy": {1: 42, 2: 435, 3: 4459, 4: 3222},
         }
         expected_duplicate_lengths = {

@@ -1,10 +1,15 @@
 -- Mohu Translator (for Express Editor)
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.12.2
+-- Ver: 0.13.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.13.0: 四码普通（动词）模式按静态字频决定固顶单字是否前置：
+-- tiger_rank 排名大于 mohu/four_code_char_yield_rank（默认 2000）的
+-- 生僻字让位给词，改由 inject_fixed_chars 注入到首选之后；高频字
+-- 维持固顶。门槛设为 0 时全部让位（魔然行为）。
 --
 -- 0.12.2: 五码词辅候选消费辅码，未匹配时才回退到四码词
 --
@@ -137,6 +142,13 @@ function top.init(env)
 
     env.quick_code_indicator_skip_chars = env.engine.schema.config:get_bool("mohu/quick_code_indicator_skip_chars") or false
 
+    -- 四码固顶单字让词的静态字频门槛（tiger_rank 排名，越小越常用）
+    local yield_rank = env.engine.schema.config:get_int("mohu/four_code_char_yield_rank")
+    if type(yield_rank) ~= "number" or yield_rank < 0 then
+        yield_rank = 2000
+    end
+    env.four_code_char_yield_rank = yield_rank
+
     -- output 状态
     env.output_i = 0
     env.output_injected_secondary = {}
@@ -194,8 +206,17 @@ function top.func(input, seg, env)
                     -- 如果只打开固词模式，则 *只* 优先输出 2 字词
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, false, function(len) return len == 2 end)
                 else
-                    -- 普通模式下，固定单字永远先于词语、英文和整句候选。
-                    top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, nil)
+                    -- 普通模式下，静态字频排名不超过 four_code_char_yield_rank
+                    -- 的四码固顶单字前置输出；更生僻的字让位给词，改由注入
+                    -- 逻辑放到首选之后。门槛为 0 时全部让位（与魔然一致）。
+                    local rank_map = mohu.load_tiger_rank()
+                    top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, nil, function(cand)
+                        if rank_map == nil then
+                            return true
+                        end
+                        local rank = rank_map[utf8.codepoint(cand.text)]
+                        return rank ~= nil and rank <= env.four_code_char_yield_rank
+                    end)
                 end
             elseif input_len < 4 then          -- 造句模式下，只使用固定单字（词语无法固定）
                 local words = nil
@@ -456,12 +477,12 @@ function top.output_from_fixed(env, cand, is_sentence_making)
     end
 end
 
-function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word)
+function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word, char_filter)
     local chars = {}
     local words = {}
     for cand in translation:iter() do
         local cand_len = utf8.len(cand.text)
-        if include_chars and cand_len == 1 then
+        if include_chars and cand_len == 1 and (char_filter == nil or char_filter(cand)) then
             table.insert(chars, cand)
         elseif cand_len > 1 and include_word and include_word(cand_len) then
             table.insert(words, cand)

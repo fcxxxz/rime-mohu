@@ -8197,8 +8197,6 @@ columns:
 毖	bivt	585
 拌	bjus	12927
 拌	bjuu	12927
-煲	bkjc	3617
-煲	bkje	3617
 龅	bkls	789
 龅	bklv	789
 𨚕	bmke	0
@@ -8206,7 +8204,6 @@ columns:
 浡	bokh	428
 浡	bokw	428
 鹁	bonh	100
-孛	boni	3274
 鹁	bonx	100
 镈	bozc	54
 蹩	bxfp	3620
@@ -8215,7 +8212,6 @@ columns:
 邶	bzat	1064
 臂	bzcn	37
 臂	bzcv	37
-兹	cihy	1
 𫚖	cisw	0
 粲	cjgm	2974
 粲	cjgp	2974
@@ -8281,10 +8277,8 @@ columns:
 颌	hejw	4941
 龢	hejx	688
 颌	hejy	4941
-鸻	hgpn	1
 淏	hkkf	472
 淏	hkkm	472
-咍	hldd	366
 郇	hrne	199
 郇	hrnt	199
 煳	hucy	569
@@ -8304,8 +8298,6 @@ columns:
 螭	iicv	2805
 𬊤	ijcn	0
 𬊤	ijcq	0
-单	ijhn	1
-单	ijhs	1
 刍	iuxd	1403
 刍	iuxj	1403
 䴔	jcan	0
@@ -8315,7 +8307,6 @@ columns:
 桨	jdae	6608
 桨	jdam	6608
 酱	jday	19063
-强	jdbc	1
 缉	jiie	17853
 暨	jiif	2326
 堲	jiig	267
@@ -8335,8 +8326,6 @@ columns:
 麂	jixl	630
 嵇	jixs	4533
 嵇	jixv	4533
-期	jizv	2
-期	jizy	2
 煎	jmhc	22180
 翦	jmhp	3195
 翦	jmhz	3195
@@ -8365,11 +8354,6 @@ columns:
 岬	jwvj	1210
 㛃	jxab	0
 㛃	jxan	0
-劼	jxgl	546
-劼	jxgs	546
-䴖	jyan	0
-䴖	jyax	0
-迳	jyrc	2733
 刭	jyrd	81
 刭	jyrp	81
 窠	keee	1020
@@ -8440,7 +8424,7 @@ columns:
 宓	miwt	4473
 楙	mkee	166
 楙	mket	166
-蟊	mkic	667
+蝥	mkic	394
 楙	mkie	166
 蝥	mkih	394
 瞀	mkiq	411
@@ -8463,7 +8447,6 @@ columns:
 砮	nubs	348
 蘖	nxle	235
 蘖	nxlk	235
-区	ouni	2425
 瓯	ounr	1414
 瓯	ounw	1414
 剽	pcvd	3778
@@ -8471,7 +8454,6 @@ columns:
 癖	piad	7798
 癖	pian	7798
 邳	pice	1407
-否	pick	1
 䴙	picn	0
 甓	picr	519
 譬	pics	11807
@@ -8479,8 +8461,6 @@ columns:
 辟	picx	29251
 陴	pitn	470
 陴	pitt	470
-醅	pzyd	524
-醅	pzyk	524
 樵	qcec	8689
 樵	qceh	8689
 迄	qiec	6616
@@ -8549,13 +8529,10 @@ columns:
 鄃	uujt	6
 菽	uulf	596
 菽	uulr	596
-咋	vada	143
 楂	vaef	964
 拃	vaua	65
 拃	vaus	65
 鸼	vbin	3
-奘	vdad	257
-奘	vdam	257
 蜇	veuc	1521
 晢	veuo	469
 晢	veur	469
@@ -8585,7 +8562,7 @@ columns:
 婺	wuih	1133
 仵	wujn	1144
 仵	wujs	1144
-尉	wzcc	62071
+螱	wzcc	270
 螱	wzck	270
 煟	wzcy	325
 沩	wzks	106
@@ -8597,8 +8574,6 @@ columns:
 魏	wzxg	120376
 逶	wzxu	1163
 滧	xckh	0
-削	xcyd	54894
-削	xcyp	54894
 瓖	xdnd	69
 瓖	xdnf	69
 窸	xieh	1262
@@ -8608,8 +8583,6 @@ columns:
 俙	xijn	456
 俙	xijr	456
 饩	xiqq	99
-裼	xite	395
-裼	xitn	395
 嶍	xivb	317
 酅	xivm	293
 酅	xivt	293
@@ -8626,8 +8599,6 @@ columns:
 湑	xuky	367
 叚	xwcn	526
 叚	xwcr	526
-邂	xxxp	5821
-邂	xxxu	5821
 刑	xyfd	107683
 邢	xyfe	16955
 刑	xyfp	107683
@@ -8641,8 +8612,6 @@ columns:
 刈	yibd	657
 嗌	yida	645
 佚	yijf	3148
-𬺈	yilk	0
-𬺈	yilz	0
 繄	yini	355
 眙	yiqd	532
 挹	yiub	606
@@ -8654,8 +8623,6 @@ columns:
 鄢	yjft	2776
 𬸘	yjnb	0
 𬸘	yjnx	0
-崦	yjva	505
-崦	yjvo	505
 黡	yjxh	61
 赝	yjxo	1389
 黡	yjxp	61
@@ -8665,8 +8632,6 @@ columns:
 轺	ykyd	477
 轺	ykyk	477
 龂	ynlj	3
-铟	ynzd	18
-铟	ynzm	18
 羱	yrgu	364
 羱	yrgy	364
 眢	yrlq	388
@@ -8676,8 +8641,6 @@ columns:
 饔	yszu	613
 阈	yuad	185
 阈	yuaf	185
-尉	yucc	30
-尉	yuck	30
 邘	yufe	363
 盂	yufm	2805
 邘	yuft	363
@@ -8705,7 +8668,6 @@ columns:
 荧	yylh	11955
 萦	yyli	11437
 蓥	yylj	35
-荥	yylk	1800
 莹	yyln	106488
 萦	yyls	11437
 茔	yylt	1180
@@ -8715,11 +8677,10 @@ columns:
 鹦	yyob	5289
 罂	yyof	3720
 鹦	yyox	5289
-咋	zeda	20
 箦	zerb	47
 箦	zero	47
 鄫	zght	10
-甑	zghy	634
+䎖	zghy	0
 䎖	zghz	0
 赀	zisb	367
 赀	ziso	367
@@ -8751,9 +8712,7 @@ columns:
 荜	biln	0
 荜	bilv	0
 坒	bivt	0
-孛	bonh	0
 镈	bozk	0
-兹	cihi	0
 𫚖	cisv	0
 黛	dljp	0
 町	dyqd	0
@@ -8765,7 +8724,6 @@ columns:
 凫	fuxj	0
 垕	hbxd	0
 龢	hejd	0
-咍	hldk	0
 煳	hucv	0
 珵	ignn	0
 𬶨	jiiv	0
@@ -8775,7 +8733,6 @@ columns:
 焗	juca	0
 腒	juvc	0
 岬	jwvs	0
-迳	jyru	0
 塱	lhiv	0
 鹂	lifv	0
 逦	lifv	0
@@ -8790,7 +8747,6 @@ columns:
 栾	lrzm	0
 鸬	luyx	0
 瞢	mglw	0
-蝥	mkic	0
 瞀	mkih	0
 摹	molu	0
 墓	mulm	0
@@ -8826,9 +8782,6 @@ columns:
 絷	viui	0
 鸷	viux	0
 觯	vixn	0
-术	vued	0
-螱	wzcc	0
-尉	wzck	0
 煟	wzcv	0
 沩	wzki	0
 魏	wzxa	0
@@ -8856,8 +8809,5 @@ columns:
 荧	yylc	0
 莹	yyli	0
 莺	yyln	0
-荥	yyls	0
-甑	zghr	0
 鄫	zghy	0
-䎖	zghy	0
 孖	zihi	0

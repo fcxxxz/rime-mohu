@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import re
 import sys
 from collections import defaultdict
@@ -21,6 +22,9 @@ from fixed_tiger_allocation import (  # noqa: E402
 )
 from flypyify import flypyify1  # noqa: E402
 from modern_readings import load_modern_readings  # noqa: E402
+from tiger_compatibility import (  # noqa: E402
+    build_compatibility_auxiliary_map,
+)
 from tiger_aux import (  # noqa: E402
     TIGER_EQUIVALENTS,
     load_auxiliary_tsv,
@@ -36,6 +40,8 @@ CODE_LENGTH_REPORT = RESEARCH_OUTPUT_DIR / "tiger_zrm_prefix2_all_code_lengths.t
 FLYPY_CODE_LENGTH_REPORT = RESEARCH_OUTPUT_DIR / "tiger_flypy_prefix2_all_code_lengths.tsv"
 TIGER_RANK_PATH = ROOT / "lua/tiger_rank.txt"
 SIMPLIFIED_READING_AUDIT_PATH = RESEARCH_OUTPUT_DIR / "simplified_reading_compatibility.tsv"
+COMPATIBILITY_CHARSET_PATH = ROOT / "tools/data/simp_chars.txt"
+COMPATIBILITY_PROFILE_PATH = RESEARCH_OUTPUT_DIR / "race_profile.tsv"
 FIXED_CHAR_CODE_OVERRIDES_PATH = (
     ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
 )
@@ -44,6 +50,7 @@ EXPECTED_SIMPLIFIED_READING_CATEGORIES = {
     "all-compat": 75832,
 }
 EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 94847
+EXPECTED_COMPATIBILITY_CHARACTER_COUNT = 8105
 LEGACY_MULTI_SHORT_CODE_MAX_LENGTH = 2
 MULTI_CASCADE_CODE_LENGTHS = (3, 4)
 GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
@@ -182,6 +189,37 @@ def load_production_pinyin_table(path: Path) -> dict[str, list[tuple[str, float]
         text: list(readings.items())
         for text, readings in weights.items()
     }
+
+
+def load_compatibility_order(
+    charset_path: Path,
+    profile_path: Path,
+) -> list[str]:
+    charset = [
+        line.strip()
+        for line in charset_path.read_text(encoding="utf-8-sig").splitlines()
+        if len(line.strip()) == 1 and not line.startswith("#")
+    ]
+    try:
+        rows = list(
+            csv.DictReader(
+                profile_path.read_text(encoding="utf-8-sig").splitlines(),
+                delimiter="\t",
+            )
+        )
+        order = [row["char"] for row in rows]
+        ranks = [int(row["rank"]) for row in rows]
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("invalid compatibility profile") from error
+    if (
+        len(charset) != len(set(charset))
+        or len(order) != len(set(order))
+        or any(len(char) != 1 for char in order)
+        or ranks != list(range(1, len(order) + 1))
+        or set(order) != set(charset)
+    ):
+        raise ValueError("compatibility profile does not match charset")
+    return order
 
 
 def load_reading_evidence(
@@ -560,6 +598,99 @@ def allocate_legacy_codes(
     return rank_candidates(rows)
 
 
+def allocate_compatibility_codes(
+    base_rows: list[TableEntry],
+    primary_entries: list[SourceEntry] | list[TableEntry],
+    compatibility_entries: list[SourceEntry] | list[TableEntry],
+    visible_order: list[str],
+) -> list[TableEntry]:
+    """Append fixed Natural-code compatibility rows over a visible charset."""
+    visible_rank = {char: rank for rank, char in enumerate(visible_order)}
+    visible = set(visible_rank)
+    primary_by_text: dict[str, list[str]] = defaultdict(list)
+    base_by_text: dict[str, list[str]] = defaultdict(list)
+    occupied: dict[str, set[str]] = defaultdict(set)
+    for entry in primary_entries:
+        if entry.text in visible and entry.code not in primary_by_text[entry.text]:
+            primary_by_text[entry.text].append(entry.code)
+    for row in base_rows:
+        base_by_text[row.text].append(row.code)
+        if row.text in visible:
+            occupied[row.code].add(row.text)
+
+    candidates_by_code: dict[str, list[tuple[int, int, SourceEntry | TableEntry]]] = (
+        defaultdict(list)
+    )
+    edges_by_text: dict[str, list[str]] = defaultdict(list)
+    seen: set[tuple[str, str]] = set()
+    for source_order, entry in enumerate(compatibility_entries):
+        value = (entry.text, entry.code)
+        if entry.text not in visible or value in seen or occupied[entry.code]:
+            continue
+        seen.add(value)
+        candidates_by_code[entry.code].append(
+            (visible_rank[entry.text], source_order, entry)
+        )
+        edges_by_text[entry.text].append(entry.code)
+
+    unresolved = [
+        char
+        for char in visible_order
+        if primary_by_text.get(char)
+        and not any(
+            full_code.startswith(fixed_code)
+            for full_code in primary_by_text[char]
+            for fixed_code in base_by_text.get(char, [])
+        )
+    ]
+    owner_by_code: dict[str, str] = {}
+
+    def augment(text: str, visited: set[str]) -> bool:
+        for code in edges_by_text.get(text, []):
+            if code in visited:
+                continue
+            visited.add(code)
+            owner = owner_by_code.get(code)
+            if owner is None or augment(owner, visited):
+                owner_by_code[code] = text
+                return True
+        return False
+
+    for text in unresolved:
+        augment(text, set())
+
+    for code in sorted(candidates_by_code):
+        if code not in owner_by_code:
+            owner_by_code[code] = min(candidates_by_code[code])[2].text
+
+    selected_entries: dict[tuple[str, str], SourceEntry | TableEntry] = {}
+    for code, text in owner_by_code.items():
+        matching = [
+            item
+            for item in candidates_by_code[code]
+            if item[2].text == text
+        ]
+        _, _, entry = min(matching)
+        selected_entries[(text, code)] = entry
+
+    rows = list(base_rows)
+    for text, code in sorted(
+        selected_entries,
+        key=lambda value: (value[1], visible_rank[value[0]]),
+    ):
+        entry = selected_entries[(text, code)]
+        rows.append(
+            TableEntry(
+                text,
+                code,
+                entry.weight,
+                len(rows),
+                source=entry.source,
+            )
+        )
+    return rank_candidates(rows)
+
+
 def convert_legacy_entries(
     entries: list[SourceEntry],
     double_pinyin: DoublePinyin,
@@ -590,6 +721,8 @@ def build_full_character_allocation(
     shortcut_readings: set[tuple[str, str]] | None = None,
     double_pinyin: DoublePinyin = "zrm",
     fixed_codes: dict[str, str] | None = None,
+    compatibility_auxiliary_codes: dict[str, list[str]] | None = None,
+    compatibility_order: list[str] | None = None,
 ) -> tuple[
     list[str],
     list[TableEntry],
@@ -656,6 +789,23 @@ def build_full_character_allocation(
         fallback_rows=short_rows,
         fixed_codes=fixed_codes,
     )
+    if (compatibility_auxiliary_codes is None) != (compatibility_order is None):
+        raise ValueError(
+            "compatibility auxiliary codes and order must be provided together"
+        )
+    if compatibility_auxiliary_codes is not None and compatibility_order is not None:
+        compatibility_entries = build_source_entries(
+            compatibility_order,
+            shortcut_pinyin_table,
+            compatibility_auxiliary_codes,
+            double_pinyin=double_pinyin,
+        )
+        multi_rows = allocate_compatibility_codes(
+            multi_rows,
+            shortcut_source_entries,
+            compatibility_entries,
+            compatibility_order,
+        )
     full_rows = []
     for entry in source_entries:
         full_rows.append(
@@ -807,6 +957,16 @@ def main() -> int:
     chars_path = ROOT / "tools/data/chars.txt"
     auxiliary_path = ROOT / "tools/data/tiger_aux.txt"
     modern_readings = load_modern_readings(ROOT / "tools/data/pinyin_simp.txt")
+    compatibility_order = load_compatibility_order(
+        COMPATIBILITY_CHARSET_PATH,
+        COMPATIBILITY_PROFILE_PATH,
+    )
+    if len(compatibility_order) != EXPECTED_COMPATIBILITY_CHARACTER_COUNT:
+        raise ValueError(
+            f"expected {EXPECTED_COMPATIBILITY_CHARACTER_COUNT} compatibility "
+            f"characters, got {len(compatibility_order)}"
+        )
+    compatibility_auxiliary_codes = build_compatibility_auxiliary_map(tiger_path)
     zrm_fixed_codes = load_fixed_char_code_overrides(
         FIXED_CHAR_CODE_OVERRIDES_PATH,
         "zrm",
@@ -824,6 +984,8 @@ def main() -> int:
             shortcut_readings=modern_readings,
             double_pinyin="zrm",
             fixed_codes=zrm_fixed_codes,
+            compatibility_auxiliary_codes=compatibility_auxiliary_codes,
+            compatibility_order=compatibility_order,
         )
     )
     flypy_order, flypy_rows, flypy_legacy_rows, flypy_full_rows, flypy_weights = (

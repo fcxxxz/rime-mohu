@@ -411,8 +411,9 @@ self.assertIn(("藠", "jclu"), zrm_legacy_pairs)
 self.assertIn(("莺", "yylx"), zrm_legacy_pairs)
 self.assertIn(("萤", "yylc"), zrm_legacy_pairs)
 self.assertIn(("莹", "yyln"), zrm_legacy_pairs)
-self.assertIn(("莹", "yyli"), zrm_legacy_pairs)
+self.assertIn(("萦", "yyli"), zrm_legacy_pairs)
 self.assertNotIn(("莺", "yyln"), zrm_legacy_pairs)
+self.assertNotIn(("莹", "yyli"), zrm_legacy_pairs)
 ```
 
 Also snapshot the four unique/Flypy generated tables in memory and assert the generator leaves them byte-for-byte unchanged.

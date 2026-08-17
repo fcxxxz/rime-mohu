@@ -7,6 +7,7 @@ from pathlib import Path
 
 import flypyify
 import zrmify
+from tiger_aux import load_auxiliary_tsv
 
 import opencc
 
@@ -98,6 +99,24 @@ def convert_spelling_code(code: str) -> str:
     return " ".join(converted)
 
 
+def keep_primary_auxiliaries(
+    text: str,
+    code: str,
+    primary_auxiliaries: dict[str, list[str]],
+) -> str:
+    allowed = primary_auxiliaries.get(text)
+    if allowed is None:
+        return code
+    result = []
+    for token in code.split(" "):
+        if not token:
+            continue
+        if ";" in token and token.split(";", 1)[1] not in allowed:
+            continue
+        result.append(token)
+    return " ".join(result)
+
+
 def convert_fixed_code(word: str, code: str) -> str:
     if len(word) == 1 and len(code) > 1 and code[0] != "o":
         return convert_syllable(code[:2]) + code[2:]
@@ -123,6 +142,11 @@ def convert_dictionary(source_name: str, target_name: str) -> str:
     text = replace_dictionary_name(text, target_name)
     lines = []
     in_body = False
+    primary_auxiliaries = None
+    if source_name == "mohu_zrm.chars.dict.yaml":
+        primary_auxiliaries = load_auxiliary_tsv(
+            ROOT / "tools/data/tiger_aux.txt"
+        )
     for raw in text.splitlines(keepends=True):
         if raw.strip() == "...":
             in_body = True
@@ -133,6 +157,12 @@ def convert_dictionary(source_name: str, target_name: str) -> str:
             continue
         fields = raw.rstrip("\n").split("\t")
         if len(fields) >= 2 and fields[1]:
+            if primary_auxiliaries is not None:
+                fields[1] = keep_primary_auxiliaries(
+                    fields[0], fields[1], primary_auxiliaries
+                )
+                if not fields[1]:
+                    continue
             fields[1] = convert_spelling_code(fields[1])
         lines.append("\t".join(fields) + ("\n" if raw.endswith("\n") else ""))
     return "".join(lines)

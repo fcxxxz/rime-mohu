@@ -245,6 +245,187 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertEqual(table["乙"], [("jia", 900.0)])
         self.assertEqual(table["丙"], [("jia", 20.0)])
 
+    def test_loads_compatibility_order_from_race_profile(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            charset = root / "chars.txt"
+            profile = root / "race.tsv"
+            charset.write_text("# group\n甲\n乙\n丙\n", encoding="utf-8")
+            profile.write_text(
+                "rank\tchar\tfrequency_weight\n"
+                "1\t乙\t3\n"
+                "2\t甲\t2\n"
+                "3\t丙\t1\n",
+                encoding="utf-8",
+            )
+
+            order = rebuild_fixed_tiger.load_compatibility_order(
+                charset, profile
+            )
+
+        self.assertEqual(order, ["乙", "甲", "丙"])
+
+    def test_rejects_incomplete_compatibility_order(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            charset = root / "chars.txt"
+            profile = root / "race.tsv"
+            charset.write_text("甲\n乙\n丙\n", encoding="utf-8")
+            profile.write_text(
+                "rank\tchar\tfrequency_weight\n"
+                "1\t乙\t3\n"
+                "2\t甲\t2\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                ValueError, "profile does not match charset"
+            ):
+                rebuild_fixed_tiger.load_compatibility_order(charset, profile)
+
+    def test_compatibility_allocation_maximizes_unresolved_coverage(self):
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            rebuild_fixed_tiger.SourceEntry("乙", "bbxx", 20),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30),
+            rebuild_fixed_tiger.SourceEntry("甲", "cccb", 30),
+            rebuild_fixed_tiger.SourceEntry("乙", "ccca", 20),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            [], primary, compatibility, ["甲", "乙"]
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("乙", "ccca"), ("甲", "cccb")},
+        )
+
+    def test_compatibility_allocation_keeps_both_free_codes_for_one_character(self):
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("莹", "yyln", 100),
+            rebuild_fixed_tiger.SourceEntry("莹", "yyli", 100),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            [],
+            [rebuild_fixed_tiger.SourceEntry("莹", "yylw", 100)],
+            compatibility,
+            ["莹"],
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("莹", "yyln"), ("莹", "yyli")},
+        )
+
+    def test_visible_fixed_owner_blocks_compatibility_promotion(self):
+        base = [rebuild_fixed_tiger.TableEntry("乙", "ccca", 20, 0)]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            base,
+            [rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30)],
+            [rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30)],
+            ["甲", "乙"],
+        )
+
+        pairs = {(row.text, row.code) for row in rows}
+        self.assertIn(("乙", "ccca"), pairs)
+        self.assertNotIn(("甲", "ccca"), pairs)
+
+    def test_out_of_scope_fixed_owner_does_not_block_promotion(self):
+        base = [rebuild_fixed_tiger.TableEntry("乙", "ccca", 20, 0)]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            base,
+            [rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30)],
+            [rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30)],
+            ["甲"],
+        )
+
+        pairs = {(row.text, row.code) for row in rows}
+        self.assertIn(("乙", "ccca"), pairs)
+        self.assertIn(("甲", "ccca"), pairs)
+
+    def test_higher_rank_wins_one_shared_compatibility_code(self):
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("甲", "aaxx", 30),
+            rebuild_fixed_tiger.SourceEntry("乙", "bbxx", 20),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("甲", "ccca", 30),
+            rebuild_fixed_tiger.SourceEntry("乙", "ccca", 20),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            [], primary, compatibility, ["甲", "乙"]
+        )
+
+        self.assertEqual(
+            {(row.text, row.code) for row in rows},
+            {("甲", "ccca")},
+        )
+
+    def test_full_allocation_accepts_natural_compatibility_inputs(self):
+        parameters = inspect.signature(
+            rebuild_fixed_tiger.build_full_character_allocation
+        ).parameters
+
+        self.assertIn("compatibility_auxiliary_codes", parameters)
+        self.assertIn("compatibility_order", parameters)
+
+    def test_natural_compatibility_examples_are_generated_and_promoted(self):
+        smart_rows = self.dictionary_rows(
+            self.root / "mohu_zrm.chars.dict.yaml"
+        )
+        smart_pairs = {(fields[0], fields[1]) for fields in smart_rows}
+        self.assertTrue(
+            {
+                ("莺", "yy;lx"),
+                ("莺", "yy;ln"),
+                ("萤", "yy;lc"),
+                ("莹", "yy;ln"),
+                ("莹", "yy;li"),
+            }.issubset(smart_pairs)
+        )
+
+        legacy_rows = self.dictionary_rows(
+            self.root / "mohu_zrm_tiger_fixed_legacy.dict.yaml"
+        )
+        legacy_pairs = {(fields[0], fields[1]) for fields in legacy_rows}
+        self.assertTrue(
+            {
+                ("蕉", "jcl"),
+                ("藠", "jclu"),
+                ("莺", "yylx"),
+                ("萤", "yylc"),
+                ("莹", "yyln"),
+                ("萦", "yyli"),
+            }.issubset(legacy_pairs)
+        )
+        self.assertNotIn(("莺", "yyln"), legacy_pairs)
+        self.assertNotIn(("莹", "yyli"), legacy_pairs)
+
+    def test_flypy_character_build_excludes_natural_compatibility_auxiliaries(self):
+        from tools import build_flypy_assets
+
+        converted = build_flypy_assets.convert_dictionary(
+            "mohu_zrm.chars.dict.yaml",
+            "mohu_flypy.chars",
+        )
+        rows = set(converted.splitlines())
+
+        self.assertIn("莺\tyk;lw\t25291", rows)
+        self.assertIn("萤\tyk;lw\t13116", rows)
+        self.assertIn("莹\tyk;lw\t106488", rows)
+        self.assertNotIn("莺\tyk;lx\t25291", rows)
+        self.assertNotIn("莺\tyk;ln\t25291", rows)
+        self.assertNotIn("萤\tyk;lc\t13116", rows)
+        self.assertNotIn("莹\tyk;ln\t106488", rows)
+        self.assertNotIn("莹\tyk;li\t106488", rows)
+
     def test_simplified_character_dictionary_contains_both_compatibility_positions(self):
         result = subprocess.run(
             ["uv", "run", "tools/gen_chars.py", "--simplified"],

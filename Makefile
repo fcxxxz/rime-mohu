@@ -51,7 +51,7 @@ opencc: chaifen emoji
 update-compact-dicts:
 	uv run ./tools/update_compact_dicts.sh
 
-fixed_tiger: tiger_aux tools/data/pinyin_simp.txt tools/modern_readings.py
+fixed_tiger: tiger_aux tiger.dict.yaml tools/data/pinyin_simp.txt tools/data/simp_chars.txt tools/modern_readings.py tools/tiger_compatibility.py research/tiger_aux/output/race_profile.tsv
 	uv run tools/rebuild_fixed_tiger.py
 
 sync-essay:

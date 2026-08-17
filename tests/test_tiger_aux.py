@@ -302,7 +302,7 @@ class FixedDictionaryTest(unittest.TestCase):
 
         self.assertEqual(
             {(row.text, row.code) for row in rows},
-            {("乙", "ccca"), ("甲", "cccb")},
+            {("甲", "ccca"), ("乙", "ccca"), ("甲", "cccb")},
         )
 
     def test_compatibility_allocation_keeps_both_free_codes_for_one_character(self):
@@ -326,7 +326,7 @@ class FixedDictionaryTest(unittest.TestCase):
             {("莹", "yyln"), ("莹", "yyli")},
         )
 
-    def test_visible_fixed_owner_blocks_compatibility_promotion(self):
+    def test_visible_fixed_owner_blocks_promotion_but_keeps_input(self):
         base = [rebuild_fixed_tiger.TableEntry("乙", "ccca", 20, 0)]
 
         rows = rebuild_fixed_tiger.allocate_compatibility_codes(
@@ -339,9 +339,40 @@ class FixedDictionaryTest(unittest.TestCase):
             ["丙", "甲", "乙"],
         )
 
-        pairs = {(row.text, row.code) for row in rows}
-        self.assertIn(("乙", "ccca"), pairs)
-        self.assertNotIn(("甲", "ccca"), pairs)
+        self.assertEqual(
+            [
+                (row.text, row.selection_rank)
+                for row in rows
+                if row.code == "ccca"
+            ],
+            [("乙", 1), ("甲", 2)],
+        )
+
+    def test_occupied_compatibility_code_remains_inputtable(self):
+        base = [
+            rebuild_fixed_tiger.TableEntry("厉", "lixf", 300, 0),
+            rebuild_fixed_tiger.TableEntry("历", "lixs", 200, 1),
+        ]
+        primary = [
+            rebuild_fixed_tiger.SourceEntry("厉", "lixf", 300),
+            rebuild_fixed_tiger.SourceEntry("励", "lixf", 100),
+        ]
+        compatibility = [
+            rebuild_fixed_tiger.SourceEntry("励", "lixs", 100),
+        ]
+
+        rows = rebuild_fixed_tiger.allocate_compatibility_codes(
+            base, primary, compatibility, ["厉", "历", "励"]
+        )
+
+        self.assertEqual(
+            [
+                (row.text, row.selection_rank, row.weight)
+                for row in rows
+                if row.code == "lixs"
+            ],
+            [("历", 1, 200), ("励", 2, 0)],
+        )
 
     def test_out_of_scope_fixed_owner_does_not_block_promotion(self):
         base = [rebuild_fixed_tiger.TableEntry("乙", "ccca", 20, 0)]
@@ -377,8 +408,12 @@ class FixedDictionaryTest(unittest.TestCase):
         )
 
         self.assertEqual(
-            {(row.text, row.code) for row in rows},
-            {("甲", "ccca")},
+            [
+                (row.text, row.selection_rank)
+                for row in rows
+                if row.code == "ccca"
+            ],
+            [("甲", 1), ("乙", 2)],
         )
 
     def test_baseline_fixed_character_does_not_consume_compatibility_slots(self):
@@ -537,7 +572,7 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertIn("compatibility_auxiliary_codes", parameters)
         self.assertIn("compatibility_order", parameters)
 
-    def test_natural_compatibility_examples_are_generated_and_promoted(self):
+    def test_natural_compatibility_examples_are_generated_and_inputtable(self):
         smart_rows = self.dictionary_rows(
             self.root / "mohu_zrm.chars.dict.yaml"
         )
@@ -549,6 +584,7 @@ class FixedDictionaryTest(unittest.TestCase):
                 ("萤", "yy;lc"),
                 ("莹", "yy;ln"),
                 ("莹", "yy;li"),
+                ("励", "li;xs"),
             }.issubset(smart_pairs)
         )
 
@@ -561,13 +597,21 @@ class FixedDictionaryTest(unittest.TestCase):
                 ("蕉", "jcl"),
                 ("藠", "jclu"),
                 ("莺", "yylx"),
+                ("莺", "yyln"),
                 ("萤", "yylc"),
                 ("莹", "yyln"),
+                ("莹", "yyli"),
                 ("萦", "yyli"),
+                ("励", "lixs"),
             }.issubset(legacy_pairs)
         )
-        self.assertNotIn(("莺", "yyln"), legacy_pairs)
-        self.assertNotIn(("莹", "yyli"), legacy_pairs)
+        legacy_weights = {
+            (fields[0], fields[1]): fields[2]
+            for fields in legacy_rows
+        }
+        self.assertEqual(legacy_weights[("莺", "yyln")], "0")
+        self.assertEqual(legacy_weights[("莹", "yyli")], "0")
+        self.assertEqual(legacy_weights[("励", "lixs")], "0")
 
     def test_flypy_character_build_excludes_natural_compatibility_auxiliaries(self):
         from tools import build_flypy_assets
@@ -1234,8 +1278,12 @@ class FixedDictionaryTest(unittest.TestCase):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
         expected_lengths = {
-            "zrm": {1: 42, 2: 435, 3: 4459, 4: 3789},
+            "zrm": {1: 42, 2: 435, 3: 4459, 4: 3916},
             "flypy": {1: 42, 2: 435, 3: 4459, 4: 3222},
+        }
+        expected_duplicate_lengths = {
+            "zrm": {1, 2, 4},
+            "flypy": {1, 2},
         }
         for scheme in ("zrm", "flypy"):
             filename = f"mohu_{scheme}_tiger_fixed_legacy.dict.yaml"
@@ -1262,7 +1310,9 @@ class FixedDictionaryTest(unittest.TestCase):
                     for code, chars in owners.items()
                     if len(chars) > 1
                 }
-                self.assertTrue(duplicate_lengths.issubset({1, 2}))
+                self.assertTrue(
+                    duplicate_lengths.issubset(expected_duplicate_lengths[scheme])
+                )
                 self.assertTrue(all(1 <= len(code) <= 4 for _, code in pairs))
                 self.assertEqual(
                     Counter(len(fields[1]) for fields in rows),

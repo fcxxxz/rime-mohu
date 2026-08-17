@@ -33,22 +33,39 @@ jobs:
       - name: Sync Python environment
         run: uv sync --locked
 
-      - name: Build distribution
-        run: make dist
+      - name: Build distributions
+        run: make dist-zrm dist-flypy
 
-      - name: Validate distribution
+      - name: Validate distributions
         run: |
-          test -f dist/mohu_zrm.schema.yaml
-          test -f dist/lua/zrmdb.txt
-          test -f dist/opencc/mohu_chaifen.ocd2
-          test -f dist/opencc/mohu_emoji.ocd2
+          test -f dist-zrm/mohu_zrm.schema.yaml
+          test -f dist-zrm/lua/zrmdb.txt
+          test -f dist-zrm/opencc/mohu_chaifen.ocd2
+          test -f dist-zrm/opencc/mohu_emoji.ocd2
+          test -f dist-flypy/mohu_flypy.schema.yaml
+          test -f dist-flypy/lua/zrmdb.txt
+          test -f dist-flypy/opencc/mohu_chaifen.ocd2
+          test -f dist-flypy/opencc/mohu_emoji.ocd2
+          test ! -e dist-zrm/mohu_flypy.schema.yaml
+          test ! -e dist-flypy/mohu_zrm.schema.yaml
+          test ! -e dist-zrm/zh-hans-t-essay-bgc.gram
+          test ! -e dist-flypy/zh-hans-t-essay-bgc.gram
 
-      - name: Upload distribution
+      - name: Upload Natural Code distribution
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: rime-mohu-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist/
+          name: rime-mohu-zrm-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-zrm/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Flypy distribution
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-flypy-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-flypy/
           if-no-files-found: error
           retention-days: 14
 
@@ -63,16 +80,22 @@ jobs:
       queue: max
       cancel-in-progress: false
     steps:
-      - name: Download distribution
+      - name: Download Natural Code distribution
         uses: actions/download-artifact@v4
         with:
-          name: rime-mohu-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist
+          name: rime-mohu-zrm-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-zrm
 
-      - name: Package distribution
+      - name: Download Flypy distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-flypy-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-flypy
+
+      - name: Package distributions
         run: |
-          cd dist
-          zip -r ../rime-mohu-latest.zip .
+          (cd dist-zrm && zip -r ../rime-mohu-zrm-latest.zip .)
+          (cd dist-flypy && zip -r ../rime-mohu-flypy-latest.zip .)
 
       - name: Update latest release
         env:
@@ -117,9 +140,15 @@ jobs:
               --title 'Latest build' \
               --notes-file "$notes_file" \
               --latest
-            gh release upload latest rime-mohu-latest.zip --clobber
+            gh release delete-asset latest rime-mohu-latest.zip --yes 2>/dev/null || true
+            gh release upload latest \
+              rime-mohu-zrm-latest.zip \
+              rime-mohu-flypy-latest.zip \
+              --clobber
           else
-            gh release create latest rime-mohu-latest.zip \
+            gh release create latest \
+              rime-mohu-zrm-latest.zip \
+              rime-mohu-flypy-latest.zip \
               --verify-tag \
               --title 'Latest build' \
               --notes-file "$notes_file" \

@@ -411,6 +411,7 @@ def allocate_reading_ordered_codes(
         ]
         if (
             request in seen_requests
+            or entry.text in fixed_codes
             or not 1 <= len(code) <= 3
             or not matching_full_codes
         ):
@@ -455,7 +456,7 @@ def allocate_reading_ordered_codes(
         )
 
     for entry in entries:
-        if entry.text not in tiger_chars:
+        if entry.text not in tiger_chars or entry.text in fixed_codes:
             continue
         code = entry.code.strip().lower()
         if not code or any(code.startswith(existing) for existing in encoded[entry.text]):
@@ -516,6 +517,7 @@ def allocate_legacy_codes(
         value = (entry.text, code)
         if (
             entry.text not in allowed
+            or entry.text in fixed_codes
             or value in seen
             or not re.fullmatch(r"[a-z]+", code)
             or not 1 <= len(code) <= LEGACY_MULTI_SHORT_CODE_MAX_LENGTH
@@ -544,6 +546,7 @@ def allocate_legacy_codes(
         value = (entry.text, code)
         if (
             entry.text not in allowed
+            or entry.text in fixed_codes
             or entry.text in legacy_texts
             or value in seen
             or not LOWERCASE_CODE.fullmatch(code)
@@ -587,7 +590,11 @@ def allocate_legacy_codes(
         candidates: dict[str, list[tuple[float, int, int, str]]] = defaultdict(list)
         for source_order, entry in enumerate(cascade_entries):
             code = entry.code.strip().lower()
-            if entry.text not in allowed or len(code) < length:
+            if (
+                entry.text not in allowed
+                or entry.text in fixed_codes
+                or len(code) < length
+            ):
                 continue
             candidates[code[:length]].append(
                 (-entry.weight, tiger_rank[entry.text], source_order, entry.text)

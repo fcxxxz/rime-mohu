@@ -1,0 +1,34 @@
+schema: mohu_zrm
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+deploy:
+  word:
+    patch:
+      mohu/ijrq/enable_word: true
+    tests:
+      - send: uixmw
+        assert: eq(cand[1].text, "实线") and eq(cand[2].text, "实现")
+
+  word_defer_2:
+    patch:
+      mohu/ijrq/enable_word: true
+      mohu/ijrq/enable_word_defer: 2
+    tests:
+      - send: uixmw
+        assert: eq(cand[1].text, "实线") and eq(cand[3].text, "实现")
+
+  word_defer_3:
+    patch:
+      mohu/ijrq/enable_word: true
+      mohu/ijrq/enable_word_defer: 3
+    tests:
+      - send: uixmw
+        assert: eq(cand[1].text, "实线") and eq(cand[4].text, "实现")
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

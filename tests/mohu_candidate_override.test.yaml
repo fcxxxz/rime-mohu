@@ -1,0 +1,155 @@
+schema: mohu_zrm
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+  function has_comment(candidates, pattern)
+    for _, candidate in ipairs(candidates) do
+      if candidate.comment:find(pattern) then return true end
+    end
+    return false
+  end
+
+deploy:
+  reorder:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_reorder
+    tests:
+      - send: 'lmjx'
+        assert: eq(cand[1].text, '链接') and eq(cand[2].text, '连接')
+      - send: 'lmjx{Down}{Control+minus}'
+        assert: eq(cand[1].text, '连接') and eq(cand[2].text, '链接')
+      - send: 'lmjx'
+        assert: eq(cand[1].text, '连接') and eq(cand[2].text, '链接')
+      - send: 'lmjx{Control+equal}'
+        assert: eq(cand[1].text, '链接') and eq(cand[2].text, '连接')
+      - send: '{Escape}{Control+Shift+M}{Down}{space}'
+        assert: eq(cand[1].text, '没有记录')
+
+  reorder_learned_user_phrase:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_reorder_user_phrase
+    tests:
+      - send: 'lmjx{space}lmjx{Down}{Control+minus}'
+        assert: eq(cand[1].text, '连接') and eq(cand[2].text, '链接')
+
+  delete_and_restore:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_delete
+    tests:
+      - send: 'lmjx{Down}{Shift+Delete}'
+        assert: eq(cand[1].text, '链接') and not has_text(cand, '连接')
+      - send: 'lmjxy'
+        assert: has_text(cand, '连接')
+      - send: 'lmjx{Control+Shift+M}'
+        assert: has_comment(cand, 'Shift%+Delete 恢复')
+      - send: 'lmjx{Control+Shift+M}{Down}{Shift+Delete}'
+        assert: has_text(cand, '连接')
+      - send: 'lmjx'
+        assert: has_text(cand, '连接')
+
+  shift_backspace_edits_syllable:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_shift_backspace
+    tests:
+      - send: 'lmjx{Down}{Shift+BackSpace}'
+        assert: eq(cand[1].text, '连')
+
+  delete_learned_user_phrase:
+    patch:
+      smart/user_dict: mohu_candidate_override_mira_user_phrase_dict
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_user_phrase_delete
+    tests:
+      - send: 'vsehmcey{space}'
+        assert: eq(commit, '柊杪')
+      - send: 'vsmc{Shift+Delete}'
+        assert: not has_text(cand, '柊杪')
+      - send: '{Escape}{Control+Shift+M}{space}'
+        assert: eq(cand[1].text, '没有记录')
+      - send: '{Escape}{Control+Shift+M}{Down}{Down}{Down}{Down}{Down}{space}'
+        assert: eq(cand[1].text, '没有记录')
+
+  reset_current_code:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_reset
+    tests:
+      - send: 'lmjx{Down}{Control+minus}'
+        assert: eq(cand[1].text, '连接')
+      - send: 'lmjx{Control+Shift+M}{Control+0}'
+        assert: eq(cand[1].text, '链接') and eq(cand[2].text, '连接')
+
+  hidden_rank_survives_reorder:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_hidden_rank
+    tests:
+      - send: 'lmjx{Down}{Control+minus}{Shift+Delete}{Escape}lmjx{Down}{Control+minus}{Escape}lmjx{Control+Shift+M}{Shift+Delete}{Escape}lmjx'
+        assert: eq(cand[1].text, '连接')
+
+  pin_precedence:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_pin
+    tests:
+      - send: 'lmjx{Down}{Control+t}'
+        assert: eq(cand[1].text, '连接') and eq(cand[1].comment, '📌')
+      - send: 'lmjx{Down}{Control+minus}'
+        assert: eq(cand[1].text, '连接') and eq(cand[1].comment, '📌')
+
+  rank_then_pin:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_rank_then_pin
+    tests:
+      - send: 'lmjx{Down}{Control+minus}{Control+t}{Control+Shift+M}'
+        assert: eq(cand[1].text, '连接') and eq(cand[1].comment, '📌')
+
+  hidden_pin_recovery_hint:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_hidden_pin
+    tests:
+      - send: 'lmjx{Control+t}{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
+        assert: cand[1].comment:find('📌') and cand[1].comment:find('Shift%+Delete 恢复')
+
+  disabled:
+    patch:
+      mohu/candidate_override/enable: false
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_disabled
+    tests:
+      - send: 'lmjx{Down}{Control+minus}'
+        assert: eq(cand[1].text, '链接') and eq(cand[2].text, '连接')
+
+  simplified_identity:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_simplified_identity
+    tests:
+      - send: 'lmjx{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
+        assert: has_text(cand, '链接') and has_comment(cand, 'Shift%+Delete 恢复')
+
+  global_manager_hidden:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_global_hidden
+    tests:
+      - send: 'lmjx{Down}{Shift+Delete}{Escape}{Control+Shift+M}'
+        assert: eq(cand[1].text, '隐藏的内置词') and eq(cand[3].text, '手动 Pin')
+      - send: '{Control+Shift+M}{space}'
+        assert: eq(cand[1].text, '连接') and cand[1].comment:find('lmjx')
+      - send: '{Escape}{Control+Shift+M}{space}{Shift+BackSpace}'
+        assert: eq(cand[1].text, '没有记录')
+
+  global_manager_pin:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_global_pin
+    tests:
+      - send: 'lmjx{Control+t}{Escape}{Control+Shift+M}{Down}{Down}{space}'
+        assert: eq(cand[1].text, '链接') and cand[1].comment:find('lmjx') and cand[1].comment:find('取消置顶') and not cand[1].comment:find('手动 Pin')
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

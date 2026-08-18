@@ -1,0 +1,156 @@
+schema: mohu_zrm_aux
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+
+  function no_commit(value)
+    return value == nil or value == ''
+  end
+
+deploy:
+  quick_code_hint_with_aux_hint:
+    patch:
+      switches/@9/reset: 1
+      switches/@10/reset: 1
+    tests:
+      - send: 'rugo'
+        assert: cand[1].text == '如果' and cand[1].comment == 'bd qe ¦ ⚡rg'
+
+  default:
+    tests:
+      - send: 'lmjxy'
+        assert: eq(cand[1].text, '连接') and eq(cand[1].comment, 'y')
+      - send: 'iifjdq'
+        assert: cand[2].text == '吃饭'
+      - send: 'iifjqd'
+        assert: cand[2].text == '吃饭'
+      - send: 'jivm'
+        assert: cand[3].comment ~= 'vm'
+      - send: 'hk'
+        assert: cand[1].text == '好' and cand[1].comment == "⚡"
+
+  aux_hint:
+    patch:
+      switches/@10/reset: 1
+    tests:
+      - send: 'lmjxy'
+        assert: cand[1].text == '连接' and cand[1].comment == 'y ¦ yu ui'
+      - send: 'keyima'
+        assert: eq(cand[1].text, '可以吗')
+
+  fix_no_dict_branches:
+    tests:
+      - send: 'lmjx'
+        assert: cand[1].text == '链接' and cand[1].comment == "" and preedit == 'lm jx'
+      - send: 'a'
+        assert: cand[1].text == '啊' and cand[1].comment ~= "⚡"
+      - send: 'hk'
+        assert: cand[1].text == '好' and cand[1].comment == "⚡"
+      - send: 'hk'
+        assert: cand[1].text == '好' and cand[1].comment == "⚡"
+
+  pin:
+    tests:
+      - send: 'lmjx'
+        assert: cand[1].text == '链接' and cand[2].text == '连接'
+      - send: 'lmjx{Control+t}'  # SIDE-EFFECT!!
+        assert: cand[1].comment == "📌"
+      - send: 'lmjx{Control+t}'
+        assert: cand[1].comment == ""
+      - send: 'lmjx{Down}{Control+t}'
+        assert: cand[1].text == '连接' and cand[1].comment == "📌"
+      - send: 'lmjx'
+        assert: cand[1].text == '连接' and cand[1].comment == "📌"
+      - send: 'xnli{Control+t}'
+        assert: cand[1].text == '心里' and cand[1].comment == "📌" and preedit == 'xn li'
+      - send: 'hk{Down}{Control+t}'
+        assert: cand[1].comment == "📌" and cand[2].text == '好' and cand[2].comment == "⚡"
+      - send: 'hk{Control+t}'
+        assert: cand[1].text == '好' and cand[1].comment == "⚡"
+
+  guided_word_creation:
+    tests:
+      - send: 'zzqb{Control+semicolon}tbnk{space}fgbk{space}'
+        assert: no_commit(commit) and cand[1].text:find('加词 zzqb') and cand[1].text:find('头脑风暴')
+      - send: '{Escape}zzqb{Control+semicolon}tbnk{space}fgbk{space}{Return}'
+        assert: eq(cand[1].text, '头脑风暴') and eq(cand[1].comment, "📌")
+      - send: '{Escape}zzqi{Control+semicolon}B2vii{space}/K'
+        assert: no_commit(commit) and cand[1].text:find('加词 zzqi') and cand[1].text:find('B2纸、K')
+      - send: '{Escape}zzqi{Control+semicolon}B2vii{space}/K{Return}'
+        assert: eq(cand[1].text, 'B2纸、K') and eq(cand[1].comment, "📌")
+
+  pin_with_fix_dict:
+    patch:
+      mohu/fix/use_dict: true
+    tests:
+      - send: 'xnli{Control+t}'
+        assert: cand[1].text == '心里' and cand[1].comment == "📌" and preedit == 'xn li'
+
+  fix_dict_branches:
+    patch:
+      mohu/fix/use_dict: true
+    tests:
+      - send: 'hk'
+        assert: cand[1].text == '好' and cand[1].comment == "⚡"
+      - send: 'xnli'
+        assert: cand[1].text == '心里' and cand[1].comment ~= "⚡" and preedit == 'xn li'
+
+  fix_dict_word:
+    patch:
+      mohu/fix/use_dict: true
+      mohu/fix/use_dict_max_length: 4
+    tests:
+      - send: 'xnli'
+        assert: cand[1].text == '心里' and cand[1].comment == "⚡" and preedit == 'xn li'
+
+  pin_with_fix_dict_word:
+    patch:
+      mohu/fix/use_dict: true
+      mohu/fix/use_dict_max_length: 4
+    tests:
+      - send: 'xnli{Control+t}'
+        assert: cand[1].text == '心里' and cand[1].comment == "📌" and preedit == 'xn li'
+
+  pin_same_as_fix_dict:
+    patch:
+      mohu/fix/use_dict: true
+    tests:
+      - send: 'hk{Control+t}'
+        assert: cand[1].text == '好' and cand[1].comment == "📌"
+      - send: 'hk'
+        assert: cand[1].text == '好' and cand[1].comment == "📌" and (cand[2] == nil or cand[2].text ~= '好')
+
+  custom_indicators:
+    patch:
+      mohu/quick_code_indicator: "💥"
+      mohu/pin/indicator: "📍"
+    tests:
+      - send: 'hk'
+        assert: cand[1].text == '好' and cand[1].comment == "💥"
+      - send: 'xnli{Control+t}'
+        assert: cand[1].text == '心里' and cand[1].comment == "📍" and preedit == 'xn li'
+
+  tab:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_aux_tab
+    tests:
+      - send: 'lmjx{Tab}j{space}{space}'
+        assert: eq(commit, '敛接')
+
+  candidate_override:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_aux
+    tests:
+      - send: 'lmjx'
+        assert: eq(cand[1].text, '链接') and eq(cand[2].text, '连接')
+      - send: 'lmjx{Down}{Control+minus}'
+        assert: eq(cand[1].text, '连接') and eq(cand[2].text, '链接')
+      - send: 'lmjx'
+        assert: eq(cand[1].text, '连接') and eq(cand[2].text, '链接')
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

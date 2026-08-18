@@ -1,0 +1,275 @@
+from pathlib import Path
+import re
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+EXPECTED_SCHEMAS = [
+    "mohu_zrm",
+    "mohu_zrm_fixed",
+    "mohu_zrm_sentence",
+    "mohu_zrm_aux",
+    "mohu_flypy",
+    "mohu_flypy_fixed",
+    "mohu_flypy_sentence",
+    "mohu_flypy_aux",
+    "tiger",
+]
+
+DOUBLE_PINYIN_SCHEMAS = EXPECTED_SCHEMAS[:-1]
+COMPILE_ONLY_SCHEMAS = [
+    "mohu_zrm_fixed_legacy",
+    "mohu_flypy_fixed_legacy",
+]
+CONTEXTUAL_SCHEMAS = [
+    "mohu_zrm",
+    "mohu_zrm_sentence",
+    "mohu_zrm_aux",
+    "mohu_flypy",
+    "mohu_flypy_sentence",
+    "mohu_flypy_aux",
+]
+REMOVED_COMPONENTS = (
+    "mohu_english",
+    "mohu_japanese",
+    "reverse_universal",
+    "reverse_stroke",
+    "reverse_cangjie5",
+    "reverse_zrlf",
+    "reverse_bopomofo",
+    "std_t2s",
+    "std_t2tw",
+    "std_t2hk",
+    "std_t2jp",
+    "std_t2dzing",
+)
+
+
+def read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+class MohuConfigTest(unittest.TestCase):
+    def test_default_schema_order(self) -> None:
+        default = read("default.yaml")
+        schemas = re.findall(r"^\s*- schema: (\S+)\s*$", default, re.MULTILINE)
+        self.assertEqual(EXPECTED_SCHEMAS, schemas)
+        for removed in ("zh_hant", "zh_hans", "simplification"):
+            self.assertNotIn(removed, default)
+
+    def test_double_pinyin_schemas_exist_and_are_minimal(self) -> None:
+        for schema_id in DOUBLE_PINYIN_SCHEMAS:
+            with self.subTest(schema=schema_id):
+                text = read(f"{schema_id}.schema.yaml")
+                self.assertIn(f"schema_id: {schema_id}", text)
+                self.assertIn("states: [ 常用字, 全字集 ]", text)
+                self.assertIn("reverse_lookup_translator@reverse_tiger", text)
+                self.assertIn(
+                    "reverse_lookup_translator@reverse_tiger_backtick", text
+                )
+                self.assertEqual(
+                    2,
+                    len(re.findall(r"reverse_lookup_translator@", text)),
+                )
+                self.assertIn("tips: 〔虎〕", text)
+                self.assertNotIn("〔虎码〕", text)
+                self.assertNotRegex(text, r"(?m)^\s+reverse_lookup:")
+                for removed in REMOVED_COMPONENTS:
+                    self.assertNotIn(removed, text)
+                self.assertNotRegex(text, r"states:\s*\[\s*简,\s*通")
+
+    def test_auxiliary_schema_display_names_use_filtering_term(self) -> None:
+        self.assertIn(
+            "  name: 辅筛·魔虎·自然码\n",
+            read("mohu_zrm_aux.schema.yaml"),
+        )
+        self.assertIn(
+            "  name: 辅筛·魔虎·小鹤\n",
+            read("mohu_flypy_aux.schema.yaml"),
+        )
+
+    def test_runtime_lua_does_not_reference_removed_variant_options(self) -> None:
+        processor = read("lua/mohu_processor.lua")
+        self.assertNotRegex(processor, r"std_(?:s|t)")
+
+    def test_all_schema_lua_modules_exist(self) -> None:
+        missing = []
+        for schema_id in DOUBLE_PINYIN_SCHEMAS:
+            text = "\n".join(
+                line
+                for line in read(f"{schema_id}.schema.yaml").splitlines()
+                if not line.lstrip().startswith("#")
+            )
+            modules = re.findall(
+                r"lua_(?:processor|translator|filter)@\*([^*@\s]+)",
+                text,
+            )
+            for module in modules:
+                if not (ROOT / "lua" / f"{module}.lua").is_file():
+                    missing.append((schema_id, module))
+        self.assertEqual([], missing)
+
+    def test_tiger_uses_full_pinyin_reverse_lookup(self) -> None:
+        text = read("tiger.schema.yaml")
+        self.assertIn("- mohu_pinyin", text)
+        self.assertIn("dictionary: mohu_pinyin", text)
+        self.assertIn('prefix: "`"', text)
+        self.assertIn("〔全拼反查〕", text)
+        dictionary = read("mohu_pinyin.dict.yaml")
+        self.assertIn("\n火\thuo\t1180390\n", dictionary)
+
+    def test_runtime_menu_switches(self) -> None:
+        default = read("default.yaml")
+        self.assertIn("    - contextual_order\n", default)
+        self.assertIn("    - quick_code_hint\n", default)
+        self.assertIn("    - aux_hint\n", default)
+        self.assertIn("    - multi_short_code\n", default)
+
+        for schema_id in DOUBLE_PINYIN_SCHEMAS:
+            with self.subTest(schema=schema_id):
+                text = read(f"{schema_id}.schema.yaml")
+                self.assertIn("  - name: multi_short_code\n", text)
+                self.assertIn(
+                    "    reset: 0\n    states: [ 多重简字, 唯一简字 ]\n",
+                    text,
+                )
+                self.assertIn("  - name: quick_code_hint\n", text)
+                self.assertIn(
+                    "    reset: 0\n    states: [ 简码提示关, 简码提示 ]\n",
+                    text,
+                )
+                self.assertIn("  - name: aux_hint\n", text)
+                self.assertIn(
+                    "    reset: 0\n    states: [ 辅助码提示关, 辅助码提示 ]\n",
+                    text,
+                )
+                self.assertIn("    - lua_filter@*mohu_hint_filter", text)
+                self.assertNotIn("mohu/enable_quick_code_hint", text)
+                self.assertIn("  inject_fixed_words: true", text)
+                if schema_id.endswith("_fixed"):
+                    self.assertIn(
+                        "lua_translator@*mohu_contextual_translator*fixed_selector",
+                        text,
+                    )
+                    self.assertNotIn(
+                        "lua_translator@*mohu_contextual_translator@fixed_selector",
+                        text,
+                    )
+                if schema_id in {
+                    "mohu_zrm",
+                    "mohu_zrm_fixed",
+                    "mohu_zrm_aux",
+                    "mohu_flypy",
+                    "mohu_flypy_fixed",
+                    "mohu_flypy_aux",
+                }:
+                    scheme = "flypy" if schema_id.startswith("mohu_flypy") else "zrm"
+                    self.assertIn(
+                        f"  dictionary: mohu_{scheme}_fixed_legacy\n",
+                        text,
+                    )
+                    self.assertIn("translator_legacy:\n", text)
+                if schema_id in CONTEXTUAL_SCHEMAS:
+                    self.assertIn("  - name: contextual_order\n", text)
+                    self.assertIn(
+                        "    reset: 0\n    states: [ 静态排序, 上下文调频 ]\n",
+                        text,
+                    )
+                else:
+                    self.assertNotIn("  - name: contextual_order\n", text)
+
+        self.assertIn(
+            "quick_code_hint_dictionary: mohu_zrm_fixed",
+            read("mohu_zrm_sentence.schema.yaml"),
+        )
+        self.assertIn(
+            "quick_code_hint_dictionary: mohu_flypy_fixed",
+            read("mohu_flypy_sentence.schema.yaml"),
+        )
+
+    def test_legacy_dictionaries_have_compile_only_dependencies(self) -> None:
+        for scheme in ("zrm", "flypy"):
+            with self.subTest(scheme=scheme):
+                schema_id = f"mohu_{scheme}_fixed_legacy"
+                helper = read(f"{schema_id}.schema.yaml")
+                self.assertIn(f"  schema_id: {schema_id}\n", helper)
+                self.assertIn(f"  dictionary: {schema_id}\n", helper)
+                self.assertIn(
+                    f"    - {schema_id}\n",
+                    read(f"mohu_{scheme}_fixed.schema.yaml"),
+                )
+                self.assertNotIn(f"  - schema: {schema_id}\n", read("default.yaml"))
+
+    def test_fixed_schemas_merge_static_table_before_learning_table(self) -> None:
+        static_selector = (
+            "    - lua_translator@*mohu_contextual_translator*fixed_static_selector\n"
+        )
+        learning_selector = (
+            "    - lua_translator@*mohu_contextual_translator*fixed_selector\n"
+        )
+        for scheme in ("zrm", "flypy"):
+            with self.subTest(scheme=scheme):
+                text = read(f"mohu_{scheme}_fixed.schema.yaml")
+                self.assertIn(static_selector, text)
+                self.assertLess(text.index(static_selector), text.index(learning_selector))
+
+    def test_quality_cannot_override_fixed_positions(self) -> None:
+        for schema_id in DOUBLE_PINYIN_SCHEMAS:
+            with self.subTest(schema=schema_id):
+                self.assertNotIn(
+                    "four_code_two_char_first_choice_quality",
+                    read(f"{schema_id}.schema.yaml"),
+                )
+
+
+class MohuCharsetTest(unittest.TestCase):
+    def test_common_charset_matches_tiger_core2022_snapshot(self) -> None:
+        dictionary = read("mohu_charset.dict.yaml")
+        self.assertIn(
+            "# Source: rime-tiger/core2022.dict.yaml (version 2026.03.01)",
+            dictionary,
+        )
+
+        entries = {
+            fields[0]: fields[1]
+            for line in dictionary.splitlines()
+            if not line.startswith("#") and len(fields := line.split("\t")) == 2
+        }
+        self.assertEqual(9767, len(entries))
+        self.assertTrue(all(marker == "t" for marker in entries.values()))
+        for char in "的一是我你":
+            self.assertIn(char, entries)
+        for char in "寗㲰㩶":
+            self.assertNotIn(char, entries)
+
+
+class MohuNamingTest(unittest.TestCase):
+    def test_no_legacy_runtime_files(self) -> None:
+        legacy = [
+            path.name
+            for path in ROOT.iterdir()
+            if path.is_file()
+            and path.name.startswith("moran")
+            and path.suffix in {".yaml", ".txt", ".gram"}
+        ]
+        legacy.extend(path.name for path in (ROOT / "lua").glob("moran*.lua"))
+        self.assertEqual([], sorted(legacy))
+
+    def test_distribution_contains_only_current_runtime_schemas(self) -> None:
+        dist = ROOT / "dist"
+        if not dist.is_dir():
+            self.skipTest("distribution has not been built")
+        schemas = sorted(path.name for path in dist.glob("*.schema.yaml"))
+        expected = sorted(
+            [f"{schema_id}.schema.yaml" for schema_id in EXPECTED_SCHEMAS]
+            + [f"{schema_id}.schema.yaml" for schema_id in COMPILE_ONLY_SCHEMAS]
+            + ["mohu_charset.schema.yaml", "mohu_pinyin.schema.yaml"]
+        )
+        self.assertEqual(expected, schemas)
+        legacy = sorted(path.name for path in dist.iterdir() if path.name.startswith("moran"))
+        self.assertEqual([], legacy)
+
+
+if __name__ == "__main__":
+    unittest.main()

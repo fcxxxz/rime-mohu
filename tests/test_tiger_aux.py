@@ -962,6 +962,39 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertIn(("甲", "abc"), legacy_pairs)
         self.assertFalse(any(row.code == "ab" for row in legacy_rows))
 
+    def test_manual_override_replaces_auto_short_codes_across_readings(self):
+        entries = [
+            rebuild_fixed_tiger.SourceEntry("甲", "abcd", 30),
+            rebuild_fixed_tiger.SourceEntry("甲", "xyzw", 20),
+            rebuild_fixed_tiger.SourceEntry("乙", "xyaa", 10),
+        ]
+        overrides = {"甲": "abc"}
+
+        unique_rows = rebuild_fixed_tiger.allocate_reading_ordered_codes(
+            entries,
+            ["甲", "乙"],
+            fixed_codes=overrides,
+        )
+        self.assertEqual(
+            [row.code for row in unique_rows if row.text == "甲"],
+            ["abc"],
+        )
+
+        legacy_rows = rebuild_fixed_tiger.allocate_legacy_codes(
+            entries,
+            ["甲", "乙"],
+            [
+                rebuild_fixed_tiger.SourceEntry("甲", "ab", 0, "original"),
+                rebuild_fixed_tiger.SourceEntry("甲", "xy", 0, "original"),
+            ],
+            fallback_rows=unique_rows,
+            fixed_codes=overrides,
+        )
+        self.assertEqual(
+            [row.code for row in legacy_rows if row.text == "甲"],
+            ["abc"],
+        )
+
     def test_curated_character_overrides_and_two_key_words_are_ordered(self):
         overrides = {
             "zrm": {
@@ -1016,8 +1049,13 @@ class FixedDictionaryTest(unittest.TestCase):
                         self.root / f"mohu_{scheme}_tiger_fixed{suffix}.dict.yaml"
                     )
                     tiger_pairs = {(fields[0], fields[1]) for fields in tiger_rows}
-                    self.assertTrue(
-                        set(overrides[scheme].items()).issubset(tiger_pairs)
+                    self.assertEqual(
+                        {
+                            pair
+                            for pair in tiger_pairs
+                            if pair[0] in overrides[scheme]
+                        },
+                        set(overrides[scheme].items()),
                     )
                     self.assertFalse(
                         any(fields[1] in blocked_codes for fields in tiger_rows)
@@ -1333,8 +1371,8 @@ class FixedDictionaryTest(unittest.TestCase):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
         expected_lengths = {
-            "zrm": {1: 42, 2: 435, 3: 4459, 4: 3866},
-            "flypy": {1: 42, 2: 435, 3: 4459, 4: 3222},
+            "zrm": {1: 42, 2: 434, 3: 4459, 4: 3866},
+            "flypy": {1: 42, 2: 434, 3: 4459, 4: 3222},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 4},

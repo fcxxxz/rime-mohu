@@ -1,0 +1,133 @@
+schema: mohu_zrm
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+deploy:
+  wordfilter-default-hidden:
+    tests:
+      - send: ybuif
+        assert: cand[1].text == "有事" and eq(cand[1].comment, "")
+
+  # 只有简快码提示
+  qchint:
+    patch:
+      switches/@10/reset: 1
+      mohu/quick_code_indicator: "💥"
+    tests:
+      - send: a
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "💥")
+      - send: a{Control+t}
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "📌")
+      - send: yyteer
+        assert: cand[1].text == "英特尔" and eq(cand[1].comment, "💥yte")
+      - send: sjxneryi
+        assert: cand[1].text == '三心二意' and eq(cand[1].comment, "💥sxey")
+  # 只有简快码提示，关闭简快码提示符的情形
+  qchint-indicator:
+    patch:
+      switches/@10/reset: 1
+      mohu/quick_code_indicator: ""
+    tests:
+      - send: a
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "")
+      - send: a{Control+t}
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "📌")
+      - send: yyteer
+        assert: cand[1].text == "英特尔" and eq(cand[1].comment, "yte")
+      - send: sjxneryi
+        assert: cand[1].text == "三心二意" and eq(cand[1].comment, "sxey")
+
+  # 只有辅助码提示
+  auxhint:
+    patch:
+      switches/@11/reset: 1
+      mohu/quick_code_indicator: "💥"
+    tests:
+      - send: a
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "dt💥")
+      - send: a{Control+t}
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "📌 ¦ dt")
+      - send: yyteer
+        assert: cand[1].text == "英特尔" and eq(cand[1].comment, "lqx")
+      - send: sjxneryi
+        assert: cand[1].text == "三心二意" and eq(cand[1].comment, "")
+  # 只有辅助码提示，关闭简快码提示符的情形
+  auxhint-indicator:
+    patch:
+      switches/@11/reset: 1
+      mohu/quick_code_indicator: ""
+    tests:
+      - send: a
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "dt")
+      - send: a{Control+t}
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "📌 ¦ dt")
+      - send: yyteer
+        assert: cand[1].text == "英特尔" and eq(cand[1].comment, "lqx")
+      - send: sjxneryi
+        assert: cand[1].text == "三心二意" and eq(cand[1].comment, "")
+  # 只有辅助码提示，开启词辅的情形
+  auxhint+wordfilter:
+    patch:
+      mohu/quick_code_indicator: "💥"
+      switches/@11/reset: 1
+      mohu/enable_word_filter: true
+    tests:
+      - send: ybuif
+        assert: cand[1].text == "有事" and eq(cand[1].comment, "nf")
+      - send: lmjx
+        assert: cand[1].text == "链接" and eq(cand[1].comment, "zu")
+      - send: lmjxy
+        assert: cand[1].text == "连接" and eq(cand[1].comment, "yu")
+
+  # 同时开启简快码和辅助码提示和词辅
+  qchint+auxhint+wordfilter:
+    patch:
+      switches/@10/reset: 1
+      switches/@11/reset: 1
+      mohu/quick_code_indicator: "💥"
+      mohu/word_filter_match_indicator: "🎯"
+      mohu/enable_word_filter: true
+    tests:
+      - send: a
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "dt💥")
+      - send: a{Control+t}
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "📌 ¦ dt")
+      - send: k
+        assert: cand[1].text == "可" and eq(cand[1].comment, "zk💥")
+      - send: rugo
+        assert: cand[1].text == "如果" and eq(cand[1].comment, "bq ¦ 💥rg")
+      - send: lmjx
+        assert: cand[1].text == "链接" and eq(cand[1].comment, "zu ¦ 💥lj")
+      - send: lmjxz
+        assert: cand[1].text == "链接" and eq(cand[1].comment, "🎯 ¦ 💥lj")
+      - send: lmjxy
+        assert: cand[1].text == "连接" and eq(cand[1].comment, "🎯")
+  qchint+auxhint+wordfilter-indicator:
+    patch:
+      switches/@10/reset: 1
+      switches/@11/reset: 1
+      mohu/quick_code_indicator: ""
+      mohu/word_filter_match_indicator: ""
+      mohu/enable_word_filter: true
+    tests:
+      - send: a
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "dt")
+      - send: a{Control+t}
+        assert: cand[1].text == "啊" and eq(cand[1].comment, "📌 ¦ dt")
+      - send: k
+        assert: cand[1].text == "可" and eq(cand[1].comment, "zk")
+      - send: rugo
+        assert: cand[1].text == "如果" and eq(cand[1].comment, "bq ¦ rg")
+      - send: lmjx
+        assert: cand[1].text == "链接" and eq(cand[1].comment, "zu ¦ lj")
+      - send: lmjxz
+        assert: cand[1].text == "链接" and eq(cand[1].comment, "lj")
+      - send: lmjxy
+        assert: cand[1].text == "连接" and eq(cand[1].comment, "")
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

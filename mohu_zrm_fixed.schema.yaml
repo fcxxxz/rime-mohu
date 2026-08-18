@@ -68,6 +68,7 @@ engine:
     - lua_translator@*mohu_candidate_manager*manager_translator
     - punct_translator
     - reverse_lookup_translator@reverse_tiger
+    - reverse_lookup_translator@reverse_tiger_backtick
     - table_translator@custom_phrase       # 自定义短语
     - lua_translator@*mohu_contextual_translator*fixed_static_selector
     - lua_translator@*mohu_contextual_translator*fixed_selector
@@ -180,6 +181,7 @@ recognizer:
   import_preset: default
   patterns:
     reverse_tiger: "^ohm[a-z]+$"
+    reverse_tiger_backtick: "^`[a-z]+$"
     candidate_manager: "^==[hopwlu]?[a-z]*$"
 
     zkci: "^[a-z]*'[a-z']*$"
@@ -192,7 +194,16 @@ reverse_tiger:
   dictionary: tiger
   enable_completion: true
   prefix: "ohm"
-  tips: 〔虎码〕
+  tips: 〔虎〕
+  comment_format:
+    - xform/(\w\w);(\w\w)/$1[$2]/
+
+reverse_tiger_backtick:
+  tag: reverse_tiger_backtick
+  dictionary: tiger
+  enable_completion: true
+  prefix: "`"
+  tips: 〔虎〕
   comment_format:
     - xform/(\w\w);(\w\w)/$1[$2]/
 

@@ -159,6 +159,7 @@ test: dist
 	mira -C /tmp/mira-cache tests/mohu_aux.test.yaml
 	mira -C /tmp/mira-cache tests/mohu_candidate_override_sentence.test.yaml
 	mira -C /tmp/mira-cache tests/mohu_candidate_override_fixed.test.yaml
+	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
 .PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist dist-zrm dist-flypy test lint-python

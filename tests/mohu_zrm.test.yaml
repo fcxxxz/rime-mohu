@@ -1,0 +1,286 @@
+## 简体测试
+
+schema: mohu_zrm
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+  function no_commit(value)
+    return value == nil or value == ''
+  end
+
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+  function has_text_in_first(candidates, text, limit)
+    for index, candidate in ipairs(candidates) do
+      if index > limit then return false end
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+  function text_index(candidates, text)
+    for index, candidate in ipairs(candidates) do
+      if candidate.text == text then return index end
+    end
+    return nil
+  end
+
+  function has_comment(candidates, pattern)
+    for _, candidate in ipairs(candidates) do
+      if candidate.comment:find(pattern) then return true end
+    end
+    return false
+  end
+
+deploy:
+  curated_short_codes_multi:
+    patch:
+      switches/@4/reset: 1
+    tests:
+      - send: tz
+        assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资') and eq(cand[2].comment, '⚡️')
+      - send: hd
+        assert: eq(cand[1].text, '黄') and eq(cand[2].text, '很多') and eq(cand[2].comment, '⚡️') and eq(cand[3].text, '回答') and eq(cand[3].comment, '⚡️')
+      - send: gs
+        assert: eq(cand[1].text, '共') and eq(cand[2].text, '公司') and eq(cand[2].comment, '⚡️')
+      - send: zh
+        assert: eq(cand[1].text, '脏') and eq(cand[2].text, '最后') and eq(cand[2].comment, '⚡️')
+      - send: tg
+        assert: eq(cand[1].text, '疼') and eq(cand[2].text, '通过') and eq(cand[2].comment, '⚡️')
+      - send: dj
+        assert: eq(cand[1].text, '但') and eq(cand[2].text, '大家') and eq(cand[2].comment, '⚡️')
+      - send: ku
+        assert: eq(cand[1].text, '哭') and eq(cand[2].text, '开始') and eq(cand[2].comment, '⚡️')
+      - send: gz
+        assert: eq(cand[1].text, '给') and eq(cand[2].text, '工作') and eq(cand[2].comment, '⚡️')
+      - send: lu
+        assert: eq(cand[1].text, '路') and eq(cand[2].text, '老师') and eq(cand[2].comment, '⚡️')
+      - send: cz
+        assert: eq(cand[1].text, '存在') and eq(cand[1].comment, '⚡️') and has_text(cand, '𤭢')
+      - send: iw
+        assert: eq(cand[1].text, '成为') and eq(cand[1].comment, '⚡️') and has_text(cand, '欻')
+      - send: rw
+        assert: eq(cand[1].text, '认为') and eq(cand[1].comment, '⚡️') and has_text(cand, '挼')
+      - send: df
+        assert: eq(cand[1].text, '地方') and eq(cand[1].comment, '⚡️') and has_text(cand, '扽')
+      - send: bd
+        assert: eq(cand[1].text, '不但') and eq(cand[1].comment, '⚡️') and has_text(cand, '𰻝')
+      - send: czz
+        assert: eq(cand[1].text, '𤭢') and eq(cand[1].comment, '⚡️')
+      - send: iwc
+        assert: eq(cand[1].text, '欻') and eq(cand[1].comment, '⚡️')
+      - send: rwu
+        assert: eq(cand[1].text, '挼') and eq(cand[1].comment, '⚡️')
+      - send: dfu
+        assert: eq(cand[1].text, '扽') and eq(cand[1].comment, '⚡️')
+      - send: bde
+        assert: eq(cand[1].text, '𰻝') and eq(cand[1].comment, '⚡️')
+
+  curated_short_codes_unique:
+    patch:
+      switches/@4/reset: 1
+      switches/@10/reset: 1
+    tests:
+      - send: tz
+        assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资') and eq(cand[2].comment, '⚡️')
+      - send: hd
+        assert: eq(cand[1].text, '黄') and eq(cand[2].text, '很多') and eq(cand[2].comment, '⚡️') and eq(cand[3].text, '回答') and eq(cand[3].comment, '⚡️')
+      - send: gs
+        assert: eq(cand[1].text, '共') and eq(cand[2].text, '公司') and eq(cand[2].comment, '⚡️')
+      - send: zh
+        assert: eq(cand[1].text, '脏') and eq(cand[2].text, '最后') and eq(cand[2].comment, '⚡️')
+      - send: tg
+        assert: eq(cand[1].text, '疼') and eq(cand[2].text, '通过') and eq(cand[2].comment, '⚡️')
+      - send: dj
+        assert: eq(cand[1].text, '但') and eq(cand[2].text, '大家') and eq(cand[2].comment, '⚡️')
+      - send: ku
+        assert: eq(cand[1].text, '哭') and eq(cand[2].text, '开始') and eq(cand[2].comment, '⚡️')
+      - send: gz
+        assert: eq(cand[1].text, '给') and eq(cand[2].text, '工作') and eq(cand[2].comment, '⚡️')
+      - send: lu
+        assert: eq(cand[1].text, '路') and eq(cand[2].text, '老师') and eq(cand[2].comment, '⚡️')
+      - send: cz
+        assert: eq(cand[1].text, '存在') and eq(cand[1].comment, '⚡️') and has_text(cand, '𤭢')
+      - send: iw
+        assert: eq(cand[1].text, '成为') and eq(cand[1].comment, '⚡️') and has_text(cand, '欻')
+      - send: rw
+        assert: eq(cand[1].text, '认为') and eq(cand[1].comment, '⚡️') and has_text(cand, '挼')
+      - send: df
+        assert: eq(cand[1].text, '地方') and eq(cand[1].comment, '⚡️') and has_text(cand, '扽')
+      - send: bd
+        assert: eq(cand[1].text, '不但') and eq(cand[1].comment, '⚡️') and has_text(cand, '𰻝')
+      - send: czz
+        assert: eq(cand[1].text, '𤭢') and eq(cand[1].comment, '⚡️')
+      - send: iwc
+        assert: eq(cand[1].text, '欻') and eq(cand[1].comment, '⚡️')
+      - send: rwu
+        assert: eq(cand[1].text, '挼') and eq(cand[1].comment, '⚡️')
+      - send: dfu
+        assert: eq(cand[1].text, '扽') and eq(cand[1].comment, '⚡️')
+      - send: bde
+        assert: eq(cand[1].text, '𰻝') and eq(cand[1].comment, '⚡️')
+
+  contextual_order:
+    patch:
+      switches/@9/reset: 1
+    tests:
+      - send: 'mo{Down}{space}rj{space}yrug'
+        assert: eq(cand[1].text, '原声')
+
+  static_order:
+    patch:
+      switches/@9/reset: 0
+    tests:
+      - send: 'mo{Down}{space}rj{space}yrug'
+        assert: eq(cand[1].text, '原生')
+
+  four_code_word_first:
+    patch:
+      smart/user_dict: mohu_fixed_position_mira_zrm
+    tests:
+      - send: 'yjjd'
+        assert: eq(cand[1].text, '演讲') and text_index(cand, '弇') > 1
+      - send: 'dakl'
+        assert: eq(cand[1].text, '打开') and text_index(cand, '溚') > 1 and text_index(cand, '溚') <= 3
+
+  default:
+    tests:
+      - send: l
+        assert: eq(cand[1].text, '了') and eq(cand[1].comment, "⚡️")
+      - send: le
+        assert: eq(cand[1].text, "乐") and eq(cand[1].comment, "⚡️")
+      - send: leby/
+        assert: eq(cand[1].text, "乐")
+      - send: jisv
+        assert: has_text(cand, "记")
+      - send: h
+        assert: eq(cand[1].text, '和')
+      - send: o
+        assert: eq(cand[1].text, '哦')
+      - send: ma
+        assert: eq(cand[1].text, '吗')
+      - send: noa
+        assert: eq(cand[1].text, 'の')
+      - send: ny
+        assert: has_text(cand, '宁') and not has_text(cand, '寗') and not has_text(cand, '㲰') and not has_text(cand, '㩶')
+      - send: jn
+        assert: eq(cand[1].text, '进') and eq(cand[2].text, '今')
+      - send: zj
+        assert: eq(cand[1].text, '自己')
+      - send: zjd
+        assert: eq(cand[1].text, '咱') and eq(cand[1].comment, '⚡️')
+      - send: hl
+        assert: eq(cand[1].text, '还')
+      - send: vko
+        assert: eq(cand[1].text, '照')
+      - send: vkop
+        assert: eq(cand[1].text, '昭') and text_index(cand, '照') > 1
+      - send: fuyn
+        assert: has_text(cand, '复印') and has_text(cand, '福音')
+      - send: fuyn/
+        assert: eq(cand[1].text, '辅')
+      - send: hvwv
+        assert: eq(cand[1].text, '徽')
+      - send: wzwv
+        assert: eq(cand[1].text, '微')
+      - send: cisa
+        assert: text_index(cand, '词') ~= nil and text_index(cand, '词') <= 6
+      - send: qudc
+        assert: eq(cand[1].text, '去掉')
+      - send: vkmy
+        assert: text_index(cand, '照明') ~= nil and text_index(cand, '照明') <= 10
+      - send: jmdjh
+        assert: eq(cand[1].text, '简单')
+      - send: lizi
+        assert: not has_text(cand, '𫟷')
+      - send: jiivo
+        assert: eq(cand[1].text, "纪")
+      - send: ubap
+        assert: eq(cand[1].text, "瘦")
+      - send: dma
+        assert: eq(cand[1].text, "癫")
+      - send: vikk
+        assert: has_text(cand, "治")
+      - send: lnt
+        assert: eq(cand[1].text, "霖")
+      - send: hoc
+        assert: eq(cand[1].text, "火")
+      - send: N2000
+        assert: eq(cand[1].text, "2000年01月01日")
+      - send: U8888
+        assert: eq(cand[1].text, '袈')
+      - send: S114514
+        assert: eq(cand[1].text, '十一万四千五百一十四')
+      - send: ohmch
+        assert: eq(cand[1].text, '火')
+      - send: "`ch"
+        assert: eq(cand[1].text, '火')
+      - send: yuviyy
+        assert: eq(cand[1].text, '于之莹')
+      - send: yursgd
+        assert: eq(cand[1].text, '于荣光')
+      - send: yufnyylmjxec
+        assert: eq(cand[1].text, '于英杰')
+      - send: yuiv
+        assert: eq(cand[1].text, '予')
+      - send: jmjq
+        assert: eq(cand[1].text, '件')
+      - send: yjjd
+        assert: eq(cand[1].text, '演讲') and text_index(cand, '弇') > 1
+
+  default_script:
+    tests:
+      - send: jmti
+        assert: has_text(cand, '简体')
+
+  automatic_word_learning:
+    patch:
+      smart/user_dict: mohu_auto_word_learning_mira_simp
+    tests:
+      - send: vsmc
+        assert: eq(cand[1].text, '种苗') and not has_text(cand, '柊杪')
+      - send: 'vsehmcey{space}'
+        assert: eq(commit, '柊杪')
+      - send: vsmc
+        assert: eq(cand[1].text, '柊杪')
+
+  candidate_override:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_simp
+    tests:
+      - send: 'lmjx{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
+        assert: has_comment(cand, 'Shift%+Delete 恢复')
+
+  guided_word_creation:
+    tests:
+      - send: 'zzqf{Control+semicolon}tbnk{space}fgbk{space}'
+        assert: no_commit(commit) and cand[1].text:find('加词 zzqf') and cand[1].text:find('头脑风暴')
+      - send: '{Escape}zzqf{Control+semicolon}tbnk{space}fgbk{space}{Return}'
+        assert: eq(cand[1].text, '头脑风暴') and eq(cand[1].comment, '📌')
+      - send: '{Escape}zzql{Control+semicolon}B2/K'
+        assert: no_commit(commit) and cand[1].text:find('加词 zzql') and cand[1].text:find('B2、K')
+      - send: '{Escape}zzql{Control+semicolon}B2/K{Return}'
+        assert: eq(cand[1].text, 'B2、K') and eq(cand[1].comment, '📌')
+      - send: '{Escape}sdd{Control+semicolon}3{Shift+D}daynji{space}'
+        assert: no_commit(commit) and eq(cand[1].text, '加词 sdd：3D打印机')
+      - send: '{Escape}sdd{Control+semicolon}3{Shift+D}daynji{space}{Return}'
+        assert: eq(cand[1].text, '3D打印机') and eq(cand[1].comment, '📌')
+      - send: '{Escape}potter{Control+semicolon}{Control+semicolon}{Shift+Y}ou dare use my own spells agai me,{Shift+P}otter;w'
+        assert: no_commit(commit) and eq(cand[1].text, '加词 potter：You dare use my own spells agai me，Potter？')
+      - send: '{Escape}potter{Control+semicolon}{Control+semicolon}{Shift+Y}ou dare use my own spells agai me,{Shift+P}otter;w{Return}'
+        assert: eq(cand[1].text, 'You dare use my own spells agai me，Potter？') and eq(cand[1].comment, '📌')
+      - send: '{Escape}potter'
+        assert: eq(cand[1].text, 'You dare use my own spells agai me，Potter？') and eq(cand[1].comment, '📌')
+
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

@@ -1,0 +1,52 @@
+schema: mohu_zrm
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+  function text_index(candidates, text)
+    for index, candidate in ipairs(candidates) do
+      if candidate.text == text then return index end
+    end
+    return nil
+  end
+
+deploy:
+  modern_reading_compatibility:
+    tests:
+      - send: ii
+        assert: eq(cand[1].text, '吃')
+      - send: isl
+        assert: eq(cand[1].text, '重')
+      - send: vsl
+        assert: eq(cand[1].text, '重')
+      - send: tsld
+        assert: text_index(cand, '重') == nil
+
+  default:
+    tests:
+      - send: cisa
+        assert: text_index(cand, '词') ~= nil and text_index(cand, '词') <= 6
+      - send: qudc
+        assert: eq(cand[1].text, '去掉')
+      - send: vkmy
+        assert: eq(cand[1].text, '照明')
+      - send: jmdjh
+        assert: eq(cand[1].text, '简单')
+      - send: 'jmdjh{space}'
+        assert: eq(commit, '简单') and (preedit == nil or preedit == '')
+      - send: jmdjr
+        assert: eq(cand[1].text, '简单')
+      - send: 'jmdjr{space}'
+        assert: eq(commit, '简单') and (preedit == nil or preedit == '')
+      - send: 'xcuit{space}'
+        assert: eq(commit, '消失') and (preedit == nil or preedit == '')
+      - send: vkop
+        assert: eq(cand[1].text, '昭') and text_index(cand, '照') > 1
+      - send: hvwv
+        assert: eq(cand[1].text, '徽')
+      - send: wzwv
+        assert: eq(cand[1].text, '微')

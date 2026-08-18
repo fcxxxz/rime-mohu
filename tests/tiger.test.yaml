@@ -1,0 +1,19 @@
+schema: tiger
+source_dir: ../dist
+script: |
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+deploy:
+  default:
+    tests:
+      - send: fi
+        assert: has_text(cand, '一')
+      - send: '`huo'
+        assert: has_text(cand, '火')
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

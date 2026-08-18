@@ -1,0 +1,75 @@
+schema: mohu_zrm_fixed
+source_dir: ../dist
+script: |
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+  function has_comment(candidates, pattern)
+    for _, candidate in ipairs(candidates) do
+      if candidate.comment:find(pattern) then return true end
+    end
+    return false
+  end
+
+deploy:
+  quick_code_hint:
+    patch:
+      switches/@8/reset: 1
+    tests:
+      - send: 'anfu'
+        assert: cand[1].text == '安抚' and cand[1].comment == '⚡af'
+
+  tiger_prefix2:
+    tests:
+      - send: 'd'
+        assert: has_text(cand, '的')
+      - send: 'zrm'
+        assert: has_text(cand, '自然码')
+
+  fixed_position_survives_learning:
+    patch:
+      fixed/user_dict: mohu_fixed_position_mira_table
+      fixed_legacy/user_dict: mohu_fixed_position_mira_table
+    tests:
+      - send: 'lmjx{Down}{space}lmjx{Down}{space}lmjx{Down}{space}lmjx{Down}{space}lmjx'
+        assert: cand[1].text == '连接' and cand[2].text == '链接'
+
+  guided_word_creation:
+    tests:
+      - send: 'zzqc{Control+semicolon}tbnk{space}fgbk{space}'
+        assert: (commit == nil or commit == '') and cand[1].text:find('加词 zzqc') and cand[1].text:find('头脑风暴')
+      - send: '{Escape}zzqc{Control+semicolon}tbnk{space}fgbk{space}{Return}'
+        assert: cand[1].text == '头脑风暴' and cand[1].comment == '📌'
+      - send: '{Escape}zzqj{Control+semicolon}B2viod{space}/K'
+        assert: (commit == nil or commit == '') and cand[1].text:find('加词 zzqj') and cand[1].text:find('B2智、K')
+      - send: '{Escape}zzqj{Control+semicolon}B2viod{space}/K{Return}'
+        assert: cand[1].text == 'B2智、K' and cand[1].comment == '📌'
+
+  reorder:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_fixed
+    tests:
+      - send: 'lmjx{Down}{Control+minus}{Escape}lmjx'
+        assert: cand[1].text == '链接' and cand[2].text == '连接'
+
+  recovery_hint:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_fixed_hint
+      speller/auto_select: false
+    tests:
+      - send: 'lmjx{Down}{Control+minus}{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
+        assert: has_comment(cand, 'Shift%+Delete 恢复')
+
+  restore:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_fixed_restore
+      speller/auto_select: false
+    tests:
+      - send: 'lmjx{Down}{Control+minus}{Shift+Delete}{Escape}lmjx{Control+Shift+M}{Shift+Delete}{Escape}lmjx'
+        assert: cand[1].text == '链接' and cand[2].text == '连接'
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

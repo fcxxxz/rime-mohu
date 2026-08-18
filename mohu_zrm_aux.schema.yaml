@@ -70,6 +70,7 @@ engine:
     - lua_translator@*mohu_candidate_manager*manager_translator
     - punct_translator
     - reverse_lookup_translator@reverse_tiger
+    - reverse_lookup_translator@reverse_tiger_backtick
     - table_translator@custom_phrase        # 自定义短语
     - lua_translator@*mohu_aux_translator
     - lua_translator@*mohu_shijian        # 日期orq 节气ojq 星期oxq 时间osj
@@ -192,8 +193,18 @@ reverse_tiger:
   dictionary: tiger
   enable_completion: true
   prefix: "ohm"
-  tips: 〔虎码〕
+  tips: 〔虎〕
   __include: reverse_format
+
+reverse_tiger_backtick:
+  tag: reverse_tiger_backtick
+  dictionary: tiger
+  enable_completion: true
+  prefix: "`"
+  tips: 〔虎〕
+  __include: reverse_format
+  preedit_format:
+    - xform/^`//
 
 punctuator:
   import_preset: symbols
@@ -224,6 +235,7 @@ recognizer:
 
     # 反查
     reverse_tiger: "^ohm[a-z]+$"
+    reverse_tiger_backtick: "^`[a-z]+$"
 
 mohu:
   inject_fixed_words: true

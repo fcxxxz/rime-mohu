@@ -1,0 +1,38 @@
+schema: mohu_zrm_sentence
+source_dir: ../dist
+
+deploy:
+  quick_code_hint:
+    patch:
+      switches/@9/reset: 1
+    tests:
+      - send: 'sjxneryi'
+        assert: cand[1].text == '三心二意' and cand[1].comment == '⚡sxey'
+
+  guided_word_creation:
+    tests:
+      - send: 'zzqd{Control+semicolon}tbnk{space}fgbk{space}'
+        assert: (commit == nil or commit == '') and cand[1].text:find('加词 zzqd') and cand[1].text:find('头脑风暴')
+      - send: '{Escape}zzqd{Control+semicolon}tbnk{space}fgbk{space}{Return}'
+        assert: cand[1].text == '头脑风暴' and cand[1].comment == '📌'
+      - send: '{Escape}zzqk{Control+semicolon}B2vii{space}/K'
+        assert: (commit == nil or commit == '') and cand[1].text:find('加词 zzqk') and cand[1].text:find('B2纸、K')
+      - send: '{Escape}zzqk{Control+semicolon}B2vii{space}/K{Return}'
+        assert: cand[1].text == 'B2纸、K' and cand[1].comment == '📌'
+
+  candidate_override:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_sentence
+    tests:
+      - send: 'lmjx'
+        assert: cand[1].text == '链接' and cand[2].text == '连接'
+      - send: 'lmjx{Down}{Control+minus}'
+        assert: cand[1].text == '连接' and cand[2].text == '链接'
+      - send: 'lmjx'
+        assert: cand[1].text == '连接' and cand[2].text == '链接'
+      - send: 'lmjx{Shift+Delete}'
+        assert: cand[1].text == '链接'
+      - send: 'lmjx{Control+Shift+M}{Shift+Delete}'
+        assert: cand[1].text == '连接'
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

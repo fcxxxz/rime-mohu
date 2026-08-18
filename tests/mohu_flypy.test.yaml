@@ -1,0 +1,148 @@
+schema: mohu_flypy
+source_dir: ../dist
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+  function text_index(candidates, text)
+    for index, candidate in ipairs(candidates) do
+      if candidate.text == text then return index end
+    end
+    return nil
+  end
+
+deploy:
+  curated_short_codes_multi:
+    patch:
+      switches/@4/reset: 1
+    tests:
+      - send: tz
+        assert: cand[1].text == '头' and cand[2].text == '投资' and cand[2].comment == '⚡️'
+      - send: hd
+        assert: cand[1].text == '还' and cand[2].text == '很多' and cand[2].comment == '⚡️' and cand[3].text == '回答' and cand[3].comment == '⚡️'
+      - send: gs
+        assert: cand[1].text == '共' and cand[2].text == '公司' and cand[2].comment == '⚡️'
+      - send: zh
+        assert: cand[1].text == '脏' and cand[2].text == '最后' and cand[2].comment == '⚡️'
+      - send: tg
+        assert: cand[1].text == '疼' and cand[2].text == '通过' and cand[2].comment == '⚡️'
+      - send: dj
+        assert: cand[1].text == '但' and cand[2].text == '大家' and cand[2].comment == '⚡️'
+      - send: ku
+        assert: cand[1].text == '哭' and cand[2].text == '开始' and cand[2].comment == '⚡️'
+      - send: gz
+        assert: cand[1].text == '够' and cand[2].text == '工作' and cand[2].comment == '⚡️'
+      - send: lu
+        assert: cand[1].text == '路' and cand[2].text == '老师' and cand[2].comment == '⚡️'
+      - send: cw
+        assert: cand[1].text == '错误' and cand[1].comment == '⚡️' and has_text(cand, '𤭢')
+      - send: ix
+        assert: cand[1].text == '出现' and cand[1].comment == '⚡️' and has_text(cand, '欻')
+      - send: rx
+        assert: cand[1].text == '如下' and cand[1].comment == '⚡️' and has_text(cand, '挼')
+      - send: df
+        assert: cand[1].text == '地方' and cand[1].comment == '⚡️' and has_text(cand, '扽')
+      - send: bl
+        assert: cand[1].text == '本来' and cand[1].comment == '⚡️' and has_text(cand, '𰻝')
+      - send: cwz
+        assert: cand[1].text == '𤭢' and cand[1].comment == '⚡️'
+      - send: ixc
+        assert: cand[1].text == '欻' and cand[1].comment == '⚡️'
+      - send: rxu
+        assert: cand[1].text == '挼' and cand[1].comment == '⚡️'
+      - send: dfu
+        assert: cand[1].text == '扽' and cand[1].comment == '⚡️'
+      - send: ble
+        assert: cand[1].text == '𰻝' and cand[1].comment == '⚡️'
+
+  curated_short_codes_unique:
+    patch:
+      switches/@4/reset: 1
+      switches/@10/reset: 1
+    tests:
+      - send: tz
+        assert: cand[1].text == '头' and cand[2].text == '投资' and cand[2].comment == '⚡️'
+      - send: hd
+        assert: cand[1].text == '还' and cand[2].text == '很多' and cand[2].comment == '⚡️' and cand[3].text == '回答' and cand[3].comment == '⚡️'
+      - send: gs
+        assert: cand[1].text == '共' and cand[2].text == '公司' and cand[2].comment == '⚡️'
+      - send: zh
+        assert: cand[1].text == '脏' and cand[2].text == '最后' and cand[2].comment == '⚡️'
+      - send: tg
+        assert: cand[1].text == '疼' and cand[2].text == '通过' and cand[2].comment == '⚡️'
+      - send: dj
+        assert: cand[1].text == '但' and cand[2].text == '大家' and cand[2].comment == '⚡️'
+      - send: ku
+        assert: cand[1].text == '哭' and cand[2].text == '开始' and cand[2].comment == '⚡️'
+      - send: gz
+        assert: cand[1].text == '够' and cand[2].text == '工作' and cand[2].comment == '⚡️'
+      - send: lu
+        assert: cand[1].text == '路' and cand[2].text == '老师' and cand[2].comment == '⚡️'
+      - send: cw
+        assert: cand[1].text == '错误' and cand[1].comment == '⚡️' and has_text(cand, '𤭢')
+      - send: ix
+        assert: cand[1].text == '出现' and cand[1].comment == '⚡️' and has_text(cand, '欻')
+      - send: rx
+        assert: cand[1].text == '如下' and cand[1].comment == '⚡️' and has_text(cand, '挼')
+      - send: df
+        assert: cand[1].text == '地方' and cand[1].comment == '⚡️' and has_text(cand, '扽')
+      - send: bl
+        assert: cand[1].text == '本来' and cand[1].comment == '⚡️' and has_text(cand, '𰻝')
+      - send: cwz
+        assert: cand[1].text == '𤭢' and cand[1].comment == '⚡️'
+      - send: ixc
+        assert: cand[1].text == '欻' and cand[1].comment == '⚡️'
+      - send: rxu
+        assert: cand[1].text == '挼' and cand[1].comment == '⚡️'
+      - send: dfu
+        assert: cand[1].text == '扽' and cand[1].comment == '⚡️'
+      - send: ble
+        assert: cand[1].text == '𰻝' and cand[1].comment == '⚡️'
+
+  aux_hint_default_off:
+    tests:
+      - send: yzuif
+        assert: cand[1].text == '有事' and cand[1].comment == ''
+
+  aux_hint:
+    patch:
+      switches/@11/reset: 1
+    tests:
+      - send: yzuif
+        assert: cand[1].text == '有事' and cand[1].comment == 'nf'
+
+  default:
+    tests:
+      - send: nihc
+        assert: has_text(cand, '你好')
+      - send: xnxb
+        assert: has_text(cand, '小心')
+      - send: ohmch
+        assert: has_text(cand, '火')
+      - send: "`ch"
+        assert: has_text(cand, '火')
+      - send: yuiv
+        assert: cand[1].text == '予'
+      - send: jmjq
+        assert: cand[1].text == '件'
+      - send: yjhx
+        assert: cand[1].text == '演化' and text_index(cand, '恹') > 1
+
+  four_code_word_first:
+    patch:
+      smart/user_dict: mohu_fixed_position_mira_flypy
+    tests:
+      - send: 'nihc'
+        assert: eq(cand[1].text, '你好') and text_index(cand, '怩') > 1
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

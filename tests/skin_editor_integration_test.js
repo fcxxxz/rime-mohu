@@ -48,3 +48,16 @@ test('local launcher deployment is wired into skin and schema saves', () => {
   assert.ok(appJs.includes("await deployAfterWrite('已保存并备份')"), 'ordinary skin saves should trigger deployment');
   assert.ok(appJs.includes("await deployAfterWrite('已回退到所选备份')"), 'rollback should trigger deployment');
 });
+
+test('app lists built-in skins from platform yaml files', () => {
+  assert.ok(appJs.includes('parseBuiltinConfig'), 'app should parse built-in skins from platform yaml');
+  assert.ok(appJs.includes('refreshBuiltinConfigs'), 'app should refresh built-ins whenever config files load');
+  assert.ok(appJs.includes('activateBuiltinSkin'), 'built-in skins should be activatable without saving a copy');
+  assert.ok(appJs.includes('skin-list-header'), 'skin list should render a built-in section header');
+});
+
+test('built-in skins render read-only with a hint', () => {
+  assert.ok(indexHtml.includes('builtinSkinHint'), 'index.html should include the built-in skin hint element');
+  assert.ok(appJs.includes("state.selectedSkinOrigin === 'builtin'"), 'app should track the built-in selection origin');
+  assert.ok(appJs.includes('复制为自定义'), 'duplicate button should offer copying built-ins into custom skins');
+});

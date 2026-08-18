@@ -3,6 +3,9 @@ package.path = "lua/?.lua;" .. package.path
 local created = {}
 local queried = {}
 local yielded = {}
+local history_pushes = {}
+local commit_callback = nil
+local commit_connection_disconnected = false
 
 Component = {
     Translator = function(_, _, name)
@@ -38,6 +41,21 @@ local env = {
                 assert(name == "contextual_order")
                 return contextual_order
             end,
+            commit_history = {
+                push = function(_, record_type, text)
+                    table.insert(history_pushes, { record_type, text })
+                end,
+            },
+            commit_notifier = {
+                connect = function(_, callback)
+                    commit_callback = callback
+                    return {
+                        disconnect = function()
+                            commit_connection_disconnected = true
+                        end,
+                    }
+                end,
+            },
         },
     },
 }
@@ -48,6 +66,9 @@ assert(#created == 1)
 assert(created[1] == "script_translator@translator")
 assert(selector.get(env).name == "script_translator@translator")
 assert(selector.get(env).contextual_suggestions == true)
+assert(commit_callback ~= nil)
+commit_callback(env.engine.context)
+assert(#history_pushes == 0)
 
 selector.func("test", {}, env)
 assert(queried["script_translator@translator"] == 1)
@@ -56,8 +77,12 @@ assert(yielded[1] == "script_translator@translator")
 
 contextual_order = false
 assert(selector.get(env).name == "script_translator@translator")
-assert(selector.get(env).contextual_suggestions == false)
+assert(selector.get(env).contextual_suggestions == true)
 assert(#created == 1)
+commit_callback(env.engine.context)
+assert(#history_pushes == 1)
+assert(history_pushes[1][1] == "mohu_contextual")
+assert(history_pushes[1][2] == "")
 
 yielded = {}
 selector.func("test", {}, env)
@@ -73,6 +98,8 @@ assert(#created == 1)
 selector.fini_pair(env)
 assert(env.contextual_translator == nil)
 assert(env.static_translator == nil)
+assert(env.contextual_commit_notifier == nil)
+assert(commit_connection_disconnected)
 
 local runtime_mode = false
 local runtime_env = {

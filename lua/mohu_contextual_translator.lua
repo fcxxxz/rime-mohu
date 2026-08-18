@@ -1,9 +1,8 @@
--- Runtime switch between contextual and context-free ordering.
+-- Runtime switch between composition-only and cross-commit contextual ordering.
 --
--- 只使用一个 script_translator 实例：静态排序时动态关闭
--- contextual_suggestions（语法模型上下文加权），而不另建实例。
--- 若另建实例，其 Memory 不会参与提交记忆，导致用户词典停止
--- 记录词频，表现为「固词」。
+-- 两种模式始终开启 contextual_suggestions，以保留同一输入串内的上下文
+-- 加权。「单次候选调频」在上屏后追加空历史，阻止下一次输入读取上文；
+-- 「跨候选调频」则保留 librime 的默认上屏历史。
 
 local Module = {}
 
@@ -15,17 +14,27 @@ function Module.init_pair(env, name)
         "script_translator@" .. name
     )
     env.static_translator = nil
+
+    local context = env.engine.context
+    env.contextual_commit_notifier = context.commit_notifier:connect(function(ctx)
+        if not ctx:get_option("contextual_order") then
+            ctx.commit_history:push("mohu_contextual", "")
+        end
+    end)
 end
 
 function Module.get(env)
-    local contextual = env.engine.context:get_option("contextual_order")
-    if env.contextual_translator.contextual_suggestions ~= contextual then
-        env.contextual_translator.contextual_suggestions = contextual
+    if env.contextual_translator.contextual_suggestions ~= true then
+        env.contextual_translator.contextual_suggestions = true
     end
     return env.contextual_translator
 end
 
 function Module.fini_pair(env)
+    if env.contextual_commit_notifier ~= nil then
+        env.contextual_commit_notifier:disconnect()
+        env.contextual_commit_notifier = nil
+    end
     env.contextual_translator = nil
     env.static_translator = nil
     env.contextual_translator_name = nil

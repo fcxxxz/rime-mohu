@@ -30,8 +30,8 @@ switches:
   - name: unicode_comment
     states: [ U关, U开 ]
   - name: contextual_order
-    reset: 0
-    states: [ 静态排序, 上下文调频 ]
+    reset: 1
+    states: [ 单次候选调频, 跨候选调频 ]
   - name: quick_code_hint
     reset: 0
     states: [ 简码提示关, 简码提示 ]
@@ -127,7 +127,7 @@ translator_static:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
   core_word_length: 4
   max_word_length: 10
-  contextual_suggestions: false
+  contextual_suggestions: true
 
 custom_phrase: # 自定义短语
   dictionary: ""

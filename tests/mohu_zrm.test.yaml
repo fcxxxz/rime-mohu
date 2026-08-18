@@ -130,14 +130,14 @@ deploy:
       - send: bde
         assert: eq(cand[1].text, '𰻝') and eq(cand[1].comment, '⚡️')
 
-  contextual_order:
+  cross_candidate_order:
     patch:
       switches/@9/reset: 1
     tests:
       - send: 'mo{Down}{space}rj{space}yrug'
         assert: eq(cand[1].text, '原声')
 
-  static_order:
+  single_candidate_order:
     patch:
       switches/@9/reset: 0
     tests:

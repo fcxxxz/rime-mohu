@@ -173,9 +173,11 @@ class MohuConfigTest(unittest.TestCase):
                 if schema_id in CONTEXTUAL_SCHEMAS:
                     self.assertIn("  - name: contextual_order\n", text)
                     self.assertIn(
-                        "    reset: 0\n    states: [ 静态排序, 上下文调频 ]\n",
+                        "    reset: 1\n    states: [ 单次候选调频, 跨候选调频 ]\n",
                         text,
                     )
+                    self.assertIn("  contextual_suggestions: true\n", text)
+                    self.assertNotIn("  contextual_suggestions: false\n", text)
                 else:
                     self.assertNotIn("  - name: contextual_order\n", text)
 

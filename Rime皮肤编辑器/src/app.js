@@ -18,6 +18,7 @@ const {
   parseYaml,
   parseSquirrelConfig,
   parseWeaselConfig,
+  parseBuiltinConfig,
   parseSkinPackage,
   rgbaToRimeHex,
   updateGlobalCustomConfig,
@@ -181,6 +182,10 @@ const state = {
     squirrel: null,
     weasel: null,
   },
+  builtins: {
+    squirrel: null,
+    weasel: null,
+  },
   fileExists: {
     squirrel: false,
     weasel: false,
@@ -204,6 +209,7 @@ const state = {
   hasAnySchemaFile: false,
   selectedPlatform: 'squirrel',
   selectedSkinId: '',
+  selectedSkinOrigin: 'custom',
   originalSkinId: '',
   draftSkin: null,
   previewActiveCandidateIndex: 0,
@@ -328,6 +334,7 @@ function bindDom() {
     'displayName',
     'author',
     'skinId',
+    'builtinSkinHint',
     'setActiveButton',
     'saveButton',
     'copyButton',
@@ -355,6 +362,8 @@ async function initialize() {
   state.selectedPlatform = state.preferredPlatform === 'weasel' ? 'weasel' : 'squirrel';
   state.configs.squirrel = emptyConfig('squirrel');
   state.configs.weasel = emptyConfig('weasel');
+  state.builtins.squirrel = emptyBuiltinConfig('squirrel');
+  state.builtins.weasel = emptyBuiltinConfig('weasel');
   loadPreviewSettings();
   populateFontOptions();
   bindEvents();
@@ -592,6 +601,7 @@ function applyLoadedConfigs(dirHandle, loaded) {
   state.fileExists.weasel = loaded.fileExists.weasel;
   state.fileExists.default = loaded.fileExists.default;
   state.hasAnySchemaFile = loaded.hasAnySchemaFile;
+  refreshBuiltinConfigs();
   refreshSchemaCatalog();
 }
 
@@ -753,15 +763,17 @@ function mergeGlobalLayoutIntoConfig(config, globalLayout = {}) {
 }
 
 function chooseInitialPlatform() {
-  const hasSquirrel = state.fileExists.squirrel;
-  const hasWeasel = state.fileExists.weasel;
+  const hasSquirrel = state.fileExists.squirrel || state.builtins.squirrel.available;
+  const hasWeasel = state.fileExists.weasel || state.builtins.weasel.available;
   if (hasSquirrel && !hasWeasel) state.selectedPlatform = 'squirrel';
   else if (hasWeasel && !hasSquirrel) state.selectedPlatform = 'weasel';
   else state.selectedPlatform = state.preferredPlatform === 'weasel' ? 'weasel' : 'squirrel';
 
-  const active = state.configs[state.selectedPlatform].activeSkinId;
-  const first = state.configs[state.selectedPlatform].skins[0]?.id || '';
-  selectSkin(active || first);
+  const { activeSkinId } = effectiveActiveSkinIds(state.selectedPlatform);
+  const first = state.configs[state.selectedPlatform].skins[0]?.id
+    || state.builtins[state.selectedPlatform].skins[0]?.id
+    || '';
+  selectSkin(activeSkinId || first);
 }
 
 async function readOptionalFile(filename, dirHandle = state.dirHandle) {
@@ -822,27 +834,89 @@ function emptyConfig(platform) {
   };
 }
 
+function emptyBuiltinConfig(platform) {
+  return {
+    platform,
+    sourceFile: `${platform}.yaml`,
+    available: false,
+    skins: [],
+    skipped: [],
+    activeSkinId: '',
+    darkSkinId: '',
+  };
+}
+
+function refreshBuiltinConfigs() {
+  for (const platform of Object.keys(PLATFORM_FILES)) {
+    const filename = `${platform}.yaml`;
+    const file = state.yamlFiles.find((item) => item.name === filename);
+    if (!file || !String(file.text || '').trim()) {
+      state.builtins[platform] = emptyBuiltinConfig(platform);
+      continue;
+    }
+    try {
+      state.builtins[platform] = parseBuiltinConfig(platform, file.text);
+    } catch (error) {
+      logMessage(`解析 ${filename} 内置皮肤失败：${error.message}`);
+      state.builtins[platform] = emptyBuiltinConfig(platform);
+    }
+    const skipped = state.builtins[platform].skipped;
+    if (skipped.length) {
+      logMessage(`${filename} 有 ${skipped.length} 个内置皮肤解析失败，已跳过：${skipped.join('、')}。`);
+    }
+  }
+}
+
+function effectiveActiveSkinIds(platform) {
+  const config = state.configs[platform];
+  const builtin = state.builtins[platform];
+  return {
+    activeSkinId: config.activeSkinId || builtin.activeSkinId || '',
+    darkSkinId: config.darkSkinId || builtin.darkSkinId || '',
+  };
+}
+
+function existingSkinIds(platform = state.selectedPlatform) {
+  return [
+    ...state.configs[platform].skins.map((skin) => skin.id),
+    ...state.builtins[platform].skins.map((skin) => skin.id),
+  ];
+}
+
 function looksLikeRimeFolder(snapshot = state) {
   return Boolean(
     snapshot.fileExists.squirrel ||
       snapshot.fileExists.weasel ||
       snapshot.fileExists.default ||
-      snapshot.hasAnySchemaFile,
+      snapshot.hasAnySchemaFile ||
+      (snapshot.yamlFiles || []).some(
+        (file) => file.name === 'squirrel.yaml' || file.name === 'weasel.yaml',
+      ),
   );
 }
 
 function selectPlatform(platform) {
   state.selectedPlatform = platform;
-  const active = state.configs[platform].activeSkinId;
-  const first = state.configs[platform].skins[0]?.id || '';
-  selectSkin(active || first);
+  const { activeSkinId } = effectiveActiveSkinIds(platform);
+  const first = state.configs[platform].skins[0]?.id || state.builtins[platform].skins[0]?.id || '';
+  selectSkin(activeSkinId || first);
 }
 
 function selectSkin(id) {
   const config = state.configs[state.selectedPlatform];
-  const skin = config.skins.find((item) => item.id === id) || config.skins[0] || null;
+  let skin = id ? config.skins.find((item) => item.id === id) || null : null;
+  let origin = 'custom';
+  if (!skin && id) {
+    skin = state.builtins[state.selectedPlatform].skins.find((item) => item.id === id) || null;
+    if (skin) origin = 'builtin';
+  }
+  if (!skin) {
+    skin = config.skins[0] || state.builtins[state.selectedPlatform].skins[0] || null;
+    origin = skin && !config.skins.includes(skin) ? 'builtin' : 'custom';
+  }
   state.selectedSkinId = skin?.id || '';
-  state.originalSkinId = skin?.id || '';
+  state.selectedSkinOrigin = origin;
+  state.originalSkinId = origin === 'custom' ? (skin?.id || '') : '';
   state.draftSkin = skin ? cloneSkin(skin) : null;
   state.previewActiveCandidateIndex = 0;
   rememberGlobalLayoutSources();
@@ -851,8 +925,7 @@ function selectSkin(id) {
 }
 
 function createNewSkin() {
-  const config = state.configs[state.selectedPlatform];
-  const id = generateSkinId('新皮肤', config.skins.map((skin) => skin.id));
+  const id = generateSkinId('新皮肤', existingSkinIds());
   state.draftSkin = {
     platform: state.selectedPlatform,
     id,
@@ -864,6 +937,7 @@ function createNewSkin() {
   };
   rememberGlobalLayoutSources();
   state.selectedSkinId = id;
+  state.selectedSkinOrigin = 'custom';
   state.originalSkinId = '';
   state.previewActiveCandidateIndex = 0;
   renderAll();
@@ -871,17 +945,18 @@ function createNewSkin() {
 
 function duplicateCurrentSkin() {
   if (!state.draftSkin) return;
-  const config = state.configs[state.selectedPlatform];
-  const id = generateSkinId(`${state.draftSkin.id}_copy`, config.skins.map((skin) => skin.id));
+  const id = generateSkinId(`${state.draftSkin.id}_copy`, existingSkinIds());
   state.draftSkin = {
     ...cloneSkin(state.draftSkin),
     id,
     displayName: `${state.draftSkin.displayName || state.draftSkin.id} 副本`,
   };
   state.selectedSkinId = id;
+  state.selectedSkinOrigin = 'custom';
   state.originalSkinId = '';
   state.previewActiveCandidateIndex = 0;
   rememberGlobalLayoutSources();
+  rememberOriginalLayout();
   renderAll();
 }
 
@@ -910,12 +985,12 @@ async function importSkinFromFile() {
     const imported = sourceSkin.platform && sourceSkin.platform !== state.selectedPlatform
       ? copySkinToPlatform(sourceSkin, state.selectedPlatform)
       : cloneSkin({ ...sourceSkin, platform: state.selectedPlatform });
-    const config = state.configs[state.selectedPlatform];
-    imported.id = generateSkinId(imported.id || imported.displayName, config.skins.map((skin) => skin.id));
+    imported.id = generateSkinId(imported.id || imported.displayName, existingSkinIds());
     imported.displayName ||= imported.id;
     imported.unsupportedFields ||= {};
     state.draftSkin = imported;
     state.selectedSkinId = imported.id;
+    state.selectedSkinOrigin = 'custom';
     state.originalSkinId = '';
     state.previewActiveCandidateIndex = 0;
     rememberGlobalLayoutSources();
@@ -1002,8 +1077,10 @@ function renderPlatform() {
 
 function renderSkinList() {
   const config = state.configs[state.selectedPlatform];
+  const builtin = state.builtins[state.selectedPlatform];
+  const { activeSkinId, darkSkinId } = effectiveActiveSkinIds(state.selectedPlatform);
   dom.skinList.replaceChildren();
-  if (!config.skins.length && !state.draftSkin) {
+  if (!config.skins.length && !state.draftSkin && !builtin.skins.length) {
     const empty = document.createElement('p');
     empty.className = 'hint';
     empty.textContent = '还没有皮肤，点击“新建”。';
@@ -1011,26 +1088,52 @@ function renderSkinList() {
     return;
   }
 
+  if (state.draftSkin && state.selectedSkinOrigin !== 'builtin'
+    && !config.skins.some((skin) => skin.id === state.draftSkin.id)) {
+    const button = document.createElement('button');
+    button.className = 'skin-item active';
+    button.innerHTML = `<span class="skin-title">${escapeHtml(state.draftSkin.displayName)}</span><span class="skin-meta">${escapeHtml(state.draftSkin.id)} · 未保存</span>`;
+    dom.skinList.append(button);
+  }
+
   for (const skin of config.skins) {
     const button = document.createElement('button');
-    button.className = `skin-item ${skin.id === state.selectedSkinId ? 'active' : ''}`;
-    button.innerHTML = `<span class="skin-title">${escapeHtml(skin.displayName)}</span><span class="skin-meta">${escapeHtml(skin.id)}${skin.id === config.activeSkinId ? ' · 当前' : ''}${skin.id === config.darkSkinId ? ' · 暗色' : ''}</span>`;
+    const active = skin.id === state.selectedSkinId && state.selectedSkinOrigin !== 'builtin';
+    button.className = `skin-item ${active ? 'active' : ''}`;
+    button.innerHTML = `<span class="skin-title">${escapeHtml(skin.displayName)}</span><span class="skin-meta">${escapeHtml(skin.id)}${skin.id === activeSkinId ? ' · 当前' : ''}${skin.id === darkSkinId ? ' · 暗色' : ''}</span>`;
     button.addEventListener('click', () => selectSkin(skin.id));
     dom.skinList.append(button);
   }
 
-  if (state.draftSkin && !config.skins.some((skin) => skin.id === state.draftSkin.id)) {
-    const button = document.createElement('button');
-    button.className = 'skin-item active';
-    button.innerHTML = `<span class="skin-title">${escapeHtml(state.draftSkin.displayName)}</span><span class="skin-meta">${escapeHtml(state.draftSkin.id)} · 未保存</span>`;
-    dom.skinList.prepend(button);
+  if (!config.skins.length && !state.draftSkin && builtin.skins.length) {
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.textContent = '还没有自定义皮肤；下方为配置包内置皮肤，可直接“设为当前”或“复制”后修改。';
+    dom.skinList.append(hint);
+  }
+
+  const overridden = new Set(config.skins.map((skin) => skin.id));
+  const visibleBuiltins = builtin.skins.filter((skin) => !overridden.has(skin.id));
+  if (visibleBuiltins.length) {
+    const header = document.createElement('p');
+    header.className = 'skin-list-header';
+    header.textContent = `内置皮肤 · ${visibleBuiltins.length}（${builtin.sourceFile}）`;
+    dom.skinList.append(header);
+    for (const skin of visibleBuiltins) {
+      const button = document.createElement('button');
+      const active = skin.id === state.selectedSkinId && state.selectedSkinOrigin === 'builtin';
+      button.className = `skin-item builtin ${active ? 'active' : ''}`;
+      button.innerHTML = `<span class="skin-title">${escapeHtml(skin.displayName)}</span><span class="skin-meta">内置 · ${escapeHtml(skin.id)}${skin.id === activeSkinId ? ' · 当前' : ''}${skin.id === darkSkinId ? ' · 暗色' : ''}</span>`;
+      button.addEventListener('click', () => selectSkin(skin.id));
+      dom.skinList.append(button);
+    }
   }
 }
 
 function renderEditor() {
   const skin = state.draftSkin;
   const disabled = !skin;
-  const canDelete = !disabled;
+  const readonly = Boolean(skin) && state.selectedSkinOrigin === 'builtin';
   for (const element of [
     dom.displayName,
     dom.author,
@@ -1089,10 +1192,21 @@ function renderEditor() {
     dom.duplicateSkinButton,
     dom.exportSkinButton,
   ]) {
-    element.disabled = disabled;
+    element.disabled = disabled || readonly;
   }
-  dom.deleteSkinButton.disabled = !canDelete;
+  dom.deleteSkinButton.disabled = disabled || readonly;
   dom.importSkinButton.disabled = false;
+  // 内置皮肤只读：仍允许切换当前、复制为自定义、导出和跨平台复制。
+  dom.setActiveButton.disabled = disabled;
+  dom.duplicateSkinButton.disabled = disabled;
+  dom.exportSkinButton.disabled = disabled;
+  dom.copyButton.disabled = disabled;
+  dom.duplicateSkinButton.textContent = readonly ? '复制为自定义' : '复制';
+  if (readonly) {
+    const canDeploy = state.storageMode === 'local' && state.deploySupported;
+    dom.setActiveButton.textContent = canDeploy ? '设为当前并应用' : '设为当前';
+  }
+  if (dom.builtinSkinHint) dom.builtinSkinHint.hidden = !readonly;
   const target = state.selectedPlatform === 'squirrel' ? 'weasel' : 'squirrel';
   dom.copyButton.textContent = `复制到${PLATFORM_LABELS[target]}`;
   dom.colorControls.replaceChildren();
@@ -1144,6 +1258,7 @@ function renderEditor() {
     const input = document.createElement('input');
     input.type = 'color';
     input.value = rgbaToCssHex(color);
+    input.disabled = readonly;
     input.addEventListener('input', () => updateDraftColor(role, cssHexToRgba(input.value)));
     const alphaRow = document.createElement('div');
     alphaRow.className = 'alpha-row';
@@ -1155,6 +1270,7 @@ function renderEditor() {
     alpha.value = String(color.a ?? 255);
     const alphaValue = document.createElement('output');
     alphaValue.value = String(color.a ?? 255);
+    alpha.disabled = readonly;
     alpha.addEventListener('input', () => {
       alphaValue.value = alpha.value;
       updateDraftAlpha(role, Number(alpha.value));
@@ -1525,8 +1641,50 @@ function manifestSummary(manifest) {
 
 async function setActiveSkin() {
   if (!state.draftSkin) return;
+  if (state.selectedSkinOrigin === 'builtin') {
+    await activateBuiltinSkin(state.draftSkin.id);
+    return;
+  }
   logMessage('正在保存并切换当前皮肤...');
   await saveCurrentSkin({ activate: true });
+}
+
+async function activateBuiltinSkin(skinId) {
+  if (!hasWritableStorage()) return;
+  try {
+    const platform = state.selectedPlatform;
+    const filename = PLATFORM_FILES[platform];
+    logMessage(`正在切换到内置皮肤 ${skinId}...`);
+    const current = await readAndValidateFrontendFile(platform);
+    if (!current.exists) {
+      const createFile = window.confirm(`未找到 ${filename}。是否创建这个前端配置文件并切换皮肤？`);
+      if (!createFile) return;
+    }
+    const existingText = current.exists ? current.text : minimalConfigText(platform);
+    await backupFiles(`切换${PLATFORM_LABELS[platform]}-${skinId}`, [filename], {
+      operation: 'save',
+      sourcePlatform: platform,
+      targetPlatform: '',
+      skinIdBefore: effectiveActiveSkinIds(platform).activeSkinId,
+      skinIdAfter: skinId,
+      createdFiles: current.exists ? [] : [filename],
+    }, { [filename]: current });
+    const output = updateActiveSkinConfig(existingText, platform, skinId, {
+      clearDark: platform === 'squirrel',
+    });
+    await writeFile(filename, output);
+    const written = await readOptionalFileEntry(filename);
+    if (!written.exists) throw new Error(`保存后无法重新读取 ${filename}`);
+    state.fileExists[platform] = true;
+    state.rawFiles[platform] = written.text;
+    state.configs[platform] = mergeGlobalLayoutIntoConfig(parseConfig(platform, written.text), state.globalLayout);
+    state.selectedSkinId = skinId;
+    selectSkin(skinId);
+    await refreshBackups();
+    await deployAfterWrite('已切换当前皮肤');
+  } catch (error) {
+    logMessage(`切换内置皮肤失败：${error.message}`);
+  }
 }
 
 async function deployAfterWrite(successMessage) {
@@ -1552,22 +1710,25 @@ async function saveCurrentSkin(options = {}) {
     const config = current.exists ? current.config : state.configs[platform];
     let overwriteConfirmed = false;
     const isRename = state.originalSkinId && state.originalSkinId !== state.draftSkin.id;
+    const existingIds = existingSkinIds(platform);
     if (isRename) {
       const saveAsNew = window.confirm('已保存皮肤的 ID 不能直接改名。是否另存为一个新皮肤？原皮肤会保留。');
       if (!saveAsNew) return;
-      if (config.skins.some((skin) => skin.id === state.draftSkin.id)) {
+      if (existingIds.includes(state.draftSkin.id)) {
         const resolution = resolveSkinIdConflict(platform, state.draftSkin.id, '另存');
         if (resolution === 'cancel') return;
-        if (resolution === 'new') state.draftSkin.id = generateSkinId(state.draftSkin.id, config.skins.map((skin) => skin.id));
+        if (resolution === 'new') state.draftSkin.id = generateSkinId(state.draftSkin.id, existingIds);
         if (resolution === 'overwrite') overwriteConfirmed = true;
       }
       state.originalSkinId = '';
     }
     const existingSkin = config.skins.find((skin) => skin.id === state.draftSkin.id);
-    if (!overwriteConfirmed && existingSkin && existingSkin.id !== state.originalSkinId) {
+    const conflictsExisting = existingIds.includes(state.draftSkin.id)
+      && existingSkin?.id !== state.originalSkinId;
+    if (!overwriteConfirmed && conflictsExisting) {
       const resolution = resolveSkinIdConflict(platform, state.draftSkin.id, '保存');
       if (resolution === 'cancel') return;
-      if (resolution === 'new') state.draftSkin.id = generateSkinId(state.draftSkin.id, config.skins.map((skin) => skin.id));
+      if (resolution === 'new') state.draftSkin.id = generateSkinId(state.draftSkin.id, existingIds);
     }
     const userRequestedActive = options.activate === true;
     const makeActive = Boolean(
@@ -1706,11 +1867,15 @@ async function copyCurrentSkin() {
     const copied = copySkinToPlatform(state.draftSkin, target);
     const confirmed = window.confirm(`将当前皮肤复制到${PLATFORM_LABELS[target]}。颜色和布局会自动映射，少数平台专属设置可能需要复制后检查。继续？`);
     if (!confirmed) return;
-    const targetExists = targetConfig.skins.some((skin) => skin.id === copied.id);
+    const targetIds = [
+      ...targetConfig.skins.map((skin) => skin.id),
+      ...state.builtins[target].skins.map((skin) => skin.id),
+    ];
+    const targetExists = targetIds.includes(copied.id);
     if (targetExists) {
       const resolution = resolveSkinIdConflict(target, copied.id, '复制');
       if (resolution === 'cancel') return;
-      if (resolution === 'new') copied.id = generateSkinId(copied.id, targetConfig.skins.map((skin) => skin.id));
+      if (resolution === 'new') copied.id = generateSkinId(copied.id, targetIds);
     }
     const operation = `复制${PLATFORM_LABELS[state.selectedPlatform]}到${PLATFORM_LABELS[target]}-${copied.id}`;
     const fileExists = current.exists;

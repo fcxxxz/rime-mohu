@@ -242,6 +242,17 @@ summary {
   background: #eef4ff;
 }
 
+.skin-list-header {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.skin-item.builtin {
+  background: #f8fafc;
+}
+
 .skin-title {
   font-weight: 600;
 }

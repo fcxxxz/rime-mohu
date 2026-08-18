@@ -256,6 +256,41 @@ function parseWeaselConfig(text) {
   };
 }
 
+function parseBuiltinConfig(platform, text) {
+  const doc = parseYaml(String(text || ''));
+  const style = isPlainObject(doc.style) ? doc.style : {};
+  const schemes = isPlainObject(doc.preset_color_schemes) ? doc.preset_color_schemes : {};
+  const globalLayout = layoutFromStyle(style);
+  const sourceFile = `${platform}.yaml`;
+  const skins = [];
+  const skipped = [];
+  for (const [id, scheme] of Object.entries(schemes)) {
+    if (!isPlainObject(scheme)) {
+      skipped.push(id);
+      continue;
+    }
+    try {
+      skins.push(skinFromScheme(platform, id, scheme, globalLayout, {
+        file: sourceFile,
+        path: `preset_color_schemes.${id}`,
+        builtin: true,
+      }));
+    } catch (error) {
+      skipped.push(id);
+    }
+  }
+
+  return {
+    platform,
+    sourceFile,
+    available: true,
+    skins,
+    skipped,
+    activeSkinId: String(style.color_scheme || ''),
+    darkSkinId: String(style.color_scheme_dark || ''),
+  };
+}
+
 function parseGlobalCustomFiles(files = []) {
   for (const file of files) {
     const name = String(file?.name || '');
@@ -330,10 +365,14 @@ function updateActiveSkinConfig(text, platform, skinId, options = {}) {
   const output = ensurePatchText(text || 'patch:\n');
   if (platform === 'squirrel') {
     validatePatchObject(parseYaml(output), 'squirrel.custom.yaml');
-    return ensureTrailingNewline(upsertObjectFields(output, ['patch', 'style'], {
+    let updated = upsertObjectFields(output, ['patch', 'style'], {
       color_scheme: id,
       ...(options.makeDark ? { color_scheme_dark: id } : {}),
-    }));
+    });
+    if (options.clearDark) {
+      updated = removeNestedValue(updated, ['patch', 'style', 'color_scheme_dark']);
+    }
+    return ensureTrailingNewline(updated);
   }
   if (platform === 'weasel') {
     validatePatchObject(parseYaml(output), 'weasel.custom.yaml');
@@ -1141,6 +1180,7 @@ const RimeSkinCore = {
   stringifyYaml,
   parseSquirrelConfig,
   parseWeaselConfig,
+  parseBuiltinConfig,
   parseGlobalCustomFiles,
   parseUserSelectedSchema,
   updateActiveSkinConfig,

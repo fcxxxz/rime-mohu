@@ -246,6 +246,91 @@ class FixedDictionaryTest(unittest.TestCase):
             rows.append(line.split("\t"))
         return rows
 
+    def test_render_parent_with_characters_places_priority_words_before_characters(
+        self,
+    ):
+        source = (
+            "---\n"
+            "name: mohu_zrm_fixed\n"
+            'version: "1"\n'
+            "sort: original\n"
+            "...\n"
+            "\n"
+            "#----------置顶词----------#\n"
+            "哪里\tnal\n"
+            "\n"
+            "#----------词库----------#\n"
+            "哪里\tnali\n"
+        )
+
+        rendered = rebuild_fixed_tiger.render_parent_with_characters(
+            source, [("𦰡", "nal", "0")]
+        )
+
+        self.assertLess(
+            rendered.index("哪里\tnal\n"),
+            rendered.index("#----------生成单字----------#"),
+        )
+        self.assertLess(
+            rendered.index("#----------生成单字----------#"),
+            rendered.index("𦰡\tnal"),
+        )
+        self.assertIn("哪里\tnali", rendered)
+
+    def test_rebuild_parent_retains_priority_word_rows(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "mohu_zrm_fixed.dict.yaml"
+            path.write_text(
+                "---\n"
+                "name: mohu_zrm_fixed\n"
+                'version: "1"\n'
+                "...\n"
+                "\n"
+                "#----------置顶词----------#\n"
+                "哪里\tnal\n"
+                "\n"
+                "#----------生成单字----------#\n"
+                "𦰡\tnal\t\t0\n"
+                "\n"
+                "#----------词库----------#\n"
+                "哪里\tnali\n"
+                "嗯\ten\t\t0\n",
+                encoding="utf-8",
+            )
+
+            parent_text, removed = rebuild_fixed_tiger.rebuild_parent(
+                path, "mohu_zrm_tiger_fixed"
+            )
+
+        self.assertEqual(removed, [(11, "嗯\ten\t\t0")])
+        self.assertIn("#----------置顶词----------#", parent_text)
+        self.assertIn("哪里\tnal", parent_text)
+        self.assertNotIn("嗯\ten", parent_text)
+
+    def test_repository_priority_word_block_precedes_generated_characters(self):
+        for name in (
+            "mohu_zrm_fixed.dict.yaml",
+            "mohu_zrm_fixed_legacy.dict.yaml",
+            "mohu_flypy_fixed.dict.yaml",
+            "mohu_flypy_fixed_legacy.dict.yaml",
+        ):
+            with self.subTest(dictionary=name):
+                text = (self.root / name).read_text(encoding="utf-8")
+                priority = text.index("#----------置顶词----------#")
+                generated = text.index("#----------生成单字----------#")
+                words = text.index("#----------词库----------#")
+                self.assertLess(priority, generated)
+                self.assertLess(generated, words)
+                block = text[priority:generated]
+                self.assertIn("哪里\tnal", block)
+                self.assertNotIn("哪里\tnal\n", text[words:])
+                codes = [
+                    line.split("\t")[1]
+                    for line in block.splitlines()
+                    if line and not line.startswith("#")
+                ]
+                self.assertEqual(codes, sorted(codes))
+
     def test_production_pinyin_weights_include_simplified_frequency_column(self):
         loader = getattr(rebuild_fixed_tiger, "load_production_pinyin_table", None)
         self.assertIsNotNone(loader)

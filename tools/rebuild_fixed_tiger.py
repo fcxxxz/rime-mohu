@@ -48,15 +48,17 @@ FIXED_CHAR_CODE_OVERRIDES_PATH = (
     ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
 )
 EXPECTED_SIMPLIFIED_READING_CATEGORIES = {
-    "all-modern": 8119,
-    "all-compat": 75832,
+    "all-modern": 8120,
+    "mixed": 1,
+    "all-compat": 75830,
 }
-EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 94847
+EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 94845
 EXPECTED_COMPATIBILITY_CHARACTER_COUNT = 8105
 LEGACY_MULTI_SHORT_CODE_MAX_LENGTH = 2
 MULTI_CASCADE_CODE_LENGTHS = (3, 4)
 GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
 WORD_TABLE_MARKER = "#----------词库----------#\n"
+PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
 
 PARENT_TABLES = (
     (
@@ -107,6 +109,26 @@ def strip_generated_character_block(body: str) -> str:
     start = body.index(GENERATED_CHARACTER_MARKER)
     end = body.index(WORD_TABLE_MARKER, start)
     return body[:start] + body[end:]
+
+
+def split_priority_word_block(body: str) -> tuple[str, str]:
+    # 置顶词块是手工维护的词库条目，渲染时放在生成单字之前，
+    # 使这些词在同码竞争中排在单字前面。
+    if PRIORITY_WORD_MARKER not in body:
+        return "", body
+    start = body.index(PRIORITY_WORD_MARKER)
+    ends = [
+        index
+        for index in (
+            body.find(GENERATED_CHARACTER_MARKER, start + 1),
+            body.find(WORD_TABLE_MARKER, start + 1),
+        )
+        if index != -1
+    ]
+    if not ends:
+        raise ValueError("priority word block must precede a known block marker")
+    end = min(ends)
+    return body[start:end], body[:start] + body[end:]
 
 
 def rebuild_parent(path: Path, table_name: str) -> tuple[str, list[tuple[int, str]]]:
@@ -176,16 +198,18 @@ def render_parent_with_characters(
     rows: list[tuple[str, str, str]],
 ) -> str:
     header, body = split_dictionary(source)
+    priority_block, remaining = split_priority_word_block("".join(body))
     character_rows = "".join(
         f"{char}\t{code}\t\t{weight}\n" for char, code, weight in rows
     )
     return (
         header
         + "\n"
+        + priority_block
         + GENERATED_CHARACTER_MARKER
         + character_rows
         + "\n"
-        + "".join(body).lstrip("\n")
+        + remaining.lstrip("\n")
     )
 
 

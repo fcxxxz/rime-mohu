@@ -1,10 +1,13 @@
 import sys
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
+import build_flypy_assets  # noqa: E402
 from build_flypy_assets import (  # noqa: E402
     FIXED_DICTIONARIES,
     convert_fixed_code,
@@ -37,6 +40,56 @@ class FlypyAssetConversionTest(unittest.TestCase):
         self.assertEqual("mry", convert_fixed_code("默认", "mry"))
         self.assertEqual("ylld", convert_fixed_code("有来来", "ylll"))
         self.assertEqual("yllx", convert_fixed_code("有来小心", "yllx"))
+
+    def test_fixed_dictionary_keeps_priority_words_before_generated_characters(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "mohu_zrm_fixed.dict.yaml").write_text(
+                "---\n"
+                "name: mohu_zrm_fixed\n"
+                'version: "1"\n'
+                "sort: original\n"
+                "...\n"
+                "\n"
+                "#----------置顶词----------#\n"
+                "哪里\tnal\n"
+                "\n"
+                "#----------生成单字----------#\n"
+                "𦰡\tnal\t\t0\n"
+                "\n"
+                "#----------词库----------#\n"
+                "哪里\tnali\n",
+                encoding="utf-8",
+            )
+            (root / "mohu_flypy_tiger_fixed.dict.yaml").write_text(
+                "# Generated\n"
+                "---\n"
+                "name: mohu_flypy_tiger_fixed\n"
+                'version: "1"\n'
+                "sort: by_weight\n"
+                "columns:\n"
+                "  - text\n"
+                "  - code\n"
+                "  - weight\n"
+                "...\n"
+                "\n"
+                "𦰡\tnal\t0\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(build_flypy_assets, "ROOT", root):
+                converted = build_flypy_assets.convert_fixed_dictionary(
+                    "mohu_zrm_fixed.dict.yaml", "mohu_flypy_fixed"
+                )
+
+        priority = converted.index("#----------置顶词----------#")
+        generated = converted.index("#----------生成单字----------#")
+        words = converted.index("#----------词库----------#")
+        self.assertLess(priority, generated)
+        self.assertLess(generated, words)
+        self.assertIn("哪里\tnal\n", converted[priority:generated])
+        self.assertIn("𦰡\tnal\t\t0", converted[generated:words])
 
 
 if __name__ == "__main__":

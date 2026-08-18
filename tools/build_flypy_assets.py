@@ -30,6 +30,7 @@ FIXED_DICTIONARIES = {
 
 GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
 WORD_TABLE_MARKER = "#----------词库----------#\n"
+PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
 
 SCHEMAS = {
     "mohu_zrm.schema.yaml": ("mohu_zrm", "魔虎·自然码"),
@@ -204,6 +205,11 @@ def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
             raise ValueError(f"invalid generated character row: {raw!r}")
         parent_rows.append(f"{fields[0]}\t{fields[1]}\t\t{fields[2]}\n")
     generated = GENERATED_CHARACTER_MARKER + "".join(parent_rows) + "\n"
+    # 置顶词块必须保持在生成单字之前，因此把单字块插到词库标记处。
+    priority_index = converted.find(PRIORITY_WORD_MARKER)
+    if priority_index != -1:
+        insert_at = converted.index(WORD_TABLE_MARKER, priority_index)
+        return converted[:insert_at] + generated + "\n" + converted[insert_at:]
     return converted.replace("...\n", "...\n\n" + generated, 1)
 
 

@@ -25,6 +25,9 @@ import_tables:
   - mohu_fixed.symbols
 ...
 
+#----------置顶词----------#
+哪里	nal
+
 #----------生成单字----------#
 啊	a		0
 阿	aa		0
@@ -615,17 +618,24 @@ import_tables:
 大	dlm		649
 地	deg		8.80404e+06
 说	uvs		1
+说	yts		0
 国	gor		3.06387e+06
+那	nea		0
+那	nza		840
 着	vkg		96993
 着	vog		96993
 道	dkh		1.06255e+06
 会	kyj		6824
 自	zio		7.2617e+06
+能	nlk		0
 于	yuf		1.61499e+06
+于	wuf		0
 都	duq		38058
 还	hrc		406569
 作	zoj		2.43769e+06
 行	hgp		1
+只	qid		0
+家	jxw		0
 方	fhl		347176
 心	xnh		1.55583e+06
 种	isx		1669
@@ -633,8 +643,12 @@ import_tables:
 经	jyi		3.92345e+06
 现	xmn		1.16114e+06
 无	mod		100
+么	mat		5
+么	mot		0
+么	ykt		9919
 军	jpw		257500
 部	bui		1.97218e+06
+将	qda		0
 理	lin		1.90392e+06
 实	uiw		2.61649e+06
 十	uin		2.56718e+06
@@ -735,12 +749,14 @@ import_tables:
 清	qyk		1.56881e+06
 务	wuh		587619
 嗯	end		9.17953e+06
+嗯	wud		0
 统	tsi		503061
 市	uiz		712352
 司	sia		911784
 师	uip		1.58175e+06
 住	vuj		2.11487e+06
 克	kec		777926
+克	kzc		0
 南	nan		1
 南	njn		856521
 区	qun		485061
@@ -756,12 +772,16 @@ import_tables:
 科	kex		383049
 呢	ni		2503
 思	siq		1.43857e+06
+思	slq		0
 达	dam		741782
+转	vy		0
 望	whf		1.62394e+06
 色	ulx		1193
 界	jxq		913395
 象	xdw		1.0411e+06
 权	qre		422461
+且	juf		0
+干	qme		0
 步	bus		1.07755e+06
 领	lyj		808920
 根	gfe		886057
@@ -777,7 +797,6 @@ import_tables:
 办	bjs		956075
 运	ypb		630729
 似	sij		1.20301e+06
-武	wuf		1.00314e+06
 士	uig		1.17573e+06
 改	glv		495567
 英	yyl		646331
@@ -827,6 +846,7 @@ import_tables:
 具	juq		433976
 脸	lmv		1.84535e+06
 青	qya		914968
+红	gsi		0
 九	jqk		862253
 八	bah		740031
 曾	zgh		5789
@@ -857,6 +877,7 @@ import_tables:
 朝	ikn		709793
 朝	vkn		42588
 派	plk		537090
+派	pak		0
 线	xmi		539444
 究	jqe		275220
 首	ubh		588887
@@ -868,10 +889,10 @@ import_tables:
 七	qir		638221
 息	xio		864425
 研	yjm		263794
-器	qid		489638
 留	lqb		778671
 房	fhm		980289
 广	gdx		374959
+广	anx		0
 注	vuk		583182
 查	iae		417554
 查	vae		26
@@ -891,8 +912,11 @@ import_tables:
 势	uiu		756507
 投	tbu		373978
 哪	ned		292
+哪	nzd		44
+哪	nld		0
 农	nsw		208656
 专	vrm		360222
+专	drm		0
 考	kkq		59906
 终	vsi		928837
 皇	hdu		640305
@@ -935,6 +959,7 @@ import_tables:
 划	hwp		385366
 革	get		180934
 底	dix		806359
+底	dex		89
 音	ynx		1.1003e+06
 态	tlm		478661
 构	gbe		152528
@@ -960,8 +985,11 @@ import_tables:
 害	hlw		740250
 供	gsj		188899
 属	uuc		394530
+属	vuc		0
 验	yjn		288664
 般	bji		940949
+般	boi		0
+般	pji		0
 沉	ifk		718489
 采	cly		264104
 察	iaw		413974
@@ -970,11 +998,13 @@ import_tables:
 夜	yez		877661
 股	guv		461541
 续	xui		591245
+假	xwj		0
 乐	ytb		77726
 陆	lqt		4000
 陆	lut		431372
 铁	txz		520031
 汉	hjk		484364
+暗	yjo		0
 状	vda		351779
 左	zon		538289
 句	gbg		1
@@ -1010,13 +1040,16 @@ import_tables:
 育	yob		0
 育	yub		214206
 担	dju		442662
+顿	duf		0
 游	ybk		537555
 充	isb		409223
 银	ynz		399570
 适	uia		295023
+适	koa		621
 省	ugy		235937
 胡	huc		468131
 食	uiq		353226
+食	yiq		0
 警	jyl		433397
 素	sua		320732
 尼	nic		272244
@@ -1038,6 +1071,7 @@ import_tables:
 益	yik		185217
 宝	bkw		564720
 脚	jcv		735170
+脚	jtv		1
 赶	gjp		585731
 坚	jmp		385150
 获	hol		245741
@@ -1078,6 +1112,7 @@ import_tables:
 姑	gub		374941
 优	ybj		279594
 征	vgw		208067
+征	viw		0
 善	ujg		305341
 刀	dkp		723425
 降	jdt		236721
@@ -1099,6 +1134,7 @@ import_tables:
 救	jqf		427315
 份	ffj		493685
 著	vul		329248
+著	vol		84
 赵	vkp		507405
 露	lbt		36419
 登	dgh		215944
@@ -1136,6 +1172,7 @@ import_tables:
 遇	yuq		409411
 良	ldi		352124
 朋	pgv		88716
+坏	pig		20
 亮	ldg		693524
 烈	lxg		52123
 闪	uja		551016
@@ -1179,6 +1216,7 @@ import_tables:
 味	wzd		493741
 杂	zak		27765
 遗	yic		186827
+遗	wzc		0
 款	krg		136499
 刺	cie		394555
 附	fut		207682
@@ -1200,14 +1238,15 @@ import_tables:
 班	bjn		459772
 康	khx		217905
 损	spu		160063
+借	jij		0
 固	gur		157594
-吴	wud		358239
 域	yug		135460
 秦	qna		381190
 妇	fub		254489
 鲜	xmw		273041
 序	xux		109198
 烟	yjc		435202
+烟	ync		0
 洞	dsk		295409
 猛	mgm		403183
 练	lmi		501341
@@ -1216,6 +1255,7 @@ import_tables:
 笔	bir		273860
 饭	fjq		592046
 括	kou		139127
+括	gwu		5
 毕	biv		433506
 席	xix		208395
 禁	jne		393943
@@ -1265,6 +1305,7 @@ import_tables:
 凡	fjo		320342
 私	six		212479
 厂	ihx		140040
+丁	vga		4
 骨	guf		310699
 牙	yal		300629
 休	xqj		334462
@@ -1302,11 +1343,13 @@ import_tables:
 盖	geg		555
 丈	vhf		238063
 篇	pmr		140190
+篇	bmr		0
 午	wue		350826
 窗	ide		298137
 雄	xsn		302005
 残	cjg		232905
 戏	xir		347524
+戏	hur		0
 妻	qif		243636
 折	ueu		10000
 折	veu		248570
@@ -1321,6 +1364,7 @@ import_tables:
 秀	xqx		364108
 曲	quy		250151
 努	nub		204860
+努	nkb		0
 潜	qmk		151581
 街	jxp		313485
 硬	yym		268057
@@ -1329,6 +1373,7 @@ import_tables:
 纵	zsi		170090
 喊	hjd		390618
 搞	gku		297225
+冒	moo		9
 罢	bay		242362
 盛	ign		202048
 盛	ugn		202048
@@ -1350,6 +1395,8 @@ import_tables:
 抬	tlu		352793
 赞	zjq		177018
 侧	cej		199092
+侧	zej		0
+侧	vlj		0
 赛	slw		301766
 申	ufo		78049
 夺	dom		175135
@@ -1396,7 +1443,6 @@ import_tables:
 符	fur		119925
 筑	vur		108668
 眉	mzc		363007
-侠	xwj		121181
 袭	xit		189129
 培	pzg		98414
 耶	yeq		100191
@@ -1439,6 +1485,7 @@ import_tables:
 津	jnk		69527
 倾	qyj		141937
 订	dys		65104
+鸟	dcx		0
 扑	puu		252812
 孔	ksh		218377
 汽	qik		102025
@@ -1460,7 +1507,6 @@ import_tables:
 裁	cln		79360
 估	guj		154328
 尸	uic		233817
-尾	wzc		148960
 瞧	qcq		180832
 迟	iic		203433
 圈	jrr		6000
@@ -1504,7 +1550,6 @@ import_tables:
 患	hrd		76682
 仇	ibj		208949
 仇	qqj		8000
-债	vlj		43823
 碎	svm		220325
 挺	tyu		269816
 泰	tla		138290
@@ -1533,7 +1578,7 @@ import_tables:
 捕	buu		87090
 辆	ldy		156125
 邪	xxl		175398
-症	vga		58943
+邪	yel		16
 颇	por		127012
 插	iau		167435
 爬	pay		183266
@@ -1558,6 +1603,7 @@ import_tables:
 番	pjt		199
 哼	hgd		255327
 撞	vdu		230714
+撞	tsu		0
 伍	wuj		144670
 柔	rbi		84782
 旦	djo		154394
@@ -1593,6 +1639,7 @@ import_tables:
 吐	tud		212473
 返	fjx		97646
 闲	xma		202953
+闲	jma		0
 乔	qct		124865
 盾	dpx		113909
 矿	kdm		75241
@@ -1633,6 +1680,7 @@ import_tables:
 埋	mlg		139624
 埋	mjg		6
 拼	pnu		181290
+拼	pju		0
 涌	isk		551
 乏	fat		78100
 腾	tgv		95410
@@ -1657,6 +1705,8 @@ import_tables:
 邓	dgr		78843
 阅	yta		66255
 液	yek		101930
+呵	aad		405
+呵	ked		0
 牵	qmm		132558
 综	zgi		1
 俩	lw		5000
@@ -1670,6 +1720,7 @@ import_tables:
 晋	jnf		67736
 卢	luy		96170
 储	iuj		41834
+汤	uhk		0
 扰	rku		122869
 宙	vbw		62098
 聪	csq		138731
@@ -1702,8 +1753,10 @@ import_tables:
 扭	nqu		173801
 册	cei		53084
 颤	ijz		194953
+颤	vjz		0
 键	jmz		510933
 洁	jxk		173303
+洁	xxk		0
 怜	lmh		195035
 寿	uba		73701
 腊	lav		36785
@@ -1716,6 +1769,8 @@ import_tables:
 券	xrh		1
 娇	jcb		199460
 夹	jwh		130443
+夹	gah		0
+夹	qwh		0
 肥	fzv		93039
 寄	jiw		487256
 斜	xxj		108597
@@ -1735,6 +1790,7 @@ import_tables:
 坡	pog		79228
 辽	lcr		47836
 匹	pin		97644
+匹	yan		0
 铜	tsz		73454
 穆	mux		74572
 割	gew		77561
@@ -1767,6 +1823,7 @@ import_tables:
 莲	lml		169828
 鹰	yyx		162593
 俊	jpj		244925
+俊	jrj		0
 恼	nkh		128907
 瞪	dgq		186802
 俱	juj		92404
@@ -1805,6 +1862,7 @@ import_tables:
 削	xcy		54894
 削	xty		54894
 衰	uyt		46360
+衰	cvt		12
 扔	rgu		141002
 湿	uik		1.10683e+06
 瞬	upq		230645
@@ -1813,7 +1871,7 @@ import_tables:
 遂	svh		54528
 雕	dcm		82838
 誉	yuk		69067
-阔	koa		77181
+暖	xro		0
 乾	qmn		67122
 祸	hof		100219
 押	yau		53350
@@ -1825,6 +1883,7 @@ import_tables:
 抑	yiu		84901
 烂	ljc		148472
 契	qia		57408
+契	xxa		4
 娃	wab		107391
 循	xpw		46243
 赋	fuo		48946
@@ -1892,7 +1951,6 @@ import_tables:
 蛮	mjz		105867
 歼	jmg		27594
 砍	kjm		105218
-欠	qme		85134
 糟	zkp		102902
 添	tmk		69960
 柴	ils		61680
@@ -1933,6 +1991,7 @@ import_tables:
 罩	vky		120318
 柄	bye		76845
 缴	jci		20827
+缴	voi		0
 潘	pjk		63492
 蜂	fgc		43028
 窝	woe		98104
@@ -1950,7 +2009,6 @@ import_tables:
 丫	yah		183167
 亭	tyg		72135
 携	xxu		41009
-泄	xxk		90918
 谭	tjs		48779
 翠	cvz		82046
 霞	xwt		114414
@@ -1966,6 +2024,7 @@ import_tables:
 卜	buy		57367
 柯	kee		71973
 吟	ynd		147887
+吟	jnd		0
 鞭	bmt		64899
 脖	bov		119048
 辱	ruf		85827
@@ -2012,6 +2071,7 @@ import_tables:
 讼	sss		11726
 杆	gje		61570
 倘	thj		34043
+拆	cau		0
 驰	iin		69666
 纲	ghi		25530
 艳	yja		147563
@@ -2022,6 +2082,7 @@ import_tables:
 掏	tku		102071
 函	hja		21187
 於	yul		73580
+於	wul		0
 裤	kut		116368
 猴	hbm		73614
 枯	kue		61044
@@ -2048,6 +2109,7 @@ import_tables:
 刹	iab		1000
 姬	jib		101929
 赚	vro		88692
+赚	zro		0
 凄	qiw		75047
 挽	wju		69193
 耸	ssj		74009
@@ -2084,7 +2146,6 @@ import_tables:
 冻	dsw		55112
 虹	hsc		86362
 虹	jdc		4
-陌	mot		97194
 骄	jcn		60597
 甫	fun		46012
 盲	mhf		29895
@@ -2107,7 +2168,7 @@ import_tables:
 捧	pgu		68202
 讶	yas		157124
 咳	hld		1734
-咳	ked		86470
+咳	kld		0
 嘱	vud		49354
 绵	mmi		86358
 筒	tsr		54584
@@ -2222,7 +2283,9 @@ import_tables:
 噢	oo		496080
 硕	uom		38779
 蹲	dpp		66158
+蹲	cpp		3
 胳	gev		75288
+胳	gav		0
 躬	gsz		43678
 徽	hvw		33080
 篮	ljr		92437
@@ -2278,7 +2341,6 @@ import_tables:
 哄	hsd		72071
 耿	ggq		54708
 叮	dyd		62022
-倦	jrj		46376
 腺	xmv		6833
 鹤	hew		44828
 尴	gjo		88570
@@ -2304,7 +2366,6 @@ import_tables:
 擒	qnu		39189
 囚	qqr		29642
 捞	lku		29577
-舶	boi		2433
 贱	jmo		51519
 厄	eex		18380
 炭	tjv		19147
@@ -2314,7 +2375,6 @@ import_tables:
 衍	yjp		33445
 狡	jcm		41377
 桶	tse		49900
-卸	xxa		27285
 嘶	sid		48914
 帆	fjr		49724
 侨	qcj		9375
@@ -2328,10 +2388,10 @@ import_tables:
 兑	dvh		17197
 魁	kva		39294
 谜	mis		26947
+谜	mzs		0
 瞥	pxf		38910
 纺	fhi		8718
 肾	ufp		10212
-烛	vuc		44470
 锻	drz		36524
 芦	lul		33912
 珊	ujn		62734
@@ -2345,6 +2405,7 @@ import_tables:
 坊	fhg		28892
 忖	cph		25374
 霉	mzt		55470
+苹	pnl		0
 佣	ysj		73609
 搂	lbu		85409
 堤	dig		19816
@@ -2363,6 +2424,7 @@ import_tables:
 剿	jco		23891
 枕	vfe		45747
 轴	vby		18321
+挟	jwu		0
 咧	lxd		58774
 斌	bnv		48027
 捡	jmu		50151
@@ -2399,11 +2461,13 @@ import_tables:
 沸	fzk		42184
 绸	ibi		23778
 椎	vve		7273
+椎	ive		21
 垫	dmu		30164
 廖	lcx		31067
 捣	dku		32179
 叩	kbd		20625
 蜡	lac		26302
+蜡	vac		284
 眸	mbq		59961
 逛	gdm		68458
 芙	ful		47397
@@ -2428,6 +2492,7 @@ import_tables:
 樱	yye		68359
 妒	dub		47550
 麟	lnx		51074
+堕	hvt		0
 揉	rbu		67835
 婢	bib		24051
 梭	soe		31489
@@ -2513,6 +2578,7 @@ import_tables:
 雍	ysz		25297
 瘫	tja		28249
 豁	how		26107
+豁	hww		0
 骸	hlf		13516
 懈	xxh		20521
 坪	pyg		20132
@@ -2522,6 +2588,7 @@ import_tables:
 娥	eeb		21944
 灼	voc		32550
 舵	doi		17755
+舵	toi		0
 歹	dlg		42757
 邹	zbx		19321
 枉	whe		35783
@@ -2530,6 +2597,7 @@ import_tables:
 杉	uje		21508
 跋	bap		26559
 梢	uke		19244
+梢	ske		0
 蝉	ijc		26987
 萎	wzl		17426
 绰	iki		1
@@ -2561,12 +2629,14 @@ import_tables:
 呻	ufd		35841
 啼	tid		21533
 虾	xwc		22165
+虾	hac		0
 樊	fjb		28633
 棕	zse		14156
 嫣	yjb		53722
 鞘	ukt		1
 删	uji		1.11234e+06
 嵌	qmv		19221
+嵌	kjv		26
 暇	xwo		33980
 蛟	jcc		20489
 炕	khc		18018
@@ -2606,7 +2676,6 @@ import_tables:
 镶	xdz		20858
 冢	vsw		6812
 唾	tod		22408
-庵	anx		13087
 扼	eeu		12762
 庚	ggx		8607
 膛	thv		37836
@@ -2655,7 +2724,8 @@ import_tables:
 嗽	sbd		28817
 皓	hku		30879
 竿	gjr		15347
-拽	vy		45251
+拽	vyu		45251
+拽	yeu		4
 倪	nij		32398
 胧	lsv		40688
 峭	qcv		13505
@@ -2664,7 +2734,6 @@ import_tables:
 锥	vvz		13235
 梗	gge		7980
 蹬	dgp		23651
-夭	ykt		25128
 廓	kox		15567
 浊	vok		18800
 迭	dxt		21389
@@ -2683,7 +2752,6 @@ import_tables:
 擎	qyl		20931
 沛	pzk		24758
 硝	xcm		9321
-崛	jtv		10826
 槽	cke		12412
 喽	lbd		29096
 腮	slv		20075
@@ -2703,7 +2771,6 @@ import_tables:
 拇	muu		19655
 柬	jmx		8238
 瑛	yyn		10948
-颐	yiq		12797
 掐	qwu		2222
 猝	cum		12077
 缀	vvi		15121
@@ -2747,7 +2814,7 @@ import_tables:
 檐	yje		18211
 搀	iju		21047
 肋	lzv		19237
-捅	tsu		45436
+肋	lev		928
 箫	xcr		21626
 嗦	sod		47528
 洽	qwk		1111
@@ -2801,13 +2868,16 @@ import_tables:
 苔	tll		8045
 嵩	ssv		16210
 篱	lir		8716
+氓	mgf		45
 婷	tyb		123852
+砌	qxm		0
 绫	lyi		10425
 呛	qdd		20665
 汀	tyk		15090
 瞟	pcq		25058
 嵋	mzv		7261
 揍	zbu		25073
+掺	cju		0
 趾	vip		12471
 酶	mzy		1858
 霖	lnt		27387
@@ -2827,11 +2897,14 @@ import_tables:
 睿	rvg		24474
 噜	lud		24633
 佃	dmj		1870
+佃	tmj		47
 颉	xxg		1
 铀	ybz		2053
 倔	jtj		18984
 蕉	jcl		9223
+蕉	qcl		0
 褂	gwt		9095
+溺	nck		40
 谟	mos		3201
 噩	een		27969
 糙	ckp		12840
@@ -2840,10 +2913,10 @@ import_tables:
 埔	pug		6340
 赣	gjx		5305
 亢	khz		20459
+亢	hhz		0
 侃	kjj		36358
 眶	kdq		32097
 捻	nmu		8152
-芜	wul		11922
 酥	suy		18511
 屉	tic		16514
 眺	tcq		12749
@@ -2853,12 +2926,13 @@ import_tables:
 褪	tvt		13537
 褪	tpt		18
 彷	phw		21360
+彷	fhw		407
 猖	ihm		8948
 捶	ivu		18237
-伎	jij		10269
 洼	wak		10233
 瞳	tsq		38812
 勺	ukn		21195
+勺	bcn		0
 淀	dmk		8590
 痪	hra		6519
 炊	ivc		9154
@@ -2875,7 +2949,6 @@ import_tables:
 俨	yjj		12202
 侬	nsj		4715
 疚	jqa		37765
-晏	yjo		11688
 驮	don		1
 烙	lkc		14608
 赃	zho		9126
@@ -2932,6 +3005,7 @@ import_tables:
 谛	dis		7639
 菇	gul		11316
 锈	xqz		10628
+辗	nmy		0
 穗	svx		13995
 惰	doh		7669
 柿	uie		8210
@@ -2982,6 +3056,7 @@ import_tables:
 铠	klz		25757
 霓	nit		25232
 嗒	dad		16686
+嗒	tad		10
 捎	uku		7956
 呱	gwd		12127
 惘	whh		15566
@@ -2994,6 +3069,8 @@ import_tables:
 梓	zie		13927
 蹭	cgp		26351
 矜	jni		18885
+矜	gri		0
+矜	qni		0
 圭	gvg		8052
 漓	lik		22606
 穹	qse		16599
@@ -3012,7 +3089,6 @@ import_tables:
 楷	kle		9165
 袒	tjt		6547
 冕	mmo		10994
-纶	gri		1
 纶	lpi		6061
 偌	roj		12710
 橙	ige		18984
@@ -3034,7 +3110,6 @@ import_tables:
 邯	hjz		7487
 锚	mkz		3900
 瑙	nkn		4424
-磐	pji		5916
 凋	dcw		8718
 滢	yyk		5356
 绚	xri		13848
@@ -3072,7 +3147,6 @@ import_tables:
 蚤	zkr		2887
 瑾	jnn		14682
 蛤	gec		400
-蛤	hac		9735
 捋	lou		100
 捋	lvu		9568
 瓮	wgh		6733
@@ -3090,6 +3164,7 @@ import_tables:
 簸	bor		9837
 雳	lit		18289
 擘	boc		803
+擘	blc		0
 跛	bop		5214
 筵	yjr		4970
 皈	gvu		2501
@@ -3099,12 +3174,12 @@ import_tables:
 瘩	daa		17347
 阪	bjt		3695
 囱	cst		3098
-暄	xro		13336
 哝	nsd		10044
 吮	upd		8032
 莞	grl		723
 涣	hrk		6445
 潦	lck		5483
+潦	lkk		75
 浚	jpk		3635
 浚	xpk		159
 琶	pan		8308
@@ -3123,7 +3198,6 @@ import_tables:
 笆	bar		3384
 蚩	iis		22424
 燎	lcc		9587
-掖	yeu		5553
 馋	ijq		8379
 黔	qmp		3727
 竣	jpi		4635
@@ -3133,6 +3207,8 @@ import_tables:
 姗	ujb		32428
 唰	uwd		16179
 呗	bzd		317817
+呗	bld		0
+跷	jtp		0
 嗷	aod		17032
 阖	hea		5863
 臧	zhn		6025
@@ -3150,6 +3226,7 @@ import_tables:
 藕	oul		5784
 筏	far		7349
 奂	hrx		2292
+芥	gll		68
 叁	sjk		5883
 媛	yrb		36310
 碘	dmm		1109
@@ -3161,8 +3238,10 @@ import_tables:
 嗟	jxd		3220
 闾	lva		3205
 挝	wou		2048
+挝	vwu		0
 癞	lla		5773
-坯	pig		3815
+癞	laa		0
+坯	hyg		0
 雒	los		4753
 荃	qrl		4385
 挎	kwu		8629
@@ -3187,6 +3266,7 @@ import_tables:
 捺	nau		9881
 斡	won		3740
 喏	nod		8320
+喏	red		33
 胯	kwv		9397
 蘸	vjl		45760
 螃	phc		6823
@@ -3197,7 +3277,6 @@ import_tables:
 贰	erp		3444
 荼	tul		6513
 傩	noj		994
-徵	viw		4233
 泯	mnk		8435
 簪	zjr		7448
 骰	tbf		6460
@@ -3235,7 +3314,6 @@ import_tables:
 钾	jwz		1159
 谩	mjs		2531
 瞑	myq		6405
-噤	jnd		6575
 汕	ujk		2204
 馍	moq		4217
 谙	ans		6174
@@ -3263,7 +3341,8 @@ import_tables:
 殡	bng		4016
 潺	ijk		7363
 斛	hux		1720
-骠	bcn		3168
+恫	tsh		567
+町	tyq		83
 骠	pcn		3168
 绶	ubi		1764
 钡	bzz		386
@@ -3287,7 +3366,6 @@ import_tables:
 瞰	kjq		4717
 籁	llr		9564
 谆	vps		3505
-槌	ive		4044
 蔗	vel		2970
 啾	jqd		4063
 腼	mmv		7396
@@ -3318,6 +3396,7 @@ import_tables:
 璜	hdn		2543
 祛	quf		1909
 庖	pkx		1610
+僮	vdj		244
 昵	nio		11208
 氦	hlv		661
 闩	ura		2512
@@ -3341,6 +3420,7 @@ import_tables:
 耙	paa		3977
 芍	ukl		2961
 榕	rse		11223
+龈	kfl		0
 痘	dba		5797
 睢	svq		1785
 绾	wji		4521
@@ -3390,16 +3470,13 @@ import_tables:
 徨	hdw		7081
 盹	dpq		4945
 袤	mkt		3094
-蚓	ync		3612
 咛	nyd		5821
 愠	yph		4548
 鄱	pot		2106
 怏	yhh		6323
 淙	csk		3304
-琊	yan		2528
 馁	nzq		5700
 柠	nye		8126
-涝	lkk		1423
 鹄	guq		1
 鹄	huq		2662
 濑	llk		3872
@@ -3419,6 +3496,7 @@ import_tables:
 臊	skv		5795
 蟑	vhc		7998
 宕	dhw		2794
+宕	tjw		0
 鲇	nmw		681
 娩	mmb		2352
 蒯	kyl		2827
@@ -3457,7 +3535,6 @@ import_tables:
 岷	mnv		2214
 滦	lrk		2148
 纭	ypi		3322
-恸	tsh		5121
 艮	gfi		3524
 娉	pyb		8067
 扪	mfu		2344
@@ -3489,7 +3566,6 @@ import_tables:
 沱	tok		3100
 篙	gkr		1804
 猕	mim		1070
-蹶	jtp		3000
 摁	enu		8517
 赊	ueo		2108
 涮	urk		6454
@@ -3500,12 +3576,10 @@ import_tables:
 坳	aog		3440
 妫	gvb		2566
 樽	zpe		2441
-茁	vol		2369
 奁	lmm		722
 懔	lnh		1326
 阡	qmt		899
 慵	ysh		6576
-蚱	vac		4020
 佞	nyj		2329
 铤	tyz		2171
 熨	ypc		2753
@@ -3519,6 +3593,7 @@ import_tables:
 胪	luv		786
 馕	nhq		685
 恁	nfj		3956
+恁	nnj		0
 罄	qyg		1796
 谝	pms		408
 仨	saj		5719
@@ -3528,6 +3603,7 @@ import_tables:
 潢	hdk		3727
 泅	qqk		1283
 隗	wzt		4223
+隗	kvt		0
 墉	ysg		1605
 胴	dsv		4599
 蝈	goc		4761
@@ -3556,6 +3632,7 @@ import_tables:
 馄	hpq		2975
 嗵	tsd		4379
 墒	uhg		728
+铣	xmz		0
 儆	jyj		1659
 哐	kdd		7050
 嗲	dw		2018
@@ -3572,6 +3649,7 @@ import_tables:
 昱	yuo		6273
 栎	yte		1
 呶	nkd		2337
+呶	nud		596
 镕	rsz		535
 庾	yux		1850
 囿	ybr		1124
@@ -3583,7 +3661,6 @@ import_tables:
 蠹	dun		852
 琨	kpn		2422
 谯	qcs		1914
-囫	hur		1691
 鞯	jmt		254
 饪	rfq		3245
 蔺	lnl		3498
@@ -3607,7 +3684,6 @@ import_tables:
 蝼	lbc		1805
 盥	grp		1987
 谖	xrs		320
-锨	xmz		1566
 徭	ykw		1157
 肓	hdf		1770
 蛉	lyc		592
@@ -3624,6 +3700,7 @@ import_tables:
 呤	lyd		4508
 崴	wlv		4790
 纥	hei		1538
+纥	gei		0
 讣	fus		689
 谪	ves		1348
 颀	qit		4370
@@ -3663,7 +3740,6 @@ import_tables:
 钍	tuz		100
 梏	gue		1443
 锉	coz		1419
-戕	qda		2303
 誊	tgh		1318
 陲	ivt		2456
 髡	kpp		598
@@ -3690,9 +3766,11 @@ import_tables:
 幄	wor		2644
 讴	ous		753
 砒	pim		1066
+呔	tld		612
 驷	sin		1950
 闿	kla		729
 俎	zuj		1606
+阏	eea		0
 骞	qmw		2002
 痨	lka		1271
 篾	mxr		1074
@@ -3725,6 +3803,7 @@ import_tables:
 踅	xtu		1165
 鸩	vfw		1439
 洱	erk		2977
+粳	ggp		554
 薮	sbl		509
 镏	lqz		592
 沤	ouk		528
@@ -3745,7 +3824,6 @@ import_tables:
 觞	uhx		1255
 骶	dif		706
 硒	xim		857
-舸	gei		672
 疥	jxa		607
 脍	kyv		1296
 轭	eey		222
@@ -3762,7 +3840,6 @@ import_tables:
 礴	bom		4039
 阆	lha		820
 毂	gug		516
-荞	qcl		1425
 矸	gjm		592
 阋	xia		413
 掮	qmu		625
@@ -3774,7 +3851,6 @@ import_tables:
 瓤	rht		846
 钏	irz		2743
 舂	isa		1111
-鲂	fhw		282
 乜	mxa		2942
 乜	nxa		112
 莜	ybl		616
@@ -3810,6 +3886,7 @@ import_tables:
 蚴	ybc		608
 妗	jnb		2231
 饧	xyq		241
+饧	thq		0
 溴	xqk		845
 缂	kei		79
 蛞	koc		551
@@ -3830,6 +3907,7 @@ import_tables:
 遢	tao		4429
 缁	zii		635
 钿	dmz		1044
+钿	tmz		0
 愍	mnd		573
 缛	rui		1142
 郴	ife		684
@@ -3883,20 +3961,23 @@ import_tables:
 篑	kvr		2458
 珩	hgn		3734
 痼	gua		690
-笾	bmr		102
 逄	phh		597
 煅	drc		1250
 讧	hss		2114
+黾	mmd		0
 砉	hwa		273
+砉	xua		273
 蚋	rvc		636
 蜍	iuc		1503
 跆	tlp		3161
 亳	bog		842
 囵	lpr		1793
+怫	fzh		230
 桉	ane		1066
 祢	mif		3851
 虺	hvf		1438
 囹	lyr		1017
+忪	vsh		0
 滁	iuk		949
 簟	dmr		586
 侔	mbj		546
@@ -3908,11 +3989,11 @@ import_tables:
 趸	dpf		623
 侪	ilj		647
 汊	iak		638
-雎	juf		2014
 鳟	zpw		436
 榧	fze		559
 跎	top		1419
 阃	kpa		231
+渑	ugk		0
 佤	waj		679
 筮	uir		554
 缶	fba		654
@@ -3925,17 +4006,22 @@ import_tables:
 柘	vee		1071
 螈	yrc		474
 蟛	pgc		566
+嘏	jwc		267
 岿	kvv		1390
 硌	gem		1300
+硌	lom		0
+苎	nyl		0
 鲐	tlw		14
 啫	ved		613
 袷	qwt		1
+袷	jwt		565
 跬	kvp		528
 倥	ksj		574
 珐	fan		878
 瓞	dxy		429
 碓	dvm		587
 笊	vkr		547
+跞	lop		0
 髂	qwf		656
 铄	uoz		1850
 矬	coo		654
@@ -3954,7 +4040,6 @@ import_tables:
 锕	aaz		144
 雠	ibu		737
 雠	ibs		737
-蛱	jwc		103
 赅	glo		969
 匏	pkm		558
 崤	xcv		508
@@ -3977,7 +4062,6 @@ import_tables:
 硐	dsm		633
 鄄	jrv		610
 锸	iaz		103
-尕	gav		1817
 徉	yhw		2314
 怛	dah		611
 獬	xxm		561
@@ -3992,6 +4076,7 @@ import_tables:
 鲅	baw		390
 珲	hpn		1336
 锛	bfz		483
+伧	ifj		0
 猱	nkm		628
 盱	xuq		658
 椁	goe		1368
@@ -4001,7 +4086,6 @@ import_tables:
 鲠	ggw		582
 锗	vez		210
 陉	xyt		714
-隳	hvt		559
 畚	bfk		523
 硗	qcm		154
 肟	wov		656
@@ -4053,7 +4137,6 @@ import_tables:
 蛏	igc		105
 钣	bjz		127
 颎	jsv		877
-髑	duf		501
 喾	kuk		235
 踟	iip		702
 镔	bnz		6859
@@ -4065,6 +4148,7 @@ import_tables:
 暌	kvo		529
 窀	vpe		506
 蓼	lcl		1444
+钭	tbz		0
 镬	hoz		308
 荽	svl		495
 衄	nvt		534
@@ -4090,12 +4174,11 @@ import_tables:
 萑	hrl		287
 钫	fhz		44
 锱	ziz		403
-悱	fzh		1249
 捩	lxu		487
 榱	cve		568
 瑷	ain		232
 窨	yne		396
-螽	vsh		441
+窨	xpe		281
 磴	dgm		540
 蘼	mil		606
 辊	gpy		148
@@ -4103,13 +4186,13 @@ import_tables:
 糗	qqp		5197
 麇	jpx		436
 麇	qpx		436
-猡	lom		693
 玢	bnn		592
 玢	ffn		592
 筇	qsr		776
 艨	mgi		580
 轫	rfy		241
 钯	baz		872
+钯	paz		0
 蒌	lbl		169
 鹾	coy		214
 酽	yjy		681
@@ -4121,6 +4204,7 @@ import_tables:
 偬	zsj		396
 砬	lam		730
 肭	nav		499
+莩	pcl		273
 侉	kwj		801
 糇	hbp		200
 铋	biz		43
@@ -4160,6 +4244,7 @@ import_tables:
 哿	ges		524
 苒	rjl		3850
 蒡	bhl		394
+蒡	phl		394
 鞲	gbt		95
 囧	jsr		66666
 艟	isi		555
@@ -4173,10 +4258,10 @@ import_tables:
 箬	ror		633
 谮	zfs		190
 檑	lze		602
-瘌	laa		1496
 纛	dka		894
 芈	mig		1723
 狴	bim		536
+玟	mnn		161
 貅	xqm		1043
 瑗	yrn		1759
 柰	nle		566
@@ -4190,6 +4275,7 @@ import_tables:
 棹	vke		624
 阼	zot		464
 撄	yyu		406
+悝	lih		488
 坩	gjg		508
 徂	cuw		560
 缵	zri		271
@@ -4238,26 +4324,30 @@ import_tables:
 犰	qqm		551
 蛸	xcc		191
 郄	qxb		546
-颃	hhz		118
 擐	hru		426
 檎	qne		498
 邗	hje		482
 坜	lig		223
+惝	thh		211
 瀹	ytk		636
 癀	hda		446
 簋	gvr		531
 镡	tjz		141
 圹	kdg		114
 廑	jnx		412
+廑	qnx		0
 悃	kph		481
+桴	bke		0
 砑	yam		558
 箜	ksr		740
+芘	pil		575
 蓁	vfl		2763
 酹	lzy		536
 馘	goh		529
 垆	lug		385
 撙	zpu		401
 浍	kyk		1
+溱	vfk		581
 狺	ynm		347
 珙	gsn		990
 瘰	loa		443
@@ -4267,15 +4357,16 @@ import_tables:
 镩	crz		16
 髹	xqp		484
 佴	nlj		140
+佴	erj		479
 坼	ieg		519
 掊	pbu		471
 杩	mae		70
 狃	nqm		462
-珉	mnn		9079
 箨	tor		34
 糍	cip		579
 舳	vui		525
 觌	din		148
+觜	zvs		521
 陔	glt		546
 骀	tln		79
 龠	ytj		484
@@ -4283,7 +4374,9 @@ import_tables:
 埝	nmg		551
 彖	trb		486
 枘	rve		479
+柁	doe		515
 栝	gwe		473
+栝	koe		0
 筲	ukr		398
 篼	dbr		514
 糈	xup		379
@@ -4356,6 +4449,7 @@ import_tables:
 蒇	ijl		81
 豇	jdz		405
 酲	igy		446
+酾	uly		0
 钐	ujz		24
 锾	hrz		55
 陧	nxt		54
@@ -4364,7 +4458,6 @@ import_tables:
 唪	fgd		406
 彳	iiw		565
 泖	mkk		580
-浈	vfk		168
 瘥	ila		230
 癃	lsa		454
 礓	jdm		376
@@ -4408,9 +4501,9 @@ import_tables:
 铼	llz		15
 锘	noz		109
 锫	pzz		42
+镦	dvz		0
 骍	xyn		115
 骣	ijn		23
-鲒	jxw		35
 黪	cjp		80
 鼯	wup		484
 㑇	vbj		0
@@ -4462,11 +4555,12 @@ import_tables:
 劄	var		16
 卍	wja		18100
 卬	ahb		265
+卬	yhb		31
 厖	mhx		436
 叕	vor		491
-吖	aad		160000
 咉	yhd		286
 咡	erd		425
+唝	gsd		0
 唵	and		576
 啴	ijd		6
 喤	hdd		424
@@ -4477,10 +4571,12 @@ import_tables:
 噇	idd		305
 囷	qpr		24
 圌	ivr		382
+圌	irr		382
 圐	kur		403
 圙	ltr		0
 圲	qmg		252
 坉	tpg		330
+坋	bfg		0
 坰	jsg		365
 垏	lvg		2
 垙	gdg		411
@@ -4512,7 +4608,9 @@ import_tables:
 婫	kpb		0
 婳	hwb		1640
 婻	njb		412
+婼	iob		529
 媆	rrb		256
+媆	nfb		0
 媓	hdb		361
 媞	tib		1080
 嫚	mjb		569
@@ -4520,6 +4618,7 @@ import_tables:
 嬛	hrb		569
 嬢	ndb		485
 嬬	rub		501
+孖	mah		0
 寁	zjw		284
 尨	mho		467
 屌	dcc		93026
@@ -4528,10 +4627,10 @@ import_tables:
 岠	juv		463
 峘	hrv		347
 崀	lhv		351
-崁	kjv		446
 崒	zuv		371
 崚	lgv		553
 崡	hjv		445
+嵅	dhv		0
 嵖	iav		15
 嵲	nxv		286
 嶒	cgv		485
@@ -4549,6 +4648,7 @@ import_tables:
 忺	xmh		775
 怊	ikh		359
 恔	jch		297
+恔	xch		297
 悈	jxh		414
 悢	ldh		479
 悰	csh		418
@@ -4582,10 +4682,8 @@ import_tables:
 杧	mhe		10
 杻	ibe		207
 杻	nqe		207
-枹	bke		429
 柊	vse		535
 栐	yse		4
-栒	xpe		26
 栟	bfe		2
 梴	ije		285
 梾	lle		9
@@ -4596,6 +4694,7 @@ import_tables:
 楩	pme		430
 楪	dxe		360
 楯	upe		466
+楯	dpe		466
 榅	wfe		9
 槜	zve		14
 橑	lce		1
@@ -4603,6 +4702,7 @@ import_tables:
 欸	eik		534
 毪	muv		395
 氕	pxv		406
+氿	gvk		464
 汈	dck		5
 汭	rvk		476
 泂	jsk		402
@@ -4617,7 +4717,6 @@ import_tables:
 溞	skk		411
 滃	wgk		517
 滆	gek		489
-潖	pak		340
 濛	mgk		695
 瀌	bck		330
 瀼	rhk		526
@@ -4645,6 +4744,7 @@ import_tables:
 狨	rsm		433
 猯	trm		308
 玚	yhn		28
+玚	ihn		0
 玤	bhn		228
 玥	ytn		5094
 玭	pnn		379
@@ -4744,11 +4844,8 @@ import_tables:
 舥	pai		503
 艎	hdi		329
 芠	wfl		17349
-苉	pil		323
 苠	mnl		434
-苧	nyl		33
 茝	ill		389
-荄	gll		446
 荙	dal		4
 荮	vbl		2
 莝	col		320
@@ -4761,7 +4858,6 @@ import_tables:
 蒈	kll		377
 蒎	pll		493
 蔀	bul		490
-蔈	pcl		269
 藨	bcl		406
 蘘	rhl		401
 虷	gjc		408
@@ -4789,6 +4885,8 @@ import_tables:
 辒	wfy		62
 邠	bnh		474
 鄑	zif		257
+酂	coq		0
+酂	crq		0
 酦	poy		0
 酺	puy		409
 醌	kpy		570
@@ -4826,7 +4924,6 @@ import_tables:
 鬒	vfp		335
 鬘	mjp		502
 鬷	zsn		301
-魆	xua		587
 魋	tva		358
 鲌	bow		14
 鲏	piw		1
@@ -4844,7 +4941,6 @@ import_tables:
 鳡	gjw		3
 鳣	vjw		5
 鹐	qmx		10
-鹯	vjz		41
 麀	ybx		371
 麑	nix		373
 麖	jyx		294
@@ -4886,6 +4982,7 @@ import_tables:
 𫞩	mfn		0
 𫟦	svy		0
 𫟹	hsz		0
+𫭟	oug		0
 𫭢	lpg		0
 𫭼	lkg		0
 𫶇	dxv		0
@@ -4899,9 +4996,9 @@ import_tables:
 𬘘	dji		0
 𬘡	yni		0
 𬘭	ifi		0
+𬘭	lni		0
 𬘯	vpi		0
 𬙊	moi		0
-𬞟	pnl		0
 𬟽	dsc		0
 𬣳	hfs		0
 𬤇	yns		0
@@ -55261,7 +55358,6 @@ JK制服	jkvf
 拿开	nakl
 那款	nakr
 那块	naky
-哪里	nal
 纳凉	nald
 那里	nali
 哪里	nali

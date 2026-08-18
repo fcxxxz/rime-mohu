@@ -11,6 +11,8 @@ use_preset_vocabulary: false
 吖	a	160000
 锕	a	144
 腌	a	1
+呵	a	0
+嗄	a	0
 爱	ai	1516399
 艾	ai	212019
 哎	ai	166400
@@ -56,6 +58,8 @@ use_preset_vocabulary: false
 盦	an	23
 垵	an	5
 𩽾	an	0
+厂	an	0
+广	an	0
 昂	ang	80972
 肮	ang	14717
 盎	ang	8678
@@ -119,6 +123,7 @@ use_preset_vocabulary: false
 羓	ba	3
 朳	ba	1
 妭	ba	0
+鲌	ba	0
 白	bai	2322211
 百	bai	962451
 败	bai	364055
@@ -130,6 +135,8 @@ use_preset_vocabulary: false
 佰	bai	1600
 稗	bai	965
 捭	bai	617
+呗	bai	0
+擘	bai	0
 半	ban	1095098
 办	ban	956075
 般	ban	940949
@@ -174,6 +181,7 @@ use_preset_vocabulary: false
 搒	bang	1
 塝	bang	0
 𠳐	bang	0
+棓	bang	0
 保	bao	859752
 报	bao	856017
 包	bao	667583
@@ -203,6 +211,7 @@ use_preset_vocabulary: false
 趵	bao	341
 枹	bao	113
 瀑	bao	1
+桴	bao	0
 被	bei	2998064
 备	bei	823555
 北	bei	718033
@@ -248,6 +257,7 @@ use_preset_vocabulary: false
 倴	ben	3
 栟	ben	2
 夯	ben	0
+坋	ben	0
 崩	beng	61288
 蹦	beng	49581
 绷	beng	29020
@@ -332,6 +342,7 @@ use_preset_vocabulary: false
 泌	bi	1
 秘	bi	1
 鲾	bi	0
+祕	bi	0
 边	bian	2448615
 便	bian	1735257
 变	bian	1428820
@@ -360,6 +371,7 @@ use_preset_vocabulary: false
 碥	bian	16
 萹	bian	5
 𨚕	bian	0
+篇	bian	0
 𰻝	biang	1
 表	biao	1303318
 标	biao	352517
@@ -384,6 +396,7 @@ use_preset_vocabulary: false
 瀌	biao	1
 幖	biao	0
 脿	biao	0
+勺	biao	0
 别	bie	2000757
 憋	bie	41712
 瘪	bie	11246
@@ -473,6 +486,9 @@ use_preset_vocabulary: false
 欂	bo	0
 袯	bo	0
 𬭛	bo	0
+桲	bo	0
+般	bo	0
+魄	bo	0
 不	bu	2985809
 部	bu	1972176
 步	bu	1077549
@@ -497,6 +513,7 @@ use_preset_vocabulary: false
 𬷕	bu	0
 擦	ca	172541
 嚓	ca	16791
+拆	ca	0
 才	cai	2774963
 菜	cai	288767
 彩	cai	274800
@@ -521,6 +538,8 @@ use_preset_vocabulary: false
 骖	can	155
 黪	can	80
 䅟	can	0
+孱	can	0
+掺	can	0
 藏	cang	339641
 苍	cang	194304
 仓	cang	68847
@@ -586,6 +605,7 @@ use_preset_vocabulary: false
 嵖	cha	15
 喳	cha	1
 𥻗	cha	0
+楂	cha	0
 拆	chai	99444
 柴	chai	61680
 钗	chai	18040
@@ -664,6 +684,8 @@ use_preset_vocabulary: false
 鲳	chang	98
 鲿	chang	0
 𬬮	chang	0
+倘	chang	0
+玚	chang	0
 超	chao	839240
 朝	chao	709793
 潮	chao	139090
@@ -679,6 +701,7 @@ use_preset_vocabulary: false
 怊	chao	15
 弨	chao	7
 绰	chao	1
+剿	chao	0
 车	che	1338066
 彻	che	168415
 扯	che	131478
@@ -715,6 +738,8 @@ use_preset_vocabulary: false
 梣	chen	3
 煁	chen	0
 𬘭	chen	0
+伧	chen	0
+沈	chen	0
 成	cheng	3478315
 城	cheng	1258895
 程	cheng	590619
@@ -754,6 +779,7 @@ use_preset_vocabulary: false
 噌	cheng	1
 晟	cheng	1
 铛	cheng	1
+樘	cheng	0
 吃	chi	1445563
 持	chi	641315
 迟	chi	203433
@@ -798,6 +824,7 @@ use_preset_vocabulary: false
 瓻	chi	0
 痓	chi	0
 𫄨	chi	0
+坻	chi	0
 冲	chong	862983
 充	chong	409223
 重	chong	114049
@@ -875,11 +902,13 @@ use_preset_vocabulary: false
 濋	chu	0
 琡	chu	0
 𬺓	chu	0
+柷	chu	0
 欻	chua	0
 揣	chuai	27568
 踹	chuai	22631
 搋	chuai	35
 啜	chuai	1
+嘬	chuai	0
 传	chuan	1034638
 穿	chuan	634742
 船	chuan	345686
@@ -891,6 +920,7 @@ use_preset_vocabulary: false
 舛	chuan	934
 遄	chuan	284
 氚	chuan	130
+圌	chuan	0
 床	chuang	465801
 窗	chuang	298137
 创	chuang	270394
@@ -909,6 +939,7 @@ use_preset_vocabulary: false
 棰	chui	405
 倕	chui	17
 圌	chui	1
+椎	chui	0
 春	chun	414544
 纯	chun	212265
 唇	chun	161329
@@ -931,6 +962,7 @@ use_preset_vocabulary: false
 踔	chuo	162
 惙	chuo	15
 逴	chuo	4
+婼	chuo	0
 此	ci	2725965
 次	ci	2307457
 刺	ci	394555
@@ -957,6 +989,8 @@ use_preset_vocabulary: false
 差	ci	1
 莿	ci	0
 𫚖	ci	0
+粢	ci	0
+龇	ci	0
 从	cong	3173776
 匆	cong	170609
 聪	cong	138731
@@ -985,6 +1019,7 @@ use_preset_vocabulary: false
 徂	cu	560
 殂	cu	248
 蔟	cu	192
+酢	cu	0
 窜	cuan	65974
 蹿	cuan	12631
 篡	cuan	6922
@@ -993,6 +1028,7 @@ use_preset_vocabulary: false
 汆	cuan	182
 爨	cuan	137
 镩	cuan	16
+酂	cuan	0
 脆	cui	145125
 催	cui	86151
 翠	cui	82046
@@ -1009,12 +1045,14 @@ use_preset_vocabulary: false
 毳	cui	60
 漼	cui	23
 缞	cui	12
+衰	cui	0
 存	cun	485467
 村	cun	343959
 寸	cun	85513
 忖	cun	25374
 皴	cun	307
 邨	cun	108
+蹲	cun	0
 错	cuo	839927
 措	cuo	104929
 挫	cuo	32364
@@ -1032,6 +1070,8 @@ use_preset_vocabulary: false
 瑳	cuo	14
 棤	cuo	0
 莝	cuo	0
+瘥	cuo	0
+酂	cuo	0
 大	da	10828984
 打	da	2882337
 答	da	796906
@@ -1056,6 +1096,7 @@ use_preset_vocabulary: false
 鿎	da	0
 𨱏	da	0
 𫟼	da	0
+阘	da	0
 带	dai	1491966
 代	dai	932729
 待	dai	658854
@@ -1113,6 +1154,7 @@ use_preset_vocabulary: false
 膻	dan	1
 𫢸	dan	0
 𬘘	dan	0
+嵅	dan	0
 当	dang	3437226
 党	dang	242508
 荡	dang	226789
@@ -1130,6 +1172,7 @@ use_preset_vocabulary: false
 筜	dang	8
 𣗋	dang	0
 𬍡	dang	0
+嵅	dang	0
 到	dao	11505436
 倒	dao	1085421
 道	dao	1062553
@@ -1150,12 +1193,14 @@ use_preset_vocabulary: false
 鱽	dao	23
 舠	dao	2
 帱	dao	1
+焘	dao	0
 的	de	76938354
 地	de	8804040
 得	de	7186260
 德	de	733775
 嘚	de	357
 锝	de	187
+底	de	0
 得	dei	7186260
 嘚	dei	1
 扽	den	81
@@ -1270,6 +1315,7 @@ use_preset_vocabulary: false
 铞	diao	36
 窎	diao	12
 汈	diao	5
+鸟	diao	0
 爹	die	147569
 蝶	die	89194
 跌	die	85274
@@ -1289,6 +1335,8 @@ use_preset_vocabulary: false
 绖	die	16
 楪	die	1
 𫶇	die	0
+咥	die	0
+踮	die	0
 定	ding	2738825
 顶	ding	372322
 丁	ding	278627
@@ -1308,6 +1356,7 @@ use_preset_vocabulary: false
 啶	ding	95
 耵	ding	19
 萣	ding	6
+铤	ding	0
 丢	diu	190646
 铥	diu	2
 动	dong	3073269
@@ -1371,6 +1420,7 @@ use_preset_vocabulary: false
 髑	du	109
 厾	du	43
 𬭊	du	0
+顿	du	0
 断	duan	759788
 段	duan	559051
 短	duan	345480
@@ -1383,6 +1433,7 @@ use_preset_vocabulary: false
 簖	duan	8
 塅	duan	1
 瑖	duan	0
+专	duan	0
 对	dui	6195038
 队	dui	1255383
 堆	dui	174996
@@ -1390,6 +1441,9 @@ use_preset_vocabulary: false
 怼	dui	765
 碓	dui	382
 祋	dui	3
+敦	dui	0
+镦	dui	0
+𬭚	dui	0
 顿	dun	557768
 盾	dun	113909
 蹲	dun	66158
@@ -1408,6 +1462,7 @@ use_preset_vocabulary: false
 砘	dun	53
 镦	dun	25
 囤	dun	1
+楯	dun	0
 多	duo	4617194
 躲	duo	249450
 朵	duo	202374
@@ -1432,6 +1487,8 @@ use_preset_vocabulary: false
 剟	duo	8
 驮	duo	1
 㙍	duo	0
+杕	duo	0
+柁	duo	0
 饿	e	606677
 呃	e	535105
 恶	e	450813
@@ -1471,6 +1528,7 @@ use_preset_vocabulary: false
 堨	e	0
 𥔲	e	0
 𫫇	e	0
+阏	e	0
 诶	ei	1
 欸	ei	534
 嗯	en	9179528
@@ -1494,6 +1552,7 @@ use_preset_vocabulary: false
 鲕	er	4
 咡	er	3
 耏	er	3
+佴	er	0
 发	fa	3946829
 法	fa	2798486
 罚	fa	94402
@@ -1504,6 +1563,7 @@ use_preset_vocabulary: false
 砝	fa	1734
 珐	fa	878
 垡	fa	79
+酦	fa	0
 反	fan	1250683
 饭	fan	592046
 翻	fan	391454
@@ -1552,6 +1612,7 @@ use_preset_vocabulary: false
 钫	fang	44
 牥	fang	0
 蚄	fang	0
+彷	fang	0
 飞	fei	1593771
 非	fei	1219442
 费	fei	449492
@@ -1585,6 +1646,7 @@ use_preset_vocabulary: false
 镄	fei	15
 剕	fei	9
 𬴂	fei	0
+怫	fei	0
 分	fen	2568782
 份	fen	493685
 纷	fen	308101
@@ -1736,6 +1798,7 @@ use_preset_vocabulary: false
 琈	fu	0
 𫓧	fu	0
 𫖯	fu	0
+枹	fu	0
 尬	ga	88603
 嘎	ga	33414
 伽	ga	18295
@@ -1747,6 +1810,9 @@ use_preset_vocabulary: false
 轧	ga	100
 钆	ga	20
 戛	ga	1
+呷	ga	0
+夹	ga	0
+胳	ga	0
 该	gai	1351318
 改	gai	495567
 盖	gai	229688
@@ -1761,6 +1827,8 @@ use_preset_vocabulary: false
 荄	gai	2
 晐	gai	0
 𬮿	gai	0
+胲	gai	0
+芥	gai	0
 感	gan	2529138
 干	gan	1197831
 敢	gan	782369
@@ -1789,6 +1857,7 @@ use_preset_vocabulary: false
 虷	gan	4
 鳡	gan	3
 㽏	gan	0
+乾	gan	0
 刚	gang	1561764
 港	gang	132167
 钢	gang	114590
@@ -1827,6 +1896,7 @@ use_preset_vocabulary: false
 藁	gao	142
 槔	gao	74
 筶	gao	4
+皓	gao	0
 个	ge	14789406
 哥	ge	1176477
 各	ge	856128
@@ -1862,6 +1932,10 @@ use_preset_vocabulary: false
 塥	ge	6
 滆	ge	2
 合	ge	1
+屹	ge	0
+纥	ge	0
+阖	ge	0
+颌	ge	0
 给	gei	2939384
 跟	gen	1547565
 根	gen	886057
@@ -1885,6 +1959,7 @@ use_preset_vocabulary: false
 颈	geng	1
 鹒	geng	1
 𬒔	geng	0
+粳	geng	0
 公	gong	2055138
 工	gong	1242237
 功	gong	945623
@@ -1906,6 +1981,8 @@ use_preset_vocabulary: false
 珙	gong	990
 䢼	gong	0
 硔	gong	0
+唝	gong	0
+红	gong	0
 够	gou	768470
 狗	gou	273402
 构	gou	152528
@@ -1993,6 +2070,7 @@ use_preset_vocabulary: false
 诖	gua	128
 栝	gua	99
 胍	gua	70
+括	gua	0
 怪	guai	1036985
 乖	guai	139563
 拐	guai	69575
@@ -2025,6 +2103,7 @@ use_preset_vocabulary: false
 纶	guan	1
 莞	guan	1
 鳤	guan	0
+矜	guan	0
 光	guang	2185701
 广	guang	374959
 逛	guang	68458
@@ -2069,6 +2148,9 @@ use_preset_vocabulary: false
 鬶	gui	2
 炅	gui	1
 筀	gui	0
+匮	gui	0
+廆	gui	0
+氿	gui	0
 滚	gun	203922
 棍	gun	70829
 衮	gun	12074
@@ -2101,6 +2183,7 @@ use_preset_vocabulary: false
 哈	ha	879528
 蛤	ha	9735
 铪	ha	59
+虾	ha	0
 还	hai	6776145
 海	hai	1335124
 孩	hai	1251885
@@ -2155,6 +2238,8 @@ use_preset_vocabulary: false
 崡	han	0
 嵅	han	0
 蔊	han	0
+擀	han	0
+阚	han	0
 行	hang	2756706
 航	hang	116067
 杭	hang	34033
@@ -2164,6 +2249,7 @@ use_preset_vocabulary: false
 绗	hang	38
 吭	hang	1
 巷	hang	1
+亢	hang	0
 好	hao	7259684
 号	hao	513737
 毫	hao	414933
@@ -2188,6 +2274,7 @@ use_preset_vocabulary: false
 嚆	hao	22
 鄗	hao	10
 镐	hao	1
+貊	hao	0
 和	he	6252031
 何	he	1822108
 合	he	1085786
@@ -2232,6 +2319,7 @@ use_preset_vocabulary: false
 黑	hei	1292192
 嘿	hei	319099
 𬭶	hei	0
+嗨	hei	0
 很	hen	3994436
 狠	hen	382360
 恨	hen	326212
@@ -2347,6 +2435,7 @@ use_preset_vocabulary: false
 嫭	hu	2
 轷	hu	2
 昈	hu	0
+戏	hu	0
 话	hua	3744917
 花	hua	1277183
 化	hua	951401
@@ -2362,12 +2451,14 @@ use_preset_vocabulary: false
 铧	hua	952
 砉	hua	111
 觟	hua	3
+豁	hua	0
 坏	huai	365836
 怀	huai	60703
 淮	huai	36109
 槐	huai	25776
 徊	huai	17842
 踝	huai	6039
+坯	huai	0
 睆	huan	1
 换	huan	996459
 缓	huan	450418
@@ -2490,6 +2581,8 @@ use_preset_vocabulary: false
 烠	hui	0
 𬤝	hui	0
 𬭬	hui	0
+堕	hui	0
+徊	hui	0
 混	hun	338565
 婚	hun	306955
 魂	hun	291928
@@ -2657,6 +2750,11 @@ use_preset_vocabulary: false
 𬯀	ji	0
 𬶨	ji	0
 𬶭	ji	0
+借	ji	0
+其	ji	0
+诘	ji	0
+革	ji	0
+齐	ji	0
 家	jia	4546765
 加	jia	1329722
 价	jia	384863
@@ -2697,6 +2795,10 @@ use_preset_vocabulary: false
 瘕	jia	20
 泇	jia	1
 𬂩	jia	0
+叚	jia	0
+嘏	jia	0
+挟	jia	0
+袷	jia	0
 见	jian	3460998
 间	jian	3067939
 剑	jian	1151704
@@ -2769,6 +2871,9 @@ use_preset_vocabulary: false
 犍	jian	1
 鳒	jian	0
 𬣡	jian	0
+囡	jian	0
+浅	jian	0
+闲	jian	0
 将	jiang	2629219
 江	jiang	705253
 讲	jiang	510842
@@ -2853,6 +2958,7 @@ use_preset_vocabulary: false
 恔	jiao	1
 䴔	jiao	0
 漖	jiao	0
+爝	jiao	0
 接	jie	1671342
 解	jie	1312068
 姐	jie	1158924
@@ -2907,6 +3013,9 @@ use_preset_vocabulary: false
 㛃	jie	0
 悈	jie	0
 蜐	jie	0
+偈	jie	0
+家	jie	0
+寁	jie	0
 进	jin	2706350
 今	jin	1337566
 金	jin	1291889
@@ -2950,6 +3059,7 @@ use_preset_vocabulary: false
 殣	jin	1
 珒	jin	0
 𬬱	jin	0
+吟	jin	0
 经	jing	3923454
 惊	jing	1161953
 竟	jing	1160070
@@ -3109,6 +3219,7 @@ use_preset_vocabulary: false
 趄	ju	1
 䴗	ju	0
 𬶋	ju	0
+且	ju	0
 卷	juan	419864
 娟	juan	73343
 倦	juan	46376
@@ -3126,6 +3237,7 @@ use_preset_vocabulary: false
 锩	juan	145
 桊	juan	40
 焆	juan	2
+俊	juan	0
 觉	jue	2372600
 绝	jue	943340
 决	jue	856467
@@ -3161,6 +3273,9 @@ use_preset_vocabulary: false
 㵐	jue	0
 𫔎	jue	0
 𫘝	jue	0
+噱	jue	0
+脚	jue	0
+跷	jue	0
 均	jun	316506
 君	jun	285417
 军	jun	257500
@@ -3207,6 +3322,7 @@ use_preset_vocabulary: false
 锎	kai	28
 炌	kai	0
 蒈	kai	0
+咳	kai	0
 看	kan	8030267
 堪	kan	118698
 砍	kan	105218
@@ -3225,6 +3341,7 @@ use_preset_vocabulary: false
 磡	kan	29
 嵁	kan	11
 墈	kan	5
+嵌	kan	0
 抗	kang	272796
 康	kang	217905
 扛	kang	25430
@@ -3282,12 +3399,16 @@ use_preset_vocabulary: false
 牁	ke	14
 匼	ke	3
 炣	ke	0
+剋	ke	0
+呵	ke	0
 剋	kei	192
+克	kei	0
 肯	ken	522835
 恳	ken	36239
 啃	ken	19567
 垦	ken	5358
 裉	ken	202
+龈	ken	0
 坑	keng	56879
 吭	keng	29375
 铿	keng	6349
@@ -3397,6 +3518,7 @@ use_preset_vocabulary: false
 煃	kui	4
 戣	kui	1
 𫠆	kui	0
+隗	kui	0
 困	kun	225133
 昆	kun	66326
 坤	kun	49143
@@ -3419,6 +3541,8 @@ use_preset_vocabulary: false
 阔	kuo	77181
 廓	kuo	15567
 蛞	kuo	118
+栝	kuo	0
+适	kuo	0
 菈	la	1
 啦	la	3655999
 拉	la	109679
@@ -3437,6 +3561,7 @@ use_preset_vocabulary: false
 蝲	la	10
 鞡	la	10
 𬶟	la	0
+癞	la	0
 来	lai	14837007
 莱	lai	152961
 赖	lai	118093
@@ -3520,6 +3645,7 @@ use_preset_vocabulary: false
 铹	lao	2
 络	lao	1
 𫭼	lao	0
+潦	lao	0
 了	le	3481243
 乐	le	777260
 勒	le	149722
@@ -3530,6 +3656,7 @@ use_preset_vocabulary: false
 仂	le	15
 簕	le	8
 嘞	le	1
+肋	le	0
 雷	lei	560379
 类	lei	542775
 泪	lei	439483
@@ -3647,6 +3774,9 @@ use_preset_vocabulary: false
 珕	li	0
 𫵷	li	0
 𬍛	li	0
+悝	li	0
+禧	li	0
+釐	li	0
 俩	lia	0
 连	lian	2453048
 脸	lian	1845354
@@ -3677,6 +3807,7 @@ use_preset_vocabulary: false
 瑓	lian	3
 浰	lian	1
 𬶠	lian	0
+磏	lian	0
 两	liang	3302466
 量	liang	1142437
 亮	liang	693524
@@ -3700,6 +3831,7 @@ use_preset_vocabulary: false
 俩	liang	1
 𫟅	liang	0
 𬜯	liang	0
+倞	liang	0
 聊	liao	265573
 料	liao	263518
 疗	liao	94630
@@ -3778,6 +3910,7 @@ use_preset_vocabulary: false
 箖	lin	0
 𬭸	lin	0
 𬴊	lin	0
+𬘭	lin	0
 令	ling	942791
 灵	ling	878814
 领	ling	808920
@@ -3814,6 +3947,7 @@ use_preset_vocabulary: false
 棱	ling	1
 㥄	ling	0
 坽	ling	0
+崚	ling	0
 流	liu	1114438
 刘	liu	835052
 留	liu	778671
@@ -3941,6 +4075,7 @@ use_preset_vocabulary: false
 澛	lu	0
 𫘧	lu	0
 𬬻	lu	0
+蓼	lu	0
 乱	luan	692152
 卵	luan	18272
 鸾	luan	11088
@@ -3991,6 +4126,8 @@ use_preset_vocabulary: false
 瘰	luo	77
 泺	luo	58
 蓏	luo	10
+硌	luo	0
+跞	luo	0
 绿	lv	245485
 律	lv	223633
 率	lv	217561
@@ -4016,6 +4153,7 @@ use_preset_vocabulary: false
 偻	lv	1
 梠	lv	1
 𦝼	lv	0
+菉	lv	0
 略	lve	301716
 掠	lve	81961
 锊	lve	58
@@ -4036,6 +4174,9 @@ use_preset_vocabulary: false
 杩	ma	70
 祃	ma	4
 摩	ma	1
+么	ma	0
+孖	ma	0
+麽	ma	0
 买	mai	477539
 卖	mai	303880
 埋	mai	139624
@@ -4145,6 +4286,7 @@ use_preset_vocabulary: false
 糜	mei	1
 媄	mei	0
 瑂	mei	0
+谜	mei	0
 们	men	1074187
 门	men	223346
 闷	men	203501
@@ -4154,6 +4296,7 @@ use_preset_vocabulary: false
 钔	men	33
 呇	men	2
 𫞩	men	0
+亹	men	0
 濛	meng	1
 梦	meng	650909
 猛	meng	403183
@@ -4179,6 +4322,8 @@ use_preset_vocabulary: false
 㠓	meng	0
 鹲	meng	0
 𫑡	meng	0
+尨	meng	0
+氓	meng	0
 密	mi	506110
 米	mi	503964
 迷	mi	424854
@@ -4230,6 +4375,7 @@ use_preset_vocabulary: false
 愐	mian	5
 偭	mian	1
 𩾃	mian	0
+黾	mian	0
 妙	miao	280421
 秒	miao	90580
 描	miao	87436
@@ -4269,6 +4415,7 @@ use_preset_vocabulary: false
 忞	min	92
 鳘	min	13
 苠	min	5
+玟	min	0
 明	ming	2864492
 名	ming	1804559
 命	ming	1368062
@@ -4282,6 +4429,7 @@ use_preset_vocabulary: false
 暝	ming	1136
 螟	ming	810
 洺	ming	405
+蓂	ming	0
 谬	miu	15676
 缪	miu	1490
 魔	mo	1160330
@@ -4322,6 +4470,9 @@ use_preset_vocabulary: false
 脉	mo	1
 藦	mo	1
 𬙊	mo	0
+么	mo	0
+冒	mo	0
+嘿	mo	0
 某	mou	342978
 谋	mou	204688
 眸	mou	59961
@@ -4356,6 +4507,7 @@ use_preset_vocabulary: false
 牟	mu	1
 𧿹	mu	0
 𬭁	mu	0
+姥	mu	0
 那	na	9929703
 哪	na	998544
 拿	na	958908
@@ -4382,6 +4534,8 @@ use_preset_vocabulary: false
 佴	nai	140
 迺	nai	52
 耏	nai	3
+哪	nai	0
+能	nai	0
 难	nan	1727440
 男	nan	1354324
 南	nan	856521
@@ -4414,13 +4568,19 @@ use_preset_vocabulary: false
 硇	nao	51
 臑	nao	10
 峱	nao	1
+努	nao	0
 呢	ne	179349
 讷	ne	10324
 哪	ne	1
+呐	ne	0
+那	ne	0
 内	nei	1509530
 馁	nei	5700
+哪	nei	0
+那	nei	0
 嫩	nen	58594
 恁	nen	3956
+媆	nen	0
 能	neng	59336
 你	ni	1422192
 尼	ni	272244
@@ -4462,6 +4622,7 @@ use_preset_vocabulary: false
 鲶	nian	680
 埝	nian	101
 粘	nian	1
+辗	nian	0
 嬢	niang	1
 娘	niang	603856
 酿	niang	22424
@@ -4470,6 +4631,7 @@ use_preset_vocabulary: false
 袅	niao	16381
 茑	niao	395
 脲	niao	14
+溺	niao	0
 捏	nie	81503
 聂	nie	36076
 孽	nie	25919
@@ -4489,6 +4651,7 @@ use_preset_vocabulary: false
 菍	nie	1
 𫔶	nie	0
 您	nin	523541
+恁	nin	0
 宁	ning	316587
 凝	ning	208926
 狞	ning	29726
@@ -4500,6 +4663,7 @@ use_preset_vocabulary: false
 甯	ning	106
 苧	ning	33
 聍	ning	30
+苎	ning	0
 牛	niu	313393
 扭	niu	173801
 纽	niu	42599
@@ -4528,6 +4692,7 @@ use_preset_vocabulary: false
 胬	nu	42
 砮	nu	40
 笯	nu	4
+呶	nu	0
 暖	nuan	155407
 诺	nuo	203149
 挪	nuo	46163
@@ -4548,6 +4713,7 @@ use_preset_vocabulary: false
 哦	o	3563330
 噢	o	496080
 喔	o	1
+嚄	o	0
 欧	ou	253543
 偶	ou	150991
 呕	ou	27879
@@ -4562,6 +4728,7 @@ use_preset_vocabulary: false
 耦	ou	443
 𠙶	ou	0
 𬉼	ou	0
+𫭟	ou	0
 怕	pa	1114820
 爬	pa	183266
 帕	pa	75768
@@ -4575,6 +4742,8 @@ use_preset_vocabulary: false
 筢	pa	568
 舥	pa	1
 潖	pa	0
+派	pa	0
+钯	pa	0
 派	pai	537090
 排	pai	449584
 拍	pai	449481
@@ -4604,6 +4773,9 @@ use_preset_vocabulary: false
 襻	pan	129
 番	pan	1
 胖	pan	1
+扳	pan	0
+拼	pan	0
+般	pan	0
 旁	pang	610425
 胖	pang	178105
 庞	pang	122515
@@ -4617,6 +4789,7 @@ use_preset_vocabulary: false
 耪	pang	139
 鳑	pang	4
 膀	pang	1
+蒡	pang	0
 跑	pao	767297
 炮	pao	176432
 泡	pao	114183
@@ -4646,6 +4819,7 @@ use_preset_vocabulary: false
 醅	pei	96
 锫	pei	42
 衃	pei	0
+𬇙	pei	0
 喷	pen	112711
 盆	pen	64086
 湓	pen	93
@@ -4723,6 +4897,9 @@ use_preset_vocabulary: false
 䴙	pi	0
 苉	pi	0
 𬳵	pi	0
+吡	pi	0
+坏	pi	0
+芘	pi	0
 片	pian	859001
 偏	pian	236193
 骗	pian	178600
@@ -4753,6 +4930,7 @@ use_preset_vocabulary: false
 螵	piao	25
 蔈	piao	0
 薸	piao	0
+莩	piao	0
 撇	pie	47004
 瞥	pie	38910
 苤	pie	81
@@ -4769,6 +4947,7 @@ use_preset_vocabulary: false
 牝	pin	864
 玭	pin	280
 𬞟	pin	0
+苹	pin	0
 平	ping	1439957
 凭	ping	221418
 评	ping	170396
@@ -4790,6 +4969,7 @@ use_preset_vocabulary: false
 蚲	ping	1
 涄	ping	0
 玶	ping	0
+𬞟	ping	0
 破	po	677496
 婆	po	325914
 迫	po	181073
@@ -4812,6 +4992,7 @@ use_preset_vocabulary: false
 陂	po	1
 䥽	po	0
 酦	po	0
+泺	po	0
 剖	pou	15232
 抔	pou	221
 裒	pou	189
@@ -4847,6 +5028,7 @@ use_preset_vocabulary: false
 蒱	pu	3
 墣	pu	1
 穙	pu	0
+暴	pu	0
 起	qi	5819918
 气	qi	3227369
 其	qi	2417047
@@ -4937,6 +5119,8 @@ use_preset_vocabulary: false
 䓫	qi	0
 𨙸	qi	0
 𬨂	qi	0
+只	qi	0
+綮	qi	0
 卡	qia	5555
 恰	qia	3333
 掐	qia	2222
@@ -4945,6 +5129,7 @@ use_preset_vocabulary: false
 葜	qia	1
 袷	qia	1
 髂	qia	1
+夹	qia	0
 前	qian	3967855
 钱	qian	1034329
 千	qian	794964
@@ -4999,6 +5184,7 @@ use_preset_vocabulary: false
 墘	qian	0
 磏	qian	0
 𬘬	qian	0
+干	qian	0
 强	qiang	1361353
 枪	qiang	424121
 墙	qiang	301301
@@ -5021,6 +5207,7 @@ use_preset_vocabulary: false
 玱	qiang	58
 锖	qiang	35
 蔃	qiang	1
+将	qiang	0
 巧	qiao	241945
 悄	qiao	233784
 瞧	qiao	180832
@@ -5051,6 +5238,7 @@ use_preset_vocabulary: false
 硚	qiao	17
 缲	qiao	14
 雀	qiao	1
+蕉	qiao	0
 且	qie	1092816
 切	qie	900592
 窃	qie	47730
@@ -5065,6 +5253,7 @@ use_preset_vocabulary: false
 箧	qie	452
 慊	qie	178
 郄	qie	95
+砌	qie	0
 螓	qin	1
 亲	qin	1388321
 秦	qin	381190
@@ -5091,6 +5280,8 @@ use_preset_vocabulary: false
 慬	qin	12
 嵚	qin	8
 梣	qin	3
+廑	qin	0
+矜	qin	0
 请	qing	8563750
 轻	qing	1720467
 清	qing	1568814
@@ -5279,6 +5470,8 @@ use_preset_vocabulary: false
 荛	rao	132
 热	re	625680
 惹	re	125358
+喏	re	0
+若	re	0
 人	ren	18435295
 任	ren	1353727
 认	ren	1184729
@@ -5371,6 +5564,7 @@ use_preset_vocabulary: false
 爇	ruo	35
 蒻	ruo	20
 鄀	ruo	8
+挼	ruo	0
 撒	sa	140910
 洒	sa	96761
 飒	sa	12008
@@ -5386,6 +5580,7 @@ use_preset_vocabulary: false
 腮	sai	20075
 噻	sai	2629
 鳃	sai	449
+思	sai	0
 三	san	2747794
 散	san	468009
 伞	san	33523
@@ -5408,6 +5603,8 @@ use_preset_vocabulary: false
 缫	sao	253
 埽	sao	166
 溞	sao	3
+梢	sao	0
+缲	sao	0
 色	se	1988512
 瑟	se	81347
 涩	se	61921
@@ -5441,6 +5638,7 @@ use_preset_vocabulary: false
 晒	shai	3043700
 筛	shai	788300
 色	shai	1193
+酾	shai	0
 山	shan	1526952
 删	shan	1112335
 闪	shan	551016
@@ -5481,6 +5679,9 @@ use_preset_vocabulary: false
 栅	shan	1
 烻	shan	1
 𫮃	shan	0
+掞	shan	0
+掸	shan	0
+掺	shan	0
 上	shang	11918291
 伤	shang	968363
 商	shang	514550
@@ -5494,6 +5695,8 @@ use_preset_vocabulary: false
 墒	shang	413
 绱	shang	147
 垧	shang	122
+埫	shang	0
+汤	shang	0
 少	shao	1940099
 烧	shao	235818
 稍	shao	214761
@@ -5516,6 +5719,7 @@ use_preset_vocabulary: false
 鞘	shao	1
 柖	shao	0
 玿	shao	0
+杓	shao	0
 射	she	386983
 设	she	369436
 舍	she	276743
@@ -5539,6 +5743,7 @@ use_preset_vocabulary: false
 厍	she	54
 拾	she	1
 𪨶	she	0
+畬	she	0
 谁	shei	1064240
 神	shen	5509843
 深	shen	5460800
@@ -5580,6 +5785,7 @@ use_preset_vocabulary: false
 屾	shen	0
 𬬹	shen	0
 𬳽	shen	0
+沉	shen	0
 生	sheng	4966773
 声	sheng	3671271
 圣	sheng	413460
@@ -5598,6 +5804,7 @@ use_preset_vocabulary: false
 嵊	sheng	242
 眚	sheng	119
 陞	sheng	42
+渑	sheng	0
 是	shi	31422712
 时	shi	8207119
 事	shi	4729336
@@ -5744,6 +5951,7 @@ use_preset_vocabulary: false
 隃	shu	1
 陎	shu	0
 𬬸	shu	0
+俞	shu	0
 刷	shua	82427
 耍	shua	70234
 唰	shua	16179
@@ -5826,6 +6034,9 @@ use_preset_vocabulary: false
 虒	si	5
 㟃	si	0
 楒	si	0
+偲	si	0
+漦	si	0
+食	si	0
 送	song	668592
 松	song	452901
 宋	song	255294
@@ -5970,6 +6181,9 @@ use_preset_vocabulary: false
 褟	ta	44
 鞳	ta	6
 鿎	ta	0
+嗒	ta	0
+溚	ta	0
+漯	ta	0
 太	tai	1962845
 台	tai	676961
 态	tai	478661
@@ -5987,6 +6201,7 @@ use_preset_vocabulary: false
 骀	tai	79
 酞	tai	42
 鲐	tai	14
+呔	tai	0
 谈	tan	536829
 叹	tan	421997
 弹	tan	355948
@@ -6020,6 +6235,8 @@ use_preset_vocabulary: false
 澹	tan	1
 榃	tan	0
 磹	tan	0
+啴	tan	0
+宕	tan	0
 躺	tang	220026
 汤	tang	124040
 糖	tang	60725
@@ -6050,6 +6267,9 @@ use_preset_vocabulary: false
 铴	tang	5
 䣘	tang	0
 鄌	tang	0
+惝	tang	0
+饧	tang	0
+𬍡	tang	0
 套	tao	478641
 逃	tao	388318
 讨	tao	282187
@@ -6122,6 +6342,7 @@ use_preset_vocabulary: false
 䴘	ti	0
 瑅	ti	0
 𫘨	ti	0
+俶	ti	0
 天	tian	6797499
 田	tian	339958
 甜	tian	156743
@@ -6143,6 +6364,8 @@ use_preset_vocabulary: false
 晪	tian	0
 沺	tian	0
 黇	tian	0
+佃	tian	0
+钿	tian	0
 条	tiao	925439
 调	tiao	542792
 跳	tiao	532527
@@ -6192,6 +6415,7 @@ use_preset_vocabulary: false
 圢	ting	0
 烶	ting	0
 𬘩	ting	0
+町	ting	0
 同	tong	2614683
 通	tong	1186869
 痛	tong	653298
@@ -6226,11 +6450,15 @@ use_preset_vocabulary: false
 峂	tong	0
 𦒍	tong	0
 𫍣	tong	0
+侗	tong	0
+恫	tong	0
+撞	tong	0
 头	tou	4813712
 投	tou	373978
 偷	tou	359993
 透	tou	336303
 骰	tou	6460
+钭	tou	0
 凃	tu	1
 突	tu	1106693
 图	tu	457307
@@ -6311,6 +6539,8 @@ use_preset_vocabulary: false
 铊	tuo	1
 圫	tuo	0
 𬶍	tuo	0
+舵	tuo	0
+魄	tuo	0
 哇	wa	961080
 瓦	wa	108370
 娃	wa	107391
@@ -6361,6 +6591,7 @@ use_preset_vocabulary: false
 椀	wan	11
 蔓	wan	1
 𬇕	wan	0
+妧	wan	0
 王	wang	1891711
 望	wang	1623939
 往	wang	1143435
@@ -6455,6 +6686,7 @@ use_preset_vocabulary: false
 𬀩	wei	0
 𬱟	wei	0
 𬶏	wei	0
+遗	wei	0
 问	wen	2899681
 文	wen	1637873
 温	wen	447521
@@ -6571,6 +6803,10 @@ use_preset_vocabulary: false
 峿	wu	0
 珸	wu	0
 𣲘	wu	0
+于	wu	0
+亡	wu	0
+嗯	wu	0
+於	wu	0
 洗	xi	2290306
 西	xi	1778761
 喜	xi	1069981
@@ -6675,6 +6911,9 @@ use_preset_vocabulary: false
 𫘬	xi	0
 𬭳	xi	0
 𬶮	xi	0
+厘	xi	0
+栖	xi	0
+腊	xi	0
 下	xia	8550882
 吓	xia	316375
 夏	xia	314864
@@ -6698,6 +6937,8 @@ use_preset_vocabulary: false
 柙	xia	216
 叚	xia	7
 翈	xia	0
+假	xia	0
+唬	xia	0
 先	xian	1662684
 现	xian	1161139
 显	xian	763327
@@ -6759,6 +7000,9 @@ use_preset_vocabulary: false
 𫍯	xian	0
 𬀪	xian	0
 𬸣	xian	0
+玹	xian	0
+铣	xian	0
+锬	xian	0
 想	xiang	6140550
 向	xiang	2570964
 相	xiang	2037658
@@ -6833,6 +7077,7 @@ use_preset_vocabulary: false
 滧	xiao	0
 皛	xiao	0
 𫍲	xiao	0
+恔	xiao	0
 些	xie	3752167
 血	xie	933230
 谢	xie	623220
@@ -6882,6 +7127,9 @@ use_preset_vocabulary: false
 偰	xie	0
 𤫉	xie	0
 𬹼	xie	0
+契	xie	0
+洁	xie	0
+鲑	xie	0
 新	xin	2232035
 心	xin	1555833
 信	xin	1529741
@@ -7015,6 +7263,7 @@ use_preset_vocabulary: false
 冔	xu	0
 𦈡	xu	0
 𬣙	xu	0
+砉	xu	0
 选	xuan	498189
 玄	xuan	249249
 宣	xuan	214690
@@ -7055,6 +7304,8 @@ use_preset_vocabulary: false
 𫍽	xuan	0
 𫓶	xuan	0
 𫠊	xuan	0
+伭	xuan	0
+暖	xuan	0
 学	xue	2566533
 血	xue	933230
 雪	xue	820388
@@ -7107,6 +7358,8 @@ use_preset_vocabulary: false
 𬍤	xun	0
 𬘓	xun	0
 𬩽	xun	0
+窨	xun	0
+荤	xun	0
 呀	ya	673765
 亚	ya	502177
 压	ya	427672
@@ -7139,6 +7392,7 @@ use_preset_vocabulary: false
 氩	ya	80
 砑	ya	66
 堐	ya	6
+匹	ya	0
 眼	yan	3495315
 言	yan	1026005
 严	yan	480979
@@ -7223,6 +7477,12 @@ use_preset_vocabulary: false
 𫄧	yan	0
 𬙂	yan	0
 𬸘	yan	0
+剡	yan	0
+埏	yan	0
+暗	yan	0
+洇	yan	0
+烻	yan	0
+阽	yan	0
 养	yang	1019753
 样	yang	969842
 阳	yang	850226
@@ -7255,6 +7515,7 @@ use_preset_vocabulary: false
 玚	yang	28
 咉	yang	19
 钖	yang	9
+卬	yang	0
 要	yao	7944606
 摇	yao	647544
 药	yao	361732
@@ -7296,6 +7557,9 @@ use_preset_vocabulary: false
 侥	yao	1
 媱	yao	1
 㙘	yao	0
+么	yao	0
+繇	yao	0
+陶	yao	0
 也	ye	9508702
 业	ye	938051
 夜	ye	877661
@@ -7321,6 +7585,8 @@ use_preset_vocabulary: false
 铘	ye	248
 倻	ye	22
 馌	ye	6
+拽	ye	0
+邪	ye	0
 一	yi	35278860
 以	yi	6523162
 已	yi	3720796
@@ -7456,6 +7722,12 @@ use_preset_vocabulary: false
 𬟁	yi	0
 𬬩	yi	0
 𬺈	yi	0
+仡	yi	0
+昳	yi	0
+欹	yi	0
+蛇	yi	0
+蛾	yi	0
+食	yi	0
 因	yin	2334623
 音	yin	1100301
 引	yin	489419
@@ -7506,6 +7778,9 @@ use_preset_vocabulary: false
 𬘡	yin	0
 𬤇	yin	0
 𬮱	yin	0
+圻	yin	0
+湮	yin	0
+烟	yin	0
 应	ying	1777404
 影	ying	1067165
 英	ying	646331
@@ -7635,6 +7910,7 @@ use_preset_vocabulary: false
 铕	you	5
 鲉	you	3
 𬨎	you	0
+尢	you	0
 与	yu	2104552
 于	yu	1614992
 语	yu	843913
@@ -7748,6 +8024,13 @@ use_preset_vocabulary: false
 艅	yu	1
 蔚	yu	1
 㺄	yu	0
+粥	yu	0
+腧	yu	0
+菀	yu	0
+薁	yu	0
+谷	yu	0
+铻	yu	0
+隩	yu	0
 原	yuan	1473346
 远	yuan	1319096
 员	yuan	887168
@@ -7814,6 +8097,7 @@ use_preset_vocabulary: false
 栎	yue	1
 𫐄	yue	0
 𬸚	yue	0
+说	yue	0
 云	yun	1205872
 运	yun	630729
 晕	yun	160115
@@ -7857,6 +8141,7 @@ use_preset_vocabulary: false
 扎	za	1000
 臜	za	186
 拶	za	1
+咱	za	0
 在	zai	19195987
 再	zai	2681503
 载	zai	127412
@@ -7921,6 +8206,8 @@ use_preset_vocabulary: false
 箦	ze	47
 迮	ze	33
 咋	ze	1
+侧	ze	0
+鲗	ze	0
 贼	zei	158556
 鲗	zei	10
 怎	zen	2520317
@@ -7973,6 +8260,7 @@ use_preset_vocabulary: false
 溠	zha	0
 鲝	zha	0
 齇	zha	0
+蜡	zha	0
 寨	zhai	67653
 宅	zhai	53376
 摘	zhai	49225
@@ -7984,6 +8272,7 @@ use_preset_vocabulary: false
 瘵	zhai	34
 祭	zhai	1
 豸	zhai	1
+侧	zhai	0
 站	zhan	994038
 战	zhan	924225
 展	zhan	570379
@@ -8010,6 +8299,7 @@ use_preset_vocabulary: false
 栴	zhan	16
 鳣	zhan	5
 𫗴	zhan	0
+颤	zhan	0
 长	zhang	3100060
 张	zhang	1977218
 章	zhang	697369
@@ -8121,6 +8411,9 @@ use_preset_vocabulary: false
 揕	zhen	2
 昣	zhen	0
 纼	zhen	0
+椹	zhen	0
+溱	zhen	0
+瑱	zhen	0
 正	zheng	2933903
 整	zheng	911668
 政	zheng	633183
@@ -8141,6 +8434,9 @@ use_preset_vocabulary: false
 钲	zheng	939
 诤	zheng	785
 烝	zheng	85
+丁	zheng	0
+徵	zheng	0
+鲭	zheng	0
 只	zhi	5050153
 知	zhi	4397165
 直	zhi	1902380
@@ -8237,6 +8533,11 @@ use_preset_vocabulary: false
 榰	zhi	0
 𦭜	zhi	0
 𬃊	zhi	0
+征	zhi	0
+擿	zhi	0
+祇	zhi	0
+茋	zhi	0
+蹢	zhi	0
 中	zhong	7680869
 种	zhong	2653924
 重	zhong	1900814
@@ -8255,6 +8556,8 @@ use_preset_vocabulary: false
 螽	zhong	97
 柊	zhong	36
 茽	zhong	0
+忪	zhong	0
+穜	zhong	0
 周	zhou	972776
 州	zhou	362849
 皱	zhou	186309
@@ -8284,6 +8587,7 @@ use_preset_vocabulary: false
 婤	zhou	1
 㑇	zhou	0
 㤘	zhou	0
+繇	zhou	0
 住	zhu	2114870
 主	zhu	1156315
 注	zhu	583182
@@ -8337,10 +8641,16 @@ use_preset_vocabulary: false
 瘃	zhu	8
 术	zhu	1
 𬣞	zhu	0
+属	zhu	0
+硅	zhu	0
+苧	zhu	0
+褚	zhu	0
 抓	zhua	82875
 爪	zhua	74674
 髽	zhua	9
+挝	zhua	0
 拽	zhuai	45251
+转	zhuai	0
 转	zhuan	1276312
 专	zhuan	360222
 赚	zhuan	88692
@@ -8355,6 +8665,7 @@ use_preset_vocabulary: false
 瑑	zhuan	18
 沌	zhuan	1
 䏝	zhuan	0
+耑	zhuan	0
 装	zhuang	695241
 状	zhuang	351779
 庄	zhuang	264912
@@ -8365,6 +8676,7 @@ use_preset_vocabulary: false
 幢	zhuang	24268
 奘	zhuang	1
 戆	zhuang	1
+僮	zhuang	0
 追	zhui	502402
 坠	zhui	61401
 缀	zhui	15121
@@ -8411,6 +8723,8 @@ use_preset_vocabulary: false
 䓬	zhuo	0
 䦃	zhuo	0
 𬸦	zhuo	0
+缴	zhuo	0
+著	zhuo	0
 子	zi	8641973
 自	zi	7261699
 字	zi	906615
@@ -8454,6 +8768,8 @@ use_preset_vocabulary: false
 鼒	zi	4
 虸	zi	0
 鄑	zi	0
+呲	zi	0
+灾	zi	0
 总	zong	1273655
 宗	zong	329551
 纵	zong	170090
@@ -8495,6 +8811,7 @@ use_preset_vocabulary: false
 纂	zuan	2790
 缵	zuan	271
 躜	zuan	59
+赚	zuan	0
 最	zui	2582957
 嘴	zui	762052
 罪	zui	300821
@@ -8502,6 +8819,7 @@ use_preset_vocabulary: false
 蕞	zui	136
 咀	zui	1
 槜	zui	1
+觜	zui	0
 尊	zun	260962
 遵	zun	50067
 樽	zun	2441
@@ -8531,3 +8849,6 @@ use_preset_vocabulary: false
 捽	zuo	149
 阼	zuo	53
 岞	zuo	6
+唔	n	0
+嗯	n	0
+这	zhei	0

@@ -94,6 +94,10 @@ jobs:
 
       - name: Package distributions
         run: |
+          # The artifact upload/download round-trip drops the exec bit, so
+          # restore it before zipping; 启动.command must stay executable.
+          chmod +x dist-zrm/Rime皮肤编辑器/启动.command
+          chmod +x dist-flypy/Rime皮肤编辑器/启动.command
           (cd dist-zrm && zip -r ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -r ../rime-mohu-flypy-latest.zip .)
 

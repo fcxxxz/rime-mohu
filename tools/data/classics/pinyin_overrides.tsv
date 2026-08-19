@@ -1,0 +1,25 @@
+# Reviewed pronunciation overrides
+#
+# Columns:
+# entry_id<TAB>pinyin<TAB>evidence
+#
+# Each row fixes the modern Mandarin reading of a polyphonic character in the
+# given entry. Readings follow modern standard pronunciation used by the input
+# scheme; the evidence column states the disambiguation.
+luoshenfu-001	nong xian de zhong	纤取纤细xiān；得为动词dé
+luoshenfu-002	xiu duan he du	合为联合hé；度为法度dù
+luoshenfu-003	jian ruo xue cheng	若为如同ruò；削为斜削xuē
+luoshenfu-004	yao ru yue su	约为约束yuē
+luoshenfu-005	yan jing xiu xiang	颈为颈项jǐng
+luoshenfu-006	hao zhi cheng lu	皓为皓白hào；露为显露lù
+luoshenfu-007	fang ze wu jia	无为否定wú
+luoshenfu-008	qian hua fu yu	铅华读qiān
+luoshenfu-011	hao chi nei xian	皓为皓白hào；鲜为鲜明xiān
+luoshenfu-014	xi yi pang huang	彷徨读páng
+luoshenfu-015	shen guang li he	合为离合hé
+luoshenfu-017	dong wu chang ze	无为否定wú
+luoshenfu-018	ruo wei ruo an	若为如若ruò
+luoshenfu-019	jin zhi nan qi	期为期约qī
+luoshenfu-020	ruo wang ruo huan	若为如若ruò；还为返回huán
+luoshenfu-021	zhuan mian liu jing	转为转顾zhuǎn
+luoshenfu-023	piao yao xi ruo liu feng zhi hui xue	若为如若ruò；飖读yáo（飘飖）

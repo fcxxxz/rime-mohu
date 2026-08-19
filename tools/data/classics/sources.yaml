@@ -1,0 +1,23 @@
+{
+  "sources": [
+    {
+      "id": "wikisource-luoshen-fu",
+      "title": "洛神赋",
+      "author": "曹植",
+      "institution": "中文维基文库",
+      "url": "https://zh.wikisource.org/wiki/洛神赋",
+      "canonical_url": "https://zh.wikisource.org/wiki/洛神賦",
+      "page_title": "洛神賦",
+      "revision": "7908816",
+      "base_text": "昭明文選（四部叢刊本）卷19；曹子建集（四部叢刊本）卷3",
+      "proofread": "proofread",
+      "license": "CC-BY-SA 4.0",
+      "redistribution": "approved",
+      "retrieved": "2026-08-19T09:30:35.693372+00:00",
+      "raw_path": "raw/wikisource-luoshen-fu/7908816.wikitext",
+      "sha256": "d562f120e64daec5281647346a68b13ca9c6da8b5449490d6285877610477c67",
+      "status": "verified",
+      "upstream_timestamp": "2026-07-19T06:57:00Z"
+    }
+  ]
+}

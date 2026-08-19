@@ -112,19 +112,31 @@ def load_readings() -> dict[str, list[str]]:
     return table
 
 
-def load_char_sets(variant: str) -> tuple[dict[str, str], dict[str, str], dict[str, list[str]]]:
-    """返回 (简码字->最短简码, 全码字->首选四码, chars 词典原表)。"""
+def load_char_sets(variant: str) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """返回 (字->固顶简码列表（含备用码）, 字->chars 词典四码变体列表)。
+
+    固顶码表中被挤的简码字会带备用码（如 万=mof/wjf、丁=dya/vga），
+    全部保留供探测。chars 词典中同字也可能有多条辅助码变体（不同拆分）。
+    """
     fixed = parse_fixed(variant)
     chars = parse_chars(variant)
-    quick: dict[str, str] = {}
-    full: dict[str, str] = {}
+    fixed_all: dict[str, list[str]] = {}
+    full: dict[str, list[str]] = {}
     for char in sorted(set(fixed) | set(chars), key=ord):
         short = [c for c in fixed.get(char, []) if len(c) < 4]
         if short:
-            quick[char] = min(short, key=len)
-        elif chars.get(char):
-            full[char] = chars[char][0]
-    return quick, full, chars
+            seen: list[str] = []
+            for code in short:
+                if code not in seen:
+                    seen.append(code)
+            fixed_all[char] = seen
+        if chars.get(char):
+            seen = []
+            for code in chars[char]:
+                if code not in seen:
+                    seen.append(code)
+            full[char] = seen
+    return fixed_all, full
 
 
 def page_position(candidates: list[str], char: str) -> int:
@@ -149,32 +161,74 @@ def parse_dump(path: str) -> dict[str, list[str]]:
     return dump
 
 
-def method_for(char: str, code: str, dump: dict[str, list[str]], stats: dict[str, int]) -> str | None:
-    """按 四码 -> 全码o -> 斜杠 的优先级确定打法，找不到返回 None。"""
-    pos = page_position(dump.get(code, []), char)
-    if pos:
-        stats["四码选重" if pos > 1 else "四码"] += 1
-        return code + suffix_for(pos)
-    pos = page_position(dump.get(code + "o", []), char)
-    if pos:
-        stats["全码o选重" if pos > 1 else "全码o"] += 1
-        return code + "o" + suffix_for(pos)
-    pos = page_position(dump.get(code + "/", []), char)
-    if pos:
-        stats["斜杠"] += 1
-        return code + "/" + suffix_for(pos)
+def replay_keys(method: str) -> str:
+    """打法转回放按键（_ -> 空格）。"""
+    return method.replace("_", " ")
+
+
+def ranked_methods_for(
+    char: str,
+    fixed_codes: list[str],
+    full_codes: list[str],
+    dump: dict[str, list[str]],
+) -> list[str]:
+    """按方案打法口径为单字生成降序候选打法列表。
+
+    口径（四码让词：被词占位时补第五键 o 或 /，不用四码数字选重）：
+    1. 有简出简：简码（含被挤后的备用简码）引擎第 1 位 -> ``简码_``；
+       简码被更常见候选压住 -> ``简码N``（三键处的数字选重，魔然惯例）。
+    2. 四码第 1 位 -> ``四码_``。
+    3. 四码被词占位 -> 补 ``o`` 全码顶字 -> ``四码o_``；仍不行补 ``/``
+       筛单字 -> ``四码/_``（/ 形式只列单字，必为整码上屏）。
+    4. 以上都拿不到第 1 位 -> 纯 ``四码o`` 兜底（打全码后菜单自选），
+       多为被常用字过滤的繁体/生僻。
+    同级取词典序靠前的变体（多音/多拆分中权重最高的读法）。
+    """
+    ranked: list[tuple[tuple[int, int], int, str]] = []  # (排序键, 统计档, 打法)
+    for order, code in enumerate(fixed_codes):
+        pos = page_position(dump.get(code, []), char)
+        if pos:
+            ranked.append(((0 if pos == 1 else 1, order), 0 if pos == 1 else 1, code + suffix_for(pos)))
+    for order, code in enumerate(full_codes):
+        pos = page_position(dump.get(code, []), char)
+        if pos == 1:
+            ranked.append(((2, order), 2, code + "_"))
+        pos = page_position(dump.get(code + "o", []), char)
+        if pos == 1:
+            ranked.append(((3, order), 3, code + "o_"))
+        pos = page_position(dump.get(code + "/", []), char)
+        if pos == 1:
+            ranked.append(((4, order), 4, code + "/_"))
+    ranked.sort(key=lambda item: item[0])
+    return [(grade, method) for _key, grade, method in ranked]
+
+
+GRADE_NAMES = ["简码", "简码选重", "四码", "全码o", "斜杠"]
+
+
+def method_for(
+    char: str,
+    fixed_codes: list[str],
+    full_codes: list[str],
+    dump: dict[str, list[str]],
+    stats: dict[str, int],
+    bad_keys: set[str],
+) -> str:
+    for grade, method in ranked_methods_for(char, fixed_codes, full_codes, dump):
+        if replay_keys(method) not in bad_keys:
+            stats[GRADE_NAMES[grade]] += 1
+            return method
+    # 兜底：引擎探测不可见（繁体/生僻）或所有形式都拿不到第 1 位。
+    # 有简码的仍按「有简出简」给最短简码（简码固顶不受常用字过滤影响，
+    # 已被全量回放证实）；简码也回放失败时退纯全码（打全码后菜单自选）。
     stats["兜底"] += 1
-    return code + "o"
-
-
-def reading_sp(char: str, quick: dict[str, str], chars: dict[str, list[str]]) -> str:
-    """取与打法对应的双拼两键（简码或首选全码的前缀）。"""
-    if char in quick:
-        code = quick[char]
-        return code[:2] if len(code) >= 2 else code
-    if chars.get(char):
-        return chars[char][0][:2]
-    return ""
+    if fixed_codes:
+        for code in sorted(fixed_codes, key=len):
+            if replay_keys(code + "_") not in bad_keys:
+                return code + "_"
+    if full_codes:
+        return full_codes[0] + "o"
+    return min(fixed_codes, key=len) if fixed_codes else ""
 
 
 def pick_reading(candidates: list[str], sp: str, to_sp) -> str:
@@ -210,61 +264,81 @@ def main() -> None:
     build.add_argument("--variant", choices=["zrm", "flypy"], required=True)
     build.add_argument("--dump", required=True, help="probe 输出的候选 dump")
     build.add_argument("--out", required=True, help="输出字提 txt 路径")
+    build.add_argument("--bad-keys", help="回放失败的按键串文件（每行一个），用于数字打法降级")
+
+    digits = commands.add_parser("digits-emit", help="输出全部含数字选重的打法按键，供全量回放")
+    digits.add_argument("--file", required=True)
 
     verify_emit = commands.add_parser("verify-emit", help="抽样输出打法回放按键（_ 转空格）")
     verify_emit.add_argument("--file", required=True)
     verify_emit.add_argument("--count", type=int, default=2000)
     verify_emit.add_argument("--seed", type=int, default=20260818)
+    verify_emit.add_argument("--only-real", action="store_true", help="只抽可回放验证的打法（排除兜底全码）")
 
     verify_check = commands.add_parser("verify-check", help="比对回放上屏结果")
     verify_check.add_argument("--file", required=True)
     verify_check.add_argument("--result", required=True, help="probe commit 模式输出")
+    verify_check.add_argument("--count", type=int, default=2000)
+    verify_check.add_argument("--seed", type=int, default=20260818)
+    verify_check.add_argument("--only-real", action="store_true", help="与 verify-emit 的抽样口径一致")
 
     args = parser.parse_args()
 
     if args.command == "queries":
-        quick, full, _ = load_char_sets(args.variant)
+        fixed_all, full = load_char_sets(args.variant)
         codes = set()
-        for code in full.values():
-            codes.update((code, code + "o", code + "/"))
-        codes.update(quick.values())
+        for variants in full.values():
+            for code in variants:
+                codes.update((code, code + "o", code + "/"))
+        for variants in fixed_all.values():
+            codes.update(variants)
         for code in sorted(codes):
             print(code)
-        print(f"# {len(quick)} 简码字 + {len(full)} 全码字，共 {len(codes)} 条查询", file=sys.stderr)
+        print(f"# {len(fixed_all)} 简码字 + {len(full)} 全码字，共 {len(codes)} 条查询", file=sys.stderr)
+        return
+
+    if args.command == "digits-emit":
+        for _char, method in iter_output_lines(args.file):
+            if method[-1:].isdigit():
+                print(replay_keys(method))
         return
 
     if args.command == "build":
         variant = args.variant
-        quick, full, chars = load_char_sets(variant)
+        fixed_all, full = load_char_sets(variant)
         dump = parse_dump(args.dump)
         chaifen = load_chaifen()
         readings = load_readings()
         to_sp = zrmify1 if variant == "zrm" else flypyify1
+        bad_keys: set[str] = set()
+        if args.bad_keys:
+            bad_keys = {
+                line.rstrip("\n")
+                for line in Path(args.bad_keys).read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            }
 
-        stats = {"简码": 0, "四码": 0, "四码选重": 0, "全码o": 0, "全码o选重": 0, "斜杠": 0, "兜底": 0}
+        stats = {"简码": 0, "简码选重": 0, "四码": 0, "全码o": 0, "斜杠": 0, "兜底": 0}
         methods: dict[str, str] = {}
-        for char in quick:
-            # 简码理论上固顶首选；引擎结果缺席时（如繁体被字符集过滤）仍给简码
-            pos = page_position(dump.get(quick[char], []), char)
-            if pos != 1 and dump.get(quick[char]):
-                print(f"warning: 简码 {quick[char]} 下 {char} 非首页首选", file=sys.stderr)
-            methods[char] = quick[char] + "_"
-            stats["简码"] += 1
-        for char, code in full.items():
-            method = method_for(char, code, dump, stats)
-            if method is None:
-                continue
-            methods[char] = method
+        for char in sorted(set(fixed_all) | set(full), key=ord):
+            methods[char] = method_for(
+                char, fixed_all.get(char, []), full.get(char, []), dump, stats, bad_keys)
+
+        # 有简出简：引擎看不到的简码字（如繁体被常用字过滤）也按设计给最短简码
+        for char, codes in fixed_all.items():
+            if char not in methods or not methods[char]:
+                methods[char] = min(codes, key=len) + "_"
 
         lines = []
         for char in sorted(methods, key=ord):
             chai = chaifen.get(char) or char
-            reading = pick_reading(readings.get(char, []), reading_sp(char, quick, chars), to_sp)
+            codes = fixed_all.get(char) or full.get(char) or [""]
+            reading = pick_reading(readings.get(char, []), codes[0][:2], to_sp)
             lines.append(f"{char}\t{methods[char]} · {chai} · {reading}" if reading else f"{char}\t{methods[char]} · {chai}")
 
         header = [
             "# 魔虎字提（%s 组），由 rime-mohu tools/gen_ziti.py 生成" % ("自然码" if variant == "zrm" else "小鹤"),
-            "# 打法后缀：_ 空格上屏；数字为四码/全码后的选重键；o 为全码顶字键（预编辑显示 °）；/ 为筛单字斜杠",
+            "# 打法后缀：_ 空格上屏；o 为全码顶字键（预编辑显示 °）；/ 为筛单字斜杠；数字仅为简码处的选重键",
             "",
         ]
         Path(args.out).write_text("\n".join(header + lines) + "\n", encoding="utf-8")
@@ -277,6 +351,8 @@ def main() -> None:
     if args.command == "verify-emit":
         # 只输出按键行（探针会把整行都当按键）；期望字由 verify-check 用相同种子重采样
         entries = list(iter_output_lines(args.file))
+        if args.only_real:
+            entries = [(c, m) for c, m in entries if not (m.endswith("o") and len(m) == 5)]
         rng = random.Random(args.seed)  # 固定种子：emit 与 check 必须抽到同一样本
         sample = rng.sample(entries, min(args.count, len(entries)))
         for _char, method in sample:
@@ -285,6 +361,8 @@ def main() -> None:
 
     if args.command == "verify-check":
         entries = list(iter_output_lines(args.file))
+        if args.only_real:
+            entries = [(c, m) for c, m in entries if not (m.endswith("o") and len(m) == 5)]
         rng = random.Random(args.seed)
         sample = rng.sample(entries, min(args.count, len(entries)))
         failures = []
@@ -293,6 +371,10 @@ def main() -> None:
             result_lines = [line.rstrip("\n").split("\t") for line in handle]
         for (char, method), parts in zip(sample, result_lines):
             if len(parts) != 2:
+                continue
+            # 兜底类（纯四码+o，5 键无后缀）多为常用字过滤隐藏的繁体/生僻，
+            # 默认模式下引擎不可见，无法回放验证，跳过。
+            if method.endswith("o") and len(method) == 5:
                 continue
             checked += 1
             got = parts[1]

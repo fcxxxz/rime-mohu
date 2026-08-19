@@ -33,16 +33,23 @@ jobs:
       - name: Sync Python environment
         run: uv sync --locked
 
+      - name: Validate classical-text dictionaries
+        run: |
+          uv run tools/import_classics.py check
+          uv run python -m unittest tests.test_classics_import -v
+
       - name: Build distributions
         run: make dist-zrm dist-flypy
 
       - name: Validate distributions
         run: |
           test -f dist-zrm/mohu_zrm.schema.yaml
+          test -f dist-zrm/mohu_zrm.classics.dict.yaml
           test -f dist-zrm/lua/zrmdb.txt
           test -f dist-zrm/opencc/mohu_chaifen.ocd2
           test -f dist-zrm/opencc/mohu_emoji.ocd2
           test -f dist-flypy/mohu_flypy.schema.yaml
+          test -f dist-flypy/mohu_flypy.classics.dict.yaml
           test -f dist-flypy/lua/zrmdb.txt
           test -f dist-flypy/opencc/mohu_chaifen.ocd2
           test -f dist-flypy/opencc/mohu_emoji.ocd2

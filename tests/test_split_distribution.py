@@ -67,6 +67,7 @@ class SplitDistributionTest(unittest.TestCase):
                     f"mohu_{scheme}_sentence.schema.yaml",
                     f"mohu_{scheme}_aux.schema.yaml",
                     f"mohu_{scheme}.extended.dict.yaml",
+                    f"mohu_{scheme}.classics.dict.yaml",
                     f"mohu_{scheme}.base.dict.yaml",
                     f"mohu_{scheme}.chars.dict.yaml",
                     f"mohu_{scheme}_fixed.dict.yaml",

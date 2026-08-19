@@ -23,6 +23,22 @@ deploy:
       - send: 'anfu'
         assert: cand[1].text == '安抚' and cand[1].comment == '⚡af'
 
+  idiom_quick_code_legacy:
+    tests:
+      - send: 'tkll'
+        assert: cand[1].text == '痛快淋漓' and cand[2].text == '太可怜了'
+      - send: 'mmqm'
+        assert: cand[1].text == '莫名其妙'
+
+  idiom_quick_code_primary:
+    patch:
+      switches/@10/reset: 1
+    tests:
+      - send: 'tkll'
+        assert: cand[1].text == '痛快淋漓' and cand[2].text == '太可怜了'
+      - send: 'mmqm'
+        assert: cand[1].text == '莫名其妙'
+
   tiger_prefix2:
     tests:
       - send: 'd'

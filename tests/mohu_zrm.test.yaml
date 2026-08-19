@@ -282,5 +282,20 @@ deploy:
       - send: '{Escape}potter'
         assert: eq(cand[1].text, 'You dare use my own spells agai me，Potter？') and eq(cand[1].comment, '📌')
 
+  classics_luoshenfu:
+    tests:
+      - send: xqdrhedu
+        assert: has_text(cand, '修短合度')
+      - send: ypjieeee
+        assert: has_text(cand, '云髻峨峨')
+      - send: xiyiphhd
+        assert: has_text(cand, '徙倚彷徨')
+      - send: ufgdlihe
+        assert: has_text(cand, '神光离合')
+      - send: yefuigqr
+        assert: has_text(cand, '靥辅承权')
+      - send: pcykxirolqfgvihvxt
+        assert: has_text(cand, '飘飖兮若流风之回雪')
+
 
 # yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

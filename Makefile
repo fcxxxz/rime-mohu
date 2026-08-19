@@ -2,9 +2,9 @@ DESTDIR ?= $(abspath ./dist)
 ZRM_DESTDIR ?= $(abspath ./dist-zrm)
 FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
 
-quick: tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
+quick: classics tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
-dict: tiger_aux chars fixed_tiger update-compact-dicts
+dict: classics tiger_aux chars fixed_tiger update-compact-dicts
 	uv run tools/build_flypy_assets.py
 all: quick dict
 
@@ -48,6 +48,13 @@ opencc: chaifen emoji
 ########
 # 詞庫 #
 ########
+classics:
+	uv run tools/import_classics.py build
+
+check-classics:
+	uv run tools/import_classics.py check
+	uv run python -m unittest tests.test_classics_import -v
+
 update-compact-dicts:
 	uv run ./tools/update_compact_dicts.sh
 
@@ -119,6 +126,8 @@ dist-flypy: quick
 	uv run tools/build_split_dist.py flypy "$(FLYPY_DESTDIR)"
 
 test: dist
+	uv run tools/import_classics.py check
+	uv run python -m unittest tests.test_classics_import -v
 	uv run python -m unittest tests.test_tiger_aux -v
 	uv run python -m unittest tests.test_mohu_config -v
 	uv run python -m unittest tests.test_flypy_assets -v
@@ -126,6 +135,7 @@ test: dist
 	uv run python -m unittest tests.test_tiger_symbol_workflow -v
 	uv run python -m unittest tests.test_merge_emoji -v
 	PYTHONDONTWRITEBYTECODE=1 uv run python -m unittest tests.test_skin_editor_local_server -v
+	bash tests/rime_sync_conf_test.sh
 	bash tests/simp_dist_config_test.sh $(DESTDIR)
 	lua tests/mohu_candidate_override_test.lua
 	lua tests/mohu_candidate_weight_reset_test.lua

@@ -20,6 +20,24 @@ class FlypyAssetConversionTest(unittest.TestCase):
         text = (ROOT / "mohu_flypy.extended.dict.yaml").read_text(encoding="utf-8")
         self.assertIn("mohu_flypy.chars      # 小鹤单字表", text)
 
+    def test_classics_dictionary_is_a_generated_flypy_asset(self) -> None:
+        self.assertEqual(
+            "mohu_flypy.classics",
+            build_flypy_assets.ZRM_DICTIONARIES["mohu_zrm.classics.dict.yaml"],
+        )
+        zrm = (ROOT / "mohu_zrm.classics.dict.yaml").read_text(encoding="utf-8")
+        flypy = (ROOT / "mohu_flypy.classics.dict.yaml").read_text(encoding="utf-8")
+        self.assertEqual(
+            flypy,
+            build_flypy_assets.convert_dictionary(
+                "mohu_zrm.classics.dict.yaml", "mohu_flypy.classics"
+            ),
+        )
+        self.assertEqual(
+            [line.split("\t", 1)[0] for line in zrm.splitlines() if "\t" in line],
+            [line.split("\t", 1)[0] for line in flypy.splitlines() if "\t" in line],
+        )
+
     def test_native_flypy_fixed_table_is_not_a_converted_asset(self) -> None:
         self.assertNotIn("mohu_zrm_tiger_fixed.dict.yaml", FIXED_DICTIONARIES)
         self.assertNotIn("mohu_zrm_tiger_fixed_legacy.dict.yaml", FIXED_DICTIONARIES)

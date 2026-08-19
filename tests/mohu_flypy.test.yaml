@@ -145,4 +145,15 @@ deploy:
       - send: 'nihc'
         assert: eq(cand[1].text, '你好') and text_index(cand, '怩') > 1
 
+  classics_luoshenfu:
+    tests:
+      - send: xqdrhedu
+        assert: has_text(cand, '修短合度')
+      - send: yyjieeee
+        assert: has_text(cand, '云髻峨峨')
+      - send: xiyiphhl
+        assert: has_text(cand, '徙倚彷徨')
+      - send: qmhxfuyu
+        assert: has_text(cand, '铅华弗御')
+
 # yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

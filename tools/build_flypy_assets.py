@@ -21,6 +21,7 @@ ZRM_DICTIONARIES = {
     "mohu_zrm.tencent.dict.yaml": "mohu_flypy.tencent",
     "mohu_zrm.computer.dict.yaml": "mohu_flypy.computer",
     "mohu_zrm.moe.dict.yaml": "mohu_flypy.moe",
+    "mohu_zrm.classics.dict.yaml": "mohu_flypy.classics",
 }
 
 FIXED_DICTIONARIES = {
@@ -381,7 +382,7 @@ def build() -> None:
     extended = T2S.convert(extended)
     extended = replace_dictionary_name(extended, "mohu_zrm.extended")
     extended = extended.replace("mohu.chars", "mohu_zrm.chars")
-    for suffix in ("base", "words", "tencent", "computer", "moe"):
+    for suffix in ("base", "words", "tencent", "computer", "moe", "classics"):
         extended = extended.replace(f"mohu.{suffix}", f"mohu_zrm.{suffix}")
     write(ROOT / "mohu_zrm.extended.dict.yaml", extended)
     flypy_extended = extended.replace("mohu_zrm", "mohu_flypy").replace(

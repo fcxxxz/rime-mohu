@@ -1,7 +1,6 @@
-from pathlib import Path
 import re
 import unittest
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -189,6 +188,19 @@ class MohuConfigTest(unittest.TestCase):
             "quick_code_hint_dictionary: mohu_flypy_fixed",
             read("mohu_flypy_sentence.schema.yaml"),
         )
+
+    def test_classics_dictionary_is_imported_only_by_smart_tables(self) -> None:
+        self.assertIn(
+            "  - mohu_zrm.classics   # 经审核的古诗文与经典文本\n",
+            read("mohu_zrm.extended.dict.yaml"),
+        )
+        self.assertIn(
+            "  - mohu_flypy.classics   # 经审核的古诗文与经典文本\n",
+            read("mohu_flypy.extended.dict.yaml"),
+        )
+        for path in ROOT.glob("mohu_*_fixed*.dict.yaml"):
+            with self.subTest(path=path.name):
+                self.assertNotIn("classics", path.read_text(encoding="utf-8"))
 
     def test_legacy_dictionaries_have_compile_only_dependencies(self) -> None:
         for scheme in ("zrm", "flypy"):

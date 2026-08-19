@@ -1,0 +1,35 @@
+# Reviewed classical-text candidates
+#
+# Columns:
+# entry_id<TAB>source_id<TAB>work<TAB>locator<TAB>layer<TAB>text<TAB>pinyin<TAB>weight<TAB>review
+#
+# Source: wikisource-luoshen-fu, revision 7908816 (昭明文選四部叢刊本/曹子建集四部叢刊本).
+# Locators reference line numbers of the committed wikitext snapshot.
+# Entries whose simplified text already exists in an active smart table were left out:
+# 翩若惊鸿 婉若游龙 荣曜秋菊 华茂春松 瑰姿艳逸 柔情绰态 仪静体闲 丹唇外朗 明眸善睐
+# 凌波微步 罗袜生尘 气若幽兰 飘忽若神 体迅飞凫 皎若太阳升朝霞 灼若芙蕖出渌波 仿佛兮若轻云之蔽月
+# 飖 lacked a modern-reading row in tools/data/pinyin_simp.txt during the first pass;
+# the reading 飖=yáo was added there, unblocking luoshenfu-023.
+luoshenfu-001	wikisource-luoshen-fu	洛神赋	L53	line	秾纤得衷	nong xian de zhong	1	approved
+luoshenfu-002	wikisource-luoshen-fu	洛神赋	L53	line	修短合度	xiu duan he du	1	approved
+luoshenfu-003	wikisource-luoshen-fu	洛神赋	L54	line	肩若削成	jian ruo xue cheng	1	approved
+luoshenfu-004	wikisource-luoshen-fu	洛神赋	L54	line	腰如约素	yao ru yue su	1	approved
+luoshenfu-005	wikisource-luoshen-fu	洛神赋	L55	line	延颈秀项	yan jing xiu xiang	1	approved
+luoshenfu-006	wikisource-luoshen-fu	洛神赋	L55	line	皓质呈露	hao zhi cheng lu	1	approved
+luoshenfu-007	wikisource-luoshen-fu	洛神赋	L56	line	芳泽无加	fang ze wu jia	1	approved
+luoshenfu-008	wikisource-luoshen-fu	洛神赋	L56	line	铅华弗御	qian hua fu yu	1	approved
+luoshenfu-009	wikisource-luoshen-fu	洛神赋	L57	line	云髻峨峨	yun ji e e	1	approved
+luoshenfu-010	wikisource-luoshen-fu	洛神赋	L57	line	修眉联娟	xiu mei lian juan	1	approved
+luoshenfu-011	wikisource-luoshen-fu	洛神赋	L58	line	皓齿内鲜	hao chi nei xian	1	approved
+luoshenfu-012	wikisource-luoshen-fu	洛神赋	L59	line	靥辅承权	ye fu cheng quan	1	approved
+luoshenfu-013	wikisource-luoshen-fu	洛神赋	L62	line	骨像应图	gu xiang ying tu	1	approved
+luoshenfu-014	wikisource-luoshen-fu	洛神赋	L86	line	徙倚彷徨	xi yi pang huang	1	approved
+luoshenfu-015	wikisource-luoshen-fu	洛神赋	L87	line	神光离合	shen guang li he	1	approved
+luoshenfu-016	wikisource-luoshen-fu	洛神赋	L87	line	乍阴乍阳	zha yin zha yang	1	approved
+luoshenfu-017	wikisource-luoshen-fu	洛神赋	L99	line	动无常则	dong wu chang ze	1	approved
+luoshenfu-018	wikisource-luoshen-fu	洛神赋	L99	line	若危若安	ruo wei ruo an	1	approved
+luoshenfu-019	wikisource-luoshen-fu	洛神赋	L100	line	进止难期	jin zhi nan qi	1	approved
+luoshenfu-020	wikisource-luoshen-fu	洛神赋	L100	line	若往若还	ruo wang ruo huan	1	approved
+luoshenfu-021	wikisource-luoshen-fu	洛神赋	L101	line	转眄流精	zhuan mian liu jing	1	approved
+luoshenfu-022	wikisource-luoshen-fu	洛神赋	L101	line	光润玉颜	guang run yu yan	1	approved
+luoshenfu-023	wikisource-luoshen-fu	洛神赋	L50	line	飘飖兮若流风之回雪	piao yao xi ruo liu feng zhi hui xue	1	approved

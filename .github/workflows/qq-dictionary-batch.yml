@@ -21,9 +21,7 @@ jobs:
           ref: "${{ github.ref }}"
 
       - name: Install OpenCC
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes opencc
+        run: bash tools/install_opencc_ubuntu.sh
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6

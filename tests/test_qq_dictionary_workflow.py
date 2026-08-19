@@ -24,6 +24,20 @@ class QqDictionaryWorkflowTest(unittest.TestCase):
         self.assertNotIn("pull-requests: write", text)
         self.assertNotIn("echo ${{ inputs.payload }}", text)
 
+    def test_opencc_install_uses_bounded_https_archive_source(self) -> None:
+        script = (ROOT / "tools/install_opencc_ubuntu.sh").read_text(encoding="utf-8")
+        build = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        batch = (ROOT / ".github/workflows/qq-dictionary-batch.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("https://archive.ubuntu.com/ubuntu", script)
+        self.assertIn("Acquire::Retries=3", script)
+        self.assertIn("timeout 180s", script)
+        self.assertNotIn("azure.archive.ubuntu.com", script)
+        self.assertIn("tools/install_opencc_ubuntu.sh", build)
+        self.assertIn("tools/install_opencc_ubuntu.sh", batch)
+
 
 if __name__ == "__main__":
     unittest.main()

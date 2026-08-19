@@ -152,6 +152,34 @@ columns:
         table = RimeTable.from_path(self.root / "mohu_zrm_fixed.dict.yaml")
         self.assertEqual([row.text for row in table.rows_for_code("abc")], ["甲", "丁"])
 
+    def test_added_rows_do_not_write_trailing_empty_columns(self) -> None:
+        batch = self.batch(
+            {
+                "kind": "fixed_add",
+                "code": "abc",
+                "word": "丁",
+                "expected_order": ["甲", "乙"],
+                "desired_order": ["甲", "乙", "丁"],
+            },
+            {
+                "kind": "word_add",
+                "word": "新词",
+                "expected": None,
+                "desired": 1,
+            },
+        )
+        apply_batch(self.root, batch)
+        fixed_line = next(
+            line for line in (self.root / "mohu_zrm_fixed.dict.yaml").read_text(encoding="utf-8").splitlines()
+            if line.startswith("丁\t")
+        )
+        word_line = next(
+            line for line in (self.root / ACTIVE_WORD_TABLES[1]).read_text(encoding="utf-8").splitlines()
+            if line.startswith("新词\t")
+        )
+        self.assertFalse(fixed_line.endswith("\t"))
+        self.assertFalse(word_line.endswith("\t"))
+
     def test_word_delete_removes_exact_duplicates_from_active_tables(self) -> None:
         (self.root / ACTIVE_WORD_TABLES[1]).write_text(
             table_text(("text", "weight", "code"), [("打印机", "1763", "")]),

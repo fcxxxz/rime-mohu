@@ -184,7 +184,10 @@ class RimeTable:
                 rendered.append(line)
                 continue
             ending = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
-            rendered.append("\t".join(row.fields) + ending)
+            fields = list(row.fields)
+            while fields and not fields[-1]:
+                fields.pop()
+            rendered.append("\t".join(fields) + ending)
         return self.header + "".join(rendered)
 
 

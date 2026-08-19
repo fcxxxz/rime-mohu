@@ -1,0 +1,81 @@
+name: Apply QQ dictionary batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Base64-encoded validated dictionary batch
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out dispatched branch
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ github.ref }}"
+
+      - name: Install OpenCC
+        run: bash tools/install_opencc_ubuntu.sh
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Sync Python environment
+        run: uv sync --locked
+
+      - name: Decode batch
+        env:
+          BATCH_PAYLOAD: "${{ inputs.payload }}"
+        run: |
+          python - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ["BATCH_PAYLOAD"]
+          decoded = base64.b64decode(encoded, validate=True)
+          (Path(os.environ["RUNNER_TEMP"]) / "batch.json").write_bytes(decoded)
+          PY
+
+      - name: Apply batch
+        run: uv run python tools/qq_dictionary_batch.py --batch "$RUNNER_TEMP/batch.json" --result "$RUNNER_TEMP/result.json"
+
+      - name: Regenerate derived assets
+        run: make quick
+
+      - name: Run focused checks
+        run: uv run python -m unittest tests.test_qq_dictionary_batch tests.test_qq_dictionary_workflow tests.test_flypy_assets -v
+
+      - name: Build split distributions
+        run: make dist-zrm dist-flypy
+
+      - name: Check diff
+        run: git diff --check
+
+      - name: Commit and push generated changes
+        env:
+          RESULT_PATH: "${{ runner.temp }}/result.json"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          Path(os.environ["RUNNER_TEMP"] + "/batch-id").write_text(result["batch_id"], encoding="utf-8")
+          PY
+          git config user.name 'Qing Dictionary Bot'
+          git config user.email 'qing-dictionary-bot@users.noreply.github.com'
+          git add mohu_zrm*.dict.yaml mohu_flypy*.dict.yaml tools/data/pinyin_simp.txt opencc/mohu_pinyinhint.txt
+          git diff --cached --quiet && exit 4
+          git commit -m "dict: apply QQ batch $(cat "$RUNNER_TEMP/batch-id")"
+          git push origin HEAD:${GITHUB_REF_NAME}

@@ -19,9 +19,6 @@ SCHEMA_MAP = {
 
 ZRM_SCHEMA_GROUP = (
     "mohu_zrm",
-    "mohu_zrm_fixed",
-    "mohu_zrm_sentence",
-    "mohu_zrm_aux",
 )
 
 FLYPY_SCHEMA_GROUP = (
@@ -73,6 +70,17 @@ def _replace_token(text: str, old: str, new: str) -> str:
     return re.sub(pattern, new, text)
 
 
+def _drop_removed_schema_lines(text: str) -> str:
+    # 字词、整句、辅筛方案已从自然码组移除，迁移时直接丢弃这些菜单项。
+    line = re.compile(
+        r"^[ \t]*-[ \t]*(?:\{[ \t]*)?schema:[ \t]*"
+        r"(?:moran|mohu_zrm)_(?:fixed|sentence|aux)"
+        r"(?:[ \t\r]*\})?[ \t\r]*\n",
+        re.MULTILINE,
+    )
+    return line.sub("", text)
+
+
 def _add_flypy_schema_group(text: str) -> str:
     schema_line = re.compile(
         r"^(?P<indent>\s*)-\s*(?P<braced>\{\s*)?schema:\s*(?P<schema>[A-Za-z0-9_]+)"
@@ -90,20 +98,20 @@ def _add_flypy_schema_group(text: str) -> str:
     ):
         return text
 
-    aux_index, aux_match = next(
+    anchor_index, anchor_match = next(
         (index, match)
         for index, match in entries
-        if match.group("schema") == "mohu_zrm_aux"
+        if match.group("schema") == "mohu_zrm"
     )
-    indent = aux_match.group("indent")
-    newline = "\r\n" if lines[aux_index].endswith("\r\n") else "\n"
-    if aux_match.group("braced"):
+    indent = anchor_match.group("indent")
+    newline = "\r\n" if lines[anchor_index].endswith("\r\n") else "\n"
+    if anchor_match.group("braced"):
         additions = [
             f"{indent}- {{schema: {schema}}}{newline}" for schema in FLYPY_SCHEMA_GROUP
         ]
     else:
         additions = [f"{indent}- schema: {schema}{newline}" for schema in FLYPY_SCHEMA_GROUP]
-    lines[aux_index + 1 : aux_index + 1] = additions
+    lines[anchor_index + 1 : anchor_index + 1] = additions
     return "".join(lines)
 
 
@@ -116,6 +124,7 @@ def migrate_text(text: str) -> tuple[str, list[str]]:
     for old, new in sorted(SCHEMA_MAP.items(), key=lambda item: -len(item[0])):
         migrated = _replace_token(migrated, old, new)
     migrated = migrated.replace("moran/", "mohu/")
+    migrated = _drop_removed_schema_lines(migrated)
     migrated = _add_flypy_schema_group(migrated)
     unknown = sorted(set(UNKNOWN_PATTERN.findall(migrated)))
     return migrated, unknown

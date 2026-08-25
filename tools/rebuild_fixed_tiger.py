@@ -22,6 +22,7 @@ from fixed_tiger_allocation import (  # noqa: E402
     select_records,
 )
 from flypyify import flypyify1  # noqa: E402
+from zrmify import unzrmify1  # noqa: E402
 from modern_readings import load_modern_readings  # noqa: E402
 from tiger_aux import (  # noqa: E402
     TIGER_EQUIVALENTS,
@@ -47,6 +48,7 @@ COMPATIBILITY_PROFILE_PATH = ROOT / "tools/data/tiger_race_profile.tsv"
 FIXED_CHAR_CODE_OVERRIDES_PATH = (
     ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
 )
+SECONDARY_SHORT_CODES_PATH = ROOT / "tools/data/mohu_fixed_secondary_codes.tsv"
 EXPECTED_SIMPLIFIED_READING_CATEGORIES = {
     "all-modern": 8121,
     "mixed": 1,
@@ -140,11 +142,19 @@ def rebuild_parent(path: Path, table_name: str) -> tuple[str, list[tuple[int, st
     header_lines = header.splitlines(keepends=True)
     removed = []
     retained = []
+    in_fly_block = False
     for offset, raw_line in enumerate(body, start=len(header_lines) + 1):
         line = raw_line.rstrip("\n")
+        # 飞键区块（# 开始飞键 ... # 结束飞键）与词库一样手工维护，
+        # 其中的单字飞键条目不参与清扫与重生成。
+        if line.startswith("# 开始飞键"):
+            in_fly_block = True
+        elif line.startswith("# 结束飞键"):
+            in_fly_block = False
         fields = line.split("\t")
         if (
-            len(fields) >= 2
+            not in_fly_block
+            and len(fields) >= 2
             and len(fields[0]) == 1
             and LOWERCASE_CODE.fullmatch(fields[1])
         ):
@@ -202,6 +212,7 @@ def render_parent_with_characters(
     character_rows = "".join(
         f"{char}\t{code}\t\t{weight}\n" for char, code, weight in rows
     )
+    remaining = refresh_fly_characters(remaining, rows)
     return (
         header
         + "\n"
@@ -211,6 +222,69 @@ def render_parent_with_characters(
         + "\n"
         + remaining.lstrip("\n")
     )
+
+
+FLY_SUBSTITUTIONS = {"wz": "wk", "xq": "xo", "qx": "qo"}
+
+
+def refresh_fly_characters(
+    body: str,
+    rows: list[tuple[str, str, str]],
+) -> str:
+    """按当前字表重生成飞键区块中的单字行（先剔除旧单字行，再按码序注入）。
+
+    单字飞键随码表分配走：zrm 与 legacy 的单字简码不同，
+    渲染每个变体时都以各自的字表为准，避免继承另一方案的飞键单字。
+    """
+    start_mark = "# 开始飞键 "
+    end_mark = "# 结束飞键"
+    fly_targets = {new: [] for new in FLY_SUBSTITUTIONS.values()}
+    for char, code, weight in rows:
+        if len(code) >= 2 and code[:2] in FLY_SUBSTITUTIONS:
+            new = FLY_SUBSTITUTIONS[code[:2]]
+            flycode = new + code[2:]
+            fly_targets[new].append((flycode, f"{char}\t{flycode}\t\t{weight}\n"))
+
+    # 第一遍：剔除飞键区块内既有的单字行
+    stripped_lines = []
+    block_new = None
+    for raw in body.splitlines(keepends=True):
+        stripped = raw.rstrip("\n")
+        if stripped.startswith(start_mark):
+            block_new = stripped.split("->")[-1].strip()
+        elif stripped.startswith(end_mark):
+            block_new = None
+        elif block_new is not None:
+            fields = stripped.split("\t")
+            if (len(fields) >= 2 and len(fields[0]) == 1
+                    and LOWERCASE_CODE.fullmatch(fields[1])):
+                continue
+        stripped_lines.append(raw)
+
+    # 第二遍：按码序把生成的单字行注入对应块（同码保持字表顺序）
+    result = []
+    pending = None
+    for raw in stripped_lines:
+        stripped = raw.rstrip("\n")
+        if stripped.startswith(start_mark):
+            label_new = stripped.split("->")[-1].strip()
+            pending = list(fly_targets.get(label_new, []))
+            result.append(raw)
+            continue
+        if stripped.startswith(end_mark):
+            result.extend(line for _, line in pending or [])
+            pending = None
+            result.append(raw)
+            continue
+        if pending:
+            fields = stripped.split("\t")
+            code = (fields[1] if len(fields) >= 2
+                    and LOWERCASE_CODE.fullmatch(fields[1] or "") else None)
+            while pending and code is not None and pending[0][0] <= code:
+                result.append(pending.pop(0)[1])
+        result.append(raw)
+    result.extend(line for _, line in pending or [])
+    return "".join(result)
 
 
 def load_production_pinyin_table(path: Path) -> dict[str, list[tuple[str, float]]]:
@@ -508,6 +582,35 @@ def allocate_reading_ordered_codes(
     return rank_candidates(rows)
 
 
+def load_secondary_short_codes(path: Path) -> list[tuple[str, str]]:
+    """Load hand-curated low-priority quick codes (secondary short codes).
+
+    These rows are appended to the multi-short-code table at low priority
+    without occupying the exclusive allocation; they also count as coverage
+    so the character's prefix-matched auto-assigned codes are suppressed.
+    Codes are natural-code (zrm); Flypy tables are converted downstream.
+    """
+    records: list[tuple[str, str]] = []
+    for line_number, raw_line in enumerate(
+        path.read_text(encoding="utf-8-sig").splitlines(),
+        1,
+    ):
+        if not raw_line.strip() or raw_line.startswith("#"):
+            continue
+        fields = [field.strip() for field in raw_line.split("\t")]
+        if (
+            len(fields) != 2
+            or len(fields[0]) != 1
+            or not LOWERCASE_CODE.fullmatch(fields[1])
+        ):
+            raise ValueError(
+                f"invalid secondary short code at {path}:{line_number}: "
+                "expected a character and a lowercase code"
+            )
+        records.append((fields[0], fields[1]))
+    return records
+
+
 def allocate_legacy_codes(
     cascade_entries: list[SourceEntry] | list[TableEntry],
     tiger_order: list[str],
@@ -516,12 +619,16 @@ def allocate_legacy_codes(
     fallback_rows: list[TableEntry] | None = None,
     *,
     fixed_codes: dict[str, str] | None = None,
+    secondary_codes: list[tuple[str, str]] | None = None,
 ) -> list[TableEntry]:
     """Keep legacy collisions, then cascade three- and four-key rows.
 
     One- and two-key codes preserve rime-moran's multi-short-code behavior and
     the existing unique-mode fallback rows. Longer rows use current full codes
     and skip characters already covered by a matching shorter prefix.
+    Secondary short codes are registered as coverage first (suppressing the
+    character's prefix-matched fallback/cascade codes) and emitted last so
+    they render after existing rows sharing the same code.
     """
     fixed_codes = fixed_codes or {}
     blocked_codes = {code[:2] for code in fixed_codes.values()}
@@ -563,6 +670,20 @@ def allocate_legacy_codes(
                 source="original",
             )
         )
+
+    pending_secondary: list[tuple[str, str]] = []
+    for text, code in secondary_codes or []:
+        value = (text, code)
+        if (
+            text not in allowed
+            or text in fixed_codes
+            or value in seen
+            or code in blocked_codes
+        ):
+            raise ValueError(f"invalid secondary short code: {text} {code}")
+        seen.add(value)
+        assigned[text].append(code)
+        pending_secondary.append(value)
 
     legacy_texts = set(assigned)
     for entry in fallback_rows or []:
@@ -649,6 +770,19 @@ def allocate_legacy_codes(
                     )
                 )
                 break
+
+    for text, code in pending_secondary:
+        if any(row.text == text and row.code == code for row in rows):
+            continue
+        rows.append(
+            TableEntry(
+                text,
+                code,
+                weights[text],
+                len(rows),
+                source="original",
+            )
+        )
     return rank_candidates(rows)
 
 
@@ -937,6 +1071,7 @@ def build_full_character_allocation(
     shortcut_readings: set[tuple[str, str]] | None = None,
     double_pinyin: DoublePinyin = "zrm",
     fixed_codes: dict[str, str] | None = None,
+    secondary_codes: list[tuple[str, str]] | None = None,
     compatibility_auxiliary_codes: dict[str, list[str]] | None = None,
     compatibility_order: list[str] | None = None,
     compatibility_targets_out: list[str] | None = None,
@@ -1005,6 +1140,7 @@ def build_full_character_allocation(
         legacy_full_entries=source_entries,
         fallback_rows=short_rows,
         fixed_codes=fixed_codes,
+        secondary_codes=secondary_codes,
     )
     if (compatibility_auxiliary_codes is None) != (compatibility_order is None):
         raise ValueError(
@@ -1208,6 +1344,11 @@ def main() -> int:
         "flypy",
     )
     compatibility_targets: list[str] = []
+    zrm_secondary_codes = load_secondary_short_codes(SECONDARY_SHORT_CODES_PATH)
+    flypy_secondary_codes = [
+        (text, flypyify1(unzrmify1(code[:2])) + code[2:])
+        for text, code in zrm_secondary_codes
+    ]
     tiger_order, zrm_rows, zrm_legacy_rows, zrm_full_rows, weights = (
         build_full_character_allocation(
             tiger_path,
@@ -1217,6 +1358,7 @@ def main() -> int:
             shortcut_readings=modern_readings,
             double_pinyin="zrm",
             fixed_codes=zrm_fixed_codes,
+            secondary_codes=zrm_secondary_codes,
             compatibility_auxiliary_codes=compatibility_auxiliary_codes,
             compatibility_order=compatibility_order,
             compatibility_targets_out=compatibility_targets,
@@ -1231,6 +1373,7 @@ def main() -> int:
             shortcut_readings=modern_readings,
             double_pinyin="flypy",
             fixed_codes=flypy_fixed_codes,
+            secondary_codes=flypy_secondary_codes,
         )
     )
     if flypy_order != tiger_order or flypy_weights != weights:

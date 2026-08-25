@@ -9,7 +9,7 @@ grep -Fq 'states: [ 常用字, 全字集 ]' "$DIST_DIR/mohu_zrm.schema.yaml"
 grep -Fq 'states: [ 动词, 固词 ]' "$DIST_DIR/mohu_zrm.schema.yaml"
 
 for schema in \
-    mohu_zrm mohu_zrm_fixed mohu_zrm_sentence mohu_zrm_aux \
+    mohu_zrm \
     mohu_flypy mohu_flypy_fixed mohu_flypy_sentence mohu_flypy_aux; do
     grep -Fq 'states: [ 常用字, 全字集 ]' "$DIST_DIR/$schema.schema.yaml"
     grep -Fq 'reverse_lookup_translator@reverse_tiger' "$DIST_DIR/$schema.schema.yaml"

@@ -26,9 +26,6 @@ class MohuMigrationTest(unittest.TestCase):
 
             expected_order = [
                 "mohu_zrm",
-                "mohu_zrm_fixed",
-                "mohu_zrm_sentence",
-                "mohu_zrm_aux",
                 "mohu_flypy",
                 "mohu_flypy_fixed",
                 "mohu_flypy_sentence",
@@ -39,6 +36,8 @@ class MohuMigrationTest(unittest.TestCase):
                 self.assertIn(f"schema: {schema}", migrated)
             positions = [migrated.index(f"schema: {schema}") for schema in expected_order]
             self.assertEqual(positions, sorted(positions))
+            for removed in ("mohu_zrm_fixed", "mohu_zrm_sentence", "mohu_zrm_aux"):
+                self.assertNotIn(removed, migrated)
 
     def test_plan_is_read_only_and_maps_old_schemas_to_zrm(self) -> None:
         with TemporaryDirectory() as directory:
@@ -52,7 +51,8 @@ class MohuMigrationTest(unittest.TestCase):
             self.assertEqual(original, source.read_text(encoding="utf-8"))
             self.assertFalse(plan.unknown_references)
             self.assertIn("mohu_zrm", plan.text_edits[source])
-            self.assertIn("mohu_zrm_fixed", plan.text_edits[source])
+            self.assertNotIn("moran_fixed", plan.text_edits[source])
+            self.assertNotIn("mohu_zrm_fixed", plan.text_edits[source])
 
     def test_apply_backs_up_and_renames_config_and_userdb(self) -> None:
         with TemporaryDirectory() as directory:

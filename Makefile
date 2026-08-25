@@ -166,9 +166,6 @@ test: dist
 	mira -C /tmp/mira-cache tests/mohu_tiger_priority.test.yaml
 	mira -C /tmp/mira-cache tests/mohu_candidate_override.test.yaml
 	mira -C /tmp/mira-cache tests/mohu.hint.test.yaml
-	mira -C /tmp/mira-cache tests/mohu_aux.test.yaml
-	mira -C /tmp/mira-cache tests/mohu_candidate_override_sentence.test.yaml
-	mira -C /tmp/mira-cache tests/mohu_candidate_override_fixed.test.yaml
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 

@@ -27,6 +27,9 @@ deploy:
         assert: text_index(cand, '重') == nil
 
   default:
+    # jmdjr 一类五码输入依赖词辅提权
+    patch:
+      mohu/enable_word_filter: true
     tests:
       - send: cisa
         assert: text_index(cand, '词') ~= nil and text_index(cand, '词') <= 6

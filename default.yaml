@@ -5,9 +5,6 @@ config_version: '1.0.mohu'
 
 schema_list:
   - schema: mohu_zrm
-  - schema: mohu_zrm_fixed
-  - schema: mohu_zrm_sentence
-  - schema: mohu_zrm_aux
   - schema: mohu_flypy
   - schema: mohu_flypy_fixed
   - schema: mohu_flypy_sentence

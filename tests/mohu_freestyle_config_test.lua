@@ -22,9 +22,7 @@ assert_contains("mohu.yaml", "    freestyle: true")
 
 for _, path in ipairs({
     "mohu_zrm.schema.yaml",
-    "mohu_zrm_aux.schema.yaml",
     "mohu_zrm_fixed.schema.yaml",
-    "mohu_zrm_sentence.schema.yaml",
     "mohu_flypy.schema.yaml",
     "mohu_flypy_aux.schema.yaml",
     "mohu_flypy_fixed.schema.yaml",
@@ -48,6 +46,7 @@ for _, path in ipairs({
     )
 end
 
+-- 自然码组的字词/整句方案仅作 compile-only 垫片保留，配置仍需正确
 for _, prefix in ipairs({ "mohu_zrm", "mohu_flypy" }) do
     local fixed = prefix .. "_fixed.schema.yaml"
     local sentence = prefix .. "_sentence.schema.yaml"

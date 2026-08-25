@@ -6,7 +6,7 @@
 
 ---
 name: mohu_zrm.chars
-version: "20260819"
+version: "20260825"
 sort: by_weight
 use_preset_vocabulary: false
 ...
@@ -7607,8 +7607,6 @@ use_preset_vocabulary: false
 䢻	jn;qt	0
 䢻	tj;qt	0
 䢼	gs;lh	0
-䢼	gs;lt	0
-䢼	gs;le	0
 䢽	xd;lh	0
 䢾	xm;qp	0
 䢿	an;wb	0
@@ -10640,9 +10638,7 @@ use_preset_vocabulary: false
 具	ju;qh	433976
 典	dm;ih	171037
 兹	ci;hi	1
-兹	ci;hy	1
 兹	zi;hi	38585
-兹	zi;hy	38585
 兺	ff;hp	0
 养	yh;gi	1019753
 兼	jm;hb	68324
@@ -11376,8 +11372,6 @@ use_preset_vocabulary: false
 厧	dm;xn	0
 厨	iu;xz	89003
 厩	jq;xi	2777
-厩	jq;xd	2777
-厩	jq;xu	2777
 厪	jn;xl	0
 厪	qn;xl	0
 厫	ao;xa	0
@@ -13656,8 +13650,6 @@ use_preset_vocabulary: false
 姽	gv;bx	284
 姾	qr;bj	0
 姿	zi;we	135544
-姿	zi;wb	135544
-姿	zi;wn	135544
 娀	ss;bp	13
 威	wz;nf	503918
 娂	gh;bl	0
@@ -14177,7 +14169,6 @@ use_preset_vocabulary: false
 孱	cj;ch	0
 孲	ya;hf	0
 孳	zi;hi	637
-孳	zi;hh	637
 孴	ni;hh	0
 孵	fu;by	4384
 孶	zi;li	0
@@ -17040,8 +17031,6 @@ use_preset_vocabulary: false
 掫	vb;uq	0
 掫	zb;uq	0
 掬	ju;un	6329
-掬	ju;up	6329
-掬	ju;um	6329
 掭	tm;uf	37
 掮	qm;um	625
 掯	kf;us	0
@@ -17681,7 +17670,6 @@ use_preset_vocabulary: false
 攼	gj;eh	0
 攼	hj;eh	0
 攽	bj;hp	21
-攽	bj;hh	21
 放	fh;lh	7730745
 政	vg;fs	633183
 敀	bo;uh	0
@@ -17838,6 +17826,8 @@ use_preset_vocabulary: false
 斦	yn;tt	0
 斦	vi;tt	0
 斧	fu;hb	52064
+斧	fu;ht	52064
+斧	fu;hj	52064
 斨	qd;at	0
 斩	vj;yt	102461
 斪	ju;gt	0
@@ -18316,11 +18306,7 @@ use_preset_vocabulary: false
 朞	ji;zh	0
 朞	qi;zh	0
 期	ji;zh	1
-期	ji;zv	1
-期	ji;zy	1
 期	qi;zh	647443
-期	qi;zv	647443
-期	qi;zy	647443
 朠	yy;vl	0
 朡	zs;vb	0
 朡	jx;vb	0
@@ -19238,8 +19224,6 @@ use_preset_vocabulary: false
 槁	gk;eg	1758
 槂	sp;eh	0
 槃	pj;ir	1340
-槃	pj;ie	1340
-槃	pj;im	1340
 槄	tk;ey	0
 槅	ge;en	0
 槅	he;en	0
@@ -19784,8 +19768,6 @@ use_preset_vocabulary: false
 欹	qi;mz	370
 欹	yi;mz	0
 欺	qi;zh	133789
-欺	qi;ze	133789
-欺	qi;zq	133789
 欻	iw;cc	0
 欻	xu;cc	44
 欼	ii;rr	0
@@ -26880,6 +26862,8 @@ use_preset_vocabulary: false
 翍	pi;zr	0
 翍	po;zr	0
 翎	ly;jk	13767
+翎	ly;jz	13767
+翎	ly;jv	13767
 翏	lc;zj	0
 翏	lq;zj	0
 翏	lu;zj	0
@@ -27121,8 +27105,6 @@ use_preset_vocabulary: false
 肂	si;gb	0
 肃	su;bp	126387
 肄	yi;vo	531
-肄	yi;vb	531
-肄	yi;vv	531
 肅	su;ba	0
 肆	si;pb	58585
 肇	vk;mh	6900
@@ -28559,7 +28541,6 @@ use_preset_vocabulary: false
 蓍	ui;lq	385
 蓎	th;lx	0
 蓏	lo;ly	10
-蓏	lo;lg	10
 蓐	ru;lf	202
 蓑	so;lt	1539
 蓒	xm;ly	0
@@ -29536,6 +29517,7 @@ use_preset_vocabulary: false
 螡	wf;vc	0
 螢	yy;cc	0
 螣	tg;vh	57
+螣	tg;vc	57
 螤	yu;vc	0
 螤	vs;vc	0
 螥	ch;cj	0
@@ -30763,8 +30745,6 @@ use_preset_vocabulary: false
 謅	ik;sn	0
 謆	uj;sm	0
 謇	jm;wq	614
-謇	jm;wh	614
-謇	jm;ws	614
 謈	bk;ol	0
 謈	bo;ol	0
 謈	po;ol	0
@@ -32768,8 +32748,6 @@ use_preset_vocabulary: false
 郘	lv;dd	0
 郙	fu;nt	0
 郚	wu;wd	3
-郚	wu;wt	3
-郚	wu;we	3
 郛	fu;yh	203
 郛	fu;yt	203
 郛	fu;ye	203
@@ -35789,8 +35767,6 @@ use_preset_vocabulary: false
 馣	yj;xo	0
 馤	ai;xo	0
 馥	fu;xo	4049
-馥	fu;xe	4049
-馥	fu;xh	4049
 馦	jm;xo	0
 馦	xm;xo	0
 馧	yp;xo	0
@@ -37538,8 +37514,6 @@ use_preset_vocabulary: false
 黌	hs;pb	0
 黍	uu;xj	1106
 黎	li;xp	98444
-黎	li;xj	98444
-黎	li;xk	98444
 黏	nm;xj	10465
 黐	ii;xj	0
 黑	hz;ph	1292192
@@ -37627,8 +37601,6 @@ use_preset_vocabulary: false
 鼉	to;dd	0
 鼊	bi;cd	0
 鼋	yr;mp	657
-鼋	yr;md	657
-鼋	yr;mm	657
 鼌	ik;of	0
 鼌	vk;of	0
 鼍	to;dd	262
@@ -86475,11 +86447,7 @@ use_preset_vocabulary: false
 𬍟	yu;jn	0
 𬍠	yi;nj	0
 𬍡	dh;ka	0
-𬍡	dh;ke	0
-𬍡	dh;ki	0
 𬍡	th;ka	0
-𬍡	th;ke	0
-𬍡	th;ki	0
 𬍣	ru;nb	0
 𬍤	xp;nb	0
 𬍥	fu;nn	0

@@ -49,6 +49,23 @@ deploy:
     tests:
       - send: tz
         assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资') and eq(cand[2].comment, '⚡️')
+      # 次级简码：同码低优先级追加，不抢占现有分配（tools/data/mohu_fixed_secondary_codes.tsv）
+      - send: jw
+        assert: eq(cand[1].text, '家') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '加') and eq(cand[2].comment, '⚡️')
+      - send: jws
+        assert: eq(cand[1].text, '架') and eq(cand[1].comment, '⚡️') and not eq(cand[2].comment, '⚡️')
+      - send: lix
+        assert: eq(cand[1].text, '利') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '梨') and eq(cand[2].comment, '⚡️')
+      - send: lixp
+        assert: eq(cand[1].text, '黎') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '励')
+      # 暮 由 four_code_char_yield_exempt 豁免四码让位规则
+      - send: mulo
+        assert: eq(cand[1].text, '幕') and eq(cand[2].text, '暮') and eq(cand[2].comment, '⚡️')
+      # 手工加词
+      - send: ypnm
+        assert: eq(cand[1].text, '云辇')
+      - send: pgyimf
+        assert: eq(cand[1].text, '鹏翼门')
       - send: hd
         assert: eq(cand[1].text, '黄') and eq(cand[2].text, '很多') and eq(cand[2].comment, '⚡️') and eq(cand[3].text, '回答') and eq(cand[3].comment, '⚡️')
       - send: gs

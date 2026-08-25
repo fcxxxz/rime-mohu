@@ -117,6 +117,8 @@ deploy:
   aux_hint:
     patch:
       switches/@11/reset: 1
+      # 词组辅助码提示依赖词辅开启
+      mohu/enable_word_filter: true
     tests:
       - send: yzuif
         assert: cand[1].text == '有事' and cand[1].comment == 'nf'

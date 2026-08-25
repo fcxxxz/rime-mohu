@@ -6,9 +6,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 EXPECTED_SCHEMAS = [
     "mohu_zrm",
-    "mohu_zrm_fixed",
-    "mohu_zrm_sentence",
-    "mohu_zrm_aux",
     "mohu_flypy",
     "mohu_flypy_fixed",
     "mohu_flypy_sentence",
@@ -18,13 +15,13 @@ EXPECTED_SCHEMAS = [
 
 DOUBLE_PINYIN_SCHEMAS = EXPECTED_SCHEMAS[:-1]
 COMPILE_ONLY_SCHEMAS = [
+    "mohu_zrm_fixed",
     "mohu_zrm_fixed_legacy",
+    "mohu_zrm_sentence",
     "mohu_flypy_fixed_legacy",
 ]
 CONTEXTUAL_SCHEMAS = [
     "mohu_zrm",
-    "mohu_zrm_sentence",
-    "mohu_zrm_aux",
     "mohu_flypy",
     "mohu_flypy_sentence",
     "mohu_flypy_aux",
@@ -79,10 +76,6 @@ class MohuConfigTest(unittest.TestCase):
                 self.assertNotRegex(text, r"states:\s*\[\s*简,\s*通")
 
     def test_auxiliary_schema_display_names_use_filtering_term(self) -> None:
-        self.assertIn(
-            "  name: 辅筛·魔虎·自然码\n",
-            read("mohu_zrm_aux.schema.yaml"),
-        )
         self.assertIn(
             "  name: 辅筛·魔虎·小鹤\n",
             read("mohu_flypy_aux.schema.yaml"),
@@ -157,8 +150,6 @@ class MohuConfigTest(unittest.TestCase):
                     )
                 if schema_id in {
                     "mohu_zrm",
-                    "mohu_zrm_fixed",
-                    "mohu_zrm_aux",
                     "mohu_flypy",
                     "mohu_flypy_fixed",
                     "mohu_flypy_aux",

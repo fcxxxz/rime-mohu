@@ -2182,7 +2182,7 @@ import_tables:
 珈	jwn		4077
 跏	jwp		553
 笳	jwr		1383
-加	jws		1.32972e+06
+架	jws		304618
 袷	jwt		565
 挟	jwu		0
 贾	jwv		117313
@@ -6267,7 +6267,7 @@ import_tables:
 泇	jwks		408
 葭	jwlc		3436
 荚	jwlh		923
-架	jwsd		304618
+驾	jwsd		107183
 甲	jwsj		253580
 胛	jwvs		2253
 铗	jwzh		375
@@ -6472,7 +6472,7 @@ import_tables:
 鳢	liwy		26
 厘	lixd		17464
 厉	lixf		352288
-梨	lixp		767900
+黎	lixp		98444
 历	lixs		492045
 轹	liyb		72
 詈	liys		614
@@ -8479,6 +8479,8 @@ import_tables:
 镞	zuzl		765
 咀	zvdf		48
 醉	zvyz		181356
+加	jw		0
+梨	lix		0
 嗌	aida		645
 嗌	aidm		645
 胺	anvb		1174
@@ -8672,8 +8674,6 @@ import_tables:
 郏	jwht		455
 迦	jwsc		30382
 袈	jwsi		3831
-驾	jwsm		107183
-驾	jwsn		107183
 袈	jwst		3831
 迦	jwsu		30382
 岬	jwvj		1210
@@ -8700,8 +8700,6 @@ import_tables:
 猁	limd		998
 猁	limp		998
 黧	lixh		446
-黎	lixj		98444
-黎	lixk		98444
 犁	lixn		7823
 犁	lixq		7823
 浰	lmkd		0
@@ -69608,6 +69606,7 @@ JK制服	jkvf
 铭心	myxn
 没有兴趣	myxq
 没有心情	myxq
+明秀	myxq
 暮夜先容	myxr
 没有心思	myxs
 免疫系统	myxt
@@ -80355,6 +80354,7 @@ P站	pvj
 切换	qxhr
 切回	qxhv
 勤学好问	qxhw
+切花	qxhw
 曲学诐行	qxhx
 惬怀	qxhy
 切成	qxig
@@ -106737,6 +106737,7 @@ U盘	upj
 闻讯	wfxp
 问询	wfxp
 歪风邪气	wfxq
+文秀	wfxq
 文选	wfxr
 无法形容	wfxr
 枉费心思	wfxs
@@ -131090,6 +131091,8 @@ U盘	upj
 湘绣	xdxo
 纤秀	xmxo
 新秀	xnxo
+修	xo		0
+下去	xo
 袖标	xobc
 休班	xobj
 锈斑	xobj
@@ -131097,16 +131100,20 @@ U盘	upj
 修编	xobm
 修补	xobu
 锈病	xoby
+䗛	xoc		0
 修辞	xoci
 羞惭	xocj
 秀才	xocl
+嗅	xod		25646
 秀逗	xodb
 嗅到	xodk
 修订	xody
+朽	xoe		25425
 秀发	xofa
 羞愤	xoff
 绣房	xofh
 修复	xofu
+羞	xog		148102
 修改	xogl
 绣工	xogs
 休怪	xogy
@@ -131115,15 +131122,18 @@ U盘	upj
 修护	xohu
 休会	xohv
 绣花	xohw
+绣	xoi		38793
 修车	xoie
 修长	xoih
 羞耻	xoii
+休	xoj		334462
 修脚	xojc
 锈迹	xoji
 修建	xojm
 秀俊	xojp
 嗅觉	xojt
 休假	xojw
+溴	xok		845
 袖口	xokb
 休克	xoke
 休刊	xokj
@@ -131133,15 +131143,20 @@ U盘	upj
 修炼	xolm
 修罗	xolo
 修路	xolu
+貅	xom		1043
 朽迈	xoml
 休眠	xomm
 朽木	xomu
 秀美	xomz
+琇	xon		589
 羞赧	xonj
 羞恼	xonk
 修女	xonv
+臭	xoo		2
+髹	xop		484
 绣品	xopn
 修配	xopz
+馐	xoq		793
 修桥	xoqc
 秀气	xoqi
 绣球	xoqq
@@ -131151,6 +131166,7 @@ U盘	upj
 羞辱	xoru
 羞涩	xose
 羞臊	xosk
+袖	xot		112531
 嗅探	xotj
 袖套	xotk
 袖筒	xots
@@ -131160,6 +131176,7 @@ U盘	upj
 修饰	xoui
 修缮	xouj
 修书	xouu
+岫	xov		2562
 袖珍	xovf
 修正	xovg
 休整	xovg
@@ -131167,7 +131184,9 @@ U盘	upj
 休止	xovi
 休战	xovj
 修筑	xovu
+宿	xow		181931
 修为	xowz
+秀	xox		364108
 休想	xoxd
 休息	xoxi
 休闲	xoxm
@@ -131181,6 +131200,13 @@ U盘	upj
 秀逸	xoyi
 休要	xoyk
 羞于	xoyu
+锈	xoz		10628
+咻	xodj		7148
+鸺	xoje		24
+脩	xojg		640
+滫	xokj		326
+珛	xonn		416
+庥	xoxj		624
 袖子	xozi
 修造	xozk
 选修	xrxo
@@ -131228,7 +131254,11 @@ U盘	upj
 迫切	poqo
 妻妾	qiqo
 亲切	qnqo
+且	qo		0
+取消	qo
+挈	qoa		768
 窃案	qoan
+郄	qob		546
 切变	qobm
 且不	qobu
 怯步	qobu
@@ -131240,39 +131270,47 @@ U盘	upj
 切点	qodm
 窃夺	qodo
 切断	qodr
+窃	qoe		47730
 切分	qoff
 切腹	qofu
 切割	qoge
 切糕	qogk
 窃国	qogo
+怯	qoh		42612
 切合	qohe
 切换	qohr
 切回	qohv
 切花	qohw
 惬怀	qohy
+妾	qoi		33441
 切成	qoig
 怯场	qoih
 切齿	qoii
 切除	qoiu
-切忌	qoji
+伽	qoj		1098
 切记	qoji
+切忌	qoji
 切近	qojn
 切口	qokb
 且看	qokj
 切开	qokl
 切块	qoky
+茄	qol		16373
 伽蓝	qolj
+砌	qom		0
 窃密	qomi
 且慢	qomj
 切脉	qoml
 切面	qomm
-且莫	qomo
 切莫	qomo
+且莫	qomo
 怯懦	qono
+趄	qop		4866
 切盼	qopj
 切片	qopm
 切切	qoqo
 窃取	qoqu
+切	qor		900592
 怯弱	qoro
 切入	qoru
 切丝	qosi
@@ -131287,8 +131325,8 @@ U盘	upj
 怯阵	qovf
 切中	qovs
 切勿	qowu
-切削	qoxc
 窃笑	qoxc
+切削	qoxc
 窃喜	qoxi
 切线	qoxm
 切形	qoxy
@@ -131296,6 +131334,10 @@ U盘	upj
 惬意	qoyi
 切要	qoyk
 切音	qoyn
+锲	qoz		2139
+慊	qohh		178
+惬	qohn		12404
+箧	qorn		452
 茄子	qozi
 窃贼	qozz
 权且	qrqo
@@ -131467,6 +131509,7 @@ U盘	upj
 芦苇	luwk
 列为	lxwk
 灵位	lywk
+马尾	mawk
 某位	mbwk
 门卫	mfwk
 锚位	mkwk
@@ -131569,10 +131612,14 @@ U盘	upj
 追尾	vvwk
 王位	whwk
 玩味	wjwk
+位	wk		0
+微	wk		0
+未	wka		758953
 胃癌	wkai
 未按	wkan
 慰安	wkan
 违拗	wkao
+娓	wkb		8105
 尾巴	wkba
 为本	wkbf
 偎傍	wkbh
@@ -131583,11 +131630,13 @@ U盘	upj
 尾部	wkbu
 胃病	wkby
 违背	wkbz
+慰	wkc		160488
 未曾	wkcg
 味噌	wkcg
 为此	wkci
 位次	wkci
 苇丛	wkcs
+味	wkd		493741
 伟大	wkda
 微雕	wkdc
 尾灯	wkdg
@@ -131599,6 +131648,7 @@ U盘	upj
 唯独	wkdu
 维度	wkdu
 未定	wkdy
+桅	wke		5611
 巍峨	wkee
 味儿	wker
 违法	wkfa
@@ -131610,6 +131660,7 @@ U盘	upj
 违反	wkfj
 未付	wkfu
 为辅	wkfu
+违	wkg		83636
 微光	wkgd
 伟哥	wkge
 桅杆	wkgj
@@ -131622,6 +131673,7 @@ U盘	upj
 围攻	wkgs
 尾骨	wkgu
 违规	wkgv
+惟	wkh		92036
 为何	wkhe
 违和	wkhe
 尾号	wkhk
@@ -131632,12 +131684,14 @@ U盘	upj
 为患	wkhr
 微红	wkhs
 维护	wkhu
+维	wki		369458
 微创	wkid
 围城	wkig
 未尝	wkih
 维持	wkii
 围产	wkij
 伪钞	wkik
+伟	wkj		242973
 围剿	wkjc
 危机	wkji
 未见	wkjm
@@ -131650,6 +131704,7 @@ U盘	upj
 慰藉	wkjx
 未接	wkjx
 未经	wkjy
+渭	wkk		5648
 胃口	wkkb
 未可	wkke
 围垦	wkkf
@@ -131658,6 +131713,7 @@ U盘	upj
 围困	wkkp
 尾款	wkkr
 唯恐	wkks
+薇	wkl		104428
 微辣	wkla
 危楼	wklb
 未了	wklc
@@ -131672,6 +131728,7 @@ U盘	upj
 伪劣	wklx
 违令	wkly
 味蕾	wklz
+猥	wkm		8898
 微码	wkma
 微妙	wkmc
 威猛	wkmg
@@ -131688,17 +131745,20 @@ U盘	upj
 帷幕	wkmu
 威名	wkmy
 唯美	wkmz
+威	wkn		503918
 伪娘	wknd
 未能	wkng
 违逆	wkni
 为难	wknj
 喂奶	wknl
+韪	wko		1315
 围殴	wkou
 尾盘	wkpj
 为盼	wkpj
 委派	wkpl
 威迫	wkpo
 委培	wkpz
+畏	wkq		70481
 围墙	wkqd
 为期	wkqi
 围棋	wkqi
@@ -131708,6 +131768,7 @@ U盘	upj
 威权	wkqr
 委屈	wkqu
 畏怯	wkqx
+围	wkr		659219
 为人	wkrf
 伟人	wkrf
 蔚然	wkrj
@@ -131717,12 +131778,14 @@ U盘	upj
 微软	wkrr
 为荣	wkrs
 葳蕤	wkrv
+谓	wks		235703
 萎缩	wkso
 猥琐	wkso
 胃酸	wksr
 味素	wksu
 尾随	wksv
 未遂	wksv
+隗	wkt		4223
 微调	wktc
 胃疼	wktg
 苇塘	wkth
@@ -131741,6 +131804,7 @@ U盘	upj
 伪善	wkuj
 尾数	wkuu
 为数	wkuu
+巍	wkv		20904
 伪装	wkvd
 围着	wkve
 威震	wkvf
@@ -131754,12 +131818,14 @@ U盘	upj
 为主	wkvu
 围住	wkvu
 围追	wkvv
+鲔	wkw		488
 慰问	wkwf
 威望	wkwh
 委婉	wkwj
 巍巍	wkwk
 帷幄	wkwo
 威武	wkwu
+危	wkx		279881
 微笑	wkxc
 未向	wkxd
 未详	wkxd
@@ -131786,10 +131852,72 @@ U盘	upj
 委员	wkyr
 违约	wkyt
 位于	wkyu
+卫	wkz		504141
+闱	wkag		1805
+痿	wkax		2501
+尉	wkcf		62071
+炜	wkcg		10301
+遗	wkco		0
+煨	wkcq		1424
+尾	wkcv		148960
+喂	wkdq		148044
+唯	wkdu		217658
+圩	wkgf		1050
+韦	wkgw		77085
+艉	wkic		580
+纬	wkig		7715
+伪	wkji		66990
+偎	wkjq		18007
+𣲗	wkkg		0
+潍	wkki		792
+洧	wkkn		657
+涠	wkkr		57
+溦	wkkv		647
+洈	wkkx		403
+蔚	wklc		20152
+苇	wklg		16237
+𫇭	wkli		0
+葳	wkln		2548
+萎	wklx		17426
+猬	wkmq		5025
+硙	wkmv		2
+玮	wkng		10284
+琟	wknu		265
+𬀩	wkog		0
+胃	wkqv		53113
+帏	wkrg		1123
+帷	wkru		8007
+诿	wksx		1417
+霨	wktc		322
+隈	wktq		526
+嵬	wkva		5144
+崴	wkvn		753
+峗	wkvx		273
+鳚	wkwc		0
+鳂	wkwq		0
+𬶏	wkwx		0
+廆	wkxa		80
+委	wkxb		274305
+𬱟	wkxx		0
 味噌	wkzg
 位子	wkzi
 伪造	wkzk
 围坐	wkzo
+亹	wkzp		443
+螱	wkcc		270
+螱	wkck		270
+煟	wkcy		325
+沩	wkks		106
+薳	wkld		4
+薳	wklu		4
+碨	wkmf		295
+碨	wkmt		295
+逶	wkxc		1163
+魏	wkxg		120376
+逶	wkxu		1163
+煟	wkcv		0
+沩	wkki		0
+魏	wkxa		0
 维族	wkzu
 畏罪	wkzv
 外围	wlwk

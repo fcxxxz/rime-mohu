@@ -1,8 +1,7 @@
 local schemas = {
     "mohu_zrm.schema.yaml",
-    "mohu_zrm_aux.schema.yaml",
-    "mohu_zrm_sentence.schema.yaml",
     "mohu_zrm_fixed.schema.yaml",
+    "mohu_zrm_sentence.schema.yaml",
     "mohu_flypy.schema.yaml",
     "mohu_flypy_aux.schema.yaml",
     "mohu_flypy_sentence.schema.yaml",

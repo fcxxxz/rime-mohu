@@ -6,7 +6,7 @@
 
 ---
 name: mohu_flypy.chars
-version: "20260819"
+version: "20260825"
 sort: by_weight
 use_preset_vocabulary: false
 ...

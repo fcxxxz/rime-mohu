@@ -9,6 +9,11 @@ schema:
     基于小鹤双拼和虎码最长主码前两码的智能整句输入方案，保留固顶简快码。
   dependencies:
     - mohu_flypy_fixed
+    # 部署只会编译一级依赖的码表，因此 legacy 码表也需直接列出
+    - mohu_flypy_fixed_legacy
+    # mohu_flypy_sentence 不再进入方案选单，仅作为 compile-only 垫片保留：
+    # 本方案引擎均为 lua 翻译器，mohu_flypy.extended 码表与 mohu_flypy 棱镜
+    # 依赖该方案的标准翻译器在部署时编译。
     - mohu_flypy_sentence
     - mohu_charset
     - tiger
@@ -283,13 +288,13 @@ mohu:
   # 当输入二字或三字词时，允许词末输入 *一位* 辅助码筛选词语。
   # 例如输入 lmjxz 得到「连接」，输入 lmjxj 得到「链接」。
   # 但是与字辅输入方法不同，词辅在生效后 *不能* 在句末继续输入形成整
-  # 句——这个功能仅用于「词语筛选」。本方案默认开启，未匹配的第五码
+  # 句——这个功能仅用于「词语筛选」。本方案默认关闭，未匹配的第五码
   # 仍按下一音节处理。
   #
   # 开启后，词辅筛选的词语会带有辅助码提示，例如「链接」后会有「jf」，
   # 意思是输入 j *或* f 都可以定位到这个词，而不是说要同时输入 jf 两个码
   # （相反，同时输入 jf 两码后反而无法得到该选项）。
-  enable_word_filter: true
+  enable_word_filter: false
   # 重设词辅匹配提示符为其他字符串。
   # 即输入 lmjxz 时被词辅匹配的候选「连接」的提示符，不影响辅助码提示功能的输出。
   # 设为 "" 完全取消提示。
@@ -339,6 +344,9 @@ mohu:
   # inject_fixed_chars 注入到首选之后；排名不超过门槛的高频字维持固顶。
   # 设为 0 时所有单字都让位（魔然行为）。
   four_code_char_yield_rank: 2000
+  # 按字豁免上面的让位规则：列在这里的字即使排名超过门槛也在四码前置，
+  # 例如配合次级简码使用的「暮」（tools/data/mohu_flypy_fixed_secondary_codes.tsv）。
+  four_code_char_yield_exempt: 暮
   # (仅*动词模式*) 是否优先输出单字或词组
   inject_prioritize: "any"    # char 优先单字, word 优先词组，其他取值理解为按码表顺序
 

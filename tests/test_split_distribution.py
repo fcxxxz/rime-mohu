@@ -8,9 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SCHEMAS = {
     "zrm": [
         "mohu_zrm",
-        "mohu_zrm_fixed",
-        "mohu_zrm_sentence",
-        "mohu_zrm_aux",
         "tiger",
     ],
     "flypy": [
@@ -60,12 +57,23 @@ class SplitDistributionTest(unittest.TestCase):
                 other = "flypy" if scheme == "zrm" else "zrm"
 
                 self.assertEqual(expected_schemas, schema_ids(output / "default.yaml"))
+                # 自然码组只保留默认方案；字词/整句方案文件作为 compile-only 依赖随包分发
+                if scheme == "flypy":
+                    schema_entries = (
+                        f"mohu_{scheme}_fixed.schema.yaml",
+                        f"mohu_{scheme}_fixed_legacy.schema.yaml",
+                        f"mohu_{scheme}_sentence.schema.yaml",
+                        f"mohu_{scheme}_aux.schema.yaml",
+                    )
+                else:
+                    schema_entries = (
+                        f"mohu_{scheme}_fixed.schema.yaml",
+                        f"mohu_{scheme}_fixed_legacy.schema.yaml",
+                        f"mohu_{scheme}_sentence.schema.yaml",
+                    )
                 for relative in (
                     f"mohu_{scheme}.schema.yaml",
-                    f"mohu_{scheme}_fixed.schema.yaml",
-                    f"mohu_{scheme}_fixed_legacy.schema.yaml",
-                    f"mohu_{scheme}_sentence.schema.yaml",
-                    f"mohu_{scheme}_aux.schema.yaml",
+                    *schema_entries,
                     f"mohu_{scheme}.extended.dict.yaml",
                     f"mohu_{scheme}.classics.dict.yaml",
                     f"mohu_{scheme}.base.dict.yaml",

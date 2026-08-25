@@ -17,9 +17,8 @@ end
 
 local schemas = {
     { "mohu_zrm.schema.yaml", "mohu_zrm", "魔虎·自然码", "mohu_zrm_tiger_prefix2", "mohu_zrm_custom_phrases" },
-    { "mohu_zrm_aux.schema.yaml", "mohu_zrm_aux", "辅筛·魔虎·自然码", "mohu_zrm_aux_tiger_prefix2", "mohu_zrm_custom_phrases" },
-    { "mohu_zrm_sentence.schema.yaml", "mohu_zrm_sentence", "整句·魔虎·自然码", "mohu_zrm_sentence_tiger_prefix2", "mohu_zrm_custom_phrases" },
     { "mohu_zrm_fixed.schema.yaml", "mohu_zrm_fixed", "字词·魔虎·自然码", "mohu_zrm_fixed_tiger_prefix2", "mohu_zrm_custom_phrases" },
+    { "mohu_zrm_sentence.schema.yaml", "mohu_zrm_sentence", "整句·魔虎·自然码", "mohu_zrm_sentence_tiger_prefix2", "mohu_zrm_custom_phrases" },
     { "mohu_flypy.schema.yaml", "mohu_flypy", "魔虎·小鹤", "mohu_flypy_tiger_prefix2", "mohu_flypy_custom_phrases" },
     { "mohu_flypy_aux.schema.yaml", "mohu_flypy_aux", "辅筛·魔虎·小鹤", "mohu_flypy_aux_tiger_prefix2", "mohu_flypy_custom_phrases" },
     { "mohu_flypy_sentence.schema.yaml", "mohu_flypy_sentence", "整句·魔虎·小鹤", "mohu_flypy_sentence_tiger_prefix2", "mohu_flypy_custom_phrases" },

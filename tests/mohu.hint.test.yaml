@@ -47,6 +47,8 @@ deploy:
     patch:
       switches/@11/reset: 1
       mohu/quick_code_indicator: "💥"
+      # 词组辅助码提示依赖词辅开启
+      mohu/enable_word_filter: true
     tests:
       - send: a
         assert: cand[1].text == "啊" and eq(cand[1].comment, "dt💥")
@@ -61,6 +63,7 @@ deploy:
     patch:
       switches/@11/reset: 1
       mohu/quick_code_indicator: ""
+      mohu/enable_word_filter: true
     tests:
       - send: a
         assert: cand[1].text == "啊" and eq(cand[1].comment, "dt")

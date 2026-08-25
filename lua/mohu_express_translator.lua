@@ -149,6 +149,13 @@ function top.init(env)
     end
     env.four_code_char_yield_rank = yield_rank
 
+    -- 按字豁免四码让位规则（例如手工指定的次级简码）
+    env.four_code_char_yield_exempt = {}
+    local exempt_chars = env.engine.schema.config:get_string("mohu/four_code_char_yield_exempt") or ""
+    for _, cp in utf8.codes(exempt_chars) do
+        env.four_code_char_yield_exempt[cp] = true
+    end
+
     -- output 状态
     env.output_i = 0
     env.output_injected_secondary = {}
@@ -214,7 +221,11 @@ function top.func(input, seg, env)
                         if rank_map == nil then
                             return true
                         end
-                        local rank = rank_map[utf8.codepoint(cand.text)]
+                        local cp = utf8.codepoint(cand.text)
+                        if env.four_code_char_yield_exempt[cp] then
+                            return true
+                        end
+                        local rank = rank_map[cp]
                         return rank ~= nil and rank <= env.four_code_char_yield_rank
                     end)
                 end

@@ -66,7 +66,7 @@
     # 部署目录（首次；flypy 组把 zrm 换成 flypy）
     mkdir -p /tmp/mohu-ziti/deploy
     cp *.yaml *.gram /tmp/mohu-ziti/deploy/ && cp -R lua opencc /tmp/mohu-ziti/deploy/
-    printf 'patch:\n  schema_list:\n    - schema: mohu_zrm\n    - schema: mohu_zrm_fixed_legacy\n' \
+    printf 'patch:\n  schema_list:\n    - schema: mohu_zrm\n' \
       > /tmp/mohu-ziti/deploy/default.custom.yaml
 
     # 探针

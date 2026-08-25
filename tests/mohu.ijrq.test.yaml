@@ -11,6 +11,8 @@ deploy:
   word:
     patch:
       mohu/ijrq/enable_word: true
+      # 本组用例的五码输入依赖词辅提权
+      mohu/enable_word_filter: true
     tests:
       - send: uixmw
         assert: eq(cand[1].text, "实线") and eq(cand[2].text, "实现")
@@ -19,6 +21,7 @@ deploy:
     patch:
       mohu/ijrq/enable_word: true
       mohu/ijrq/enable_word_defer: 2
+      mohu/enable_word_filter: true
     tests:
       - send: uixmw
         assert: eq(cand[1].text, "实线") and eq(cand[3].text, "实现")
@@ -27,6 +30,7 @@ deploy:
     patch:
       mohu/ijrq/enable_word: true
       mohu/ijrq/enable_word_defer: 3
+      mohu/enable_word_filter: true
     tests:
       - send: uixmw
         assert: eq(cand[1].text, "实线") and eq(cand[4].text, "实现")

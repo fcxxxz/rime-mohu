@@ -4,9 +4,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MOHU_SCHEMAS = (
     "mohu_zrm",
-    "mohu_zrm_fixed",
-    "mohu_zrm_sentence",
-    "mohu_zrm_aux",
     "mohu_flypy",
     "mohu_flypy_fixed",
     "mohu_flypy_sentence",

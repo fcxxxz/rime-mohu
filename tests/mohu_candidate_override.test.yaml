@@ -47,6 +47,8 @@ deploy:
   delete_and_restore:
     patch:
       mohu/candidate_override/db_name: mohu_candidate_override_mira_delete
+      # lmjxy 的五码输入依赖词辅提权
+      mohu/enable_word_filter: true
     tests:
       - send: 'lmjx{Down}{Shift+Delete}'
         assert: eq(cand[1].text, '链接') and not has_text(cand, '连接')

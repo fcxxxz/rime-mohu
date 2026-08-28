@@ -70,18 +70,24 @@ local function parse_config(text, expected_type)
   if normalized:sub(1, 1) ~= "{" or normalized:sub(-1) ~= "}" then
     return false
   end
-  local depth, quoted, escaped = 0, false, false
+  local depth, quoted, escaped, root_closed = 0, false, false, false
   for index = 1, #text do
     local char = text:sub(index, index)
     if quoted then
       if escaped then escaped = false
       elseif char == "\\" then escaped = true
       elseif char == '"' then quoted = false end
+    elseif root_closed then
+      if not char:match("%s") then return false end
     elseif char == '"' then quoted = true
     elseif char == "{" then depth = depth + 1
-    elseif char == "}" then depth = depth - 1; if depth < 0 then return false end end
+    elseif char == "}" then
+      depth = depth - 1
+      if depth < 0 then return false end
+      if depth == 0 then root_closed = true end
+    end
   end
-  if quoted or escaped or depth ~= 0 then return false end
+  if quoted or escaped or depth ~= 0 or not root_closed then return false end
   local model_type = text:match('"model_type"%s*:%s*"([^"]+)"')
   local bits = tonumber(text:match('"bits"%s*:%s*(%d+)'))
   return model_type == expected_type and bits == 4

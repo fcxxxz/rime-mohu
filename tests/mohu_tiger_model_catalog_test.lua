@@ -42,6 +42,13 @@ write(root .. "/tiger/models/Qwen3-0.6B-4bit/config.json",
 local missing_weights = catalog.status({ user_data_dir = root })
 assert(missing_weights.status == "unavailable", "model assets are required")
 write(root .. "/tiger/models/Qwen3-0.6B-4bit/tokenizer.json", "{}\n")
+write(root .. "/tiger/models/Qwen3-0.6B-4bit/config.json",
+  '{"model_type":"qwen3","quantization":{"bits":4}} {"extra":true}\n')
+local multiple_objects = catalog.status({ user_data_dir = root })
+assert(multiple_objects.status == "unavailable",
+  "multiple JSON objects must not be treated as one model config")
+write(root .. "/tiger/models/Qwen3-0.6B-4bit/config.json",
+  '{"model_type":"qwen3","quantization":{"bits":4}}\n')
 local available = catalog.status({ user_data_dir = root })
 assert(available.status == "available")
 assert(available.model.relative_path == "tiger/models/Qwen3-0.6B-4bit")

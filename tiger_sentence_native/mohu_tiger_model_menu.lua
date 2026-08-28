@@ -80,6 +80,7 @@ local function model_candidate(seg, model, current, index)
     model.display_label or model.label or model.id, comment)
   candidate.quality = 1000000 - (index or 0)
   candidate.mohu_tiger_model_id = model.id or model.selection_id
+  candidate.model_id = candidate.mohu_tiger_model_id
   return candidate
 end
 
@@ -139,15 +140,28 @@ function processor.func(key_event, env)
       candidate.type ~= "mohu_tiger_model_status") then
     return NOOP
   end
-  if candidate.mohu_tiger_model_id then
-    if not write_selection(user_data_dir(), candidate.mohu_tiger_model_id) then
+  local model_id = candidate.mohu_tiger_model_id or candidate.model_id
+  if model_id then
+    if not write_selection(user_data_dir(), model_id) then
       return ACCEPTED
     end
-    if context.clear then context:clear() end
+    if context.clear then
+      context:clear()
+    else
+      context.input = ""
+      if context.refresh_non_confirmed_composition then
+        context:refresh_non_confirmed_composition()
+      end
+    end
     local reload = reranker.reload_profile or reranker.reload
     if type(reload) == "function" then pcall(reload) end
   elseif context.clear then
     context:clear()
+  else
+    context.input = ""
+    if context.refresh_non_confirmed_composition then
+      context:refresh_non_confirmed_composition()
+    end
   end
   return ACCEPTED
 end

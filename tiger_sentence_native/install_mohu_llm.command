@@ -54,15 +54,17 @@ fi
 custom="$rime_dir/default.custom.yaml"
 
 schema_registered() {
-  grep -Eq '(^|[-{,][[:space:]]*)schema:[[:space:]]*mohu_tiger_sentence([[:space:]} ,]|$)' "$custom"
+  grep -Ev '^[[:space:]]*#' "$custom" |
+    sed -E 's/[[:space:]]+#.*$//' |
+    grep -Eq '(^[[:space:]]*-[[:space:]]*schema:[[:space:]]*mohu_tiger_sentence([[:space:]} ,]|$)|[{,][[:space:]]*schema:[[:space:]]*mohu_tiger_sentence([[:space:]} ,]|$))'
 }
 
 patch_inline() {
   local source="$1" destination="$2"
-  if grep -Eq '^[[:space:]]*patch:[[:space:]]*\{[[:space:]]*\}[[:space:]]*$' "$source"; then
-    sed -E 's#^([[:space:]]*patch:[[:space:]]*)\{[[:space:]]*\}([[:space:]]*)$#\1{schema_list/+: [{schema: mohu_tiger_sentence}]}\2#' "$source" > "$destination"
+  if grep -Eq '^[[:space:]]*patch:[[:space:]]*\{[[:space:]]*\}[[:space:]]*(#.*)?$' "$source"; then
+    sed -E 's|^([[:space:]]*patch:[[:space:]]*)\{[[:space:]]*\}([[:space:]]*(#.*))?$|\1{schema_list/+: [{schema: mohu_tiger_sentence}]}\2|' "$source" > "$destination"
   else
-    sed -E 's#^([[:space:]]*patch:[[:space:]]*\{)(.*)(\}[[:space:]]*)$#\1\2, schema_list/+: [{schema: mohu_tiger_sentence}]\3#' "$source" > "$destination"
+    sed -E 's|^([[:space:]]*patch:[[:space:]]*\{)(.*)\}([[:space:]]*(#.*))?$|\1\2, schema_list/+: [{schema: mohu_tiger_sentence}]}\3|' "$source" > "$destination"
   fi
 }
 
@@ -72,14 +74,14 @@ if [[ ! -f "$custom" ]]; then
   mv -f "$temporary" "$custom"
 elif ! schema_registered; then
   temporary="$(mktemp "$custom.tmp.XXXXXX")"
-  if grep -Eq '^[[:space:]]*patch:[[:space:]]*\{.*\}[[:space:]]*$' "$custom"; then
+  if grep -Eq '^[[:space:]]*patch:[[:space:]]*\{.*\}[[:space:]]*(#.*)?$' "$custom"; then
     patch_inline "$custom" "$temporary"
   else
     cp "$custom" "$temporary"
   fi
   if grep -Eq '^patch:[[:space:]]*$' "$custom"; then
     printf '\n  schema_list/+:\n    - schema: mohu_tiger_sentence\n' >> "$temporary"
-  elif ! grep -Eq '^[[:space:]]*patch:[[:space:]]*\{.*\}[[:space:]]*$' "$custom"; then
+  elif ! grep -Eq '^[[:space:]]*patch:[[:space:]]*\{.*\}[[:space:]]*(#.*)?$' "$custom"; then
     printf '\npatch:\n  schema_list/+:\n    - schema: mohu_tiger_sentence\n' >> "$temporary"
   fi
   mv -f "$temporary" "$custom"

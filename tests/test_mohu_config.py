@@ -348,6 +348,8 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn("--reload", installer)
         self.assertIn("patch_inline", installer)
         self.assertIn("schema_list/+", installer)
+        self.assertIn("(#.*)?", installer)
+        self.assertIn("grep -Ev", installer)
         readme = read("tiger_sentence_native/README.md")
         self.assertIn("双击", readme)
         self.assertIn("`install_mohu_llm.command`", readme)

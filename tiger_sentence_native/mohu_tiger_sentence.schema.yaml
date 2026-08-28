@@ -55,6 +55,7 @@ engine:
     - lua_processor@*mohu_candidate_override*override_processor
     - lua_processor@*mohu_pin*pin_processor
     - lua_processor@*option_sync
+    - lua_processor@*mohu_tiger_model_menu*processor
     - key_binder
     - ascii_composer
     - lua_processor@*mohu_processor
@@ -78,6 +79,7 @@ engine:
     - reverse_lookup_translator@reverse_tiger
     - reverse_lookup_translator@reverse_tiger_backtick
     - table_translator@custom_phrase
+    - lua_translator@*mohu_tiger_model_menu*translator
     - lua_translator@*mohu_tiger_sentence*translator
     - lua_translator@*mohu_express_translator@with_reorder
     - lua_translator@*mohu_shijian

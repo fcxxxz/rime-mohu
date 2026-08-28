@@ -17,6 +17,7 @@ local registry = {
     path = "tiger/models/Qwen3.5-0.8B-MLX-4bit",
     model_sha256 = "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
     expected_sha256 = "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
+    model_type = "qwen3_5",
   },
   {
     id = "qwen3-0.6b",
@@ -27,6 +28,7 @@ local registry = {
     path = "tiger/models/Qwen3-0.6B-4bit",
     model_sha256 = "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
     expected_sha256 = "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
+    model_type = "qwen3",
   },
 }
 
@@ -60,6 +62,41 @@ local function read_bounded(path, limit)
   return value
 end
 
+local function parse_config(text, expected_type)
+  if type(text) ~= "string" or #text < 2 or text:match("^%s*{%s*}%s*$") then
+    return false
+  end
+  local depth, quoted, escaped = 0, false, false
+  for index = 1, #text do
+    local char = text:sub(index, index)
+    if quoted then
+      if escaped then escaped = false
+      elseif char == "\\" then escaped = true
+      elseif char == '"' then quoted = false end
+    elseif char == '"' then quoted = true
+    elseif char == "{" then depth = depth + 1
+    elseif char == "}" then depth = depth - 1; if depth < 0 then return false end end
+  end
+  if quoted or escaped or depth ~= 0 then return false end
+  local model_type = text:match('"model_type"%s*:%s*"([^"]+)"')
+  local bits = tonumber(text:match('"bits"%s*:%s*(%d+)'))
+  return model_type == expected_type and bits == 4
+end
+
+local function has_readable_asset(root, relative_path)
+  local names = { "tokenizer.json", "tokenizer_config.json", "model.safetensors", "model.safetensors.index.json" }
+  for _, name in ipairs(names) do
+    local value = read_bounded(root .. "/" .. relative_path .. "/" .. name, 1)
+    if type(value) == "string" and #value > 0 then return true end
+  end
+  return false
+end
+
+local function is_available(item, root)
+  local config = read_bounded(root .. "/" .. item.relative_path .. "/config.json", MAX_CONFIG_BYTES)
+  return parse_config(config, item.model_type) and has_readable_asset(root, item.relative_path)
+end
+
 local function model_for(id)
   for _, item in ipairs(registry) do
     if item.id == id then return item end
@@ -79,8 +116,7 @@ function M.list(options)
   local root = tostring(opts.user_data_dir or default_user_data_dir()):gsub("/+$", "")
   local result = {}
   for _, item in ipairs(registry) do
-    local config = read_bounded(root .. "/" .. item.relative_path .. "/config.json", MAX_CONFIG_BYTES)
-    result[#result + 1] = model_with_path(item, root, type(config) == "string" and #config > 0)
+    result[#result + 1] = model_with_path(item, root, is_available(item, root))
   end
   return result
 end
@@ -91,8 +127,7 @@ function M.get(id, options)
   local opts = options or {}
   local root = opts.user_data_dir or default_user_data_dir()
   root = tostring(root):gsub("/+$", "")
-  local config = read_bounded(root .. "/" .. item.relative_path .. "/config.json", MAX_CONFIG_BYTES)
-  return model_with_path(item, root, type(config) == "string" and #config > 0)
+  return model_with_path(item, root, is_available(item, root))
 end
 
 function M.read_selection(options)
@@ -124,7 +159,7 @@ function M.status(options)
   end
   local config_path = root .. "/" .. item.relative_path .. "/config.json"
   local config, config_error = read_bounded(config_path, MAX_CONFIG_BYTES)
-  local available = type(config) == "string" and #config > 0
+  local available = parse_config(config, item.model_type) and has_readable_asset(root, item.relative_path)
   local model = model_with_path(item, root, available)
   return {
     status = available and "available" or "unavailable",

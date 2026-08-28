@@ -28,8 +28,12 @@
     make llm-dist LLM_DESTDIR=/tmp/mohu-llm-dist \
       TIGER_NGRAM=/Users/fuchuxuan/Library/Rime/tiger/sentence-ngram-mobile.bin
 
-将 `dist-llm` 的内容叠加到 Rime 用户目录后，在方案列表中启用
-`魔虎大模型`。addon 需要 `sentence-ngram-mobile.bin` 和
+发布包的普通用户不需要执行上面的构建命令：解压 `llm-dist` 后，双击
+`install_mohu_llm.command` 即可安装。安装器会把 addon 文件复制到
+`~/Library/Rime/`，在方案列表中注册 `魔虎大模型`，并重新加载 Squirrel；它会合并
+`default.custom.yaml`，不会覆盖已有的 `default.custom.yaml`，重复运行也是安全的。
+
+addon 需要 `sentence-ngram-mobile.bin` 和
 `mohu_tiger.lexicon.txt`；ngram 不在仓库中，使用 `TIGER_NGRAM` 指向现有文件。
 Qwen 权重也不随 addon 分发，必须按 `models/*.manifest` 中的 registry path
 单独下载到 `tiger/models/`，并校验大小与 SHA-256。

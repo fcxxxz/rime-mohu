@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import unittest
 from pathlib import Path
@@ -244,6 +245,7 @@ class MohuConfigTest(unittest.TestCase):
             "mohu_tiger_reranker_profile_qwen3_06b.lua",
             "mohu_tiger_model_menu.lua",
             "sentence-ngram-mobile.bin",
+            "install_mohu_llm.command",
         ):
             with self.subTest(filename=filename):
                 self.assertIn(filename, recipe)
@@ -257,6 +259,13 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn(
             'test -f "$(DESTDIR)/lua/mohu_tiger_model_menu.lua"', recipe
         )
+        self.assertIn(
+            'install -m 0755 tiger_sentence_native/install_mohu_llm.command "$(DESTDIR)/install_mohu_llm.command"',
+            recipe,
+        )
+        self.assertIn('test -x "$(DESTDIR)/install_mohu_llm.command"', recipe)
+        for filename in ("option_sync.lua", "option_state.lua"):
+            self.assertIn(f"lua/{filename}", recipe)
         self.assertIn("codesign --verify --strict", recipe)
         self.assertIn('mv -f "$$dylib_tmp"', recipe)
         self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
@@ -293,6 +302,14 @@ class MohuConfigTest(unittest.TestCase):
         )[0]
         self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
         self.assertIn("sentence-ngram-mobile.bin", recipe)
+        self.assertIn("install_mohu_llm.command", recipe)
+        self.assertIn(
+            'install -m 0755 tiger_sentence_native/install_mohu_llm.command "$(LLM_DESTDIR)/install_mohu_llm.command"',
+            recipe,
+        )
+        self.assertIn('test -x "$(LLM_DESTDIR)/install_mohu_llm.command"', recipe)
+        for filename in ("option_sync.lua", "option_state.lua"):
+            self.assertIn(f"lua/{filename}", recipe)
         self.assertIn(
             "tiger_sentence_native/mohu_tiger_reranker_profile.lua", recipe
         )
@@ -318,6 +335,18 @@ class MohuConfigTest(unittest.TestCase):
         for forbidden in ("safetensors", "models/Qwen", "cp -a tiger_sentence_native/models"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, recipe)
+
+    def test_llm_installer_merges_user_schema_patch_safely(self) -> None:
+        installer = read("tiger_sentence_native/install_mohu_llm.command")
+        self.assertTrue(os.access(ROOT / "tiger_sentence_native/install_mohu_llm.command", os.X_OK))
+        self.assertIn("default.custom.yaml", installer)
+        self.assertIn("schema_list/+", installer)
+        self.assertIn("MOHU_RIME_DIR", installer)
+        self.assertIn("--reload", installer)
+        readme = read("tiger_sentence_native/README.md")
+        self.assertIn("双击", readme)
+        self.assertIn("`install_mohu_llm.command`", readme)
+        self.assertIn("不会覆盖已有的 `default.custom.yaml`", readme)
 
     def test_qwen_manifests_match_model_registry(self) -> None:
         catalog = read("tiger_sentence_native/mohu_tiger_model_catalog.lua")

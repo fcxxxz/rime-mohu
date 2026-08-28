@@ -76,11 +76,12 @@ end
 
 local function model_candidate(seg, model, current, index)
   local comment = current and "当前模型" or "可用模型"
-  local candidate = Candidate("mohu_tiger_model", seg.start, seg._end,
+  local model_id = model.id or model.selection_id
+  local candidate = Candidate("mohu_tiger_model:" .. tostring(model_id), seg.start, seg._end,
     model.display_label or model.label or model.id, comment)
   candidate.quality = 1000000 - (index or 0)
-  candidate.mohu_tiger_model_id = model.id or model.selection_id
-  candidate.model_id = candidate.mohu_tiger_model_id
+  pcall(function() candidate.mohu_tiger_model_id = model_id end)
+  pcall(function() candidate.model_id = model_id end)
   return candidate
 end
 
@@ -136,11 +137,14 @@ function processor.func(key_event, env)
     return NOOP
   end
   local candidate = selected_for_key(context, key_event.keycode)
-  if not candidate or (candidate.type ~= "mohu_tiger_model" and
-      candidate.type ~= "mohu_tiger_model_status") then
+  if not candidate or (candidate.type ~= "mohu_tiger_model_status" and
+      not tostring(candidate.type or ""):match("^mohu_tiger_model:")) then
     return NOOP
   end
   local model_id = candidate.mohu_tiger_model_id or candidate.model_id
+  if not model_id then
+    model_id = tostring(candidate.type or ""):match("^mohu_tiger_model:(.+)$")
+  end
   if model_id then
     if not write_selection(user_data_dir(), model_id) then
       return ACCEPTED

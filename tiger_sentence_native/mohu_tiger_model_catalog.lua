@@ -10,15 +10,23 @@ local MAX_CONFIG_BYTES = 4096
 local registry = {
   {
     id = "qwen35-0.8b",
+    selection_id = "qwen35-0.8b",
     display_label = "Qwen3.5-0.8B-MLX-4bit",
+    label = "Qwen3.5-0.8B-MLX-4bit",
     relative_path = "tiger/models/Qwen3.5-0.8B-MLX-4bit",
+    path = "tiger/models/Qwen3.5-0.8B-MLX-4bit",
     model_sha256 = "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
+    expected_sha256 = "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
   },
   {
     id = "qwen3-0.6b",
+    selection_id = "qwen3-0.6b",
     display_label = "Qwen3-0.6B-4bit",
+    label = "Qwen3-0.6B-4bit",
     relative_path = "tiger/models/Qwen3-0.6B-4bit",
+    path = "tiger/models/Qwen3-0.6B-4bit",
     model_sha256 = "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
+    expected_sha256 = "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
   },
 }
 

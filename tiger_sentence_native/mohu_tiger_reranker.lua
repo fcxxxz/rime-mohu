@@ -492,6 +492,7 @@ local function validate_profile(profile)
   return {
     schema = 1,
     model_id = model_id,
+    model_selection_id = profile.model_selection_id,
     model_path = model_path,
     model_sha256 = model_sha256,
     catalog_status = profile.catalog_status,
@@ -517,7 +518,8 @@ end
 profile_signature = function(profile)
   if not profile then return "" end
   local values = {
-    profile.schema, profile.model_id, profile.model_path,
+    profile.schema, profile.model_id, profile.model_selection_id or "",
+    profile.model_path,
     profile.model_sha256, profile.catalog_status or "",
     profile.model_available == nil and "" or profile.model_available,
     profile.normalization, profile.alpha,

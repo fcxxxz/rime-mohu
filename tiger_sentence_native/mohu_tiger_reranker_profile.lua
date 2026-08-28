@@ -7,7 +7,10 @@ local model_root = selected and selected.model_path or ""
 
 return {
   schema = 1,
-  model_id = selected and selected.id or "unknown-selection",
+  -- Keep model_id's historical display-name value for scorer/cache
+  -- compatibility; expose the stable catalog key separately.
+  model_id = selected and selected.display_label or "unknown-selection",
+  model_selection_id = selected and selected.id or nil,
   model_label = selected and selected.display_label or "Unknown model selection",
   model_path = model_root,
   model_sha256 = selected and selected.model_sha256 or string.rep("0", 64),

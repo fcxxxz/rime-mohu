@@ -1,0 +1,300 @@
+# 魔虎大模型（魔虎完整流水线 + C 引擎 TCSKNM 三元模型）
+schema:
+  schema_id: mohu_tiger_sentence
+  name: 魔虎大模型
+  version: "20260826"
+  author:
+    - rime-mohu 移植
+  description: |
+    魔虎自然码完整输入功能与原生 TCSKNM 整句解码合并方案。
+    原生引擎不可用时，保留标准魔虎候选作为降级路径。
+  dependencies:
+    - mohu_zrm_fixed
+    - mohu_zrm_fixed_legacy
+    - mohu_zrm_sentence
+    - mohu_charset
+    - tiger
+
+switches:
+  - name: ascii_mode
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: mohu_tiger_sentence_neural_rerank
+    states: [ 模型重排关, 模型重排开 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
+  - name: extended_charset
+    states: [ 常用字, 全字集 ]
+  - name: inflexible
+    states: [ 动词, 固词 ]
+  - name: chaifen
+    states: [ 不拆, 扌斥 ]
+  - name: pinyinhint
+    states: [ 🔇, 🔊 ]
+  - name: unicode_comment
+    states: [ U关, U开 ]
+  - name: contextual_order
+    states: [ 单次候选调频, 跨候选调频 ]
+  - name: quick_code_hint
+    states: [ 简码提示关, 简码提示 ]
+  - name: aux_hint
+    states: [ 辅助码提示关, 辅助码提示 ]
+  - name: multi_short_code
+    states: [ 多重简字, 唯一简字 ]
+  - name: candidate_override_management
+    states: [ 常规, 候选管理 ]
+    reset: 0
+
+engine:
+  processors:
+    - lua_processor@*mohu_skin_command
+    - lua_processor@*mohu_candidate_manager*manager_processor
+    - lua_processor@*mohu_candidate_override*override_processor
+    - lua_processor@*mohu_pin*pin_processor
+    - lua_processor@*option_sync
+    - key_binder
+    - ascii_composer
+    - lua_processor@*mohu_processor
+    - recognizer
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - matcher@recognizer_emoji
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - lua_translator@*mohu_symbol_hint
+    - lua_translator@*mohu_candidate_manager*manager_translator
+    - punct_translator
+    - reverse_lookup_translator@reverse_tiger
+    - reverse_lookup_translator@reverse_tiger_backtick
+    - table_translator@custom_phrase
+    - lua_translator@*mohu_tiger_sentence*translator
+    - lua_translator@*mohu_express_translator@with_reorder
+    - lua_translator@*mohu_shijian
+    - lua_translator@*mohu_number
+    - lua_translator@*mohu_unicode
+    - lua_translator@*mohu_pin*panacea_translator
+  filters:
+    - lua_filter@*mohu_charset_filter
+    - lua_filter@*mohu_pin*pin_filter
+    - lua_filter@*mohu_reorder_filter
+    - lua_filter@*mohu_candidate_override*override_order_filter
+    - lua_filter@*mohu_candidate_override*override_filter
+    - lua_filter@*mohu_ijrq_filter
+    - lua_filter@*mohu_hint_filter
+    - simplifier@emoji
+    - lua_filter@*mohu_charset_filter@post_conversion
+    - simplifier@chaifen
+    - simplifier@pinyinhint
+    - lua_filter@*mohu_charset_comment_filter
+    - lua_filter@*mohu_unicode_display_filter
+    - uniquifier
+
+navigator:
+  syllable_jump_position: before_delimiter
+
+speller:
+  alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/=;'
+  delimiter: " '"
+  auto_select: true
+  auto_select_pattern: ^;(\w+|;)
+  algebra:
+    __patch:
+      - mohu:/algebra/user_force_top?
+      - mohu:/algebra/user_sentence_top?
+      - mohu:/algebra/generate_code
+      - mohu:/algebra/user_sentence_bottom?
+      - mohu:/algebra/user_force_bottom?
+
+smart:
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_tiger_prefix2
+  prism: mohu_zrm
+  initial_quality: 5
+  max_homophones: 7
+  spelling_hints: 3
+  contextual_suggestions: true
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  max_sentences: 2
+
+smart_static:
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_tiger_prefix2
+  prism: mohu_zrm
+  initial_quality: 5
+  max_homophones: 7
+  spelling_hints: 3
+  contextual_suggestions: true
+  preedit_format:
+    - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  core_word_length: 4
+  max_word_length: 10
+  max_sentences: 2
+
+fixed:
+  dictionary: mohu_zrm_fixed
+  initial_quality: 100
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false
+  enable_encoder: false
+  encode_commit_history: true
+
+fixed_legacy:
+  dictionary: mohu_zrm_fixed_legacy
+  initial_quality: 100
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: false
+  enable_encoder: false
+  encode_commit_history: true
+
+translator_legacy:
+  dictionary: mohu_zrm_fixed_legacy
+
+custom_phrase:
+  dictionary: ""
+  user_dict: mohu_zrm_custom_phrases
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+  initial_quality: 1000
+
+tiger:
+  # engine_lib / model / lexicon 默认取用户目录 tiger/ 下同名文件。
+  beam: 200
+  all_ranks: true
+  # 固顶候选为 100，默认 smart 候选为 5；原生整句位于二者之间。
+  initial_quality: 50
+  # 神经重排默认关闭；参数和 alpha 只来自校准 profile。
+  # 本地 launchd 启动器负责常驻 scorer，Lua 只连接 Unix socket 并 fail-open。
+  rerank_service: ""
+  rerank_socket: ""
+  rerank_model: ""
+  rerank_http_endpoint: ""  # 生产路径禁用；仅保留测试注入字段
+  # Base requests (normally five candidates) keep a short fail-open budget.
+  # Adaptive full-pool requests get a separate measured budget because a
+  # twenty-row MLX forward is materially slower on Apple Silicon.
+  rerank_timeout_ms: 45
+  rerank_full_timeout_ms: 140
+
+chaifen:
+  option_name: chaifen
+  opencc_config: mohu_chaifen.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    - "xform/-/ /"
+    - "xform/〕〔/｜/"
+
+pinyinhint:
+  option_name: pinyinhint
+  opencc_config: mohu_pinyinhint.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    __include: :/chaifen/comment_format
+
+emoji:
+  opencc_config: mohu_emoji.json
+  option_name: emoji
+  tips: none
+  tags: [has_emoji]
+
+reverse_format:
+  target: smart
+  comment_format:
+    - xform/(\w\w);(\w\w)/$1[$2]/
+  preedit_format:
+    - xform/^o(lf|bh|cj|vy|hm)//
+
+reverse_tiger:
+  tag: reverse_tiger
+  dictionary: tiger
+  enable_completion: true
+  prefix: "ohm"
+  tips: 〔虎〕
+  __include: reverse_format
+
+reverse_tiger_backtick:
+  tag: reverse_tiger_backtick
+  dictionary: tiger
+  enable_completion: true
+  prefix: "`"
+  tips: 〔虎〕
+  __include: reverse_format
+  preedit_format:
+    - xform/^`//
+
+punctuator:
+  import_preset: symbols
+
+key_binder:
+  import_preset: default
+  custom_bindings:
+    __append:
+  bindings:
+    __patch:
+      - :/key_binder/custom_bindings?
+      - mohu:/key_bindings/mohu_tab
+      - mohu:/key_bindings/mohu_switches
+      - mohu:/key_bindings/mohu_keypad
+      - mohu:/key_bindings/mohu_toggle_inflexible
+
+recognizer:
+  import_preset: default
+  patterns:
+    candidate_manager: "^==[hopwlu]?[a-z]*$"
+    unicode: "^U[a-fA-F0-9]+"
+    number: "^S[0-9\\.]+"
+    shijian: "^N[0-9]+"
+    uppercase: "[A-Z][-_+.'A-Za-z]*$"
+    punct: '^/([0-9]0?|[A-Za-z]*)$'
+    reverse_tiger: "^ohm[a-z]+$"
+    reverse_tiger_backtick: "^`[a-z]+$"
+
+recognizer_emoji:
+  patterns:
+    has_emoji: '(^[a-np-z][a-z/]*$)|(^[a-z]$)|(^ou[a-z/]*$)'
+
+mohu:
+  candidate_manager:
+    __include: mohu:/candidate_manager
+    memory_namespace: smart
+  quick_code_indicator: "⚡️"
+  quick_code_in_sentence_making: true
+  enable_word_filter: false
+  word_filter_match_indicator: {}
+  ijrq:
+    enable: true
+    show_hint: true
+    suffix: "o"
+    enable_word: false
+    enable_word_defer: 1
+    enable_word_delay: 0
+  quick_code_hint_indicator: null
+  quick_code_hint_skip_chars: false
+  inject_fixed_chars: true
+  inject_fixed_words: true
+  four_code_char_yield_rank: 2000
+  four_code_char_yield_exempt: 暮
+  inject_prioritize: "any"
+  candidate_override:
+    __include: mohu:/candidate_override
+  pin:
+    __include: mohu:/pin
+  charset: simp
+  shorthands: false

@@ -180,6 +180,20 @@ class MohuConfigTest(unittest.TestCase):
             read("mohu_flypy_sentence.schema.yaml"),
         )
 
+    def test_native_schema_is_named_for_llm_and_keeps_octagram_on_mohu_zrm(self) -> None:
+        native = read("tiger_sentence_native/mohu_tiger_sentence.schema.yaml")
+        self.assertIn("  schema_id: mohu_tiger_sentence\n", native)
+        self.assertIn("  name: 魔虎大模型\n", native)
+        self.assertIn(
+            "    states: [ 模型重排关, 模型重排开 ]\n",
+            native,
+        )
+        self.assertNotIn("__include: mohu:/octagram/enable_for_sentence", native)
+        self.assertIn(
+            "__include: mohu:/octagram/enable_for_sentence\n",
+            read("mohu_zrm.schema.yaml"),
+        )
+
     def test_classics_dictionary_is_imported_only_by_smart_tables(self) -> None:
         self.assertIn(
             "  - mohu_zrm.classics   # 经审核的古诗文与经典文本\n",

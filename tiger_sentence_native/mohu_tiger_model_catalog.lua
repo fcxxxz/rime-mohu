@@ -63,33 +63,139 @@ local function read_bounded(path, limit)
 end
 
 local function parse_config(text, expected_type)
-  if type(text) ~= "string" or #text < 2 or text:match("^%s*{%s*}%s*$") then
-    return false
-  end
-  local normalized = trim(text)
-  if normalized:sub(1, 1) ~= "{" or normalized:sub(-1) ~= "}" then
-    return false
-  end
-  local depth, quoted, escaped, root_closed = 0, false, false, false
-  for index = 1, #text do
-    local char = text:sub(index, index)
-    if quoted then
-      if escaped then escaped = false
-      elseif char == "\\" then escaped = true
-      elseif char == '"' then quoted = false end
-    elseif root_closed then
-      if not char:match("%s") then return false end
-    elseif char == '"' then quoted = true
-    elseif char == "{" then depth = depth + 1
-    elseif char == "}" then
-      depth = depth - 1
-      if depth < 0 then return false end
-      if depth == 0 then root_closed = true end
+  if type(text) ~= "string" or #text < 2 then return false end
+
+  local null_value = {}
+  local position = 1
+
+  local function skip_space()
+    while position <= #text and text:sub(position, position):match("%s") do
+      position = position + 1
     end
   end
-  if quoted or escaped or depth ~= 0 or not root_closed then return false end
-  local model_type = text:match('"model_type"%s*:%s*"([^"]+)"')
-  local bits = tonumber(text:match('"bits"%s*:%s*(%d+)'))
+
+  local function parse_string()
+    if text:sub(position, position) ~= '"' then return nil end
+    position = position + 1
+    local parts = {}
+    while position <= #text do
+      local char = text:sub(position, position)
+      position = position + 1
+      if char == '"' then return table.concat(parts) end
+      if char == "\\" then
+        if position > #text then return nil end
+        local escaped = text:sub(position, position)
+        position = position + 1
+        local simple = { ['"'] = '"', ['\\'] = "\\", ['/'] = "/",
+          b = "\b", f = "\f", n = "\n", r = "\r", t = "\t" }
+        if simple[escaped] then
+          parts[#parts + 1] = simple[escaped]
+        elseif escaped == "u" then
+          local hex = text:sub(position, position + 3)
+          if not hex:match("^%x%x%x%x$") then return nil end
+          position = position + 4
+          parts[#parts + 1] = "?"
+        else
+          return nil
+        end
+      elseif char:byte() < 0x20 then
+        return nil
+      else
+        parts[#parts + 1] = char
+      end
+    end
+    return nil
+  end
+
+  local parse_value
+  local function parse_array()
+    if text:sub(position, position) ~= "[" then return nil end
+    position = position + 1
+    local result = {}
+    skip_space()
+    if text:sub(position, position) == "]" then
+      position = position + 1
+      return result
+    end
+    while position <= #text do
+      local value = parse_value()
+      if value == nil then return nil end
+      result[#result + 1] = value
+      skip_space()
+      local delimiter = text:sub(position, position)
+      position = position + 1
+      if delimiter == "]" then return result end
+      if delimiter ~= "," then return nil end
+      skip_space()
+    end
+    return nil
+  end
+
+  local function parse_object()
+    if text:sub(position, position) ~= "{" then return nil end
+    position = position + 1
+    local result = {}
+    skip_space()
+    if text:sub(position, position) == "}" then
+      position = position + 1
+      return result
+    end
+    while position <= #text do
+      local key = parse_string()
+      if key == nil then return nil end
+      skip_space()
+      if text:sub(position, position) ~= ":" then return nil end
+      position = position + 1
+      local value = parse_value()
+      if value == nil then return nil end
+      result[key] = value
+      skip_space()
+      local delimiter = text:sub(position, position)
+      position = position + 1
+      if delimiter == "}" then return result end
+      if delimiter ~= "," then return nil end
+      skip_space()
+    end
+    return nil
+  end
+
+  local function parse_number()
+    local start = position
+    local value = text:sub(position):match("^-?%d+%.?%d*[eE]?[+-]?%d*")
+    if not value or value == "" or not tonumber(value) then return nil end
+    position = start + #value
+    local next_char = text:sub(position, position)
+    if next_char ~= "" and not next_char:match("[%s,%]}]") then return nil end
+    return tonumber(value)
+  end
+
+  function parse_value()
+    skip_space()
+    local prefix = text:sub(position, position)
+    if prefix == '"' then return parse_string() end
+    if prefix == "{" then return parse_object() end
+    if prefix == "[" then return parse_array() end
+    if text:sub(position, position + 3) == "true" then
+      position = position + 4
+      return true
+    end
+    if text:sub(position, position + 4) == "false" then
+      position = position + 5
+      return false
+    end
+    if text:sub(position, position + 3) == "null" then
+      position = position + 4
+      return null_value
+    end
+    return parse_number()
+  end
+
+  local value = parse_value()
+  skip_space()
+  if type(value) ~= "table" or position <= #text then return false end
+  local model_type = value.model_type
+  local quantization = value.quantization or value.quantization_config
+  local bits = type(quantization) == "table" and quantization.bits or nil
   return model_type == expected_type and bits == 4
 end
 

@@ -23,6 +23,21 @@ source "$script_dir/scorer_models.zsh"
 mkdir -p "$HOME/Library/LaunchAgents" "$log_dir"
 chmod 700 "$log_dir"
 
+xml_escape() {
+  local value="$1"
+  value="${value//&/&amp;}"
+  value="${value//</&lt;}"
+  value="${value//>/&gt;}"
+  value="${value//\"/&quot;}"
+  value="${value//\'/&apos;}"
+  print -r -- "$value"
+}
+
+script_dir_xml="$(xml_escape "$script_dir")"
+launcher_xml="$(xml_escape "$launcher")"
+home_xml="$(xml_escape "$HOME")"
+log_dir_xml="$(xml_escape "$log_dir")"
+
 cat > "$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -30,19 +45,19 @@ cat > "$plist" <<EOF
 <dict>
   <key>Label</key><string>$label</string>
   <key>ProgramArguments</key>
-  <array><string>$launcher</string></array>
-  <key>WorkingDirectory</key><string>$script_dir</string>
+  <array><string>$launcher_xml</string></array>
+  <key>WorkingDirectory</key><string>$script_dir_xml</string>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>HOME</key><string>$HOME</string>
+    <key>HOME</key><string>$home_xml</string>
     <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>10</integer>
   <key>ProcessType</key><string>Interactive</string>
-  <key>StandardOutPath</key><string>$log_dir/scorer.stdout.log</string>
-  <key>StandardErrorPath</key><string>$log_dir/scorer.stderr.log</string>
+  <key>StandardOutPath</key><string>$log_dir_xml/scorer.stdout.log</string>
+  <key>StandardErrorPath</key><string>$log_dir_xml/scorer.stderr.log</string>
 </dict>
 </plist>
 EOF

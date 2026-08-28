@@ -14,6 +14,19 @@ ROOT = Path(__file__).resolve().parents[1]
 NATIVE = ROOT / "tiger_sentence_native"
 
 
+def test_supervisor_has_background_job_signal_fallback() -> None:
+    launcher = (NATIVE / "run_qwen35_scorer.command").read_text(encoding="utf-8")
+    assert "jobs -pr" in launcher
+
+
+def test_launch_agent_escapes_plist_paths() -> None:
+    installer = (NATIVE / "install_qwen35_launch_agent.command").read_text(
+        encoding="utf-8"
+    )
+    assert "xml_escape" in installer
+    assert "script_dir_xml" in installer
+
+
 def wait_for(path: Path, predicate, timeout: float = 5.0) -> str:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -143,6 +156,12 @@ def test_unknown_selection_is_retried_without_starting_registered_fallback() -> 
 
 
 class QwenModelSupervisorTest(unittest.TestCase):
+    def test_supervisor_has_background_job_signal_fallback(self) -> None:
+        test_supervisor_has_background_job_signal_fallback()
+
+    def test_launch_agent_escapes_plist_paths(self) -> None:
+        test_launch_agent_escapes_plist_paths()
+
     def test_missing_selection_defaults_to_qwen35_without_fallback(self) -> None:
         test_missing_selection_defaults_to_qwen35_without_fallback()
 

@@ -20,16 +20,29 @@ default_model="${SCORER_DEFAULT_MODEL:-qwen35-0.8b}"
 child_pid=""
 child_selection=""
 
+stop_pid() {
+  local pid="$1"
+  if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then return; fi
+  kill -TERM "$pid" 2>/dev/null || true
+  for _ in {1..20}; do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 0.05
+  done
+  kill -KILL "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+}
+
 stop_child() {
-  if [[ -n "$child_pid" ]] && kill -0 "$child_pid" 2>/dev/null; then
-    kill -TERM "$child_pid" 2>/dev/null || true
-    for _ in {1..20}; do
-      kill -0 "$child_pid" 2>/dev/null || break
-      sleep 0.05
-    done
-    kill -KILL "$child_pid" 2>/dev/null || true
+  if [[ -n "$child_pid" ]]; then
+    stop_pid "$child_pid"
   fi
-  if [[ -n "$child_pid" ]]; then wait "$child_pid" 2>/dev/null || true; fi
+  # A signal may arrive between starting the background job and assigning
+  # $!, so also reap any untracked job owned by this supervisor.
+  local job_pid
+  for job_pid in ${(f)"$(jobs -pr 2>/dev/null)"}; do
+    [[ "$job_pid" == "$child_pid" || "$job_pid" == "$$" ]] && continue
+    stop_pid "$job_pid"
+  done
   child_pid=""
   child_selection=""
 }

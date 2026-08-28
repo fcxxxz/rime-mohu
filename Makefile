@@ -165,7 +165,7 @@ llm-dist: tigerengine-native
 	mkdir -p "$(LLM_DESTDIR)/tiger/models" "$(LLM_DESTDIR)/lua"
 	cp tiger_sentence_native/mohu_tiger_sentence.schema.yaml "$(LLM_DESTDIR)/"
 	cp tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(LLM_DESTDIR)/lua/"
-	cp tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/scorer_models.zsh tiger_sentence_native/switch_qwen_model.command tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(LLM_DESTDIR)/tiger/"
+	cp tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/scorer_models.zsh tiger_sentence_native/switch_qwen_model.command tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(LLM_DESTDIR)/tiger/"
 	cp tiger_sentence_native/README.md tiger_sentence_native/QWEN35_SCORER.md "$(LLM_DESTDIR)/tiger/"
 	cp tiger_sentence_native/models/README.md tiger_sentence_native/models/*.manifest "$(LLM_DESTDIR)/tiger/models/"
 	if [ ! -f tiger_sentence_native/libtigerengine.dylib ]; then :; else \
@@ -183,6 +183,7 @@ llm-dist: tigerengine-native
 	test -f "$(LLM_DESTDIR)/tiger/mohu_tiger.lexicon.txt"
 	test -f "$(LLM_DESTDIR)/tiger/sentence-ngram-mobile.bin"
 	test -f "$(LLM_DESTDIR)/tiger/scorer_models.zsh"
+	test -f "$(LLM_DESTDIR)/tiger/mohu_tiger_reranker_profile.lua"
 	test -x "$(LLM_DESTDIR)/tiger/run_qwen35_scorer.command"
 	test -x "$(LLM_DESTDIR)/tiger/install_qwen35_launch_agent.command"
 	test -x "$(LLM_DESTDIR)/tiger/switch_qwen_model.command"

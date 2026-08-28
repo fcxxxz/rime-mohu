@@ -293,6 +293,13 @@ class MohuConfigTest(unittest.TestCase):
         )[0]
         self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
         self.assertIn("sentence-ngram-mobile.bin", recipe)
+        self.assertIn(
+            "tiger_sentence_native/mohu_tiger_reranker_profile.lua", recipe
+        )
+        self.assertIn(
+            'test -f "$(LLM_DESTDIR)/tiger/mohu_tiger_reranker_profile.lua"',
+            recipe,
+        )
         for required in (
             "mohu_tiger_sentence.schema.yaml",
             "mohu_tiger_sentence.lua",

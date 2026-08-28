@@ -396,6 +396,16 @@ class MohuConfigTest(unittest.TestCase):
                 self.assertIn(fields["sha256"], catalog)
                 self.assertIn(fields["sha256"], supervisor)
 
+    def test_github_workflow_builds_and_releases_llm_addon(self) -> None:
+        workflow = read(".github/workflows/build.yml")
+        self.assertIn("runs-on: macos-14", workflow)
+        self.assertIn("make llm-dist", workflow)
+        self.assertIn("sentence-ngram-mobile.bin", workflow)
+        self.assertIn("rime-mohu-llm-", workflow)
+        self.assertIn("rime-mohu-llm-latest.zip", workflow)
+        self.assertIn("build-llm", workflow)
+        self.assertIn("needs: [build, build-llm]", workflow)
+
     def test_classics_dictionary_is_imported_only_by_smart_tables(self) -> None:
         self.assertIn(
             "  - mohu_zrm.classics   # 经审核的古诗文与经典文本\n",

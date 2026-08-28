@@ -74,9 +74,50 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  build-llm:
+    runs-on: macos-14
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download and verify TCSKNM n-gram
+        env:
+          NGRAM_URL: https://github.com/wallleap/huma-rime-config/releases/download/LTS/sentence-ngram-mobile.bin
+          NGRAM_SHA256: e3953f8f1526b871eb81fe887a8ae4a6edf79edffd33e388b95e2915adadb2d3
+        run: |
+          curl --fail --location --retry 5 --retry-all-errors \
+            "$NGRAM_URL" -o sentence-ngram-mobile.bin
+          printf '%s  %s\n' "$NGRAM_SHA256" sentence-ngram-mobile.bin | shasum -a 256 -c -
+
+      - name: Build LLM addon
+        run: |
+          uname -m
+          make llm-dist \
+            LLM_DESTDIR=dist-llm \
+            TIGER_NGRAM="$GITHUB_WORKSPACE/sentence-ngram-mobile.bin"
+
+      - name: Validate LLM addon
+        run: |
+          test -f dist-llm/mohu_tiger_sentence.schema.yaml
+          test -x dist-llm/install_mohu_llm.command
+          test -x dist-llm/tiger/run_qwen35_scorer.command
+          test -f dist-llm/tiger/sentence-ngram-mobile.bin
+          test -f dist-llm/tiger/models/qwen35-0.8b.manifest
+          test -f dist-llm/tiger/models/qwen3-0.6b.manifest
+          test -z "$(find dist-llm -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print)"
+
+      - name: Upload LLM addon
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-llm-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-llm/
+          if-no-files-found: error
+          retention-days: 14
+
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [build, build-llm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -97,14 +138,23 @@ jobs:
           name: rime-mohu-flypy-${{ github.run_number }}-${{ github.run_attempt }}
           path: dist-flypy
 
+      - name: Download LLM addon
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-llm-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-llm
+
       - name: Package distributions
         run: |
           # The artifact upload/download round-trip drops the exec bit, so
           # restore it before zipping; 启动.command must stay executable.
           chmod +x dist-zrm/Rime皮肤编辑器/启动.command
           chmod +x dist-flypy/Rime皮肤编辑器/启动.command
+          chmod +x dist-llm/install_mohu_llm.command
+          chmod +x dist-llm/tiger/*.command
           (cd dist-zrm && zip -r ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -r ../rime-mohu-flypy-latest.zip .)
+          (cd dist-llm && zip -r ../rime-mohu-llm-latest.zip .)
 
       - name: Update latest release
         env:
@@ -153,11 +203,13 @@ jobs:
             gh release upload latest \
               rime-mohu-zrm-latest.zip \
               rime-mohu-flypy-latest.zip \
+              rime-mohu-llm-latest.zip \
               --clobber
           else
             gh release create latest \
               rime-mohu-zrm-latest.zip \
               rime-mohu-flypy-latest.zip \
+              rime-mohu-llm-latest.zip \
               --verify-tag \
               --title 'Latest build' \
               --notes-file "$notes_file" \

@@ -19,6 +19,7 @@ source "$script_dir/scorer_models.zsh"
 default_model="${SCORER_DEFAULT_MODEL:-qwen35-0.8b}"
 child_pid=""
 child_selection=""
+shutdown_requested=0
 
 stop_pid() {
   local pid="$1"
@@ -36,17 +37,11 @@ stop_child() {
   if [[ -n "$child_pid" ]]; then
     stop_pid "$child_pid"
   fi
-  # A signal may arrive between starting the background job and assigning
-  # $!, so also reap any untracked job owned by this supervisor.
-  local job_pid
-  for job_pid in ${(f)"$(jobs -pr 2>/dev/null)"}; do
-    [[ "$job_pid" == "$child_pid" || "$job_pid" == "$$" ]] && continue
-    stop_pid "$job_pid"
-  done
   child_pid=""
   child_selection=""
 }
-handle_signal() { stop_child; exit 0; }
+defer_signal() { shutdown_requested=1; }
+handle_signal() { shutdown_requested=1; stop_child; exit 0; }
 trap stop_child EXIT
 trap handle_signal INT TERM HUP
 
@@ -82,6 +77,10 @@ start_child() {
     return 1
   fi
   print -u2 "starting scorer model $selection ($model_dir)"
+  # Defer termination while the background job is being created and $! is
+  # captured.  A signal in this tiny window must not orphan the scorer.
+  shutdown_requested=0
+  trap defer_signal INT TERM HUP
   "$python_bin" "$script_dir/qwen35_scorer.py" \
     --model "$model_dir" \
     --socket "$socket_path" \
@@ -90,6 +89,11 @@ start_child() {
     --expected-sha256 "$expected_sha" &
   child_pid=$!
   child_selection="$selection"
+  trap handle_signal INT TERM HUP
+  if (( shutdown_requested )); then
+    stop_child
+    exit 0
+  fi
 }
 
 while true; do

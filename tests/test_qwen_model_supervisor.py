@@ -16,7 +16,8 @@ NATIVE = ROOT / "tiger_sentence_native"
 
 def test_supervisor_has_background_job_signal_fallback() -> None:
     launcher = (NATIVE / "run_qwen35_scorer.command").read_text(encoding="utf-8")
-    assert "jobs -pr" in launcher
+    assert "shutdown_requested" in launcher
+    assert "trap defer_signal" in launcher
 
 
 def test_launch_agent_escapes_plist_paths() -> None:

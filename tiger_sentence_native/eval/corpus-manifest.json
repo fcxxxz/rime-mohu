@@ -1,0 +1,13 @@
+{
+  "generated_date": "2026-08-26",
+  "sources": [
+    {
+      "license_note": "Repository GPL-3.0 test fixture; synthetic cases for evaluator smoke tests.",
+      "line_count": 4,
+      "path": "tests/fixtures/tiger_reranker_cases.jsonl",
+      "sha256": "1b4536a8459a653f4c5859277179c838021527e6ee6cbb94c1b91bcffac03fb8",
+      "source": "checked-in-smoke"
+    }
+  ],
+  "version": 1
+}

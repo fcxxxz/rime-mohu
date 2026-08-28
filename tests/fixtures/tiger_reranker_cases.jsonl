@@ -1,0 +1,4 @@
+{"id":"hesitation","source":"checked-in-smoke","mode":"plain","raw":"najqmzufmekeybyudele","expected":"那就没什么可犹豫的了"}
+{"id":"tomorrow","source":"checked-in-smoke","mode":"plain","raw":"womfmingtmzj","expected":"我们明天再见"}
+{"id":"weather","source":"checked-in-smoke","mode":"full_aux","raw":"jintmtmqihenhc","expected":"今天天气很好"}
+{"id":"directions","source":"checked-in-smoke","mode":"full_aux","raw":"qingwenxishoujianzainali","expected":"请问洗手间在哪里"}

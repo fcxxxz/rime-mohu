@@ -43,6 +43,7 @@
 
 local Top = {}
 local native_sentence_type = "mohu_tiger_sentence"
+local native_independent_min_length = 5
 
 function Top.init(env)
     -- At most THRESHOLD smart candidates are subject to reordering,
@@ -207,7 +208,9 @@ function Top.flush(env, ctx, include_delay_slot)
         Top.yield_exact(env, ctx.fixed_list[i])
     end
     for _, c in ipairs(ctx.native_list) do
-        if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text] then
+        local text_length = utf8.len(c.text) or 0
+        if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
+            or text_length >= native_independent_min_length then
             Top.yield_exact(env, c)
         end
     end

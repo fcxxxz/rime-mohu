@@ -814,6 +814,8 @@ function M.reload_profile()
   return nil
 end
 
+M.reload = M.reload_profile
+
 local function validate_scores(scores, count)
   if type(scores) ~= "table" or #scores ~= count then return nil end
   local result = {}

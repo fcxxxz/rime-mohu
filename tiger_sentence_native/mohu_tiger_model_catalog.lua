@@ -163,6 +163,10 @@ local function parse_config(text, expected_type)
     local start = position
     local value = text:sub(position):match("^-?%d+%.?%d*[eE]?[+-]?%d*")
     if not value or value == "" or not tonumber(value) then return nil end
+    if value:match("^-?0%d") or value:match("%.$") or
+        value:match("[eE][+-]?$") then
+      return nil
+    end
     position = start + #value
     local next_char = text:sub(position, position)
     if next_char ~= "" and not next_char:match("[%s,%]}]") then return nil end

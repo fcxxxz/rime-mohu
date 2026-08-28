@@ -58,6 +58,11 @@ local misplaced_bits = catalog.status({ user_data_dir = root })
 assert(misplaced_bits.status == "unavailable",
   "bits outside quantization must not satisfy model validation")
 write(root .. "/tiger/models/Qwen3-0.6B-4bit/config.json",
+  '{"model_type":"qwen3","quantization":{"bits":4.}}\n')
+local invalid_number = catalog.status({ user_data_dir = root })
+assert(invalid_number.status == "unavailable",
+  "invalid JSON numbers must not satisfy model validation")
+write(root .. "/tiger/models/Qwen3-0.6B-4bit/config.json",
   '{"model_type":"qwen3","quantization":{"bits":4}}\n')
 local available = catalog.status({ user_data_dir = root })
 assert(available.status == "available")

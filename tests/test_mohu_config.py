@@ -266,6 +266,9 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn('test -x "$(DESTDIR)/install_mohu_llm.command"', recipe)
         for filename in ("option_sync.lua", "option_state.lua"):
             self.assertIn(f"lua/{filename}", recipe)
+        self.assertIn('mkdir -p "$(DESTDIR)/tiger/models"', recipe)
+        self.assertIn("tiger_sentence_native/models/README.md", recipe)
+        self.assertIn('test -f "$(DESTDIR)/tiger/models/qwen35-0.8b.manifest"', recipe)
         self.assertIn("codesign --verify --strict", recipe)
         self.assertIn('mv -f "$$dylib_tmp"', recipe)
         self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
@@ -343,6 +346,8 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn("schema_list/+", installer)
         self.assertIn("MOHU_RIME_DIR", installer)
         self.assertIn("--reload", installer)
+        self.assertIn("patch_inline", installer)
+        self.assertIn("schema_list/+", installer)
         readme = read("tiger_sentence_native/README.md")
         self.assertIn("双击", readme)
         self.assertIn("`install_mohu_llm.command`", readme)

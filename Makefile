@@ -131,12 +131,13 @@ tigerengine-native: tiger_sentence_native/tigerengine.cc tiger_sentence_native/t
 
 native-dist: dist tigerengine-native
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
-	mkdir -p "$(DESTDIR)/tiger" "$(DESTDIR)/lua"
+	mkdir -p "$(DESTDIR)/tiger/models" "$(DESTDIR)/lua"
 	cp tiger_sentence_native/mohu_tiger_sentence.schema.yaml "$(DESTDIR)/"
 	cp tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(DESTDIR)/lua/"
 	cp lua/option_sync.lua lua/option_state.lua "$(DESTDIR)/lua/"
 	install -m 0755 tiger_sentence_native/install_mohu_llm.command "$(DESTDIR)/install_mohu_llm.command"
 	cp tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/scorer_models.zsh tiger_sentence_native/switch_qwen_model.command tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(DESTDIR)/tiger/"
+	cp tiger_sentence_native/models/README.md tiger_sentence_native/models/*.manifest "$(DESTDIR)/tiger/models/"
 	if [ ! -f tiger_sentence_native/libtigerengine.dylib ]; then :; else \
 		dylib_tmp="$(DESTDIR)/tiger/.libtigerengine.dylib.$$$$"; \
 		trap 'rm -f "$$dylib_tmp"' EXIT INT TERM; \
@@ -154,6 +155,9 @@ native-dist: dist tigerengine-native
 	test -x "$(DESTDIR)/tiger/install_qwen35_launch_agent.command"
 	test -x "$(DESTDIR)/tiger/switch_qwen_model.command"
 	test -x "$(DESTDIR)/install_mohu_llm.command"
+	test -f "$(DESTDIR)/tiger/models/README.md"
+	test -f "$(DESTDIR)/tiger/models/qwen35-0.8b.manifest"
+	test -f "$(DESTDIR)/tiger/models/qwen3-0.6b.manifest"
 	test -f "$(DESTDIR)/lua/option_sync.lua"
 	test -f "$(DESTDIR)/lua/option_state.lua"
 	test -f "$(DESTDIR)/lua/mohu_tiger_model_catalog.lua"

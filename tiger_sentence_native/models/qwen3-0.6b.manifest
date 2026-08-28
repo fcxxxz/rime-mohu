@@ -1,9 +1,13 @@
 {
   "id": "qwen3-0.6b",
   "registry_path": "mlx-community/Qwen3-0.6B-4bit",
+  "registry": "mlx-community/Qwen3-0.6B-4bit",
+  "path": "tiger/models/Qwen3-0.6B-4bit",
   "model_type": "qwen3",
+  "quantization": "4-bit",
   "quantization_bits": 4,
   "size_bytes": 351388968,
   "size_mib": 335.11,
-  "sha256": "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548"
+  "sha256": "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
+  "expected_sha256": "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548"
 }

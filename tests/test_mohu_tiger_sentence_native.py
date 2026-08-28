@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "mohu_zrm.schema.yaml"
 NATIVE_SCHEMA = ROOT / "tiger_sentence_native" / "mohu_tiger_sentence.schema.yaml"
 NATIVE_TRANSLATOR = "lua_translator@*mohu_tiger_sentence*translator"
+MODEL_MENU_TRANSLATOR = "lua_translator@*mohu_tiger_model_menu*translator"
 
 
 def load_yaml(path: Path) -> dict:
@@ -72,7 +73,8 @@ class MohuTigerSentenceSchemaTest(unittest.TestCase):
     def test_inserts_native_translator_before_default_mohu_translator(self) -> None:
         expected = list(self.default["engine"]["translators"])
         insert_at = expected.index("lua_translator@*mohu_express_translator@with_reorder")
-        expected.insert(insert_at, NATIVE_TRANSLATOR)
+        expected.insert(insert_at, MODEL_MENU_TRANSLATOR)
+        expected.insert(insert_at + 1, NATIVE_TRANSLATOR)
         self.assertEqual(expected, self.native["engine"]["translators"])
 
     def test_copies_default_component_configuration(self) -> None:

@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -242,6 +243,7 @@ class MohuConfigTest(unittest.TestCase):
             "mohu_tiger_reranker_profile.lua",
             "mohu_tiger_reranker_profile_qwen3_06b.lua",
             "mohu_tiger_model_menu.lua",
+            "sentence-ngram-mobile.bin",
         ):
             with self.subTest(filename=filename):
                 self.assertIn(filename, recipe)
@@ -257,10 +259,99 @@ class MohuConfigTest(unittest.TestCase):
         )
         self.assertIn("codesign --verify --strict", recipe)
         self.assertIn('mv -f "$$dylib_tmp"', recipe)
+        self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
         self.assertNotIn(
             'cp tiger_sentence_native/libtigerengine.dylib "$(DESTDIR)/tiger/"',
             recipe,
         )
+
+    def test_standard_dist_excludes_native_and_qwen_assets(self) -> None:
+        makefile = read("Makefile")
+        recipe = makefile.split("dist: quick", 1)[1].split(
+            "# Native Tiger sentence assets", 1
+        )[0]
+        for forbidden in (
+            "tiger_sentence_native",
+            "libtigerengine.dylib",
+            "qwen35_scorer.py",
+            "sentence-ngram-mobile.bin",
+            "safetensors",
+            "/models/",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, recipe)
+
+    def test_llm_dist_requires_ngram_and_excludes_model_weights(self) -> None:
+        makefile = read("Makefile")
+        self.assertIn(
+            "TIGER_NGRAM ?= tiger_sentence_native/sentence-ngram-mobile.bin",
+            makefile,
+        )
+        self.assertIn("llm-dist:", makefile)
+        recipe = makefile.split("llm-dist:", 1)[1].split(
+            "\ntigerengine-safety:", 1
+        )[0]
+        self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
+        self.assertIn("sentence-ngram-mobile.bin", recipe)
+        for required in (
+            "mohu_tiger_sentence.schema.yaml",
+            "mohu_tiger_sentence.lua",
+            "mohu_tiger_reranker.lua",
+            "mohu_tiger_model_catalog.lua",
+            "mohu_tiger_model_menu.lua",
+            "libtigerengine.dylib",
+            "mohu_tiger.lexicon.txt",
+            "qwen35_scorer.py",
+            "run_qwen35_scorer.command",
+            "scorer_models.zsh",
+            "switch_qwen_model.command",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, recipe)
+        for forbidden in ("safetensors", "models/Qwen", "cp -a tiger_sentence_native/models"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, recipe)
+
+    def test_qwen_manifests_match_model_registry(self) -> None:
+        catalog = read("tiger_sentence_native/mohu_tiger_model_catalog.lua")
+        supervisor = read("tiger_sentence_native/scorer_models.zsh")
+        expected = {
+            "qwen35-0.8b": {
+                "registry_path": "mlx-community/Qwen3.5-0.8B-MLX-4bit",
+                "model_type": "qwen3_5",
+                "size_bytes": 652034038,
+                "size_mib": 621.83,
+                "sha256": "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
+                "manifest": "tiger_sentence_native/models/qwen35-0.8b.manifest",
+            },
+            "qwen3-0.6b": {
+                "registry_path": "mlx-community/Qwen3-0.6B-4bit",
+                "model_type": "qwen3",
+                "size_bytes": 351388968,
+                "size_mib": 335.11,
+                "sha256": "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
+                "manifest": "tiger_sentence_native/models/qwen3-0.6b.manifest",
+            },
+        }
+        for model_id, fields in expected.items():
+            with self.subTest(model=model_id):
+                manifest = json.loads(read(fields["manifest"]))
+                self.assertEqual(model_id, manifest["id"])
+                self.assertEqual(fields["registry_path"], manifest["registry_path"])
+                self.assertEqual(fields["model_type"], manifest["model_type"])
+                self.assertEqual(4, manifest["quantization_bits"])
+                self.assertEqual(fields["size_bytes"], manifest["size_bytes"])
+                self.assertAlmostEqual(fields["size_mib"], manifest["size_mib"], places=2)
+                self.assertEqual(fields["sha256"], manifest["sha256"])
+                self.assertIsNotNone(
+                    re.search(
+                        rf'id = "{re.escape(model_id)}".*?model_type = "{re.escape(fields["model_type"])}"',
+                        catalog,
+                        re.DOTALL,
+                    )
+                )
+                self.assertIn(fields["sha256"], catalog)
+                self.assertIn(fields["sha256"], supervisor)
 
     def test_classics_dictionary_is_imported_only_by_smart_tables(self) -> None:
         self.assertIn(

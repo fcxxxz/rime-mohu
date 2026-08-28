@@ -1,4 +1,7 @@
-# Qwen3.5 本地候选评分服务
+# 魔虎大模型本地候选评分服务
+
+该 scorer 属于独立的魔虎大模型 addon；标准 Mohu 的 Octagram 配置保持不变，
+本方案不启用 Octagram。模型权重按 `models/*.manifest` 单独下载，绝不随 addon 分发。
 
 `qwen35_scorer.py` 是一个与 Rime 宿主隔离的 MLX 服务。它使用
 `mlx-lm==0.31.3` 加载 Qwen3.5 VLM checkpoint 的文本分支，对最多二十个完整候选
@@ -50,7 +53,7 @@ uv run --with mlx-lm==0.31.3 \
   --expected-sha256 8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8
 ```
 
-正式部署使用同目录的 `run_qwen35_scorer.command`，由 launchd 预启动；它会把
+正式部署使用同目录的 `run_qwen35_scorer.command`，由 supervisor 启动；它会把
 模型目录、socket 和 Python runtime 固定在同一个 `tiger/` 目录，并在指纹不符时
 拒绝加载。launcher 读取 `scorer_models.zsh` 中注册的模型表，按同目录
 `model-selection` 文件记录的选择（文件不存在时缺省为 `qwen35-0.8b`）加载对应
@@ -58,25 +61,24 @@ checkpoint；文件内容未知或模型缺失时会持续重试，不会静默�
 
 ## 模型切换
 
-用同目录的 `switch_qwen_model.command` 在注册模型之间切换：
+在 Rime 输入 `/model` 打开动态菜单即可在注册模型之间切换。命令行
+`switch_qwen_model.command` 仅用于自动化部署：
 
 ```bash
 ~/Library/Rime/tiger/switch_qwen_model.command qwen3-0.6b   # 切到 Qwen3-0.6B
 ~/Library/Rime/tiger/switch_qwen_model.command qwen35-0.8b  # 切回 Qwen3.5
 ```
 
-切换是 fail-closed 的：脚本先按注册表校验目标 checkpoint 的内容指纹，一致才会
-写入选择、把对应的 Lua profile 拷到用户目录 `lua/mohu_tiger_reranker_profile.lua`
-并重启 scorer。Lua 客户端会核对响应里的 `model.sha256` 与 profile 中的
-`model_sha256`，因此**切换后必须重新部署 Squirrel**（输入法菜单 → 重新部署）
-让 Lua 重新加载 profile；重新部署之前神经重排会因指纹不匹配静默 fail-open
-（回退三元顺序，不报错）。
+切换是 fail-closed 的：脚本或 `/model` 菜单先按注册表校验目标 checkpoint 的内容
+指纹，一致才会写入选择并加载对应 profile。默认始终为 `qwen35-0.8b`；未知选择、
+缺失模型或指纹不符时不会静默回退到另一个模型，重排直接回退三元顺序。
 
 Squirrel 的 Lua ABI 是 5.4.6。请把 LuaSocket 3.1 编译/安装到用户目录的
 `lua/rocks`，并确认存在 `lib/lua/5.4/socket/unix.so`；只安装 5.5 版本会被
 Squirrel 拒绝加载。
 
-服务不会在运行时联网下载权重；需要先离线下载并校验模型目录，再启动服务。
+服务不会在运行时联网下载权重；请先按 `models/*.manifest` 单独下载并校验模型目录，
+再启动服务。addon 本身永远不包含 Qwen 权重或 `model.safetensors` 文件。
 
 `--http-port PORT` 只用于独立诊断。Rime 生产路径只使用 Unix JSONL；Lua 不执行
 curl、HTTP prompt 或伪分数 fallback。

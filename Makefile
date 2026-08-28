@@ -1,6 +1,8 @@
 DESTDIR ?= $(abspath ./dist)
 ZRM_DESTDIR ?= $(abspath ./dist-zrm)
 FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
+LLM_DESTDIR ?= $(abspath ./dist-llm)
+TIGER_NGRAM ?= tiger_sentence_native/sentence-ngram-mobile.bin
 
 quick: classics tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
@@ -128,6 +130,7 @@ tigerengine-native: tiger_sentence_native/tigerengine.cc tiger_sentence_native/t
 	zsh tiger_sentence_native/build.sh
 
 native-dist: dist tigerengine-native
+	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	mkdir -p "$(DESTDIR)/tiger" "$(DESTDIR)/lua"
 	cp tiger_sentence_native/mohu_tiger_sentence.schema.yaml "$(DESTDIR)/"
 	cp tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(DESTDIR)/lua/"
@@ -141,6 +144,7 @@ native-dist: dist tigerengine-native
 		trap - EXIT INT TERM; \
 	fi
 	test ! -f tiger_sentence_native/mohu_tiger.lexicon.txt || cp tiger_sentence_native/mohu_tiger.lexicon.txt "$(DESTDIR)/tiger/"
+	cp "$(TIGER_NGRAM)" "$(DESTDIR)/tiger/sentence-ngram-mobile.bin"
 	test -f "$(DESTDIR)/tiger/scorer_models.zsh"
 	test -f "$(DESTDIR)/tiger/mohu_tiger_reranker_profile.lua"
 	test -f "$(DESTDIR)/tiger/mohu_tiger_reranker_profile_qwen3_06b.lua"
@@ -151,6 +155,40 @@ native-dist: dist tigerengine-native
 	test -f "$(DESTDIR)/lua/option_state.lua"
 	test -f "$(DESTDIR)/lua/mohu_tiger_model_catalog.lua"
 	test -f "$(DESTDIR)/lua/mohu_tiger_model_menu.lua"
+
+# Independent overlay containing the optional 魔虎大模型 runtime.  Model
+# weights are deliberately excluded; install them separately from the
+# registry manifests under tiger/models/.
+llm-dist: tigerengine-native
+	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
+	if [ "$(abspath $(LLM_DESTDIR))" = "$(abspath ./dist-llm)" ]; then rm -rf "$(LLM_DESTDIR)"; fi
+	mkdir -p "$(LLM_DESTDIR)/tiger/models" "$(LLM_DESTDIR)/lua"
+	cp tiger_sentence_native/mohu_tiger_sentence.schema.yaml "$(LLM_DESTDIR)/"
+	cp tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(LLM_DESTDIR)/lua/"
+	cp tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/scorer_models.zsh tiger_sentence_native/switch_qwen_model.command tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(LLM_DESTDIR)/tiger/"
+	cp tiger_sentence_native/README.md tiger_sentence_native/QWEN35_SCORER.md "$(LLM_DESTDIR)/tiger/"
+	cp tiger_sentence_native/models/README.md tiger_sentence_native/models/*.manifest "$(LLM_DESTDIR)/tiger/models/"
+	if [ ! -f tiger_sentence_native/libtigerengine.dylib ]; then :; else \
+		dylib_tmp="$(LLM_DESTDIR)/tiger/.libtigerengine.dylib.$$$$"; \
+		trap 'rm -f "$$dylib_tmp"' EXIT INT TERM; \
+		cp tiger_sentence_native/libtigerengine.dylib "$$dylib_tmp"; \
+		codesign --verify --strict "$$dylib_tmp"; \
+		mv -f "$$dylib_tmp" "$(LLM_DESTDIR)/tiger/libtigerengine.dylib"; \
+		trap - EXIT INT TERM; \
+	fi
+	test -f tiger_sentence_native/mohu_tiger.lexicon.txt || (echo "Error: mohu_tiger.lexicon.txt is required" >&2; exit 1)
+	cp tiger_sentence_native/mohu_tiger.lexicon.txt "$(LLM_DESTDIR)/tiger/"
+	cp "$(TIGER_NGRAM)" "$(LLM_DESTDIR)/tiger/sentence-ngram-mobile.bin"
+	test -f "$(LLM_DESTDIR)/tiger/libtigerengine.dylib"
+	test -f "$(LLM_DESTDIR)/tiger/mohu_tiger.lexicon.txt"
+	test -f "$(LLM_DESTDIR)/tiger/sentence-ngram-mobile.bin"
+	test -f "$(LLM_DESTDIR)/tiger/scorer_models.zsh"
+	test -x "$(LLM_DESTDIR)/tiger/run_qwen35_scorer.command"
+	test -x "$(LLM_DESTDIR)/tiger/install_qwen35_launch_agent.command"
+	test -x "$(LLM_DESTDIR)/tiger/switch_qwen_model.command"
+	test -f "$(LLM_DESTDIR)/tiger/models/README.md"
+	test -f "$(LLM_DESTDIR)/lua/mohu_tiger_model_catalog.lua"
+	test -f "$(LLM_DESTDIR)/lua/mohu_tiger_model_menu.lua"
 
 tigerengine-safety:
 	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_safety_test.cc tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_safety_test
@@ -231,4 +269,4 @@ test: dist
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native native-dist tigerengine-safety tigerengine-lua-safety dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native native-dist llm-dist tigerengine-safety tigerengine-lua-safety dist-zrm dist-flypy test lint-python

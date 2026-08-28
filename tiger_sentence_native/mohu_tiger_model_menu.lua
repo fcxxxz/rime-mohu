@@ -18,7 +18,7 @@ local function current_segment(context)
 end
 
 local function is_commit_key(keycode)
-  return keycode == 0x20 or keycode == 0xff0d or keycode == 0x0d or
+  return keycode == 0x20 or keycode == 0xff0d or keycode == 0xff8d or keycode == 0x0d or
     (keycode >= 0x31 and keycode <= 0x39)
 end
 

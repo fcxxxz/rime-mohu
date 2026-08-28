@@ -119,6 +119,54 @@ dist: quick
 
 	rm -rf dist/*.userdb  # Just in case
 
+# Native Tiger sentence assets are kept separate from the portable scheme
+# bundle.  The Qwen checkpoint and LuaSocket runtime are installed locally by
+# the native deployment instructions and are intentionally not copied here.
+tigerengine-native: tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc tiger_sentence_native/tigerengine.h
+	@test -f tiger_sentence_native/lua-5.4.6/src/lua.hpp || \
+		(echo "Lua 5.4 headers are required; see tiger_sentence_native/README.md" >&2; exit 1)
+	zsh tiger_sentence_native/build.sh
+
+native-dist: dist tigerengine-native
+	mkdir -p "$(DESTDIR)/tiger" "$(DESTDIR)/lua"
+	cp tiger_sentence_native/mohu_tiger_sentence.schema.yaml "$(DESTDIR)/"
+	cp tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(DESTDIR)/lua/"
+	cp tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/scorer_models.zsh tiger_sentence_native/switch_qwen_model.command tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(DESTDIR)/tiger/"
+	if [ ! -f tiger_sentence_native/libtigerengine.dylib ]; then :; else \
+		dylib_tmp="$(DESTDIR)/tiger/.libtigerengine.dylib.$$$$"; \
+		trap 'rm -f "$$dylib_tmp"' EXIT INT TERM; \
+		cp tiger_sentence_native/libtigerengine.dylib "$$dylib_tmp"; \
+		codesign --verify --strict "$$dylib_tmp"; \
+		mv -f "$$dylib_tmp" "$(DESTDIR)/tiger/libtigerengine.dylib"; \
+		trap - EXIT INT TERM; \
+	fi
+	test ! -f tiger_sentence_native/mohu_tiger.lexicon.txt || cp tiger_sentence_native/mohu_tiger.lexicon.txt "$(DESTDIR)/tiger/"
+	test -f "$(DESTDIR)/tiger/scorer_models.zsh"
+	test -f "$(DESTDIR)/tiger/mohu_tiger_reranker_profile.lua"
+	test -f "$(DESTDIR)/tiger/mohu_tiger_reranker_profile_qwen3_06b.lua"
+	test -x "$(DESTDIR)/tiger/run_qwen35_scorer.command"
+	test -x "$(DESTDIR)/tiger/install_qwen35_launch_agent.command"
+	test -x "$(DESTDIR)/tiger/switch_qwen_model.command"
+	test -f "$(DESTDIR)/lua/option_sync.lua"
+	test -f "$(DESTDIR)/lua/option_state.lua"
+	test -f "$(DESTDIR)/lua/mohu_tiger_model_catalog.lua"
+	test -f "$(DESTDIR)/lua/mohu_tiger_model_menu.lua"
+
+tigerengine-safety:
+	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_safety_test.cc tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_safety_test
+	/tmp/tigerengine_safety_test
+
+tigerengine-lua-safety:
+	@if [ -f tiger_sentence_native/lua-5.4.6/src/liblua.a ]; then \
+		clang++ -std=c++17 -O2 -I tiger_sentence_native -I tiger_sentence_native/lua-5.4.6/src \
+			tests/tigerengine_lua_safety_test.cc tiger_sentence_native/tigerengine.cc \
+			tiger_sentence_native/tigerengine_lua.cc tiger_sentence_native/lua-5.4.6/src/liblua.a \
+			-lm -ldl -o /tmp/tigerengine_lua_safety_test; \
+		/tmp/tigerengine_lua_safety_test; \
+	else \
+		echo "tigerengine Lua safety tests skipped (Lua 5.4 static library not present)"; \
+	fi
+
 dist-zrm: quick
 	uv run tools/build_split_dist.py zrm "$(ZRM_DESTDIR)"
 
@@ -126,10 +174,16 @@ dist-flypy: quick
 	uv run tools/build_split_dist.py flypy "$(FLYPY_DESTDIR)"
 
 test: dist
+	$(MAKE) tigerengine-safety
+	$(MAKE) tigerengine-lua-safety
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
 	uv run python -m unittest tests.test_tiger_aux -v
 	uv run python -m unittest tests.test_mohu_config -v
+	uv run python -m unittest tests.test_mohu_tiger_sentence_native -v
+	uv run python -m unittest tests.test_tiger_lexicon_fly -v
+	uv run python -m unittest tests.test_qwen35_scorer -v
+	uv run python -m unittest tests.test_tiger_reranker_eval -v
 	uv run python -m unittest tests.test_flypy_assets -v
 	uv run python -m unittest tests.test_mohu_migration -v
 	uv run python -m unittest tests.test_tiger_symbol_workflow -v
@@ -140,8 +194,16 @@ test: dist
 	lua tests/mohu_candidate_override_test.lua
 	lua tests/mohu_candidate_weight_reset_test.lua
 	lua tests/mohu_pin_store_test.lua
+	lua tests/option_sync_test.lua
 	lua tests/mohu_candidate_manager_test.lua
 	lua tests/mohu_candidate_manager_config_test.lua
+	lua tests/mohu_tiger_sentence_native_test.lua
+	lua tests/mohu_tiger_no_early_commit_test.lua
+	lua tests/mohu_tiger_selected_segment_test.lua
+	lua tests/mohu_tiger_translator_rerank_test.lua
+	lua tests/mohu_tiger_reranker_test.lua
+	lua tests/mohu_tiger_reranker_socket_recovery_test.lua
+	lua tests/mohu_reorder_filter_lexicon_test.lua
 	lua tests/mohu_freestyle_config_test.lua
 	lua tests/tiger_aux_config_test.lua
 	lua tests/mohu_contextual_translator_test.lua
@@ -169,4 +231,4 @@ test: dist
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native native-dist tigerengine-safety tigerengine-lua-safety dist-zrm dist-flypy test lint-python

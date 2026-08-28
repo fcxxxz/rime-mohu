@@ -86,6 +86,14 @@ assert(space_result == 1, "space selection must be accepted")
 assert(context.clear_count == 2, "space selection must clear composition")
 assert(reload_count == before_reload + 1, "space selection must reload profile")
 
+context.input = "/model"
+local before_keypad_reload = reload_count
+local keypad_result = menu.processor.func(event(0xff8d), env)
+assert(keypad_result == 1, "keypad Enter selection must be accepted")
+assert(context.clear_count == 3, "keypad Enter selection must clear composition")
+assert(reload_count == before_keypad_reload + 1,
+  "keypad Enter selection must reload profile")
+
 models = { models[1] }
 status = { status = "unknown-selection", selection_id = "made-up-model" }
 context.input = "/model"

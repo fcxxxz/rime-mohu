@@ -117,25 +117,31 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn("    - quick_code_hint\n", default)
         self.assertIn("    - aux_hint\n", default)
         self.assertIn("    - multi_short_code\n", default)
+        self.assertIn("    - mohu_tiger_sentence_neural_rerank\n", default)
+        self.assertNotIn("mohu_tiger_sentence_early_commit", default)
 
         for schema_id in DOUBLE_PINYIN_SCHEMAS:
             with self.subTest(schema=schema_id):
                 text = read(f"{schema_id}.schema.yaml")
                 self.assertIn("  - name: multi_short_code\n", text)
                 self.assertIn(
-                    "    reset: 0\n    states: [ 多重简字, 唯一简字 ]\n",
+                    "    states: [ 多重简字, 唯一简字 ]\n",
                     text,
                 )
+                self.assertNotIn("  - name: multi_short_code\n    reset", text)
                 self.assertIn("  - name: quick_code_hint\n", text)
                 self.assertIn(
-                    "    reset: 0\n    states: [ 简码提示关, 简码提示 ]\n",
+                    "    states: [ 简码提示关, 简码提示 ]\n",
                     text,
                 )
+                self.assertNotIn("  - name: quick_code_hint\n    reset", text)
                 self.assertIn("  - name: aux_hint\n", text)
                 self.assertIn(
-                    "    reset: 0\n    states: [ 辅助码提示关, 辅助码提示 ]\n",
+                    "    states: [ 辅助码提示关, 辅助码提示 ]\n",
                     text,
                 )
+                self.assertNotIn("  - name: aux_hint\n    reset", text)
+                self.assertIn("lua_processor@*option_sync\n", text)
                 self.assertIn("    - lua_filter@*mohu_hint_filter", text)
                 self.assertNotIn("mohu/enable_quick_code_hint", text)
                 self.assertIn("  inject_fixed_words: true", text)
@@ -163,8 +169,11 @@ class MohuConfigTest(unittest.TestCase):
                 if schema_id in CONTEXTUAL_SCHEMAS:
                     self.assertIn("  - name: contextual_order\n", text)
                     self.assertIn(
-                        "    reset: 1\n    states: [ 单次候选调频, 跨候选调频 ]\n",
+                        "    states: [ 单次候选调频, 跨候选调频 ]\n",
                         text,
+                    )
+                    self.assertNotIn(
+                        "  - name: contextual_order\n    reset", text
                     )
                     self.assertIn("  contextual_suggestions: true\n", text)
                     self.assertNotIn("  contextual_suggestions: false\n", text)
@@ -180,6 +189,28 @@ class MohuConfigTest(unittest.TestCase):
             read("mohu_flypy_sentence.schema.yaml"),
         )
 
+    def test_option_sync_setup(self) -> None:
+        # 菜单开关依赖 save_options + option_sync 跨会话同步，不能再用 reset 压制。
+        self.assertTrue((ROOT / "lua" / "option_sync.lua").is_file())
+        self.assertTrue((ROOT / "lua" / "option_state.lua").is_file())
+        self.assertIn("lua_processor@*option_sync\n", read("tiger.schema.yaml"))
+        tiger_sentence = read(
+            "tiger_sentence_native/mohu_tiger_sentence.schema.yaml"
+        )
+        for name in (
+            "mohu_tiger_sentence_neural_rerank",
+            "contextual_order",
+            "quick_code_hint",
+            "aux_hint",
+            "multi_short_code",
+        ):
+            self.assertNotIn(f"  - name: {name}\n    reset", tiger_sentence)
+        self.assertIn("lua_processor@*option_sync\n", tiger_sentence)
+        self.assertIn(
+            "    - mohu_tiger_sentence_neural_rerank\n", read("default.yaml")
+        )
+        self.assertNotIn("mohu_tiger_sentence_early_commit", tiger_sentence)
+
     def test_native_schema_is_named_for_llm_and_keeps_octagram_on_mohu_zrm(self) -> None:
         native = read("tiger_sentence_native/mohu_tiger_sentence.schema.yaml")
         self.assertIn("  schema_id: mohu_tiger_sentence\n", native)
@@ -192,6 +223,43 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn(
             "__include: mohu:/octagram/enable_for_sentence\n",
             read("mohu_zrm.schema.yaml"),
+        )
+
+    def test_native_dist_contains_complete_scorer_runtime(self) -> None:
+        makefile = read("Makefile")
+        self.assertIn("native-dist:", makefile)
+        recipe = makefile.split("native-dist:", 1)[1].split(
+            "\ntigerengine-safety:", 1
+        )[0]
+        # The launcher and model-switch command are copied into the same
+        # directory at install time; each of these files is a runtime input.
+        for filename in (
+            "qwen35_scorer.py",
+            "run_qwen35_scorer.command",
+            "install_qwen35_launch_agent.command",
+            "scorer_models.zsh",
+            "switch_qwen_model.command",
+            "mohu_tiger_reranker_profile.lua",
+            "mohu_tiger_reranker_profile_qwen3_06b.lua",
+            "mohu_tiger_model_menu.lua",
+        ):
+            with self.subTest(filename=filename):
+                self.assertIn(filename, recipe)
+        # Keep a post-copy smoke check in the recipe so a partial DESTDIR
+        # install cannot be reported as successful.
+        self.assertIn('test -f "$(DESTDIR)/tiger/scorer_models.zsh"', recipe)
+        self.assertIn(
+            'test -x "$(DESTDIR)/tiger/run_qwen35_scorer.command"', recipe
+        )
+        self.assertIn("mohu_tiger_model_menu.lua", recipe)
+        self.assertIn(
+            'test -f "$(DESTDIR)/lua/mohu_tiger_model_menu.lua"', recipe
+        )
+        self.assertIn("codesign --verify --strict", recipe)
+        self.assertIn('mv -f "$$dylib_tmp"', recipe)
+        self.assertNotIn(
+            'cp tiger_sentence_native/libtigerengine.dylib "$(DESTDIR)/tiger/"',
+            recipe,
         )
 
     def test_classics_dictionary_is_imported_only_by_smart_tables(self) -> None:

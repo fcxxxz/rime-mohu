@@ -66,6 +66,10 @@ local function parse_config(text, expected_type)
   if type(text) ~= "string" or #text < 2 or text:match("^%s*{%s*}%s*$") then
     return false
   end
+  local normalized = trim(text)
+  if normalized:sub(1, 1) ~= "{" or normalized:sub(-1) ~= "}" then
+    return false
+  end
   local depth, quoted, escaped = 0, false, false
   for index = 1, #text do
     local char = text:sub(index, index)

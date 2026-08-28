@@ -25,6 +25,7 @@ engine:
   processors:
     - ascii_composer
     - recognizer
+    - lua_processor@*option_sync
     - key_binder
     - speller
     - punctuator

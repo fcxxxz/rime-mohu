@@ -36,6 +36,7 @@ switcher:
     - quick_code_hint
     - aux_hint
     - multi_short_code
+    - mohu_tiger_sentence_neural_rerank
   fold_options: true
   abbreviate_options: true
   option_list_separator: '／'

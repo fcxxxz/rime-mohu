@@ -33,6 +33,9 @@ user.yaml
 __pycache__/
 .worktrees/
 .mimosa/
+tiger_sentence_native/lua-5.4.6/src/*.o
+tiger_sentence_native/lua-5.4.6/src/lua
+tiger_sentence_native/lua-5.4.6/src/luac
 /research/
 /docs/superpowers/specs/
 **/[Pp][Ll][Aa][Nn]*/

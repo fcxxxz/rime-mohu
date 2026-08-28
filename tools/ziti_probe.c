@@ -9,6 +9,7 @@
 // 用法:
 //   probe <部署目录> <方案id>            查询模式：每行一个编码，输出 首页候选
 //   probe <部署目录> <方案id> commit     回放模式：每行一串按键，输出 上屏文本
+//   probe <部署目录> <方案id> neural     查询模式并打开 native 神经重排开关
 //
 // 部署目录需含方案全部 yaml/lua/opencc/gram 与 default.custom.yaml，
 // 并把 *_fixed_legacy 方案一并列入 schema_list，否则 lua 翻译器加载
@@ -26,13 +27,17 @@ int main(int argc, char** argv) {
   const char* user_dir = argv[1];
   const char* schema_id = argv[2];
   int commit_mode = (argc > 3 && strcmp(argv[3], "commit") == 0);
+  int neural_mode = (argc > 3 && strcmp(argv[3], "neural") == 0);
 
   static const char* kModules[] = {"default", "plugins", NULL};
   RIME_STRUCT(RimeTraits, traits);
-  traits.app_name = "mohu-ziti-probe";
+  // Keep the neural probe's userdb namespace separate from an active Squirrel
+  // session.  Shared LevelDB locks can otherwise make a healthy rerank look
+  // like a fail-open baseline during validation.
+  traits.app_name = neural_mode ? "mohu-neural-probe" : "mohu-ziti-probe";
   traits.user_data_dir = user_dir;
   traits.shared_data_dir = user_dir;
-  traits.log_dir = "/tmp/mohu-ziti/logs";
+  traits.log_dir = neural_mode ? "/tmp/mohu-neural-probe-logs" : "/tmp/mohu-ziti/logs";
   traits.modules = kModules;
   RimeApi* rime = rime_get_api();
   rime->setup(&traits);
@@ -54,6 +59,8 @@ int main(int argc, char** argv) {
     fprintf(stderr, "failed to select schema %s\n", schema_id);
     return 5;
   }
+  if (neural_mode)
+    rime->set_option(session, "mohu_tiger_sentence_neural_rerank", 1);
 
   char line[256];
   while (fgets(line, sizeof(line), stdin)) {
@@ -103,5 +110,6 @@ int main(int argc, char** argv) {
   }
 
   rime->destroy_session(session);
+  rime->finalize();
   return 0;
 }

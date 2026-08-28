@@ -30,16 +30,12 @@ switches:
   - name: unicode_comment
     states: [ U关, U开 ]
   - name: contextual_order
-    reset: 1
     states: [ 单次候选调频, 跨候选调频 ]
   - name: quick_code_hint
-    reset: 0
     states: [ 简码提示关, 简码提示 ]
   - name: aux_hint
-    reset: 0
     states: [ 辅助码提示关, 辅助码提示 ]
   - name: multi_short_code
-    reset: 0
     states: [ 多重简字, 唯一简字 ]
   - name: candidate_override_management
     states: [ 常规, 候选管理 ]
@@ -51,6 +47,7 @@ engine:
     - lua_processor@*mohu_candidate_manager*manager_processor
     - lua_processor@*mohu_candidate_override*override_processor
     - lua_processor@*mohu_pin*pin_processor
+    - lua_processor@*option_sync
     - key_binder
     - ascii_composer
     - recognizer

@@ -42,6 +42,7 @@
 -- 必须与 mohu_express_translator v0.5.0 以上版本联用。
 
 local Top = {}
+local native_sentence_type = "mohu_tiger_sentence"
 
 function Top.init(env)
     -- At most THRESHOLD smart candidates are subject to reordering,
@@ -58,7 +59,10 @@ end
 -- 状态机定义
 --
 -- 输入的候选格式是：
---   [pinned]* [fixed1]* smart1{1} [fixed2]* smart2+
+--   [pinned]* [fixed1]* [native]* smart1{1} [fixed2]* smart2+
+-- native 候选有独立身份，不参与 fixed -> smart 替换，输出在 fixed 与 smart 之间。
+-- 当词库候选存在时，native 只允许输出词库也能覆盖的文本；这样模型只负责
+-- 在词库可行集合内排序，不会用静态码表绕过用户词造出错误分词。
 --
 -- + kCollecting   收集 pinned, fixed1, smart1
 -- + kMatching     碰到了 smart2，且还有一些候选等待匹配
@@ -73,7 +77,10 @@ function Top.func(t_input, env)
         phase = kCollecting,  -- 当前状态
         fixed_list = {},      -- 等待匹配的固定候选
         fixed_next = 1,       -- 下一个待匹配的固定候选匹配的
+        native_list = {},     -- 原生整句候选不参与 fixed/smart 身份替换
         smart_list = {},      -- 等待匹配的整句候选
+        trailing_list = {},   -- fixed 匹配完成后暂存的其余候选
+        lexicon_texts = {},   -- 本轮非 native 候选的文本集合
         threshold = env.reorder_threshold,
         pin_set = {},         -- 候选是否是 pinned
 
@@ -85,12 +92,17 @@ function Top.func(t_input, env)
     for cand in t_input:iter() do
         if cand:get_genuine().type == "punct" then
             yield(cand)
+        elseif cand:get_genuine().type == native_sentence_type then
+            table.insert(ctx.native_list, cand)
+        elseif ctx.phase == kDone then
+            ctx.lexicon_texts[cand.text] = true
+            table.insert(ctx.trailing_list, cand)
         elseif ctx.phase == kCollecting then
+            ctx.lexicon_texts[cand.text] = true
             Top.handle_collecting(env, ctx, cand)
-        elseif ctx.phase == kMatching then
-            Top.handle_matching(env, ctx, cand)
         else
-            Top.yield_exact(env, cand)
+            ctx.lexicon_texts[cand.text] = true
+            Top.handle_matching(env, ctx, cand)
         end
     end
 
@@ -144,9 +156,8 @@ end
 
 function Top.handle_matching(env, ctx, cand)
     if ctx.threshold == 0 then
-        Top.flush(env, ctx, false)
         ctx.phase = kDone
-        Top.yield_exact(env, cand)
+        table.insert(ctx.trailing_list, cand)
         return
     else
         ctx.threshold = ctx.threshold - 1
@@ -171,7 +182,6 @@ function Top.handle_matching(env, ctx, cand)
         end
     end
     if ctx.fixed_next > #ctx.fixed_list then
-        Top.flush(env, ctx, false)
         ctx.phase = kDone
     end
 end
@@ -196,6 +206,11 @@ function Top.flush(env, ctx, include_delay_slot)
     for i = ctx.fixed_next, #ctx.fixed_list do
         Top.yield_exact(env, ctx.fixed_list[i])
     end
+    for _, c in ipairs(ctx.native_list) do
+        if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text] then
+            Top.yield_exact(env, c)
+        end
+    end
     if include_delay_slot then
         -- 只在完全匹配完毕后才清空延迟槽
         for _, c in ipairs(ctx.delay_slot) do
@@ -206,8 +221,14 @@ function Top.flush(env, ctx, include_delay_slot)
     for _, c in ipairs(ctx.smart_list) do
         Top.yield_exact(env, c)
     end
+    for _, c in ipairs(ctx.trailing_list) do
+        Top.yield_exact(env, c)
+    end
     ctx.fixed_list = {}
+    ctx.native_list = {}
     ctx.smart_list = {}
+    ctx.trailing_list = {}
+    ctx.lexicon_texts = {}
 end
 
 --- cand 是否有可能被重排（即是否有可能是 smart 输出）。

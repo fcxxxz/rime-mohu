@@ -173,7 +173,7 @@ dist-flypy: quick
 mohu-llm-runtime-dist: tigerengine-native
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	runtime_dest="$(abspath $(MOHU_LLM_RUNTIME_DESTDIR))"; repo_root="$(abspath .)"; runtime_base="$${runtime_dest##*/}"; \
-	case "$$runtime_dest" in /|"$$HOME"|"$$repo_root"|"$$repo_root"/*) echo "unsafe runtime destination" >&2; exit 1;; esac; \
+	case "$$runtime_dest" in /|"$$HOME"|"$$repo_root") echo "unsafe runtime destination" >&2; exit 1;; esac; \
 	case "$$runtime_base" in tmp|private|Users|home|Library|Rime) echo "unsafe runtime destination" >&2; exit 1;; esac; \
 	case "$$repo_root/" in "$$runtime_dest/"*) echo "unsafe runtime destination" >&2; exit 1;; esac
 	rm -rf "$(MOHU_LLM_RUNTIME_DESTDIR)"
@@ -196,7 +196,7 @@ mohu-llm-runtime-dist: tigerengine-native
 mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	zrm_dest="$(abspath $(MOHU_LLM_ZRM_DESTDIR))"; repo_root="$(abspath .)"; zrm_base="$${zrm_dest##*/}"; \
-	case "$$zrm_dest" in /|"$$HOME"|"$$repo_root"|"$$repo_root"/*) echo "unsafe zrm destination" >&2; exit 1;; esac; \
+	case "$$zrm_dest" in /|"$$HOME"|"$$repo_root") echo "unsafe zrm destination" >&2; exit 1;; esac; \
 	case "$$zrm_base" in tmp|private|Users|home|Library|Rime) echo "unsafe zrm destination" >&2; exit 1;; esac; \
 	case "$$repo_root/" in "$$zrm_dest/"*) echo "unsafe zrm destination" >&2; exit 1;; esac
 	rm -rf "$(MOHU_LLM_ZRM_DESTDIR)"
@@ -223,7 +223,7 @@ mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	flypy_dest="$(abspath $(MOHU_LLM_FLYPY_DESTDIR))"; repo_root="$(abspath .)"; flypy_base="$${flypy_dest##*/}"; \
-	case "$$flypy_dest" in /|"$$HOME"|"$$repo_root"|"$$repo_root"/*) echo "unsafe flypy destination" >&2; exit 1;; esac; \
+	case "$$flypy_dest" in /|"$$HOME"|"$$repo_root") echo "unsafe flypy destination" >&2; exit 1;; esac; \
 	case "$$flypy_base" in tmp|private|Users|home|Library|Rime) echo "unsafe flypy destination" >&2; exit 1;; esac; \
 	case "$$repo_root/" in "$$flypy_dest/"*) echo "unsafe flypy destination" >&2; exit 1;; esac
 	rm -rf "$(MOHU_LLM_FLYPY_DESTDIR)"

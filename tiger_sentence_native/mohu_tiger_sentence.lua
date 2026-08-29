@@ -6,9 +6,11 @@
 -- schema 引用：
 --   lua_translator@*mohu_tiger_sentence*translator
 -- 配置（schema 内 tiger/ 节，均可省略）：
---   tiger/engine_lib: 引擎 dylib 路径（默认 <用户目录>/tiger/libtigerengine.dylib）
---   tiger/model:      模型路径（默认 <用户目录>/tiger/sentence-ngram-mobile.bin）
---   tiger/lexicon:    码表路径（默认 <用户目录>/tiger/mohu_tiger.lexicon.txt）
+--   tiger/engine_lib: 引擎 dylib 路径（默认 <用户目录>/mohu_llm/runtime/libtigerengine.dylib）
+--   tiger/model:      模型路径（默认 <用户目录>/mohu_llm/data/sentence-ngram-mobile.bin）
+--   tiger/scheme:      双拼方案标识（zrm 或 flypy）
+--   tiger/candidate_type: native 候选类型（默认按 scheme 推导）
+--   tiger/lexicon:    码表路径（默认由 runtime resolver 提供）
 --   tiger/beam:       束宽（默认 200）
 --   tiger/all_ranks:  >4 键时是否允许全部档位竞争（默认 true）
 --   tiger/initial_quality: 原生候选质量（默认 50）
@@ -18,6 +20,7 @@
 --   tiger/rerank_full_timeout_ms: adaptive >5-row deadline（默认 140）
 
 local M = {}
+local runtime = require("mohu_llm_runtime")
 
 -- Neural reranking is optional.  Keep the native sentence decoder usable on
 -- installations that do not deploy the companion Lua module/profile.
@@ -96,14 +99,6 @@ local engine_references = 0
 local engine_signature = nil
 local engine_config_error_logged = false
 
-local function default_dir()
-  if rime_api and rime_api.get_user_data_dir then
-    local ok, value = pcall(rime_api.get_user_data_dir)
-    if ok and type(value) == "string" and value ~= "" then return value end
-  end
-  return "."
-end
-
 local function report_engine_error(message)
   engine_error = message
   if not engine_error_logged then
@@ -122,8 +117,36 @@ local function report_decode_output_error(message)
   end
 end
 
+local function config_string(cfg, key)
+  if not cfg or type(cfg.get_string) ~= "function" then return nil end
+  local ok, value = pcall(cfg.get_string, cfg, key)
+  if ok and type(value) == "string" and value ~= "" then return value end
+  return nil
+end
+
+local function resolve_runtime_path(value, paths)
+  if type(value) ~= "string" or value == "" then return value end
+  if value:sub(1, 1) == "/" then return value end
+  local root = paths and paths.root
+  if not root then return value end
+  if value == "mohu_llm" or value:sub(1, #"mohu_llm/") == "mohu_llm/" then
+    return root .. value:sub(#"mohu_llm" + 1)
+  end
+  return value
+end
+
 local function configure(env)
   local cfg = env and env.engine and env.engine.schema and env.engine.schema.config
+  local scheme = config_string(cfg, "tiger/scheme") or "zrm"
+  if scheme ~= "zrm" and scheme ~= "flypy" then scheme = "zrm" end
+  local candidate_type = config_string(cfg, "tiger/candidate_type")
+  if candidate_type ~= "mohu_llm_zrm" and candidate_type ~= "mohu_llm_flypy" then
+    candidate_type = "mohu_llm_" .. scheme
+  end
+  if env then
+    env._tiger_scheme = scheme
+    env._tiger_candidate_type = candidate_type
+  end
   if cfg then
     local quality
     local ok, value = pcall(cfg.get_int, cfg, "tiger/initial_quality")
@@ -146,10 +169,11 @@ local function ensure_engine(env)
     end
     return nil
   end
-  local user_dir = default_dir()
-  local lib = conf("engine_lib") or (user_dir .. "/tiger/libtigerengine.dylib")
-  local model = conf("model") or (user_dir .. "/tiger/sentence-ngram-mobile.bin")
-  local lexicon = conf("lexicon") or (user_dir .. "/tiger/mohu_tiger.lexicon.txt")
+  local paths = runtime.paths()
+  local lib = resolve_runtime_path(conf("engine_lib"), paths) or paths.engine
+  local model = resolve_runtime_path(conf("model"), paths) or paths.ngram
+  local lexicon = resolve_runtime_path(conf("lexicon"), paths) or
+    (runtime.lexicon and runtime.lexicon(env and env._tiger_scheme)) or paths.lexicons.zrm
   local beam = conf("beam")
   local all_ranks = conf("all_ranks")
   local beam_value = beam and tonumber(beam) or beam_width
@@ -561,7 +585,8 @@ function M.translator.func(input, seg, env)
         prefix_raw_boundary)
       if preedit == "" and segment_input ~= "" then preedit = segment_input end
       if text ~= "" then
-        local cand = Candidate("mohu_tiger_sentence", seg.start, seg._end, text, "")
+        local candidate_type = env and env._tiger_candidate_type or "mohu_llm_zrm"
+        local cand = Candidate(candidate_type, seg.start, seg._end, text, "")
         cand.preedit = preedit
         cand.quality = candidate_quality - yielded * 0.001
         yield(cand)

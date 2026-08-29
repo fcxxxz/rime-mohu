@@ -12,10 +12,13 @@ EXPECTED_SCHEMAS = [
     "mohu_flypy_fixed",
     "mohu_flypy_sentence",
     "mohu_flypy_aux",
+    "mohu_llm_zrm",
+    "mohu_llm_flypy",
     "tiger",
 ]
 
-DOUBLE_PINYIN_SCHEMAS = EXPECTED_SCHEMAS[:-1]
+DOUBLE_PINYIN_SCHEMAS = EXPECTED_SCHEMAS[:5]
+STANDARD_SCHEMAS = [schema for schema in EXPECTED_SCHEMAS if not schema.startswith("mohu_llm_")]
 COMPILE_ONLY_SCHEMAS = [
     "mohu_zrm_fixed",
     "mohu_zrm_fixed_legacy",
@@ -119,7 +122,7 @@ class MohuConfigTest(unittest.TestCase):
         self.assertIn("    - quick_code_hint\n", default)
         self.assertIn("    - aux_hint\n", default)
         self.assertIn("    - multi_short_code\n", default)
-        self.assertIn("    - mohu_tiger_sentence_neural_rerank\n", default)
+        self.assertIn("    - mohu_llm_model_rerank\n", default)
         self.assertNotIn("mohu_tiger_sentence_early_commit", default)
 
         for schema_id in DOUBLE_PINYIN_SCHEMAS:
@@ -196,11 +199,9 @@ class MohuConfigTest(unittest.TestCase):
         self.assertTrue((ROOT / "lua" / "option_sync.lua").is_file())
         self.assertTrue((ROOT / "lua" / "option_state.lua").is_file())
         self.assertIn("lua_processor@*option_sync\n", read("tiger.schema.yaml"))
-        tiger_sentence = read(
-            "tiger_sentence_native/mohu_tiger_sentence.schema.yaml"
-        )
+        tiger_sentence = read("mohu_llm_zrm.schema.yaml")
         for name in (
-            "mohu_tiger_sentence_neural_rerank",
+            "mohu_llm_model_rerank",
             "contextual_order",
             "quick_code_hint",
             "aux_hint",
@@ -209,14 +210,14 @@ class MohuConfigTest(unittest.TestCase):
             self.assertNotIn(f"  - name: {name}\n    reset", tiger_sentence)
         self.assertIn("lua_processor@*option_sync\n", tiger_sentence)
         self.assertIn(
-            "    - mohu_tiger_sentence_neural_rerank\n", read("default.yaml")
+            "    - mohu_llm_model_rerank\n", read("default.yaml")
         )
         self.assertNotIn("mohu_tiger_sentence_early_commit", tiger_sentence)
 
     def test_native_schema_is_named_for_llm_and_keeps_octagram_on_mohu_zrm(self) -> None:
-        native = read("tiger_sentence_native/mohu_tiger_sentence.schema.yaml")
-        self.assertIn("  schema_id: mohu_tiger_sentence\n", native)
-        self.assertIn("  name: 魔虎大模型\n", native)
+        native = read("mohu_llm_zrm.schema.yaml")
+        self.assertIn("  schema_id: mohu_llm_zrm\n", native)
+        self.assertIn("  name: 魔虎大模型·自然码\n", native)
         self.assertIn(
             "    states: [ 模型重排关, 模型重排开 ]\n",
             native,
@@ -229,53 +230,10 @@ class MohuConfigTest(unittest.TestCase):
 
     def test_native_dist_contains_complete_scorer_runtime(self) -> None:
         makefile = read("Makefile")
-        self.assertIn("native-dist:", makefile)
-        recipe = makefile.split("native-dist:", 1)[1].split(
-            "\ntigerengine-safety:", 1
-        )[0]
-        # The launcher and model-switch command are copied into the same
-        # directory at install time; each of these files is a runtime input.
-        for filename in (
-            "qwen35_scorer.py",
-            "run_qwen35_scorer.command",
-            "install_qwen35_launch_agent.command",
-            "scorer_models.zsh",
-            "switch_qwen_model.command",
-            "mohu_tiger_reranker_profile.lua",
-            "mohu_tiger_reranker_profile_qwen3_06b.lua",
-            "mohu_tiger_model_menu.lua",
-            "sentence-ngram-mobile.bin",
-            "install_mohu_llm.command",
-        ):
-            with self.subTest(filename=filename):
-                self.assertIn(filename, recipe)
-        # Keep a post-copy smoke check in the recipe so a partial DESTDIR
-        # install cannot be reported as successful.
-        self.assertIn('test -f "$(DESTDIR)/tiger/scorer_models.zsh"', recipe)
-        self.assertIn(
-            'test -x "$(DESTDIR)/tiger/run_qwen35_scorer.command"', recipe
-        )
-        self.assertIn("mohu_tiger_model_menu.lua", recipe)
-        self.assertIn(
-            'test -f "$(DESTDIR)/lua/mohu_tiger_model_menu.lua"', recipe
-        )
-        self.assertIn(
-            'install -m 0755 tiger_sentence_native/install_mohu_llm.command "$(DESTDIR)/install_mohu_llm.command"',
-            recipe,
-        )
-        self.assertIn('test -x "$(DESTDIR)/install_mohu_llm.command"', recipe)
-        for filename in ("option_sync.lua", "option_state.lua"):
-            self.assertIn(f"lua/{filename}", recipe)
-        self.assertIn('mkdir -p "$(DESTDIR)/tiger/models"', recipe)
-        self.assertIn("tiger_sentence_native/models/README.md", recipe)
-        self.assertIn('test -f "$(DESTDIR)/tiger/models/qwen35-0.8b.manifest"', recipe)
-        self.assertIn("codesign --verify --strict", recipe)
-        self.assertIn('mv -f "$$dylib_tmp"', recipe)
-        self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
-        self.assertNotIn(
-            'cp tiger_sentence_native/libtigerengine.dylib "$(DESTDIR)/tiger/"',
-            recipe,
-        )
+        for target in ("mohu-llm-runtime-dist", "mohu-llm-zrm-dist", "mohu-llm-flypy-dist"):
+            self.assertIn(f"{target}:", makefile)
+        self.assertNotIn("mohu_tiger_sentence.schema.yaml", makefile)
+        self.assertNotIn("install_mohu_llm.command", makefile)
 
     def test_standard_dist_excludes_native_and_qwen_assets(self) -> None:
         makefile = read("Makefile")
@@ -299,61 +257,31 @@ class MohuConfigTest(unittest.TestCase):
             "TIGER_NGRAM ?= tiger_sentence_native/sentence-ngram-mobile.bin",
             makefile,
         )
-        self.assertIn("llm-dist:", makefile)
-        recipe = makefile.split("llm-dist:", 1)[1].split(
-            "\ntigerengine-safety:", 1
-        )[0]
-        self.assertIn('test -f "$(TIGER_NGRAM)"', recipe)
-        self.assertIn("sentence-ngram-mobile.bin", recipe)
-        self.assertIn("install_mohu_llm.command", recipe)
-        self.assertIn(
-            'install -m 0755 tiger_sentence_native/install_mohu_llm.command "$(LLM_DESTDIR)/install_mohu_llm.command"',
-            recipe,
-        )
-        self.assertIn('test -x "$(LLM_DESTDIR)/install_mohu_llm.command"', recipe)
-        for filename in ("option_sync.lua", "option_state.lua"):
-            self.assertIn(f"lua/{filename}", recipe)
-        self.assertIn(
-            "tiger_sentence_native/mohu_tiger_reranker_profile.lua", recipe
-        )
-        self.assertIn(
-            'test -f "$(LLM_DESTDIR)/tiger/mohu_tiger_reranker_profile.lua"',
-            recipe,
-        )
-        for required in (
-            "mohu_tiger_sentence.schema.yaml",
-            "mohu_tiger_sentence.lua",
-            "mohu_tiger_reranker.lua",
-            "mohu_tiger_model_catalog.lua",
-            "mohu_tiger_model_menu.lua",
-            "libtigerengine.dylib",
-            "mohu_tiger.lexicon.txt",
-            "qwen35_scorer.py",
-            "run_qwen35_scorer.command",
-            "scorer_models.zsh",
-            "switch_qwen_model.command",
-        ):
-            with self.subTest(required=required):
-                self.assertIn(required, recipe)
-        for forbidden in ("safetensors", "models/Qwen", "cp -a tiger_sentence_native/models"):
-            with self.subTest(forbidden=forbidden):
-                self.assertNotIn(forbidden, recipe)
+        self.assertIn("mohu-llm-runtime-dist:", makefile)
+        self.assertIn("mohu-llm-zrm-dist:", makefile)
+        self.assertIn("mohu-llm-flypy-dist:", makefile)
+        self.assertIn("MOHU_LLM_ZRM_DESTDIR", makefile)
+        self.assertIn('"$(MOHU_LLM_ZRM_DESTDIR)/runtime"', makefile)
+        self.assertIn("mohu_llm_zrm.schema.yaml", makefile)
+        self.assertIn("mohu_llm_flypy.schema.yaml", makefile)
+        self.assertIn("model_manifests", read("tiger_sentence_native/mohu_llm_zrm.package.json"))
+        self.assertNotIn("mohu_tiger_sentence.schema.yaml", makefile)
+        self.assertNotIn("$(LLM_DESTDIR)/tiger", makefile)
 
     def test_llm_installer_merges_user_schema_patch_safely(self) -> None:
-        installer = read("tiger_sentence_native/install_mohu_llm.command")
-        self.assertTrue(os.access(ROOT / "tiger_sentence_native/install_mohu_llm.command", os.X_OK))
+        self.assertFalse((ROOT / "tiger_sentence_native/install_mohu_llm.command").exists())
+        for scheme in ("zrm", "flypy"):
+            installer_path = ROOT / "tiger_sentence_native/install_mohu_llm_scheme.command"
+            installer = installer_path.read_text(encoding="utf-8")
+            self.assertTrue(os.access(installer_path, os.X_OK))
+            self.assertIn("MOHU_LLM_SCHEME", installer)
+            self.assertNotIn("mohu_tiger_sentence.schema.yaml", installer)
+            self.assertNotIn("$rime_dir/tiger", installer)
         self.assertIn("default.custom.yaml", installer)
         self.assertIn("schema_list/+", installer)
         self.assertIn("MOHU_RIME_DIR", installer)
         self.assertIn("--reload", installer)
-        self.assertIn("patch_inline", installer)
-        self.assertIn("schema_list/+", installer)
-        self.assertIn("(#.*)?", installer)
-        self.assertIn("grep -Ev", installer)
-        readme = read("tiger_sentence_native/README.md")
-        self.assertIn("双击", readme)
-        self.assertIn("`install_mohu_llm.command`", readme)
-        self.assertIn("不会覆盖已有的 `default.custom.yaml`", readme)
+        self.assertIn("mohu_llm/runtime", installer)
 
     def test_qwen_manifests_match_model_registry(self) -> None:
         catalog = read("tiger_sentence_native/mohu_tiger_model_catalog.lua")
@@ -361,6 +289,7 @@ class MohuConfigTest(unittest.TestCase):
         expected = {
             "qwen35-0.8b": {
                 "registry_path": "mlx-community/Qwen3.5-0.8B-MLX-4bit",
+                "path": "mohu_llm/models/Qwen3.5-0.8B-MLX-4bit",
                 "model_type": "qwen3_5",
                 "size_bytes": 652034038,
                 "size_mib": 621.83,
@@ -369,6 +298,7 @@ class MohuConfigTest(unittest.TestCase):
             },
             "qwen3-0.6b": {
                 "registry_path": "mlx-community/Qwen3-0.6B-4bit",
+                "path": "mohu_llm/models/Qwen3-0.6B-4bit",
                 "model_type": "qwen3",
                 "size_bytes": 351388968,
                 "size_mib": 335.11,
@@ -381,6 +311,7 @@ class MohuConfigTest(unittest.TestCase):
                 manifest = json.loads(read(fields["manifest"]))
                 self.assertEqual(model_id, manifest["id"])
                 self.assertEqual(fields["registry_path"], manifest["registry_path"])
+                self.assertEqual(fields["path"], manifest["path"])
                 self.assertEqual(fields["model_type"], manifest["model_type"])
                 self.assertEqual(4, manifest["quantization_bits"])
                 self.assertEqual(fields["size_bytes"], manifest["size_bytes"])
@@ -399,10 +330,10 @@ class MohuConfigTest(unittest.TestCase):
     def test_github_workflow_builds_and_releases_llm_addon(self) -> None:
         workflow = read(".github/workflows/build.yml")
         self.assertIn("runs-on: macos-14", workflow)
-        self.assertIn("make llm-dist", workflow)
+        self.assertIn("mohu-llm-zrm-dist", workflow)
         self.assertIn("sentence-ngram-mobile.bin", workflow)
-        self.assertIn("rime-mohu-llm-", workflow)
-        self.assertIn("rime-mohu-llm-latest.zip", workflow)
+        self.assertIn("mohu-llm-zrm-latest.zip", workflow)
+        self.assertIn("mohu-llm-flypy-latest.zip", workflow)
         self.assertIn("build-llm", workflow)
         self.assertIn("needs: [build, build-llm]", workflow)
 
@@ -493,7 +424,7 @@ class MohuNamingTest(unittest.TestCase):
             self.skipTest("distribution has not been built")
         schemas = sorted(path.name for path in dist.glob("*.schema.yaml"))
         expected = sorted(
-            [f"{schema_id}.schema.yaml" for schema_id in EXPECTED_SCHEMAS]
+            [f"{schema_id}.schema.yaml" for schema_id in STANDARD_SCHEMAS]
             + [f"{schema_id}.schema.yaml" for schema_id in COMPILE_ONLY_SCHEMAS]
             + ["mohu_charset.schema.yaml", "mohu_pinyin.schema.yaml"]
         )

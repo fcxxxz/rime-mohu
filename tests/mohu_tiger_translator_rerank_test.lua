@@ -75,7 +75,7 @@ end
 
 local context = {
   input = "najqmzufmekeybyudele",
-  options = { mohu_tiger_sentence_neural_rerank = true },
+  options = { mohu_llm_model_rerank = true },
   properties = {},
 }
 function context:get_option(name) return self.options[name] or false end

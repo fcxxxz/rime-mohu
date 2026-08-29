@@ -1,0 +1,43 @@
+{
+  "package_type": "mohu_llm",
+  "package_version": 1,
+  "scheme": "zrm",
+  "schema_id": "mohu_llm_zrm",
+  "display_name": "魔虎大模型·自然码",
+  "schema": "mohu_llm_zrm.schema.yaml",
+  "data_dir": "data/zrm",
+  "runtime_dir": "runtime",
+  "model_manifests": [
+    "models/qwen35-0.8b.manifest",
+    "models/qwen3-0.6b.manifest"
+  ],
+  "lua_files": [
+    "mohu_llm_runtime.lua",
+    "mohu_tiger_sentence.lua",
+    "mohu_tiger_reranker.lua",
+    "mohu_tiger_reranker_profile.lua",
+    "mohu_tiger_model_catalog.lua",
+    "mohu_tiger_model_menu.lua",
+    "option_sync.lua",
+    "option_state.lua"
+  ],
+  "runtime_files": [
+    "libtigerengine.dylib",
+    "qwen35_scorer.py",
+    "run_qwen35_scorer.command",
+    "install_qwen35_launch_agent.command",
+    "scorer_models.zsh",
+    "switch_qwen_model.command",
+    "mohu_tiger_reranker_profile.lua",
+    "mohu_tiger_reranker_profile_qwen3_06b.lua"
+  ],
+  "data_files": [
+    "data/sentence-ngram-mobile.bin",
+    "data/zrm/mohu_llm_zrm.lexicon.txt"
+  ],
+  "executable_files": [
+    "run_qwen35_scorer.command",
+    "install_qwen35_launch_agent.command",
+    "switch_qwen_model.command"
+  ]
+}

@@ -16,7 +16,7 @@ local context = {
   properties = {
   },
   options = {
-    mohu_tiger_sentence_neural_rerank = false,
+    mohu_llm_model_rerank = false,
   },
 }
 local selected_segment = {

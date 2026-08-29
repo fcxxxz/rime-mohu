@@ -29,7 +29,7 @@ local COMMON_OPTIONS = {
 }
 
 local SCHEMA_OPTIONS = {
-  mohu_tiger_sentence = {
+  mohu_llm_zrm = {
     "ascii_punct",
     "full_shape",
     "extended_charset",
@@ -40,7 +40,20 @@ local SCHEMA_OPTIONS = {
     "quick_code_hint",
     "aux_hint",
     "multi_short_code",
-    "mohu_tiger_sentence_neural_rerank",
+    "mohu_llm_model_rerank",
+  },
+  mohu_llm_flypy = {
+    "ascii_punct",
+    "full_shape",
+    "extended_charset",
+    "emoji",
+    "inflexible",
+    "unicode_comment",
+    "contextual_order",
+    "quick_code_hint",
+    "aux_hint",
+    "multi_short_code",
+    "mohu_llm_model_rerank",
   },
 }
 

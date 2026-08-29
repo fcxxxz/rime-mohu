@@ -41,20 +41,20 @@ local function run(candidates)
 end
 
 local output = run({
-  candidate("mohu_tiger_sentence", "万户上课"),
+  candidate("mohu_llm_zrm", "万户上课"),
   candidate("sentence", "魔虎尚可"),
 })
 assert(#output == 1 and output[1].text == "魔虎尚可",
   "native-only hallucinated segmentation must be removed when the dictionary has a candidate")
 
 local native_only = run({
-  candidate("mohu_tiger_sentence", "模型候选"),
+  candidate("mohu_llm_zrm", "模型候选"),
 })
 assert(#native_only == 1 and native_only[1].text == "模型候选",
   "native candidates remain available when no dictionary candidate exists")
 
 local long_sentence = run({
-  candidate("mohu_tiger_sentence", "你不要再精神内耗了"),
+  candidate("mohu_llm_zrm", "你不要再精神内耗了"),
   candidate("sentence", "你不要在精神内耗了"),
 })
 assert(long_sentence[1] and long_sentence[1].text == "你不要再精神内耗了",

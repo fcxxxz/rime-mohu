@@ -4,6 +4,7 @@ set -euo pipefail
 
 script_dir="${0:A:h}"
 launcher="$script_dir/run_qwen35_scorer.command"
+python_bin="${MOHU_QWEN35_PYTHON:-}"
 label="com.fuchuxuan.mohu.qwen35-reranker"
 plist="$HOME/Library/LaunchAgents/$label.plist"
 log_dir="$script_dir/logs"
@@ -12,8 +13,18 @@ if [[ ! -x "$launcher" ]]; then
   print -u2 "scorer launcher is missing or not executable: $launcher"
   exit 1
 fi
-if [[ ! -x "$script_dir/.venv/bin/python" ]]; then
-  print -u2 "scorer Python runtime is missing: $script_dir/.venv/bin/python"
+if [[ -z "$python_bin" && -x "$script_dir/.venv/bin/python" ]]; then
+  python_bin="$script_dir/.venv/bin/python"
+fi
+if [[ -z "$python_bin" ]]; then
+  python_bin="$(command -v python3 2>/dev/null || true)"
+fi
+if [[ -z "$python_bin" || ! -x "$python_bin" ]]; then
+  print -u2 "scorer Python runtime is missing; install Python 3 or set MOHU_QWEN35_PYTHON"
+  exit 1
+fi
+if ! "$python_bin" -c 'import mlx_lm' >/dev/null 2>&1; then
+  print -u2 "mlx_lm is unavailable in $python_bin; install mlx-lm (for example: uv pip install mlx-lm) or set MOHU_QWEN35_PYTHON"
   exit 1
 fi
 # The supervisor validates the current selection and retries unavailable models
@@ -37,6 +48,7 @@ script_dir_xml="$(xml_escape "$script_dir")"
 launcher_xml="$(xml_escape "$launcher")"
 home_xml="$(xml_escape "$HOME")"
 log_dir_xml="$(xml_escape "$log_dir")"
+python_bin_xml="$(xml_escape "$python_bin")"
 
 cat > "$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -51,6 +63,7 @@ cat > "$plist" <<EOF
   <dict>
     <key>HOME</key><string>$home_xml</string>
     <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>MOHU_QWEN35_PYTHON</key><string>$python_bin_xml</string>
   </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>

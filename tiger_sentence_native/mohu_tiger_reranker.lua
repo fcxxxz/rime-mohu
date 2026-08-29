@@ -6,6 +6,7 @@
 -- direct HTTP score endpoint.  Every failure is fail-open.
 
 local M = {}
+local runtime = require("mohu_llm_runtime")
 
 local CACHE_LIMIT = 64
 local MIN_CANDIDATES = 2
@@ -16,7 +17,7 @@ local DEFAULT_TIMEOUT_MS = 20
 -- five-row request on Apple Silicon.  Keep the fast-path deadline separate so
 -- an unavailable scorer never stalls ordinary keypresses for the full budget.
 local DEFAULT_FULL_TIMEOUT_MS = 140
-local OPTION_NAME = "mohu_tiger_sentence_neural_rerank"
+local OPTION_NAME = "mohu_llm_model_rerank"
 local MAX_ALPHA = 16
 local DEFAULT_SHORTLIST_MIN_K = 2
 local DEFAULT_SHORTLIST_MARGIN = 0
@@ -620,7 +621,7 @@ local function env_config(env, profile)
   local configured_socket = config_string(config, "tiger/rerank_socket", "")
   local socket_path = configured_socket
   if socket_path == "" and profile then
-    socket_path = user_data_dir() .. "/tiger/qwen35-reranker.sock"
+    socket_path = runtime.paths().socket
   else
     socket_path = resolve_user_path(socket_path)
   end

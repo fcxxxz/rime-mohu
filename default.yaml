@@ -9,6 +9,8 @@ schema_list:
   - schema: mohu_flypy_fixed
   - schema: mohu_flypy_sentence
   - schema: mohu_flypy_aux
+  - schema: mohu_llm_zrm
+  - schema: mohu_llm_flypy
   - schema: tiger
   # - schema: luna_pinyin
   # - schema: luna_pinyin_simp
@@ -36,7 +38,7 @@ switcher:
     - quick_code_hint
     - aux_hint
     - multi_short_code
-    - mohu_tiger_sentence_neural_rerank
+    - mohu_llm_model_rerank
   fold_options: true
   abbreviate_options: true
   option_list_separator: '／'

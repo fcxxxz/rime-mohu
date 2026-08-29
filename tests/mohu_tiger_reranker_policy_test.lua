@@ -149,7 +149,7 @@ assert(key_five ~= key_six, "cache identity must include the selected shortlist 
 
 local context = {
   input = "abcdefgh",
-  options = { mohu_tiger_sentence_neural_rerank = true },
+  options = { mohu_llm_model_rerank = true },
 }
 function context:get_option(name) return self.options[name] or false end
 

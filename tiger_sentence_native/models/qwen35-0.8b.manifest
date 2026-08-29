@@ -2,7 +2,7 @@
   "id": "qwen35-0.8b",
   "registry_path": "mlx-community/Qwen3.5-0.8B-MLX-4bit",
   "registry": "mlx-community/Qwen3.5-0.8B-MLX-4bit",
-  "path": "tiger/models/Qwen3.5-0.8B-MLX-4bit",
+  "path": "mohu_llm/models/Qwen3.5-0.8B-MLX-4bit",
   "model_type": "qwen3_5",
   "quantization": "4-bit",
   "quantization_bits": 4,

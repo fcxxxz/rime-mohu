@@ -2,6 +2,7 @@
 -- Availability checks only read a small config.json prefix; model weights are
 -- intentionally never hashed from the keypress thread.
 local M = {}
+local runtime = require("mohu_llm_runtime")
 
 local DEFAULT_ID = "qwen35-0.8b"
 local MAX_SELECTION_BYTES = 128
@@ -13,8 +14,8 @@ local registry = {
     selection_id = "qwen35-0.8b",
     display_label = "Qwen3.5-0.8B-MLX-4bit",
     label = "Qwen3.5-0.8B-MLX-4bit",
-    relative_path = "tiger/models/Qwen3.5-0.8B-MLX-4bit",
-    path = "tiger/models/Qwen3.5-0.8B-MLX-4bit",
+    relative_path = "mohu_llm/models/Qwen3.5-0.8B-MLX-4bit",
+    path = "mohu_llm/models/Qwen3.5-0.8B-MLX-4bit",
     model_sha256 = "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
     expected_sha256 = "8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8",
     model_type = "qwen3_5",
@@ -24,8 +25,8 @@ local registry = {
     selection_id = "qwen3-0.6b",
     display_label = "Qwen3-0.6B-4bit",
     label = "Qwen3-0.6B-4bit",
-    relative_path = "tiger/models/Qwen3-0.6B-4bit",
-    path = "tiger/models/Qwen3-0.6B-4bit",
+    relative_path = "mohu_llm/models/Qwen3-0.6B-4bit",
+    path = "mohu_llm/models/Qwen3-0.6B-4bit",
     model_sha256 = "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
     expected_sha256 = "2de6c7d42ac12c447715e06bfab6497bdd49707bec990ae3cddce3a8c4ba0548",
     model_type = "qwen3",
@@ -253,7 +254,7 @@ end
 function M.read_selection(options)
   local opts = options or {}
   local root = tostring(opts.user_data_dir or default_user_data_dir()):gsub("/+$", "")
-  local path = opts.selection_path or (root .. "/tiger/model-selection")
+  local path = opts.selection_path or runtime.paths({ user_data_dir = root }).selection
   local value, err = read_bounded(path, MAX_SELECTION_BYTES)
   if not value then
     if err and tostring(err):match("No such file") then

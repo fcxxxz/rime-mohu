@@ -9,7 +9,7 @@ yield = function(candidate) yielded[#yielded + 1] = candidate end
 
 local root = os.tmpname()
 os.remove(root)
-assert(os.execute("mkdir -p " .. root .. "/tiger") == true)
+assert(os.execute("mkdir -p " .. root .. "/mohu_llm/config") == true)
 rime_api = { get_user_data_dir = function() return root end }
 
 local models = {
@@ -70,7 +70,7 @@ segment.menu = {
 }
 local result = menu.processor.func(event(0x32), env)
 assert(result == 1, "numeric model selection must be accepted")
-local file = assert(io.open(root .. "/tiger/model-selection", "r"))
+local file = assert(io.open(root .. "/mohu_llm/config/model-selection", "r"))
 local selected = file:read("*a"); file:close()
 assert(selected == "qwen3-0.6b\n", "selection must persist stable model id")
 assert(context.clear_count == 1, "selection must clear composition")

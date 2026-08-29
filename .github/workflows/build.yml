@@ -80,6 +80,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Sync Python environment
+        run: uv sync --locked
+
       - name: Download and verify TCSKNM n-gram
         env:
           NGRAM_URL: https://github.com/wallleap/huma-rime-config/releases/download/LTS/sentence-ngram-mobile.bin
@@ -89,29 +98,65 @@ jobs:
             "$NGRAM_URL" -o sentence-ngram-mobile.bin
           printf '%s  %s\n' "$NGRAM_SHA256" sentence-ngram-mobile.bin | shasum -a 256 -c -
 
-      - name: Build LLM addon
+      - name: Build complete LLM scheme packages
         run: |
           uname -m
-          make llm-dist \
-            LLM_DESTDIR=dist-llm \
+          make mohu-llm-runtime-dist mohu-llm-zrm-dist mohu-llm-flypy-dist \
+            MOHU_LLM_RUNTIME_DESTDIR=dist-mohu-llm-runtime \
+            MOHU_LLM_ZRM_DESTDIR=dist-mohu-llm-zrm \
+            MOHU_LLM_FLYPY_DESTDIR=dist-mohu-llm-flypy \
             TIGER_NGRAM="$GITHUB_WORKSPACE/sentence-ngram-mobile.bin"
 
-      - name: Validate LLM addon
+      - name: Validate complete LLM packages
         run: |
-          test -f dist-llm/mohu_tiger_sentence.schema.yaml
-          test -x dist-llm/install_mohu_llm.command
-          test -x dist-llm/tiger/run_qwen35_scorer.command
-          test -f dist-llm/tiger/sentence-ngram-mobile.bin
-          test -f dist-llm/tiger/models/qwen35-0.8b.manifest
-          test -f dist-llm/tiger/models/qwen3-0.6b.manifest
-          test -z "$(find dist-llm -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print)"
+          test -f dist-mohu-llm-zrm/mohu_llm_zrm.schema.yaml
+          test -f dist-mohu-llm-flypy/mohu_llm_flypy.schema.yaml
+          test -f dist-mohu-llm-zrm/package.json
+          test -f dist-mohu-llm-flypy/package.json
+          test -f dist-mohu-llm-zrm/lua/mohu_llm_runtime.lua
+          test -f dist-mohu-llm-flypy/lua/mohu_llm_runtime.lua
+          test -f dist-mohu-llm-zrm/models/qwen35-0.8b.manifest
+          test -f dist-mohu-llm-flypy/models/qwen3-0.6b.manifest
+          test -x dist-mohu-llm-zrm/install_mohu_llm_zrm.command
+          test -x dist-mohu-llm-flypy/install_mohu_llm_flypy.command
+          test -f dist-mohu-llm-zrm/data/zrm/mohu_llm_zrm.lexicon.txt
+          test -f dist-mohu-llm-flypy/data/flypy/mohu_llm_flypy.lexicon.txt
+          test -f dist-mohu-llm-zrm/package.json
+          test -f dist-mohu-llm-flypy/package.json
+          test -f dist-mohu-llm-zrm/lua/mohu_llm_runtime.lua
+          test -f dist-mohu-llm-flypy/lua/mohu_llm_runtime.lua
+          test -f dist-mohu-llm-zrm/models/qwen35-0.8b.manifest
+          test -f dist-mohu-llm-flypy/models/qwen3-0.6b.manifest
+          codesign --verify --strict dist-mohu-llm-zrm/runtime/libtigerengine.dylib
+          codesign --verify --strict dist-mohu-llm-flypy/runtime/libtigerengine.dylib
+          test ! -e dist-mohu-llm-zrm/mohu_llm_flypy.schema.yaml
+          test ! -e dist-mohu-llm-flypy/mohu_llm_zrm.schema.yaml
+          test -z "$(find dist-mohu-llm-runtime dist-mohu-llm-zrm dist-mohu-llm-flypy -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print)"
 
-      - name: Upload LLM addon
+      - name: Upload LLM runtime
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: rime-mohu-llm-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist-llm/
+          name: rime-mohu-llm-runtime-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-mohu-llm-runtime/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Natural-code LLM distribution
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-llm-zrm-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-mohu-llm-zrm/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Flypy LLM distribution
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-llm-flypy-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-mohu-llm-flypy/
           if-no-files-found: error
           retention-days: 14
 
@@ -138,11 +183,23 @@ jobs:
           name: rime-mohu-flypy-${{ github.run_number }}-${{ github.run_attempt }}
           path: dist-flypy
 
-      - name: Download LLM addon
+      - name: Download LLM runtime
         uses: actions/download-artifact@v4
         with:
-          name: rime-mohu-llm-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist-llm
+          name: rime-mohu-llm-runtime-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-mohu-llm-runtime
+
+      - name: Download Natural-code LLM distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-llm-zrm-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-mohu-llm-zrm
+
+      - name: Download Flypy LLM distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-llm-flypy-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-mohu-llm-flypy
 
       - name: Package distributions
         run: |
@@ -150,11 +207,17 @@ jobs:
           # restore it before zipping; 启动.command must stay executable.
           chmod +x dist-zrm/Rime皮肤编辑器/启动.command
           chmod +x dist-flypy/Rime皮肤编辑器/启动.command
-          chmod +x dist-llm/install_mohu_llm.command
-          chmod +x dist-llm/tiger/*.command
+          chmod +x dist-mohu-llm-runtime/runtime/*.command
+          chmod +x dist-mohu-llm-zrm/install_mohu_llm_*.command dist-mohu-llm-zrm/runtime/*.command
+          chmod +x dist-mohu-llm-flypy/install_mohu_llm_*.command dist-mohu-llm-flypy/runtime/*.command
           (cd dist-zrm && zip -r ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -r ../rime-mohu-flypy-latest.zip .)
-          (cd dist-llm && zip -r ../rime-mohu-llm-latest.zip .)
+          (cd dist-mohu-llm-runtime && zip -r ../rime-mohu-llm-runtime-latest.zip .)
+          (cd dist-mohu-llm-zrm && zip -r ../mohu-llm-zrm-latest.zip .)
+          (cd dist-mohu-llm-flypy && zip -r ../mohu-llm-flypy-latest.zip .)
+          for archive in rime-mohu-llm-runtime-latest.zip mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip; do
+            test -z "$(unzip -Z1 "$archive" | awk '/^\// || /(^|\/)\.\.($|\/)/ { print; exit }')"
+          done
 
       - name: Update latest release
         env:
@@ -200,16 +263,21 @@ jobs:
               --notes-file "$notes_file" \
               --latest
             gh release delete-asset latest rime-mohu-latest.zip --yes 2>/dev/null || true
+            gh release delete-asset latest rime-mohu-llm-latest.zip --yes 2>/dev/null || true
             gh release upload latest \
               rime-mohu-zrm-latest.zip \
               rime-mohu-flypy-latest.zip \
-              rime-mohu-llm-latest.zip \
+              rime-mohu-llm-runtime-latest.zip \
+              mohu-llm-zrm-latest.zip \
+              mohu-llm-flypy-latest.zip \
               --clobber
           else
             gh release create latest \
               rime-mohu-zrm-latest.zip \
               rime-mohu-flypy-latest.zip \
-              rime-mohu-llm-latest.zip \
+              rime-mohu-llm-runtime-latest.zip \
+              mohu-llm-zrm-latest.zip \
+              mohu-llm-flypy-latest.zip \
               --verify-tag \
               --title 'Latest build' \
               --notes-file "$notes_file" \

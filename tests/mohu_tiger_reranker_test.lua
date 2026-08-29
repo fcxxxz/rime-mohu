@@ -24,7 +24,7 @@ end
 
 local context = {
   input = "abcdefghijkl",
-  options = { mohu_tiger_sentence_neural_rerank = true },
+  options = { mohu_llm_model_rerank = true },
   properties = {},
 }
 function context:get_option(name) return self.options[name] or false end
@@ -472,7 +472,7 @@ package.preload["mohu_tiger_reranker_profile"] = function()
 end
 local adaptive_context = {
   input = "adaptive-input",
-  options = { mohu_tiger_sentence_neural_rerank = true },
+  options = { mohu_llm_model_rerank = true },
   properties = {},
 }
 function adaptive_context:get_option(name) return self.options[name] or false end

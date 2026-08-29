@@ -2,6 +2,7 @@
 -- Candidates carry a stable model id; the processor consumes selection keys so
 -- the visible model label is never committed as user text.
 local catalog = require("mohu_tiger_model_catalog")
+local runtime = require("mohu_llm_runtime")
 local ok_reranker, reranker = pcall(require, "mohu_tiger_reranker")
 if not ok_reranker or type(reranker) ~= "table" then reranker = {} end
 
@@ -36,13 +37,13 @@ local function selected_for_key(context, keycode)
 end
 
 local function write_selection(user_data_dir, model_id)
-  local root = tostring(user_data_dir or "."):gsub("/+$", "")
-  local directory = root .. "/tiger"
+  local paths = runtime.paths({ user_data_dir = user_data_dir })
+  local directory = paths.config
   -- The deployment creates this directory, but creating it here also makes
   -- the command work on a fresh user data directory.
   local shell_directory = directory:gsub("'", "'\\''")
   pcall(os.execute, "mkdir -p '" .. shell_directory .. "'")
-  local path = directory .. "/model-selection"
+  local path = paths.selection
   local temporary = path .. ".tmp-" .. tostring(os.time()) .. "-" .. tostring(math.random(1000000))
   local file = io.open(temporary, "w")
   if not file then return false end

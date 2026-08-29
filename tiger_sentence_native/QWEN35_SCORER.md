@@ -1,7 +1,8 @@
 # 魔虎大模型本地候选评分服务
 
-该 scorer 属于独立的魔虎大模型 addon；标准 Mohu 的 Octagram 配置保持不变，
-本方案不启用 Octagram。模型权重按 `models/*.manifest` 单独下载，绝不随 addon 分发。
+该 scorer 由 `mohu-llm-zrm-latest.zip` / `mohu-llm-flypy-latest.zip` 完整方案包共享；标准 Mohu
+的 Octagram 配置保持不变，本方案不启用 Octagram。模型权重按 `models/*.manifest`
+单独下载，绝不随方案包分发。
 
 `qwen35_scorer.py` 是一个与 Rime 宿主隔离的 MLX 服务。它使用
 `mlx-lm==0.31.3` 加载 Qwen3.5 VLM checkpoint 的文本分支，对最多二十个完整候选
@@ -29,8 +30,8 @@ health 响应中的 `model.text_branch` 区分加载的是哪个分支。
 默认模型仍是 Qwen3.5。也可以显式使用同一模型的本地 4-bit checkpoint：
 
 ```text
-/Users/fuchuxuan/Library/Rime/tiger/models/Qwen3.5-0.8B-MLX-4bit
-/Users/fuchuxuan/Library/Rime/tiger/models/Qwen3-0.6B-4bit
+/Users/fuchuxuan/Library/Rime/mohu_llm/models/Qwen3.5-0.8B-MLX-4bit
+/Users/fuchuxuan/Library/Rime/mohu_llm/models/Qwen3-0.6B-4bit
 ```
 
 服务启动后 health 响应中的 `model.revision` 优先使用 `--revision`，否则从
@@ -41,20 +42,25 @@ launcher/profile 中固定的 `model.sha256` 为准。该值是 checkpoint 目�
 
 ## 启动
 
+启动 scorer 需要 Python 3 和 `mlx-lm==0.31.3`。安装器会优先使用方案包内的
+`runtime/.venv/bin/python`，否则使用 `MOHU_QWEN35_PYTHON` 或系统 `python3`；若检测
+不到 `mlx_lm` 会明确提示安装命令并保持输入法的 n-gram 候选可用，不会假报 scorer
+已启动。推荐先执行 `uv pip install mlx-lm==0.31.3`，再重新双击方案安装器。
+
 先确保模型目录已完整下载，然后在仓库根目录执行（Unix socket 路径必须显式
 指定；服务不会默认占用一个可预测的全局 socket）：
 
 ```bash
 uv run --with mlx-lm==0.31.3 \
   python -m tiger_sentence_native.qwen35_scorer \
-  --model /Users/fuchuxuan/Library/Rime/tiger/models/Qwen3.5-0.8B-MLX-4bit \
-  --socket /Users/fuchuxuan/Library/Rime/tiger/qwen35-reranker.sock \
+  --model /Users/fuchuxuan/Library/Rime/mohu_llm/models/Qwen3.5-0.8B-MLX-4bit \
+  --socket /Users/fuchuxuan/Library/Rime/mohu_llm/runtime/qwen35-reranker.sock \
   --idle-timeout 0 \
   --expected-sha256 8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8
 ```
 
 正式部署使用同目录的 `run_qwen35_scorer.command`，由 supervisor 启动；它会把
-模型目录、socket 和 Python runtime 固定在同一个 `tiger/` 目录，并在指纹不符时
+模型目录、socket 和 Python runtime 固定在 `mohu_llm/` 目录，并在指纹不符时
 拒绝加载。launcher 读取 `scorer_models.zsh` 中注册的模型表，按同目录
 `model-selection` 文件记录的选择（文件不存在时缺省为 `qwen35-0.8b`）加载对应
 checkpoint；文件内容未知或模型缺失时会持续重试，不会静默切换到其他模型。
@@ -65,8 +71,8 @@ checkpoint；文件内容未知或模型缺失时会持续重试，不会静默�
 `switch_qwen_model.command` 仅用于自动化部署：
 
 ```bash
-~/Library/Rime/tiger/switch_qwen_model.command qwen3-0.6b   # 切到 Qwen3-0.6B
-~/Library/Rime/tiger/switch_qwen_model.command qwen35-0.8b  # 切回 Qwen3.5
+~/Library/Rime/mohu_llm/runtime/switch_qwen_model.command qwen3-0.6b   # 切到 Qwen3-0.6B
+~/Library/Rime/mohu_llm/runtime/switch_qwen_model.command qwen35-0.8b  # 切回 Qwen3.5
 ```
 
 切换是 fail-closed 的：脚本或 `/model` 菜单先按注册表校验目标 checkpoint 的内容
@@ -120,7 +126,7 @@ token 数。`candidate_mode=complete` 在候选包含 context 前缀时会先按
 ```bash
 uv run --with mlx-lm==0.31.3 \
   python -m tiger_sentence_native.qwen35_bench \
-  --model /Users/fuchuxuan/Library/Rime/tiger/models/Qwen3.5-0.8B-MLX-4bit \
+  --model /Users/fuchuxuan/Library/Rime/mohu_llm/models/Qwen3.5-0.8B-MLX-4bit \
   --warmup 10 --runs 200 \
   --candidate 中华人民共和国 --candidate 中国人民
 ```

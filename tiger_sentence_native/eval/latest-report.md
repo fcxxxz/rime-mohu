@@ -74,8 +74,8 @@ adjustments happen before the top-20 cap.
 ## Deployment
 
 The user-scoped LaunchAgent `com.fuchuxuan.mohu.qwen35-reranker` is loaded and
-running from `~/Library/Rime/tiger/run_qwen35_scorer.command`. The socket is
-`~/Library/Rime/tiger/qwen35-reranker.sock` with mode `0600`; its parent is
+running from `~/Library/Rime/mohu_llm/runtime/run_qwen35_scorer.command`. The socket is
+`~/Library/Rime/mohu_llm/runtime/qwen35-reranker.sock` with mode `0600`; its parent is
 `0700`. The latest health response reports `ready=true`, `mlx-lm==0.31.3`,
 and the fingerprint above. Repository and live Lua/scorer/dylib checksums are
 verified during deployment. The final isolated Squirrel probe returns

@@ -76,8 +76,15 @@ def write_filtered_default(scheme: str, destination: Path) -> None:
         keepends=True
     ):
         match = SCHEMA_LINE.match(line.rstrip("\r\n"))
-        if match and match.group(2).startswith(f"mohu_{other_scheme}"):
-            continue
+        if match:
+            schema_id = match.group(2)
+            # Standard zrm/flypy packages must remain independent from the
+            # optional native/Qwen packages.  Remove both LLM schemes from
+            # their copied default.yaml; installers register them separately.
+            if schema_id.startswith("mohu_llm_"):
+                continue
+            if schema_id.startswith(f"mohu_{other_scheme}"):
+                continue
         output_lines.append(line)
     destination.write_text("".join(output_lines), encoding="utf-8")
 

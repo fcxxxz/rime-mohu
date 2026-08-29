@@ -1,4 +1,4 @@
-# 魔虎大模型整句引擎（tigerengine）
+# 魔虎大模型整句引擎（mohu_llm）
 
 魔虎自然码完整输入流水线 + 虎码辅助码的原生整句输入。语言模型与解码在
 纯 C 动态库中执行，原生 Lua 层只负责候选输出与可选神经重排，不主动改写或提交组合；
@@ -12,7 +12,7 @@
 - `tigerengine_lua.cc` — Lua 5.4 绑定（luaopen_tigerengine）
 - `nativetest.cc` — 基准对拍工具（与 Lua 版逐键比对输出）
 - `../lua/mohu_tiger_sentence.lua` 位置见用户目录 — Rime Lua 薄壳
-- `mohu_tiger_sentence.schema.yaml` — 方案
+- `mohu_llm_zrm.schema.yaml` / `mohu_llm_flypy.schema.yaml` — 自然码与小鹤完整方案
 
 ## 构建
 
@@ -25,23 +25,29 @@
 部署（用户目录）：
 
     # 使用独立 addon；标准方案包仍由 make dist 生成。
-    make llm-dist LLM_DESTDIR=/tmp/mohu-llm-dist \
-      TIGER_NGRAM=/Users/fuchuxuan/Library/Rime/tiger/sentence-ngram-mobile.bin
+    make mohu-llm-zrm-dist MOHU_LLM_ZRM_DESTDIR=/tmp/mohu-llm-zrm \
+      TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin
 
-发布包的普通用户不需要执行上面的构建命令：解压 `llm-dist` 后，双击
-`install_mohu_llm.command` 即可安装。安装器会把 addon 文件复制到
-`~/Library/Rime/`，在方案列表中注册 `魔虎大模型`，并重新加载 Squirrel；它会合并
-`default.custom.yaml`，不会覆盖已有的 `default.custom.yaml`，重复运行也是安全的。
+发布包的普通用户不需要执行上面的构建命令：从 GitHub Release 下载
+`mohu-llm-zrm-latest.zip` 或 `mohu-llm-flypy-latest.zip` 后，双击对应的
+`install_mohu_llm_*.command` 即可安装。
+安装器会把文件复制到 `~/Library/Rime/mohu_llm/`，只注册所选方案并重新加载
+Squirrel；它会合并 `default.custom.yaml`，不会覆盖已有配置，重复运行也是安全的。
 
-addon 需要 `sentence-ngram-mobile.bin` 和
-`mohu_tiger.lexicon.txt`；ngram 不在仓库中，使用 `TIGER_NGRAM` 指向现有文件。
-Qwen 权重也不随 addon 分发，必须按 `models/*.manifest` 中的 registry path
-单独下载到 `tiger/models/`，并校验大小与 SHA-256。
+Qwen 模型重排还需要 Python 3 和 `mlx-lm==0.31.3`。安装器会自动检查 `mlx_lm`；
+如果本机没有，会明确提示执行 `uv pip install mlx-lm==0.31.3`，输入法仍保留
+n-gram 候选，不会假报模型服务已启动。
+
+自然码包需要 `data/zrm/mohu_llm_zrm.lexicon.txt`，小鹤包需要
+`data/flypy/mohu_llm_flypy.lexicon.txt`；两个包都包含共享的
+`data/sentence-ngram-mobile.bin`。
+Qwen 权重也不随方案分发，必须按 `models/*.manifest` 中的 registry path
+单独下载到 `mohu_llm/models/`，并校验大小与 SHA-256。
 
 Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安装到
 `~/Library/Rime/lua/rocks`（模块会自动加入该目录的 `package.path/cpath`）。
-`run_qwen35_scorer.command` 由 launchd 常驻运行，Unix socket 与模型位于同一 `tiger/`
-目录；没有 scorer、模型指纹不符或响应超时都会自动回到三元原序。
+`run_qwen35_scorer.command` 由 launchd 常驻运行，Unix socket 位于
+`mohu_llm/runtime/`；没有 scorer、模型指纹不符或响应超时都会自动回到三元原序。
 
 ## 码表格式
 
@@ -59,7 +65,7 @@ Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安�
 
 ## 配置（schema 的 tiger/ 节）
 
-- `engine_lib` / `model` / `lexicon`：路径覆盖，默认用户目录 `tiger/` 下同名文件
+- `engine_lib` / `model` / `lexicon`：路径覆盖，默认用户目录 `mohu_llm/` 下同名文件
 - `beam`：束宽（默认 200）
 - `all_ranks`：>4 键时全部档位竞争（默认 true）
 - `initial_quality`：原生候选质量（默认 50）。固顶候选为 100，默认 smart 候选为 5

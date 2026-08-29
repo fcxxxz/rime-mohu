@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     return 5;
   }
   if (neural_mode)
-    rime->set_option(session, "mohu_tiger_sentence_neural_rerank", 1);
+    rime->set_option(session, "mohu_llm_model_rerank", 1);
 
   char line[256];
   while (fgets(line, sizeof(line), stdin)) {

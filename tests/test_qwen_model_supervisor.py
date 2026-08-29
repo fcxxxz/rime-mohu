@@ -73,13 +73,13 @@ while True:
 def make_fixture() -> tuple[tempfile.TemporaryDirectory, Path, Path]:
     temp = tempfile.TemporaryDirectory()
     root = Path(temp.name)
-    native = root / "tiger"
-    native.mkdir()
+    native = root / "mohu_llm" / "runtime"
+    native.mkdir(parents=True)
     shutil.copy2(NATIVE / "run_qwen35_scorer.command", native / "run_qwen35_scorer.command")
     shutil.copy2(NATIVE / "scorer_models.zsh", native / "scorer_models.zsh")
     (native / "qwen35_scorer.py").write_text("# unused by fake runtime\n", encoding="utf-8")
     for model in ("Qwen3.5-0.8B-MLX-4bit", "Qwen3-0.6B-4bit"):
-        (native / "models" / model).mkdir(parents=True)
+        (native.parent / "models" / model).mkdir(parents=True)
     fake_python = root / "fake-python"
     write_fake_python(fake_python)
     log = root / "events.log"
@@ -89,7 +89,7 @@ def make_fixture() -> tuple[tempfile.TemporaryDirectory, Path, Path]:
 def run_supervisor(native: Path, log: Path, selection: Path) -> subprocess.Popen[str]:
     env = os.environ.copy()
     env.update(
-        MOHU_QWEN35_PYTHON=str(native.parent / "fake-python"),
+        MOHU_QWEN35_PYTHON=str(native.parent.parent / "fake-python"),
         MOHU_SCORER_SELECTION_PATH=str(selection),
         MOHU_SCORER_POLL_INTERVAL="0.05",
         MOHU_QWEN35_TEST_LOG=str(log),
@@ -108,7 +108,8 @@ def run_supervisor(native: Path, log: Path, selection: Path) -> subprocess.Popen
 def test_missing_selection_defaults_to_qwen35_without_fallback() -> None:
     temp, native, log = make_fixture()
     try:
-        selection = native / "model-selection"
+        selection = native.parent / "config" / "model-selection"
+        selection.parent.mkdir(parents=True, exist_ok=True)
         process = run_supervisor(native, log, selection)
         wait_for(log, lambda value: "Qwen3.5-0.8B-MLX-4bit" in value)
         process.send_signal(signal.SIGTERM)
@@ -121,7 +122,8 @@ def test_missing_selection_defaults_to_qwen35_without_fallback() -> None:
 def test_selection_change_stops_old_scorer_before_starting_new_one() -> None:
     temp, native, log = make_fixture()
     try:
-        selection = native / "model-selection"
+        selection = native.parent / "config" / "model-selection"
+        selection.parent.mkdir(parents=True, exist_ok=True)
         selection.write_text("qwen35-0.8b\n", encoding="utf-8")
         process = run_supervisor(native, log, selection)
         wait_for(log, lambda value: "start:" in value and "Qwen3.5-0.8B-MLX-4bit" in value)
@@ -143,7 +145,8 @@ def test_selection_change_stops_old_scorer_before_starting_new_one() -> None:
 def test_unknown_selection_is_retried_without_starting_registered_fallback() -> None:
     temp, native, log = make_fixture()
     try:
-        selection = native / "model-selection"
+        selection = native.parent / "config" / "model-selection"
+        selection.parent.mkdir(parents=True, exist_ok=True)
         selection.write_text("not-registered\n", encoding="utf-8")
         process = run_supervisor(native, log, selection)
         time.sleep(0.25)

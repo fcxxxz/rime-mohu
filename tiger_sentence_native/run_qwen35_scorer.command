@@ -1,12 +1,18 @@
 #!/bin/zsh
 # User-scoped supervisor for the local Qwen scorer. The supervisor owns one
-# Python child at a time and reloads it when tiger/model-selection changes.
+# Python child at a time and reloads it when mohu_llm/config/model-selection changes.
 set -euo pipefail
 
 script_dir="${0:A:h}"
-python_bin="${MOHU_QWEN35_PYTHON:-$script_dir/.venv/bin/python}"
+python_bin="${MOHU_QWEN35_PYTHON:-}"
+if [[ -z "$python_bin" && -x "$script_dir/.venv/bin/python" ]]; then
+  python_bin="$script_dir/.venv/bin/python"
+fi
+if [[ -z "$python_bin" ]]; then
+  python_bin="$(command -v python3 2>/dev/null || true)"
+fi
 socket_path="${MOHU_QWEN35_SOCKET:-$script_dir/qwen35-reranker.sock}"
-selection_path="${MOHU_SCORER_SELECTION_PATH:-$script_dir/model-selection}"
+selection_path="${MOHU_SCORER_SELECTION_PATH:-$script_dir/../config/model-selection}"
 poll_interval="${MOHU_SCORER_POLL_INTERVAL:-2}"
 
 if [[ ! "$poll_interval" == <->(|.<->) || "$poll_interval" == 0 ]]; then

@@ -18,7 +18,7 @@ end
 rime_api = { get_user_data_dir = function() return "/tmp/socket-recovery" end }
 local reranker = require("mohu_tiger_reranker")
 
-local context = { options = { mohu_tiger_sentence_neural_rerank = true } }
+local context = { options = { mohu_llm_model_rerank = true } }
 function context:get_option(name) return self.options[name] or false end
 local values = {
   ["tiger/rerank_socket"] = "/tmp/socket-recovery.sock",

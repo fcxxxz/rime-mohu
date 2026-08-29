@@ -2,18 +2,8 @@
 -- Same layout as mohu_tiger_reranker_profile.lua; only the model identity
 -- differs.  Fusion parameters are inherited from the Qwen3.5 profile and
 -- have not been recalibrated for this checkpoint yet.
-local function user_data_dir()
-  local api = rawget(_G, "rime_api")
-  if api and type(api.get_user_data_dir) == "function" then
-    local ok, value = pcall(api.get_user_data_dir)
-    if ok and type(value) == "string" and value ~= "" then
-      return (value:gsub("/+$", ""))
-    end
-  end
-  return "."
-end
-
-local model_root = user_data_dir() .. "/tiger/models/Qwen3-0.6B-4bit"
+local runtime = require("mohu_llm_runtime")
+local model_root = runtime.paths().models .. "/Qwen3-0.6B-4bit"
 
 return {
   schema = 1,

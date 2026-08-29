@@ -37,7 +37,13 @@ fi
 
 model_dir="$script_dir/${SCORER_MODEL_DIR[$selection]}"
 expected_sha="${SCORER_MODEL_SHA[$selection]}"
-python_bin="${MOHU_QWEN35_PYTHON:-$script_dir/.venv/bin/python}"
+python_bin="${MOHU_QWEN35_PYTHON:-}"
+if [[ -z "$python_bin" && -x "$script_dir/.venv/bin/python" ]]; then
+  python_bin="$script_dir/.venv/bin/python"
+fi
+if [[ -z "$python_bin" ]]; then
+  python_bin="$(command -v python3 2>/dev/null || true)"
+fi
 
 if [[ ! -d "$model_dir" ]]; then
   print -u2 "model directory is missing: $model_dir"
@@ -64,7 +70,8 @@ if [[ "$actual_sha" != "$expected_sha" ]]; then
 fi
 
 profile_source="$script_dir/${SCORER_MODEL_PROFILE[$selection]}"
-lua_dir="$HOME/Library/Rime/lua"
+lua_root="${MOHU_RIME_DIR:-$HOME/Library/Rime}"
+lua_dir="$lua_root/lua"
 if [[ ! -f "$profile_source" ]]; then
   print -u2 "profile variant is missing: $profile_source"
   exit 1

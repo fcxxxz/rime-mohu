@@ -3,11 +3,11 @@
 # The SHA-256 values are the content fingerprints computed by
 # qwen35_scorer.compute_model_fingerprint and enforced at load time.
 SCORER_DEFAULT_MODEL="qwen35-0.8b"
-SCORER_SELECTION_FILE="model-selection"
+SCORER_SELECTION_FILE="../config/model-selection"
 typeset -A SCORER_MODEL_DIR SCORER_MODEL_SHA SCORER_MODEL_PROFILE
 SCORER_MODEL_DIR=(
-  [qwen35-0.8b]="models/Qwen3.5-0.8B-MLX-4bit"
-  [qwen3-0.6b]="models/Qwen3-0.6B-4bit"
+  [qwen35-0.8b]="../models/Qwen3.5-0.8B-MLX-4bit"
+  [qwen3-0.6b]="../models/Qwen3-0.6B-4bit"
 )
 SCORER_MODEL_SHA=(
   [qwen35-0.8b]="8b1fc914a940d611e13ba1880ffdae553deb4504a0a6299256ac19470fc591b8"

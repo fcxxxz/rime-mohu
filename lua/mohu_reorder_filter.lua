@@ -42,7 +42,10 @@
 -- 必须与 mohu_express_translator v0.5.0 以上版本联用。
 
 local Top = {}
-local native_sentence_type = "mohu_tiger_sentence"
+local native_sentence_types = {
+    mohu_llm_zrm = true,
+    mohu_llm_flypy = true,
+}
 local native_independent_min_length = 5
 
 function Top.init(env)
@@ -93,7 +96,7 @@ function Top.func(t_input, env)
     for cand in t_input:iter() do
         if cand:get_genuine().type == "punct" then
             yield(cand)
-        elseif cand:get_genuine().type == native_sentence_type then
+        elseif native_sentence_types[cand:get_genuine().type] then
             table.insert(ctx.native_list, cand)
         elseif ctx.phase == kDone then
             ctx.lexicon_texts[cand.text] = true

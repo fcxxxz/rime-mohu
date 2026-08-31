@@ -103,8 +103,14 @@ end
 local function log_once(key, message)
   if state.log_seen[key] then return end
   state.log_seen[key] = true
-  if log and type(log.error) == "function" then
-    pcall(log.error, "mohu_tiger_reranker: " .. tostring(message))
+  -- Tiger weasel builds register `log` as a plain function; indexing it
+  -- would raise, so branch on type before touching fields.
+  if type(log) == "table" then
+    if type(log.error) == "function" then
+      pcall(log.error, "mohu_tiger_reranker: " .. tostring(message))
+    end
+  elseif type(log) == "function" then
+    pcall(log, "mohu_tiger_reranker: " .. tostring(message))
   end
 end
 

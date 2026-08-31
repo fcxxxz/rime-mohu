@@ -94,11 +94,16 @@ jobs:
       - name: Build tigerengine.dll
         shell: bash
         run: |
-          g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
+          g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ -static \
             -I tiger_sentence_native -I lua-5.4.6/src \
             tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
             lua-5.4.6/src/lua54.dll -o libtigerengine.dll
           objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
+          # Weasel loads the engine from the user directory, where the OS
+          # loader never looks for mingw runtime DLLs: only KERNEL32.dll and
+          # lua54.dll may remain as dynamic imports.
+          objdump -p libtigerengine.dll | grep "DLL Name" | tee engine-deps.txt
+          ! grep -Ei 'libwinpthread|libgcc|libstdc' engine-deps.txt
 
       - name: Smoke test engine with v5 model
         shell: bash

@@ -23,6 +23,19 @@ local M = {}
 local runtime = require("mohu_llm_runtime")
 local personal_lexicon = require("mohu_personal_lexicon")
 
+-- librime-lua builds differ in how they expose logging: most ship a `log`
+-- table, but some Tiger weasel builds register `log` as a plain function.
+-- Indexing a function value raises, so never touch fields before type checks.
+local function log_error(message)
+  if type(log) == "table" then
+    if type(log.error) == "function" then
+      pcall(log.error, message)
+    end
+  elseif type(log) == "function" then
+    pcall(log, message)
+  end
+end
+
 -- Neural reranking is optional.  Keep the native sentence decoder usable on
 -- installations that do not deploy the companion Lua module/profile.
 local reranker
@@ -104,18 +117,14 @@ local function report_engine_error(message)
   engine_error = message
   if not engine_error_logged then
     engine_error_logged = true
-    if log and log.error then
-      log.error("mohu_tiger_sentence: " .. message)
-    end
+    log_error("mohu_tiger_sentence: " .. message)
   end
 end
 
 local function report_decode_output_error(message)
   if decode_output_error_logged then return end
   decode_output_error_logged = true
-  if log and log.error then
-    pcall(log.error, "mohu_tiger_sentence: " .. message)
-  end
+  log_error("mohu_tiger_sentence: " .. message)
 end
 
 local function config_string(cfg, key)
@@ -191,14 +200,22 @@ local function ensure_engine(env)
     if engine_signature == signature then return engine_handle end
     if not engine_config_error_logged then
       engine_config_error_logged = true
-      if log and log.error then
-        pcall(log.error, "mohu_tiger_sentence: native engine configuration changed; reload required")
-      end
+      log_error("mohu_tiger_sentence: native engine configuration changed; reload required")
     end
     return nil
   end
   if engine_error then return nil end
 
+  -- The Windows loader does not search the engine DLL's own directory for its
+  -- dependencies.  Preload every runtime-side dependency by absolute path
+  -- first; modules already mapped into the process satisfy imports by name.
+  -- lua54.dll is always required; libwinpthread-1.dll only exists for mingw
+  -- builds that link the pthread runtime dynamically, and its preload is
+  -- silent no-op when the file is absent (fully static builds).
+  if lib:sub(-4):lower() == ".dll" then
+    pcall(package.loadlib, paths.runtime .. "/lua54.dll", "*")
+    pcall(package.loadlib, paths.runtime .. "/libwinpthread-1.dll", "*")
+  end
   local load_ok, loader, err = pcall(package.loadlib, lib, "luaopen_tigerengine")
   if not load_ok then
     report_engine_error("loadlib failed: " .. tostring(loader))
@@ -248,8 +265,8 @@ local function refresh_personal_lexicon(env)
   end
   local _, payload = personal_lexicon.snapshot(memory, { limit = limit })
   local ok, err = pcall(tigerengine.set_personal_lexicon, engine_handle, payload)
-  if not ok and log and log.error then
-    log.error("mohu_sentence: personal lexicon update failed: " .. tostring(err))
+  if not ok then
+    log_error("mohu_sentence: personal lexicon update failed: " .. tostring(err))
   end
 end
 

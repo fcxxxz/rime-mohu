@@ -263,6 +263,7 @@ test: dist mohu_llm_lexicons
 	lua tests/mohu_candidate_manager_test.lua
 	lua tests/mohu_candidate_manager_config_test.lua
 	lua tests/mohu_tiger_sentence_native_test.lua
+	lua tests/mohu_tiger_log_compat_test.lua
 	lua tests/mohu_personal_lexicon_test.lua
 	lua tests/mohu_llm_path_test.lua
 	lua tests/mohu_llm_schema_split_test.lua

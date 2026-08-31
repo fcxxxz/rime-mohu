@@ -38,10 +38,16 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef _WIN32
+// windows.h 定义 min/max 宏会破坏 std::min/std::max，必须先声明 NOMINMAX。
+#define NOMINMAX
+#include <windows.h>
+#else
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 
 #include "tigerengine.h"
 
@@ -102,7 +108,40 @@ inline double logsumexp(double a, double b) {
 struct MappedFile {
   uint8_t* data = nullptr;
   size_t size = 0;
+#ifdef _WIN32
+  HANDLE mapping = nullptr;
+#endif
   bool open(const char* path) {
+#ifdef _WIN32
+    HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+      set_error("cannot open %s", path);
+      return false;
+    }
+    LARGE_INTEGER file_size;
+    if (!GetFileSizeEx(file, &file_size) || file_size.QuadPart <= 0) {
+      set_error("cannot stat %s", path);
+      CloseHandle(file);
+      return false;
+    }
+    size = (size_t)file_size.QuadPart;
+    mapping = CreateFileMappingA(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
+    CloseHandle(file);
+    if (mapping == nullptr) {
+      set_error("cannot mmap %s", path);
+      return false;
+    }
+    void* view = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0);
+    if (view == nullptr) {
+      CloseHandle(mapping);
+      mapping = nullptr;
+      set_error("cannot mmap %s", path);
+      return false;
+    }
+    data = (uint8_t*)view;
+    return true;
+#else
     int fd = ::open(path, O_RDONLY);
     if (fd < 0) { set_error("cannot open %s", path); return false; }
     struct stat st;
@@ -115,8 +154,16 @@ struct MappedFile {
     if (p == MAP_FAILED) { set_error("cannot mmap %s", path); return false; }
     data = (uint8_t*)p;
     return true;
+#endif
   }
+#ifdef _WIN32
+  ~MappedFile() {
+    if (data) UnmapViewOfFile(data);
+    if (mapping) CloseHandle(mapping);
+  }
+#else
   ~MappedFile() { if (data) munmap(data, size); }
+#endif
 };
 
 const uint64_t kShift = 2097152;  // 2^21，容一个 Unicode 码点

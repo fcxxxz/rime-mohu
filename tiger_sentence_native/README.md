@@ -21,14 +21,18 @@
 这是独立的魔虎自定义候选模型 addon。完整方案包按输入法分别提供：
 
 - `mohu-llm-zrm-latest.zip`：魔虎大模型·自然码，只安装自然码方案；
-- `mohu-llm-flypy-latest.zip`：魔虎大模型·小鹤，只安装小鹤方案；
-- `rime-mohu-llm-runtime-latest.zip`：共享动态库、原生整句模型和 Qwen 模型清单，不能单独提供输入方案。
+- `mohu-llm-flypy-latest.zip`：魔虎大模型·小鹤，只安装小鹤方案。
 
 如果只使用自然码，下载并解压 `mohu-llm-zrm-latest.zip`，双击其中的
 `install_mohu_llm_zrm.command`，然后在 Squirrel 菜单执行“重新部署”。安装器只注册
 `mohu_llm_zrm`，保留已有用户词库和用户配置，重复运行安全。
 
-`data/sentence-ngram-mobile.bin` 是原生整句候选模型。官方 Release 使用固定哈希的 TCSKNM02 字符级模型；本地 v5 也属于 TCSKNM02，可在构建时通过 `TIGER_NGRAM` 指定。它与可选的 Qwen 神经重排模型是两层不同组件：Qwen 不随 zip 分发，也不替换包内的原生模型。Qwen3 0.6B 4-bit 下载后放到
+Windows（小狼毫）：解压同一 zip，右键 `install_mohu_llm_windows.ps1` 选择
+“使用 PowerShell 运行”，然后在小狼毫中“重新部署”。Windows 版内置
+`runtime/libtigerengine.dll` 与 `lua54.dll`，仅提供原生 v5 候选，不含 Qwen 重排；
+引擎加载失败时方案自动回退普通魔虎候选。
+
+`data/sentence-ngram-mobile.bin` 是原生整句候选模型（魔虎自定义 v5，TCSKNM02 字符级）。官方包由 CI 从 Release 资产 `mohu-sentence-ngram-v5.bin` 校验 SHA-256 后打包；本地构建可用 `TIGER_NGRAM` 覆盖。它与可选的 Qwen 神经重排模型是两层不同组件：Qwen 不随 zip 分发，也不替换包内的原生模型。Qwen3 0.6B 4-bit 下载后放到
 `~/Library/Rime/mohu_llm/models/Qwen3-0.6B-4bit`，再在输入法中输入 `/model` 选择
 `Qwen3-0.6B-4bit`，或运行：
 

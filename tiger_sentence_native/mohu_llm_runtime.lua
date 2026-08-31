@@ -18,6 +18,15 @@ local function join(root, suffix)
   return root .. "/" .. suffix
 end
 
+-- Windows (Weasel) ships libtigerengine.dll; macOS ships libtigerengine.dylib.
+local function engine_library(runtime)
+  local dll = join(runtime, "libtigerengine.dll")
+  if package.config:sub(1, 1) == "\\" then return dll end
+  local handle = io.open(dll, "r")
+  if handle then handle:close() return dll end
+  return join(runtime, "libtigerengine.dylib")
+end
+
 function M.user_data_dir()
   return user_data_dir()
 end
@@ -36,7 +45,7 @@ function M.paths(options)
     data = data,
     models = models,
     config = config,
-    engine = join(runtime, "libtigerengine.dylib"),
+    engine = engine_library(runtime),
     ngram = join(data, "sentence-ngram-mobile.bin"),
     lexicon = join(data, "zrm/mohu_llm_zrm.lexicon.txt"),
     lexicons = {

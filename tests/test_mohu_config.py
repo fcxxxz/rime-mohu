@@ -230,7 +230,7 @@ class MohuConfigTest(unittest.TestCase):
 
     def test_native_dist_contains_complete_scorer_runtime(self) -> None:
         makefile = read("Makefile")
-        for target in ("mohu-llm-runtime-dist", "mohu-llm-zrm-dist", "mohu-llm-flypy-dist"):
+        for target in ("mohu-llm-zrm-dist", "mohu-llm-flypy-dist"):
             self.assertIn(f"{target}:", makefile)
         self.assertNotIn("mohu_tiger_sentence.schema.yaml", makefile)
         self.assertNotIn("install_mohu_llm.command", makefile)
@@ -257,7 +257,6 @@ class MohuConfigTest(unittest.TestCase):
             "TIGER_NGRAM ?= tiger_sentence_native/sentence-ngram-mobile.bin",
             makefile,
         )
-        self.assertIn("mohu-llm-runtime-dist:", makefile)
         self.assertIn("mohu-llm-zrm-dist:", makefile)
         self.assertIn("mohu-llm-flypy-dist:", makefile)
         self.assertIn("MOHU_LLM_ZRM_DESTDIR", makefile)

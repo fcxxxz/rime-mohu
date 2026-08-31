@@ -26,6 +26,14 @@ assert(custom.root == "/tmp/example-rime/mohu_llm")
 assert(custom.models == "/tmp/example-rime/mohu_llm/models")
 assert(custom.selection == "/tmp/example-rime/mohu_llm/config/model-selection")
 
+-- When a Windows engine is present alongside the dylib it must win, so the
+-- same deployed tree serves both platforms.
+os.execute("mkdir -p " .. root .. "/mohu_llm/runtime")
+local dll = io.open(root .. "/mohu_llm/runtime/libtigerengine.dll", "w")
+dll:write("stub")
+dll:close()
+assert(runtime.paths().engine == root .. "/mohu_llm/runtime/libtigerengine.dll")
+
 for _, name in ipairs({
   "mohu_llm_runtime.lua",
   "mohu_tiger_sentence.lua",

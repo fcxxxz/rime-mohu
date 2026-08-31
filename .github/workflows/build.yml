@@ -74,7 +74,75 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  build-engine-win:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Lua 5.4.6 host and runtime
+        shell: bash
+        run: |
+          curl -sL -o lua546.tar.gz https://www.lua.org/ftp/lua-5.4.6.tar.gz
+          tar xzf lua546.tar.gz
+          cd lua-5.4.6/src
+          core="lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c"
+          lib="lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c"
+          gcc -O2 -shared -DLUA_BUILD_AS_DLL $core $lib -o lua54.dll
+          gcc -O2 -DLUA_BUILD_AS_DLL lua.c -o lua.exe lua54.dll
+
+      - name: Build tigerengine.dll
+        shell: bash
+        run: |
+          g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
+            -I tiger_sentence_native -I lua-5.4.6/src \
+            tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
+            lua-5.4.6/src/lua54.dll -o libtigerengine.dll
+          objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
+
+      - name: Smoke test engine with v5 model
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NGRAM_SHA256: c2c148ea7aae3336b745f3f63551c6cf35cc6d0a892078e4bd4e7568a2dfee34
+        run: |
+          gh release download latest --repo "$GITHUB_REPOSITORY" \
+            --pattern mohu-sentence-ngram-v5.bin --dir .
+          printf '%s  %s\n' "$NGRAM_SHA256" mohu-sentence-ngram-v5.bin | sha256sum -c -
+          g++ -O2 -std=c++17 -I tiger_sentence_native \
+            tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc -o nativetest.exe
+          printf '1\tufqyhfmimh\n' > keys.txt
+          ./nativetest.exe mohu-sentence-ngram-v5.bin \
+            tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt keys.txt out.txt
+          grep -q '迷茫' out.txt
+          cp lua-5.4.6/src/lua54.dll ./lua54.dll
+          cat > smoke.lua <<'LUA'
+          local dll, model, lexicon = ...
+          local engine = assert(package.loadlib(dll, "luaopen_tigerengine"))()
+          local handle = engine.create(model, lexicon, 200, 1)
+          assert(type(handle) == "number")
+          local out = engine.decode(handle, "ufqyhfmimh", false)
+          assert(type(out) == "string" and out:find("迷茫", 1, true), tostring(out))
+          engine.free(handle)
+          print("WINDOWS_LUA_SMOKE_OK")
+          LUA
+          ./lua-5.4.6/src/lua.exe smoke.lua "$PWD/libtigerengine.dll" \
+            "$PWD/mohu-sentence-ngram-v5.bin" \
+            "$PWD/tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt"
+
+      - name: Upload Windows engine
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mohu-tigerengine-win64-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            libtigerengine.dll
+            lua54.dll
+          if-no-files-found: error
+          retention-days: 14
+
   build-llm:
+    needs: build-engine-win
     runs-on: macos-14
     steps:
       - name: Check out repository
@@ -91,26 +159,38 @@ jobs:
 
       - name: Download and verify custom n-gram
         env:
-          # The public build uses the pinned TCSKNM02 candidate model. Local
-          # MHKNM01/v5 artifacts are injected through TIGER_NGRAM when building
-          # a package manually; they are not silently mislabeled as this CI input.
-          NGRAM_URL: https://github.com/wallleap/huma-rime-config/releases/download/LTS/sentence-ngram-mobile.bin
-          NGRAM_SHA256: e3953f8f1526b871eb81fe887a8ae4a6edf79edffd33e388b95e2915adadb2d3
+          # The custom Mohu v5 model ships as a release asset; CI downloads
+          # and verifies it by SHA-256 so official packages carry the same
+          # model as the locally validated build. gh + GITHUB_TOKEN keeps
+          # working after the repository turns private.
+          GH_TOKEN: ${{ github.token }}
+          NGRAM_SHA256: c2c148ea7aae3336b745f3f63551c6cf35cc6d0a892078e4bd4e7568a2dfee34
         run: |
-          curl --fail --location --retry 5 --retry-all-errors \
-            "$NGRAM_URL" -o sentence-ngram-mobile.bin
-          printf '%s  %s\n' "$NGRAM_SHA256" sentence-ngram-mobile.bin | shasum -a 256 -c -
+          gh release download latest --repo "$GITHUB_REPOSITORY" \
+            --pattern mohu-sentence-ngram-v5.bin --dir .
+          printf '%s  %s\n' "$NGRAM_SHA256" mohu-sentence-ngram-v5.bin | shasum -a 256 -c -
+
+      - name: Download Windows engine artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: mohu-tigerengine-win64-${{ github.run_number }}-${{ github.run_attempt }}
+          path: engine-win64
 
       - name: Build complete LLM scheme packages
         run: |
           uname -m
-          make mohu-llm-runtime-dist mohu-llm-zrm-dist mohu-llm-flypy-dist \
-            MOHU_LLM_RUNTIME_DESTDIR=dist-mohu-llm-runtime \
+          dll="engine-win64/libtigerengine.dll"
+          if [ ! -f "$dll" ]; then dll=""; fi
+          make mohu-llm-zrm-dist mohu-llm-flypy-dist \
             MOHU_LLM_ZRM_DESTDIR=dist-mohu-llm-zrm \
             MOHU_LLM_FLYPY_DESTDIR=dist-mohu-llm-flypy \
-            TIGER_NGRAM="$GITHUB_WORKSPACE/sentence-ngram-mobile.bin"
+            TIGER_NGRAM="$GITHUB_WORKSPACE/mohu-sentence-ngram-v5.bin" \
+            TIGER_ENGINE_DLL="$dll"
 
       - name: Validate complete LLM packages
+        env:
+          NGRAM_SHA256: c2c148ea7aae3336b745f3f63551c6cf35cc6d0a892078e4bd4e7568a2dfee34
         run: |
           test -f dist-mohu-llm-zrm/mohu_llm_zrm.schema.yaml
           test -f dist-mohu-llm-flypy/mohu_llm_flypy.schema.yaml
@@ -124,6 +204,12 @@ jobs:
           test -x dist-mohu-llm-flypy/install_mohu_llm_flypy.command
           test -f dist-mohu-llm-zrm/data/zrm/mohu_llm_zrm.lexicon.txt
           test -f dist-mohu-llm-flypy/data/flypy/mohu_llm_flypy.lexicon.txt
+          test -f dist-mohu-llm-zrm/data/sentence-ngram-mobile.bin
+          test -f dist-mohu-llm-flypy/data/sentence-ngram-mobile.bin
+          for archive in dist-mohu-llm-zrm dist-mohu-llm-flypy; do
+            printf '%s  %s\n' \
+              "$NGRAM_SHA256" "$archive/data/sentence-ngram-mobile.bin" | shasum -a 256 -c -
+          done
           test -f dist-mohu-llm-zrm/package.json
           test -f dist-mohu-llm-flypy/package.json
           test -f dist-mohu-llm-zrm/lua/mohu_llm_runtime.lua
@@ -134,16 +220,7 @@ jobs:
           codesign --verify --strict dist-mohu-llm-flypy/runtime/libtigerengine.dylib
           test ! -e dist-mohu-llm-zrm/mohu_llm_flypy.schema.yaml
           test ! -e dist-mohu-llm-flypy/mohu_llm_zrm.schema.yaml
-          test -z "$(find dist-mohu-llm-runtime dist-mohu-llm-zrm dist-mohu-llm-flypy -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print)"
-
-      - name: Upload LLM runtime
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: rime-mohu-llm-runtime-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist-mohu-llm-runtime/
-          if-no-files-found: error
-          retention-days: 14
+          test -z "$(find dist-mohu-llm-zrm dist-mohu-llm-flypy -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print)"
 
       - name: Upload Natural-code LLM distribution
         if: github.event_name != 'pull_request'
@@ -186,12 +263,6 @@ jobs:
           name: rime-mohu-flypy-${{ github.run_number }}-${{ github.run_attempt }}
           path: dist-flypy
 
-      - name: Download LLM runtime
-        uses: actions/download-artifact@v4
-        with:
-          name: rime-mohu-llm-runtime-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist-mohu-llm-runtime
-
       - name: Download Natural-code LLM distribution
         uses: actions/download-artifact@v4
         with:
@@ -210,15 +281,13 @@ jobs:
           # restore it before zipping; 启动.command must stay executable.
           chmod +x dist-zrm/Rime皮肤编辑器/启动.command
           chmod +x dist-flypy/Rime皮肤编辑器/启动.command
-          chmod +x dist-mohu-llm-runtime/runtime/*.command
           chmod +x dist-mohu-llm-zrm/install_mohu_llm_*.command dist-mohu-llm-zrm/runtime/*.command
           chmod +x dist-mohu-llm-flypy/install_mohu_llm_*.command dist-mohu-llm-flypy/runtime/*.command
           (cd dist-zrm && zip -r ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -r ../rime-mohu-flypy-latest.zip .)
-          (cd dist-mohu-llm-runtime && zip -r ../rime-mohu-llm-runtime-latest.zip .)
           (cd dist-mohu-llm-zrm && zip -r ../mohu-llm-zrm-latest.zip .)
           (cd dist-mohu-llm-flypy && zip -r ../mohu-llm-flypy-latest.zip .)
-          for archive in rime-mohu-llm-runtime-latest.zip mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip; do
+          for archive in mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip; do
             test -z "$(unzip -Z1 "$archive" | awk '/^\// || /(^|\/)\.\.($|\/)/ { print; exit }')"
           done
 
@@ -249,18 +318,22 @@ jobs:
             '<!-- run-number: '"$GITHUB_RUN_NUMBER"' -->' \
             '## 魔虎大模型方案' \
             '' \
-            '本次 Release 提供魔虎自定义候选模型 addon，原生整句模型随方案包放在 `data/sentence-ngram-mobile.bin`。官方构建使用固定哈希的 TCSKNM02 原生候选模型；Qwen 仅作为可选的神经重排层，不会替换原生模型。' \
-            '' \
             '### 下载与安装' \
             '' \
-            '- 只用自然码：下载 `mohu-llm-zrm-latest.zip`，解压后双击 `install_mohu_llm_zrm.command`，然后在 Squirrel 菜单执行“重新部署”。' \
-            '- 小鹤用户：下载 `mohu-llm-flypy-latest.zip`，解压后双击 `install_mohu_llm_flypy.command`，然后重新部署。' \
-            '- `rime-mohu-llm-runtime-latest.zip` 是共享运行时包，不能代替具体方案包单独使用。' \
-            '- 安装器只注册所选方案，并保留已有 Rime 用户词库；自然码和小鹤包不要同时安装到同一个方案选择列表，除非确实需要两套方案。' \
+            '- 自然码：下载 `mohu-llm-zrm-latest.zip`，解压后双击 `install_mohu_llm_zrm.command`，然后在 Squirrel 菜单执行“重新部署”。' \
+            '- 小鹤：下载 `mohu-llm-flypy-latest.zip`，解压后双击 `install_mohu_llm_flypy.command`，然后重新部署。' \
+            '- Windows（小狼毫）：解压同一 zip，右键 `install_mohu_llm_windows.ps1` 选择“使用 PowerShell 运行”，然后在小狼毫中“重新部署”；Windows 版仅提供原生 v5 候选，不含 Qwen 重排。' \
+            '- 安装器只注册所选方案，保留已有用户词库和配置，可重复运行。' \
             '' \
-            '### Qwen 模型切换' \
+            '### 模型' \
             '' \
-            'Qwen 权重不随 Release 分发。按包内 `models/*.manifest` 下载并校验后，放到 `~/Library/Rime/mohu_llm/models/` 对应目录。输入 `/model` 选择已安装模型，或运行 `runtime/switch_qwen_model.command qwen3-0.6b` 切换到 Qwen3 0.6B；切换后重新部署 Squirrel。模型缺失、校验失败或服务不可用时，输入法会继续使用包内的魔虎自定义候选模型。' \
+            '包内 `data/sentence-ngram-mobile.bin` 为魔虎自定义候选模型 v5（SHA-256 `c2c148ea`），负责整句候选生成与排序。' \
+            '' \
+            '### Qwen 神经重排（可选）' \
+            '' \
+            'Qwen 权重不随包分发。按 `models/*.manifest` 下载到 `~/Library/Rime/mohu_llm/models/` 后，输入 `/model` 选择，或执行 `runtime/switch_qwen_model.command qwen3-0.6b`，然后重新部署。未安装 Qwen 时整句输入直接使用 v5。' \
+            '' \
+            '注：v5 训练语料含 LCCC（CC-BY-NC-SA）与 TNews/THUCNews（研究用途），仅限个人使用，请勿再分发。' \
             '' \
             '### 本次构建' \
             '' \
@@ -285,10 +358,10 @@ jobs:
               --latest
             gh release delete-asset latest rime-mohu-latest.zip --yes 2>/dev/null || true
             gh release delete-asset latest rime-mohu-llm-latest.zip --yes 2>/dev/null || true
+            gh release delete-asset latest rime-mohu-llm-runtime-latest.zip --yes 2>/dev/null || true
             gh release upload latest \
               rime-mohu-zrm-latest.zip \
               rime-mohu-flypy-latest.zip \
-              rime-mohu-llm-runtime-latest.zip \
               mohu-llm-zrm-latest.zip \
               mohu-llm-flypy-latest.zip \
               --clobber
@@ -296,7 +369,6 @@ jobs:
             gh release create latest \
               rime-mohu-zrm-latest.zip \
               rime-mohu-flypy-latest.zip \
-              rime-mohu-llm-runtime-latest.zip \
               mohu-llm-zrm-latest.zip \
               mohu-llm-flypy-latest.zip \
               --verify-tag \

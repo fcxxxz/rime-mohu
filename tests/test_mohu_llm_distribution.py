@@ -13,7 +13,6 @@ class MohuLlmDistributionTest(unittest.TestCase):
     def run_make(self, target: str, destination: Path, ngram: Path) -> None:
         env = os.environ.copy()
         env["TIGER_NGRAM"] = str(ngram)
-        env["MOHU_LLM_RUNTIME_DESTDIR"] = str(destination)
         env["MOHU_LLM_ZRM_DESTDIR"] = str(destination)
         env["MOHU_LLM_FLYPY_DESTDIR"] = str(destination)
         result = subprocess.run(
@@ -53,19 +52,28 @@ class MohuLlmDistributionTest(unittest.TestCase):
                 self.assertIn(f'"schema_id": "mohu_llm_{scheme}"', payload)
                 self.assertNotIn(f'"schema_id": "mohu_llm_{other}"', payload)
 
-    def test_runtime_package_contains_only_shared_runtime(self) -> None:
+    def test_windows_engine_is_staged_when_provided(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             ngram = root / "sentence-ngram-mobile.bin"
             ngram.write_bytes(b"test-ngram")
-            destination = root / "runtime"
-            self.run_make("mohu-llm-runtime-dist", destination, ngram)
-            self.assertTrue((destination / "runtime").is_dir())
-            self.assertTrue((destination / "data" / "sentence-ngram-mobile.bin").is_file())
-            self.assertTrue((destination / "models" / "qwen35-0.8b.manifest").is_file())
-            self.assertFalse(any(destination.glob("mohu_llm_*.schema.yaml")))
-            self.assertFalse((destination / "data" / "zrm").exists())
-            self.assertFalse((destination / "data" / "flypy").exists())
+            engine_dir = root / "engine-win64"
+            engine_dir.mkdir()
+            (engine_dir / "libtigerengine.dll").write_bytes(b"test-dll")
+            (engine_dir / "lua54.dll").write_bytes(b"test-lua")
+            destination = root / "zrm"
+            env = os.environ.copy()
+            env["TIGER_NGRAM"] = str(ngram)
+            env["MOHU_LLM_ZRM_DESTDIR"] = str(destination)
+            env["TIGER_ENGINE_DLL"] = str(engine_dir / "libtigerengine.dll")
+            result = subprocess.run(
+                ["make", "mohu-llm-zrm-dist"], cwd=ROOT, env=env, text=True,
+                capture_output=True, check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertTrue((destination / "runtime" / "libtigerengine.dll").is_file())
+            self.assertTrue((destination / "runtime" / "lua54.dll").is_file())
+            self.assertTrue((destination / "install_mohu_llm_windows.ps1").is_file())
 
     def test_reusing_custom_destination_does_not_leak_other_scheme(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

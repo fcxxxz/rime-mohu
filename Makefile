@@ -2,10 +2,12 @@ DESTDIR ?= $(abspath ./dist)
 ZRM_DESTDIR ?= $(abspath ./dist-zrm)
 FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
 LLM_DESTDIR ?= $(abspath ./dist-llm)
-MOHU_LLM_RUNTIME_DESTDIR ?= $(abspath ./dist-mohu-llm-runtime)
 MOHU_LLM_ZRM_DESTDIR ?= $(abspath ./dist-mohu-llm-zrm)
 MOHU_LLM_FLYPY_DESTDIR ?= $(abspath ./dist-mohu-llm-flypy)
 TIGER_NGRAM ?= tiger_sentence_native/sentence-ngram-mobile.bin
+# Optional Windows engine (libtigerengine.dll); staged by CI from the
+# windows-builder job. Local macOS-only builds may leave it unset.
+TIGER_ENGINE_DLL ?=
 
 quick: classics tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
@@ -101,7 +103,7 @@ clean:
 	rm -f mohu.mdd mohu.mdx
 	rm -rf dist
 	rm -rf dist-zrm dist-flypy
-	rm -rf dist-mohu-llm-runtime dist-mohu-llm-zrm dist-mohu-llm-flypy
+	rm -rf dist-mohu-llm-zrm dist-mohu-llm-flypy
 	rm -f $(chars_output)
 	rm -f $(tiger_rank_output)
 	rm -f dazhu*.txt
@@ -168,31 +170,6 @@ dist-zrm: quick
 dist-flypy: quick
 	uv run tools/build_split_dist.py flypy "$(FLYPY_DESTDIR)"
 
-# Shared runtime package. Scheme packages below stage the same files plus one
-# schema and one scheme-specific lexicon.
-mohu-llm-runtime-dist: tigerengine-native
-	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
-	runtime_dest="$(abspath $(MOHU_LLM_RUNTIME_DESTDIR))"; repo_root="$(abspath .)"; runtime_base="$${runtime_dest##*/}"; \
-	case "$$runtime_dest" in /|"$$HOME"|"$$repo_root") echo "unsafe runtime destination" >&2; exit 1;; esac; \
-	case "$$runtime_base" in tmp|private|Users|home|Library|Rime) echo "unsafe runtime destination" >&2; exit 1;; esac; \
-	case "$$repo_root/" in "$$runtime_dest/"*) echo "unsafe runtime destination" >&2; exit 1;; esac
-	rm -rf "$(MOHU_LLM_RUNTIME_DESTDIR)"
-	mkdir -p "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime" "$(MOHU_LLM_RUNTIME_DESTDIR)/data" "$(MOHU_LLM_RUNTIME_DESTDIR)/models"
-	install -m 0755 tiger_sentence_native/libtigerengine.dylib "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/libtigerengine.dylib"
-	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/libtigerengine.dylib"; fi
-	install -m 0644 tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/"
-	install -m 0755 tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/switch_qwen_model.command "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/"
-	install -m 0644 "$(TIGER_NGRAM)" "$(MOHU_LLM_RUNTIME_DESTDIR)/data/sentence-ngram-mobile.bin"
-	install -m 0644 tiger_sentence_native/models/*.manifest tiger_sentence_native/models/README.md "$(MOHU_LLM_RUNTIME_DESTDIR)/models/"
-	test -f "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/libtigerengine.dylib"
-	test -x "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/run_qwen35_scorer.command"
-	test -x "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/install_qwen35_launch_agent.command"
-	test -x "$(MOHU_LLM_RUNTIME_DESTDIR)/runtime/switch_qwen_model.command"
-	test -f "$(MOHU_LLM_RUNTIME_DESTDIR)/data/sentence-ngram-mobile.bin"
-	test -f "$(MOHU_LLM_RUNTIME_DESTDIR)/models/qwen35-0.8b.manifest"
-	test -f "$(MOHU_LLM_RUNTIME_DESTDIR)/models/qwen3-0.6b.manifest"
-	! find "$(MOHU_LLM_RUNTIME_DESTDIR)" -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print -quit | grep -q .
-
 mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	zrm_dest="$(abspath $(MOHU_LLM_ZRM_DESTDIR))"; repo_root="$(abspath .)"; zrm_base="$${zrm_dest##*/}"; \
@@ -204,11 +181,16 @@ mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	cp -a lua/. "$(MOHU_LLM_ZRM_DESTDIR)/lua/"
 	install -m 0644 mohu_llm_zrm.schema.yaml "$(MOHU_LLM_ZRM_DESTDIR)/mohu_llm_zrm.schema.yaml"
 	install -m 0755 tiger_sentence_native/install_mohu_llm_zrm.command tiger_sentence_native/install_mohu_llm_scheme.command "$(MOHU_LLM_ZRM_DESTDIR)/"
+	install -m 0644 tiger_sentence_native/install_mohu_llm_windows.ps1 "$(MOHU_LLM_ZRM_DESTDIR)/"
 	install -m 0644 tiger_sentence_native/mohu_llm_zrm.package.json "$(MOHU_LLM_ZRM_DESTDIR)/package.json"
 	install -m 0644 tiger_sentence_native/mohu_llm_runtime.lua tiger_sentence_native/mohu_sentence.lua tiger_sentence_native/mohu_tiger_sentence.lua lua/mohu_personal_lexicon.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(MOHU_LLM_ZRM_DESTDIR)/lua/"
 	install -m 0755 tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/switch_qwen_model.command "$(MOHU_LLM_ZRM_DESTDIR)/runtime/"
 	install -m 0644 tiger_sentence_native/libtigerengine.dylib tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_ZRM_DESTDIR)/runtime/"
 	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_ZRM_DESTDIR)/runtime/libtigerengine.dylib"; fi
+	if [ -n "$(TIGER_ENGINE_DLL)" ]; then \
+		install -m 0644 "$(TIGER_ENGINE_DLL)" "$(MOHU_LLM_ZRM_DESTDIR)/runtime/libtigerengine.dll"; \
+		if [ -f "$(dir $(TIGER_ENGINE_DLL))lua54.dll" ]; then install -m 0644 "$(dir $(TIGER_ENGINE_DLL))lua54.dll" "$(MOHU_LLM_ZRM_DESTDIR)/runtime/lua54.dll"; fi; \
+	fi
 	install -m 0644 "$(TIGER_NGRAM)" "$(MOHU_LLM_ZRM_DESTDIR)/data/sentence-ngram-mobile.bin"
 	install -m 0644 tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt "$(MOHU_LLM_ZRM_DESTDIR)/data/zrm/"
 	install -m 0644 tiger_sentence_native/models/*.manifest tiger_sentence_native/models/README.md "$(MOHU_LLM_ZRM_DESTDIR)/models/"
@@ -231,11 +213,16 @@ mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
 	cp -a lua/. "$(MOHU_LLM_FLYPY_DESTDIR)/lua/"
 	install -m 0644 mohu_llm_flypy.schema.yaml "$(MOHU_LLM_FLYPY_DESTDIR)/mohu_llm_flypy.schema.yaml"
 	install -m 0755 tiger_sentence_native/install_mohu_llm_flypy.command tiger_sentence_native/install_mohu_llm_scheme.command "$(MOHU_LLM_FLYPY_DESTDIR)/"
+	install -m 0644 tiger_sentence_native/install_mohu_llm_windows.ps1 "$(MOHU_LLM_FLYPY_DESTDIR)/"
 	install -m 0644 tiger_sentence_native/mohu_llm_flypy.package.json "$(MOHU_LLM_FLYPY_DESTDIR)/package.json"
 	install -m 0644 tiger_sentence_native/mohu_llm_runtime.lua tiger_sentence_native/mohu_sentence.lua tiger_sentence_native/mohu_tiger_sentence.lua lua/mohu_personal_lexicon.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(MOHU_LLM_FLYPY_DESTDIR)/lua/"
 	install -m 0755 tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/switch_qwen_model.command "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/"
 	install -m 0644 tiger_sentence_native/libtigerengine.dylib tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/"
 	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/libtigerengine.dylib"; fi
+	if [ -n "$(TIGER_ENGINE_DLL)" ]; then \
+		install -m 0644 "$(TIGER_ENGINE_DLL)" "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/libtigerengine.dll"; \
+		if [ -f "$(dir $(TIGER_ENGINE_DLL))lua54.dll" ]; then install -m 0644 "$(dir $(TIGER_ENGINE_DLL))lua54.dll" "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/lua54.dll"; fi; \
+	fi
 	install -m 0644 "$(TIGER_NGRAM)" "$(MOHU_LLM_FLYPY_DESTDIR)/data/sentence-ngram-mobile.bin"
 	install -m 0644 tiger_sentence_native/data/flypy/mohu_llm_flypy.lexicon.txt "$(MOHU_LLM_FLYPY_DESTDIR)/data/flypy/"
 	install -m 0644 tiger_sentence_native/models/*.manifest tiger_sentence_native/models/README.md "$(MOHU_LLM_FLYPY_DESTDIR)/models/"
@@ -312,4 +299,4 @@ test: dist mohu_llm_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_llm_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native mohu-llm-runtime-dist mohu-llm-zrm-dist mohu-llm-flypy-dist tigerengine-safety tigerengine-lua-safety dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict mohu_llm_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native mohu-llm-zrm-dist mohu-llm-flypy-dist tigerengine-safety tigerengine-lua-safety dist-zrm dist-flypy test lint-python

@@ -225,6 +225,71 @@ std::string write_nonfinite_model() {
   return write_file("-nonfinite.bin", model);
 }
 
+std::vector<uint8_t> make_mhknm01_model() {
+  std::vector<uint8_t> model(120, 0);
+  std::memcpy(model.data(), "MHKNM01", 7);
+  put_u32(&model, 8, 1);       // version
+  put_u32(&model, 12, 120);    // header size
+  put_u32(&model, 24, 3);      // vocabulary count
+  put_u32(&model, 28, 1);      // embedding dimension
+  put_u32(&model, 32, 64);     // index stride
+  put_u64(&model, 40, 120);    // vocabulary offset
+
+  for (const char* word : {"<s>", "</s>", "甲"}) {
+    const uint32_t length = static_cast<uint32_t>(std::strlen(word));
+    append_value<uint32_t>(&model, length);
+    model.insert(model.end(), word, word + length);
+  }
+  const uint64_t uni_offset = model.size();
+  for (float probability : {0.1f, 0.2f, 0.9f}) append_value<float>(&model, probability);
+  const uint64_t empty_section = model.size();
+  const uint64_t embedding_offset = model.size();
+  for (int index = 0; index < 3; ++index) {
+    model.push_back(index == 2 ? 1 : 0);
+    append_value<float>(&model, 1.0f);
+  }
+  put_u64(&model, 16, model.size());  // file size
+  put_u64(&model, 48, uni_offset);
+  put_u64(&model, 56, empty_section);  // bigram blocks
+  put_u64(&model, 64, empty_section);  // bigram index
+  put_u64(&model, 72, empty_section);  // trigram blocks
+  put_u64(&model, 80, embedding_offset);
+  return model;
+}
+
+std::string write_mhknm01_model() {
+  return write_file("-mhknm01.bin", make_mhknm01_model());
+}
+
+std::string write_mhknm01_lexicon() {
+  const std::string path = "/tmp/mohu-tiger-safety-" + std::to_string(getpid()) +
+                           "-mhknm01.txt";
+  std::ofstream stream(path, std::ios::trunc);
+  assert(stream);
+  stream << "ab\t甲\t1\t1\n";
+  assert(stream);
+  return path;
+}
+
+void expect_mhknm01_loads_and_decodes() {
+  const std::string model_path = write_mhknm01_model();
+  const std::string lexicon_path = write_mhknm01_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+  char output[4096] = {};
+  assert(tiger_decode_full(handle, "ab", 0, output, sizeof(output)) == 1);
+  assert(std::strstr(output, "\n甲\t") != nullptr);
+  tiger_engine_free(handle);
+}
+
+void expect_malformed_mhknm01_rejected() {
+  std::vector<uint8_t> model = make_mhknm01_model();
+  put_u64(&model, 80, model.size() + 1);  // embedding section outside the file
+  expect_create_rejects_without_signal(model, "mhknm01-bad-embedding");
+}
+
 void expect_final_output_limit() {
   const std::string model_path = write_many_candidate_model();
   const std::string lexicon_path = write_many_candidate_lexicon();
@@ -567,6 +632,69 @@ void expect_final_candidates_include_pathmaps() {
   tiger_engine_free(handle);
 }
 
+std::string write_personal_overlay_lexicon() {
+  const std::string path = "/tmp/mohu-tiger-safety-" + std::to_string(getpid()) +
+                           "-personal-overlay.txt";
+  std::ofstream stream(path, std::ios::trunc);
+  assert(stream);
+  stream << "ab\t甲\t1\t1\n";
+  stream << "cd\t丁\t1\t1\n";
+  stream << "ef\t戊\t1\t1\n";
+  assert(stream);
+  return path;
+}
+
+void expect_personal_overlay_replacement_and_internal_edges() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+
+  char output[8192] = {};
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t8\n") == 0);
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  // Replacing the snapshot with an empty payload must remove the old edge and
+  // invalidate any cached result built with the previous overlay.
+  assert(tiger_engine_set_personal_lexicon(handle, "") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") == nullptr);
+
+  // Malformed rows are ignored without making a valid snapshot update fail.
+  assert(tiger_engine_set_personal_lexicon(handle,
+                                           "odd\trow\t1\nxy\t坏\\xff\t2\n") == 0);
+  assert(tiger_engine_set_personal_lexicon(handle, nullptr) < 0);
+  tiger_engine_free(handle);
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t1\n") < 0);
+}
+
+void expect_personal_overlay_large_payload_is_accepted() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_single_candidate_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+  std::string large_payload;
+  for (int index = 0; index < 6000; ++index) {
+    std::string text;
+    for (int repeat = 0; repeat < 62; ++repeat) text += "\xe7\x94\xb2";
+    text += std::to_string(index);
+    large_payload += "abcd\t" + text + "\t1\n";
+  }
+  assert(large_payload.size() > (1u << 20));
+  assert(tiger_engine_set_personal_lexicon(handle, large_payload.c_str()) == 0);
+  tiger_engine_free(handle);
+}
+
 void expect_stale_engine_handles_are_rejected() {
   const std::string model_path = write_many_candidate_model();
   const std::string lexicon_path = write_single_candidate_lexicon();
@@ -581,6 +709,7 @@ void expect_stale_engine_handles_are_rejected() {
   char output[4096] = {};
   double elapsed = 0;
   assert(tiger_decode(first, "a", 0, output, sizeof(output), &elapsed) < 0);
+  assert(tiger_engine_set_personal_lexicon(first, "ab\t甲乙\t1\n") < 0);
   tiger_engine_free(second);
 }
 
@@ -616,6 +745,8 @@ void expect_null_api_rejected() {
       _exit(1);
     if (tiger_decode_full(handle, "a", 0, nullptr, sizeof(output)) >= 0)
       _exit(1);
+    if (tiger_engine_set_personal_lexicon(handle, nullptr) >= 0)
+      _exit(1);
     tiger_engine_free(handle);
     _exit(0);
   }
@@ -624,6 +755,7 @@ void expect_null_api_rejected() {
   assert(WIFEXITED(status));
   assert(WEXITSTATUS(status) == 0);
 }
+
 
 }  // namespace
 
@@ -635,12 +767,16 @@ int main() {
   expect_raw_length_rejected();
   expect_overflowing_lexicon_numbers_use_defaults();
   expect_nonfinite_model_rejected();
+  expect_mhknm01_loads_and_decodes();
+  expect_malformed_mhknm01_rejected();
   expect_multi_key_input_rejects_single_key_edges();
   expect_incremental_extension_matches_full_rebuild();
   expect_intermediate_prune_propagates_truncation();
   expect_invalid_input_clears_incremental_state();
   expect_include_early_is_part_of_decode_cache_identity();
   expect_final_candidates_include_pathmaps();
+  expect_personal_overlay_replacement_and_internal_edges();
+  expect_personal_overlay_large_payload_is_accepted();
   expect_stale_engine_handles_are_rejected();
   expect_null_api_rejected();
 

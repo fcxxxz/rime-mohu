@@ -532,12 +532,374 @@ struct KnModel {
   }
 };
 
+// ---------------------------------------------------------------- 词级模型
+
+// MHKNM01：词级 Kneser-Ney 三元 + 词义向量（魔虎音形词场景深度定制）。
+// 与字符级 TCSKNM 的区别：解码按「码表词条」整词转移打分，与魔虎
+// script/beam 的组词过程同构；未观察搭配由词义向量余弦回退，解决
+// 「申请很迷茫 vs 神情很迷茫」这类频率无法裁决的同音竞争。
+struct WordModel {
+  MappedFile file;
+  std::vector<std::string> vocab;            // id -> 词（0=<s> 1=</s>）
+  std::unordered_map<std::string, uint32_t> ids;
+  std::vector<float> uni;                    // id -> P(w)
+  uint32_t emb_dim = 0;
+  std::vector<int8_t> emb_q;                 // id*dim 量化向量
+  std::vector<float> emb_scale;              // id -> scale
+  std::vector<float> emb_norm;               // id -> 单位化范数缓存
+  double beta_sem = 0.8;
+
+  int64_t index_stride = 64;
+  const uint8_t *bi_index = nullptr, *tri_index = nullptr;
+  int64_t bi_index_count = 0, tri_index_count = 0;
+  uint64_t bi_start = 0, bi_end = 0, tri_start = 0, tri_end = 0;
+  int64_t bi_ctx_total = 0, tri_ctx_total = 0;
+  FifoCache<uint64_t> cache_b{16384}, cache_t{16384};
+
+  static uint32_t rd_u32_at(const uint8_t* p) { return rd_u32(p); }
+  static uint64_t rd_u64_at(const uint8_t* p) { return rd_u64(p); }
+  static float rd_f32_at(const uint8_t* p) { return rd_f32(p); }
+
+  bool range_ok(uint64_t offset, uint64_t length) const {
+    return offset <= file.size && length <= static_cast<uint64_t>(file.size) - offset;
+  }
+
+  const uint8_t* page_base(const uint8_t* index_data, int64_t index_count,
+                           int64_t page, uint64_t sstart, uint64_t send) const {
+    if (!index_data || page < 0 || page >= index_count || sstart > send ||
+        send > file.size || index_data < file.data ||
+        index_data > file.data + file.size ||
+        static_cast<uint64_t>(page) > UINT64_MAX / 16)
+      return nullptr;
+    const uint64_t index_offset = static_cast<uint64_t>(index_data - file.data);
+    const uint64_t at = static_cast<uint64_t>(page) * 16;
+    if (index_offset + at + 16 > file.size) return nullptr;
+    const uint64_t offset = rd_u64(index_data + at + 8);
+    if (offset < sstart || offset >= send || offset + 16 > send) return nullptr;
+    return file.data + offset;
+  }
+
+  int64_t find_page(const uint8_t* index_data, int64_t index_count,
+                    uint64_t key) const {
+    int64_t lo = 0, hi = index_count;
+    while (lo < hi) {
+      int64_t mid = lo + (hi - lo) / 2;
+      if (rd_u64(index_data + mid * 16) <= key) lo = mid + 1; else hi = mid;
+    }
+    return lo - 1;
+  }
+
+  struct Ctx { double lambda_; double prob; bool observed; };
+
+  Ctx scan(const uint8_t* data, size_t position, int64_t count, double lambda_,
+           uint32_t target, uint64_t send) const {
+    if (!data || count <= 0) return {lambda_, 0.0, false};
+    const uint64_t base = (uint64_t)(data - file.data) + position;
+    if (base + (uint64_t)count * 8 > send) return {lambda_, 0.0, false};
+    int64_t lo = 0, hi = count;
+    while (lo < hi) {
+      int64_t mid = lo + (hi - lo) / 2;
+      if (rd_u32(data + position + mid * 8) < target) lo = mid + 1; else hi = mid;
+    }
+    if (lo < count) {
+      const uint8_t* at = data + position + lo * 8;
+      if (rd_u32(at) == target) return {lambda_, rd_f32(at + 4), true};
+    }
+    return {lambda_, 0.0, false};
+  }
+
+  Ctx lookup(bool trigram, uint64_t key, uint32_t target) {
+    FifoCache<uint64_t>& cache = trigram ? cache_t : cache_b;
+    const uint8_t* index_data = trigram ? tri_index : bi_index;
+    int64_t index_count = trigram ? tri_index_count : bi_index_count;
+    uint64_t sstart = trigram ? tri_start : bi_start;
+    uint64_t send = trigram ? tri_end : bi_end;
+    int64_t ctx_total = trigram ? tri_ctx_total : bi_ctx_total;
+    if (CtxCacheEntry* c = cache.lookup(key)) {
+      if (c->missing) return {1.0, 0.0, false};
+      const uint8_t* data =
+          page_base(index_data, index_count, c->page, sstart, send);
+      if (!data) return {1.0, 0.0, false};
+      return scan(data, c->successor_position, c->successor_count, c->lambda_,
+                  target, send);
+    }
+    int64_t page = find_page(index_data, index_count, key);
+    if (page < 0) {
+      cache.remember(key, {true, -1, 1.0, 0, 0});
+      return {1.0, 0.0, false};
+    }
+    const uint8_t* data = page_base(index_data, index_count, page, sstart, send);
+    if (!data) return {1.0, 0.0, false};
+    const uint64_t page_start = (uint64_t)page * (uint64_t)index_stride;
+    if (page_start >= (uint64_t)ctx_total) return {1.0, 0.0, false};
+    const int64_t remaining = (int64_t)std::min<uint64_t>(
+        (uint64_t)index_stride, (uint64_t)ctx_total - page_start);
+    size_t position = 0;
+    for (int64_t i = 0; i < remaining; ++i) {
+      uint64_t context_key = rd_u64(data + position);
+      double lambda_ = rd_f32(data + position + 8);
+      int32_t succ = rd_i32(data + position + 12);
+      if (succ < 0) return {1.0, 0.0, false};
+      position += 16;
+      if (context_key == key) {
+        cache.remember(key, {false, page, lambda_, succ, position});
+        return scan(data, position, succ, lambda_, target, send);
+      }
+      if (context_key > key) break;
+      position += (size_t)succ * 8;
+    }
+    cache.remember(key, {true, -1, 1.0, 0, 0});
+    return {1.0, 0.0, false};
+  }
+
+  double semantic(uint32_t w, uint32_t ctx_word) const {
+    if (emb_dim == 0 || w >= emb_norm.size() || ctx_word >= emb_norm.size())
+      return 0.0;
+    const int8_t* a = emb_q.data() + (size_t)w * emb_dim;
+    const int8_t* b = emb_q.data() + (size_t)ctx_word * emb_dim;
+    double dot = 0;
+    for (uint32_t k = 0; k < emb_dim; ++k) dot += (double)a[k] * (double)b[k];
+    // 量化还原：真实点积 = Σ(qa·qb)·scale_a·scale_b
+    dot *= (double)emb_scale[w] * (double)emb_scale[ctx_word];
+    double denom = emb_norm[w] * emb_norm[ctx_word];
+    if (denom <= 0) return 0.0;
+    double cos = dot / denom;
+    if (cos > 1.0) cos = 1.0;
+    if (cos < -1.0) cos = -1.0;
+    return cos;
+  }
+
+  double logp(uint32_t a, uint32_t b, uint32_t c) {
+    double u = c < uni.size() ? uni[c] : 1e-9;
+    double sem = semantic(c, b);
+    if (sem > 0) u *= std::exp(beta_sem * sem);
+    Ctx bi = lookup(false, (uint64_t)b, c);
+    if (!(u >= 0.0) || !(bi.prob >= 0.0) || !(bi.lambda_ >= 0.0))
+      return std::numeric_limits<double>::quiet_NaN();
+    double bigram = bi.prob + bi.lambda_ * u;
+    Ctx tri = lookup(true, ((uint64_t)a << 32) | b, c);
+    if (!(bigram >= 0.0) || !(tri.prob >= 0.0) || !(tri.lambda_ >= 0.0))
+      return std::numeric_limits<double>::quiet_NaN();
+    double p = tri.prob + tri.lambda_ * bigram;
+    if (!(p >= 0.0)) return std::numeric_limits<double>::quiet_NaN();
+    if (p < 1e-300) p = 1e-300;
+    return std::log(p);
+  }
+
+  bool load(const char* p) {
+    if (!file.open(p)) return false;
+    const uint8_t* d = file.data;
+    if (file.size < 120 || std::memcmp(d, "MHKNM01", 7) != 0) {
+      set_error("not an MHKNM01 model: %s", p);
+      return false;
+    }
+    size_t q = 8;
+    auto u32 = [&]() { uint32_t v = rd_u32(d + q); q += 4; return v; };
+    auto u64 = [&]() { uint64_t v = rd_u64(d + q); q += 8; return v; };
+    auto f32 = [&]() { float v = rd_f32(d + q); q += 4; return v; };
+    const uint32_t version = u32();
+    const uint32_t header_size = u32();
+    const uint64_t file_size = u64();
+    const uint32_t vocab_count = u32();
+    emb_dim = u32();
+    index_stride = u32();
+    (void)u32();  // flags
+    const uint64_t vocab_off = u64();
+    const uint64_t uni_off = u64();
+    const uint64_t bi_blocks_off = u64();
+    const uint64_t bi_index_off = u64();
+    const uint64_t tri_blocks_off = u64();
+    const uint64_t emb_off = u64();
+    const uint32_t bi_ctx_n = u32();
+    const uint32_t tri_ctx_n = u32();
+    const uint32_t bi_idx_n = u32();
+    const uint32_t tri_idx_n = u32();
+    beta_sem = f32();
+    if (version != 1 || header_size != 120 || file_size != file.size ||
+        emb_dim == 0 || emb_dim > 512 || vocab_count < 2 || index_stride == 0 ||
+        vocab_off < header_size || vocab_off > file.size || uni_off > file.size ||
+        bi_blocks_off > file.size || bi_index_off > file.size ||
+        tri_blocks_off > file.size || emb_off > file.size) {
+      set_error("invalid MHKNM01 header: %s", p);
+      return false;
+    }
+    if (static_cast<uint64_t>(vocab_count) > UINT64_MAX / 4) {
+      set_error("MHKNM01 unigram size overflow: %s", p);
+      return false;
+    }
+    const uint64_t uni_bytes = static_cast<uint64_t>(vocab_count) * 4;
+    if (!range_ok(uni_off, uni_bytes)) {
+      set_error("invalid MHKNM01 unigram range: %s", p);
+      return false;
+    }
+    // vocab
+    size_t pos = static_cast<size_t>(vocab_off);
+    vocab.clear();
+    vocab.reserve(vocab_count);
+    for (uint32_t i = 0; i < vocab_count; ++i) {
+      if (!range_ok(pos, 4)) { set_error("vocab truncated"); return false; }
+      uint32_t len = rd_u32(d + pos);
+      pos += 4;
+      if (!range_ok(pos, len)) { set_error("vocab entry truncated"); return false; }
+      vocab.emplace_back((const char*)(d + pos), len);
+      pos += len;
+    }
+    if (uni_off > bi_blocks_off || uni_bytes > bi_blocks_off - uni_off ||
+        static_cast<uint64_t>(pos) > uni_off ||
+        static_cast<uint64_t>(bi_idx_n) > UINT64_MAX / 16 ||
+        static_cast<uint64_t>(tri_idx_n) > UINT64_MAX / 16) {
+      set_error("invalid MHKNM01 vocabulary/unigram layout");
+      return false;
+    }
+    ids.clear();
+    ids.reserve(vocab.size() * 2);
+    for (uint32_t i = 0; i < vocab.size(); ++i) ids[vocab[i]] = i;
+    // unigram
+    uni.resize(vocab_count);
+    for (uint32_t i = 0; i < vocab_count; ++i) uni[i] = rd_f32(d + uni_off + i * 4);
+
+    if (static_cast<uint64_t>(bi_idx_n) > UINT64_MAX / 16 ||
+        static_cast<uint64_t>(tri_idx_n) > UINT64_MAX / 16) {
+      set_error("MHKNM01 index count overflow");
+      return false;
+    }
+    const uint64_t bi_index_bytes = static_cast<uint64_t>(bi_idx_n) * 16;
+    const uint64_t tri_index_bytes = static_cast<uint64_t>(tri_idx_n) * 16;
+    if (uni_off > bi_blocks_off ||
+        uni_bytes > bi_blocks_off - uni_off ||
+        bi_index_off < bi_blocks_off ||
+        bi_index_bytes > file.size - bi_index_off ||
+        bi_index_off > tri_blocks_off ||
+        bi_index_bytes > tri_blocks_off - bi_index_off ||
+        tri_blocks_off > emb_off ||
+        (tri_idx_n > 0 && tri_index_bytes > emb_off) ||
+        (tri_idx_n > 0 && emb_off - tri_index_bytes < tri_blocks_off)) {
+      set_error("invalid MHKNM01 section layout");
+      return false;
+    }
+    const uint64_t tri_index_off = emb_off - tri_index_bytes;
+    if (tri_index_off < tri_blocks_off ||
+        !range_ok(tri_index_off, tri_index_bytes) ||
+        emb_off < tri_index_off ||
+        tri_index_bytes != emb_off - tri_index_off) {
+      set_error("invalid MHKNM01 trigram index range");
+      return false;
+    }
+    const uint64_t emb_item_bytes = static_cast<uint64_t>(emb_dim) + 4;
+    if (static_cast<uint64_t>(vocab_count) > UINT64_MAX / emb_item_bytes) {
+      set_error("MHKNM01 embedding size overflow");
+      return false;
+    }
+    const uint64_t emb_bytes = static_cast<uint64_t>(vocab_count) * emb_item_bytes;
+    if (!range_ok(emb_off, emb_bytes) || emb_bytes != file.size - emb_off) {
+      set_error("emb truncated");
+      return false;
+    }
+    if (bi_ctx_n > static_cast<uint32_t>(INT64_MAX) ||
+        tri_ctx_n > static_cast<uint32_t>(INT64_MAX) ||
+        bi_idx_n > static_cast<uint32_t>(INT64_MAX) ||
+        tri_idx_n > static_cast<uint32_t>(INT64_MAX)) {
+      set_error("MHKNM01 count exceeds runtime limits");
+      return false;
+    }
+    auto validate_index = [&](uint64_t index_off, uint32_t count,
+                              uint64_t section_start, uint64_t section_end) {
+      uint64_t previous_key = 0;
+      bool have_previous = false;
+      for (uint32_t i = 0; i < count; ++i) {
+        const uint64_t entry = index_off + static_cast<uint64_t>(i) * 16;
+        const uint64_t key = rd_u64(d + entry);
+        const uint64_t page = rd_u64(d + entry + 8);
+        if ((have_previous && key < previous_key) ||
+            page < section_start || page >= section_end || !range_ok(page, 16)) return false;
+        previous_key = key;
+        have_previous = true;
+      }
+      return true;
+    };
+    if (!validate_index(bi_index_off, bi_idx_n, bi_blocks_off, tri_blocks_off) ||
+        !validate_index(tri_index_off, tri_idx_n, tri_blocks_off, emb_off)) {
+      set_error("MHKNM01 page index is outside section");
+      return false;
+    }
+    auto validate_pages = [&](uint64_t index_off, uint32_t index_count,
+                              uint32_t context_count, uint64_t section_end) {
+      for (uint32_t page = 0; page < index_count; ++page) {
+        const uint64_t entry = index_off + static_cast<uint64_t>(page) * 16;
+        const uint64_t page_offset = rd_u64(d + entry + 8);
+        const uint64_t consumed = static_cast<uint64_t>(page) * index_stride;
+        if (consumed >= context_count) continue;
+        const uint64_t records = std::min<uint64_t>(index_stride, context_count - consumed);
+        uint64_t position = page_offset;
+        for (uint64_t record = 0; record < records; ++record) {
+          if (position > section_end || section_end - position < 16) return false;
+          const int32_t successors = rd_i32(d + position + 12);
+          if (successors < 0 || static_cast<uint64_t>(successors) > UINT64_MAX / 8) return false;
+          position += 16;
+          const uint64_t successor_bytes = static_cast<uint64_t>(successors) * 8;
+          if (successor_bytes > section_end - position) return false;
+          position += successor_bytes;
+        }
+      }
+      return true;
+    };
+    if (!validate_pages(bi_index_off, bi_idx_n, bi_ctx_n, tri_blocks_off) ||
+        !validate_pages(tri_index_off, tri_idx_n, tri_ctx_n, emb_off)) {
+      set_error("MHKNM01 successor table is outside section");
+      return false;
+    }
+    bi_start = bi_blocks_off;
+    bi_end = bi_index_off;
+    bi_index = d + bi_index_off;
+    bi_index_count = bi_idx_n;
+    bi_ctx_total = bi_ctx_n;
+    tri_start = tri_blocks_off;
+    tri_end = tri_index_off;
+    tri_index = d + tri_index_off;
+    tri_index_count = tri_idx_n;
+    tri_ctx_total = tri_ctx_n;
+    if (getenv("MHDBG")) {
+      fprintf(stderr,
+              "[MHDBG] vocab=%zu dim=%u stride=%lld beta=%.2f uni[0]=%.3g "
+              "biB@%llu biI@%llu(%lld) triB@%llu triI@%llu(%lld) emb@%llu\n",
+              vocab.size(), emb_dim, (long long)index_stride, beta_sem,
+              uni.size() > 2 ? uni[2] : -1.0,
+              (unsigned long long)bi_blocks_off, (unsigned long long)bi_index_off,
+              (long long)bi_index_count, (unsigned long long)tri_blocks_off,
+              (unsigned long long)tri_index_off,
+              (long long)tri_index_count, (unsigned long long)emb_off);
+    }
+    // 词向量
+    if (static_cast<uint64_t>(vocab_count) > SIZE_MAX / emb_dim) {
+      set_error("MHKNM01 embedding allocation overflow");
+      return false;
+    }
+    emb_q.resize(static_cast<size_t>(vocab_count) * emb_dim);
+    emb_scale.resize(vocab_count);
+    emb_norm.resize(vocab_count);
+    for (uint32_t i = 0; i < vocab_count; ++i) {
+      const uint8_t* base = d + emb_off + static_cast<uint64_t>(i) * emb_item_bytes;
+      std::memcpy(emb_q.data() + static_cast<size_t>(i) * emb_dim, base, emb_dim);
+      emb_scale[i] = rd_f32(base + emb_dim);
+      double n2 = 0;
+      for (uint32_t k = 0; k < emb_dim; ++k) {
+        double v = (double)((const int8_t*)base)[k] * emb_scale[i];
+        n2 += v * v;
+      }
+      emb_norm[i] = std::sqrt(n2);
+    }
+    return true;
+  }
+};
+
 // ---------------------------------------------------------------- 码表
 
 struct LexEntry {
   std::string text;
   int rank;
   std::vector<uint32_t> chars;  // 预拆码点
+  bool personal = false;
+  double personal_boost = 0.0;
 };
 
 struct Lexicon {
@@ -547,6 +909,8 @@ struct Lexicon {
   std::unordered_map<std::string, int> freq_rank;        // text -> 名次
   int max_code_len = 1;
   bool has_multi_char_entries = false;
+  std::unordered_map<std::string, std::vector<LexEntry>> base_codes;
+  std::unordered_map<std::string, int> base_freq_rank;
 
   static std::string trim(const std::string& s) {
     size_t a = s.find_first_not_of(" \t\r\n");
@@ -613,7 +977,98 @@ struct Lexicon {
       for (size_t l = 1; l < code.size(); ++l)
         proper_prefixes.insert(code.substr(0, l));
     }
+    base_codes = codes;
+    base_freq_rank = freq_rank;
     return !codes.empty();
+  }
+
+  static bool valid_personal_row(const std::string& code, const std::string& text) {
+    if (code.size() < 4 || code.size() > 128 || text.empty() || text.size() > 192)
+      return false;
+    for (char c : code)
+      if (c < 'a' || c > 'z') return false;
+    for (size_t i = 0; i < text.size();) {
+      uint32_t cp = 0;
+      size_t n = 0;
+      utf8_next(text.data(), text.size(), i, &cp, &n);
+      if (n == 0 || cp == 0xFFFD || cp < 0x20 || cp == 0x7f) return false;
+      i += n;
+    }
+    return true;
+  }
+
+  void rebuild_metadata() {
+    lengths.clear();
+    proper_prefixes.clear();
+    max_code_len = 1;
+    has_multi_char_entries = false;
+    std::unordered_set<int> length_set;
+    for (const auto& kv : codes) {
+      const std::string& code = kv.first;
+      max_code_len = std::max(max_code_len, static_cast<int>(code.size()));
+      length_set.insert(static_cast<int>(code.size()));
+      for (size_t l = 1; l < code.size(); ++l)
+        proper_prefixes.insert(code.substr(0, l));
+      for (const auto& entry : kv.second)
+        if (entry.chars.size() != 1) has_multi_char_entries = true;
+    }
+    lengths.assign(length_set.begin(), length_set.end());
+    std::sort(lengths.begin(), lengths.end());
+  }
+
+  bool set_personal(const char* rows) {
+    if (!rows) return false;
+    const size_t payload_size = std::strlen(rows);
+    codes = base_codes;
+    freq_rank = base_freq_rank;
+    std::unordered_set<std::string> seen;
+    size_t start = 0;
+    while (start < payload_size) {
+      size_t end = start;
+      while (end < payload_size && rows[end] != '\n') ++end;
+      std::string line(rows + start, end - start);
+      start = end + (end < payload_size ? 1 : 0);
+      if (line.empty()) continue;
+      size_t a = line.find('\t');
+      size_t b = a == std::string::npos ? std::string::npos : line.find('\t', a + 1);
+      if (a == std::string::npos || b == std::string::npos || line.find('\t', b + 1) != std::string::npos)
+        continue;
+      std::string code = line.substr(0, a);
+      std::string text = line.substr(a + 1, b - a - 1);
+      int commits = Lexicon::parse_int(line.substr(b + 1), 0);
+      if (commits <= 0 || !valid_personal_row(code, text)) continue;
+      std::string key = code + "\t" + text;
+      if (!seen.insert(key).second) continue;
+      auto& entries = codes[code];
+      bool duplicate_static = false;
+      for (const auto& existing : entries) {
+        if (existing.text == text) {
+          duplicate_static = true;
+          break;
+        }
+      }
+      LexEntry entry;
+      entry.text = text;
+      entry.rank = 1;
+      entry.personal = true;
+      entry.personal_boost = std::min(3.0, std::log1p(static_cast<double>(commits)) * 0.35);
+      for (auto& ch : utf8_split(text)) {
+        uint32_t cp;
+        size_t n;
+        utf8_next(ch.data(), ch.size(), 0, &cp, &n);
+        entry.chars.push_back(cp);
+      }
+      if (duplicate_static) {
+        for (auto& existing : entries) {
+          if (existing.text == text && !existing.personal)
+            existing.personal_boost = entry.personal_boost;
+        }
+      } else {
+        entries.push_back(std::move(entry));
+      }
+    }
+    rebuild_metadata();
+    return true;
   }
 
   int rank_of(const std::string& text) const {
@@ -627,6 +1082,15 @@ struct Lexicon {
 const uint32_t kBOS = 2, kEOS = 3;
 const double kRankPenalty = 0.03;
 const double kCharReward = 2.0;
+// 词级模式的每字奖励（实验可调；默认与字符模式一致）
+inline double word_char_reward() {
+  static const double cached = []() {
+    const char* env = getenv("MH_WORD_REWARD");
+    double v = env ? atof(env) : kCharReward;
+    return v > 0 ? v : kCharReward;
+  }();
+  return cached;
+}
 const int kIsolationThreshold = 3000;
 const double kIsolationLambda = 2.0;
 const int kCandidateLimit = 20;
@@ -639,6 +1103,7 @@ struct State {
   std::string text;
   std::string segmented;
   uint32_t prev2 = kBOS, prev1 = kBOS;
+  uint32_t pw2 = 0, pw1 = 0;   // 词级上下文（0 = <s>）
   int max_rank = 1;
   int edges = 0;  // 消费的词典条目数；≤4 键排序时“整段单条命中”优先
   const State* previous = nullptr;
@@ -734,9 +1199,20 @@ struct DecodeResult {
 
 struct Engine {
   KnModel model;
+  WordModel wm;              // 词级+词义模型（MHKNM01）
+  bool word_mode = false;
+  KnModel blend;             // 可选第二字符模型（概率域插值）
+  bool blend_mode = false;
+  double blend_alpha = 0.6;  // 主模型权重
   Lexicon lex;
   int beam = 200;
   bool all_ranks_always = true;      // 魔虎模式：>4 键也允许全部档位竞争
+
+  // 码表词条 -> 词 id（词表含码表全部词条，正常都有；未命中用 OOV 地板）
+  uint32_t word_id(const std::string& text) const {
+    auto it = wm.ids.find(text);
+    return it == wm.ids.end() ? 0xFFFFFFFFu : it->second;
+  }
 
   std::vector<std::unique_ptr<State>> pool;
   std::vector<std::unique_ptr<Bucket>> states;
@@ -755,11 +1231,34 @@ struct Engine {
 
   std::unordered_map<uint64_t, double> logp_cache;
 
+  double word_logp(uint32_t a, uint32_t b, uint32_t c) {
+    if (c == 0xFFFFFFFFu) {
+      // 词条不在词表：字级兜底（拆字按字符模型路径不可用时给重罚）
+      return -20.0;
+    }
+    uint64_t key = ((uint64_t)a << 42) | ((uint64_t)b << 21) | (c & 0x1FFFFF);
+    auto it = logp_cache.find(key);
+    if (it != logp_cache.end()) return it->second;
+    double v = wm.logp(a, b, c);
+    if (!std::isfinite(v)) v = -20.0;
+    if (logp_cache.size() > 65536) logp_cache.clear();
+    logp_cache[key] = v;
+    return v;
+  }
+
   double logp(uint32_t a, uint32_t b, uint32_t c) {
     uint64_t key = ((uint64_t)a << 42) | ((uint64_t)b << 21) | c;
     auto it = logp_cache.find(key);
     if (it != logp_cache.end()) return it->second;
     double v = model.logp(a, b, c);
+    if (blend_mode) {
+      double w = blend.logp(a, b, c);
+      if (std::isfinite(v) && std::isfinite(w)) {
+        double p1 = std::exp(std::max(-700.0, v));
+        double p2 = std::exp(std::max(-700.0, w));
+        v = std::log(blend_alpha * p1 + (1.0 - blend_alpha) * p2);
+      }
+    }
     if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
     if (logp_cache.size() > 65536) logp_cache.clear();
     logp_cache[key] = v;
@@ -878,19 +1377,33 @@ struct Engine {
           states[consumed_end]->truncated = true;
         for (State* item : current) {
           for (const LexEntry& cand : *chosen) {
-            // 多字简词只作为整串完全命中的候选，不参与更长句子的内部切分。
-            if (cand.chars.size() != 1 && !(pos == 0 && consumed_end == length)) continue;
-            if (cand.chars.size() != 1) has_terminal_phrase_states = true;
+            // 静态多字词保持整段命中语义；个人词允许成为长句内部边。
+            if (cand.chars.size() != 1 && !cand.personal &&
+                !(pos == 0 && consumed_end == length)) continue;
+            if (cand.chars.size() != 1 && !cand.personal) has_terminal_phrase_states = true;
             double score = item->score;
             uint32_t prev2 = item->prev2, prev1 = item->prev1;
-            for (uint32_t cp : cand.chars) {
-              score += logp(prev2, prev1, cp);
-              score += kCharReward;
-              prev2 = prev1;
-              prev1 = cp;
+            uint32_t pw2 = item->pw2, pw1 = item->pw1;
+            if (word_mode) {
+              // 词级打分：整词转移 + 每字奖励（鼓励长词、对冲 logp 项数差）
+              uint32_t wid = word_id(cand.text);
+              double wlp = word_logp(pw2, pw1, wid);
+              if (cand.personal && wid == 0xFFFFFFFFu) wlp = -8.0;
+              score += wlp;
+              score += word_char_reward() * cand.chars.size();
+              pw2 = pw1;
+              pw1 = wid;
+            } else {
+              for (uint32_t cp : cand.chars) {
+                score += logp(prev2, prev1, cp);
+                score += kCharReward;
+                prev2 = prev1;
+                prev1 = cp;
+              }
             }
             if (selected_rank == 0 && cand.rank > 1)
               score -= kRankPenalty * log(1.0 + (double)(cand.rank - 1));
+            score += cand.personal_boost;
             std::string piece = raw.substr(pos, consumed_end - pos);
             std::string segmented = item->segmented.empty() ? piece
                 : item->segmented + " " + piece;
@@ -902,6 +1415,8 @@ struct Engine {
             s2->segmented = std::move(segmented);
             s2->prev2 = prev2;
             s2->prev1 = prev1;
+            s2->pw2 = pw2;
+            s2->pw1 = pw1;
             s2->max_rank = std::max(item->max_rank, cand.rank);
             s2->edges = item->edges + 1;
             s2->previous = item;
@@ -1070,7 +1585,9 @@ struct Engine {
     std::vector<OutItem> final_items;
     final_items.reserve(completed.size());
     for (State* s : completed) {
-      double ending = logp(s->prev2, s->prev1, kEOS) - isolation_penalty(s->text);
+      double ending = (word_mode ? word_logp(s->pw2, s->pw1, 1 /*</s>*/)
+                                 : logp(s->prev2, s->prev1, kEOS)) -
+                      (word_mode ? 0.0 : isolation_penalty(s->text));
       OutItem item;
       to_out(s, ending, &item);
       // Early-commit and downstream prefix consumers need the raw-code
@@ -1111,7 +1628,9 @@ struct Engine {
     auto add_states = [&](const std::vector<State*>& vs) {
       for (State* s : vs) {
         if (s->text.empty()) continue;
-        double ending = logp(s->prev2, s->prev1, kEOS) - isolation_penalty(s->text);
+        double ending = (word_mode ? word_logp(s->pw2, s->pw1, 1 /*</s>*/)
+                                 : logp(s->prev2, s->prev1, kEOS)) -
+                      (word_mode ? 0.0 : isolation_penalty(s->text));
         double confidence = s->mass_score + ending;
         auto it = mass_by_text.find(s->text);
         if (it == mass_by_text.end()) mass_by_text[s->text] = confidence;
@@ -1187,6 +1706,16 @@ struct Engine {
         (result.truncated || result.early_truncated) &&
         result.items.size() + result.early.size() >= 2;
     return result;
+  }
+
+  void invalidate_overlay_cache() {
+    pool.clear();
+    states.clear();
+    cached_raw.clear();
+    cached_result = DecodeResult();
+    cache_valid = false;
+    has_terminal_phrase_states = false;
+    logp_cache.clear();
   }
 
   void invalidate_decode_cache(const std::string& raw, bool include_early) {
@@ -1335,9 +1864,26 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
     auto e = std::make_unique<Engine>();
     if (beam_width > 0) e->beam = beam_width;
     if (all_ranks_always >= 0) e->all_ranks_always = all_ranks_always != 0;
-    if (!e->model.load(model_path) || !e->lex.load(lexicon_path)) {
-      copy_last_error(err, errcap);
-      return -1;
+    if (!e->wm.load(model_path)) {
+      // 非 MHKNM01 → 尝试字符级 TCSKNM
+      if (!e->model.load(model_path) || !e->lex.load(lexicon_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
+    } else {
+      e->word_mode = true;
+      if (!e->lex.load(lexicon_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
+    }
+    // 可选第二字符模型（研究用：MH_BLEND 指向 TCSKNM 路径做概率域融合）
+    if (const char* bp = getenv("MH_BLEND")) {
+      if (!e->word_mode && e->blend.load(bp)) {
+        e->blend_mode = true;
+        if (const char* al = getenv("MH_BLEND_ALPHA"))
+          e->blend_alpha = atof(al);
+      }
     }
     if (g_engines.size() >= static_cast<size_t>(std::numeric_limits<int>::max())) {
       set_error("too many engine handles");
@@ -1353,6 +1899,25 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
   } catch (...) {
     set_error("engine creation failed");
     copy_last_error(err, errcap);
+    return -1;
+  }
+}
+
+int tiger_engine_set_personal_lexicon(int handle, const char* rows) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!g_engines[handle]->lex.set_personal(rows)) return -1;
+    g_engines[handle]->invalidate_overlay_cache();
+    return 0;
+  } catch (const std::exception&) {
+    set_error("personal lexicon update failed");
+    return -1;
+  } catch (...) {
+    set_error("personal lexicon update failed");
     return -1;
   }
 }

@@ -205,7 +205,7 @@ mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	install -m 0644 mohu_llm_zrm.schema.yaml "$(MOHU_LLM_ZRM_DESTDIR)/mohu_llm_zrm.schema.yaml"
 	install -m 0755 tiger_sentence_native/install_mohu_llm_zrm.command tiger_sentence_native/install_mohu_llm_scheme.command "$(MOHU_LLM_ZRM_DESTDIR)/"
 	install -m 0644 tiger_sentence_native/mohu_llm_zrm.package.json "$(MOHU_LLM_ZRM_DESTDIR)/package.json"
-	install -m 0644 tiger_sentence_native/mohu_llm_runtime.lua tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(MOHU_LLM_ZRM_DESTDIR)/lua/"
+	install -m 0644 tiger_sentence_native/mohu_llm_runtime.lua tiger_sentence_native/mohu_sentence.lua tiger_sentence_native/mohu_tiger_sentence.lua lua/mohu_personal_lexicon.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(MOHU_LLM_ZRM_DESTDIR)/lua/"
 	install -m 0755 tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/switch_qwen_model.command "$(MOHU_LLM_ZRM_DESTDIR)/runtime/"
 	install -m 0644 tiger_sentence_native/libtigerengine.dylib tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_ZRM_DESTDIR)/runtime/"
 	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_ZRM_DESTDIR)/runtime/libtigerengine.dylib"; fi
@@ -232,7 +232,7 @@ mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
 	install -m 0644 mohu_llm_flypy.schema.yaml "$(MOHU_LLM_FLYPY_DESTDIR)/mohu_llm_flypy.schema.yaml"
 	install -m 0755 tiger_sentence_native/install_mohu_llm_flypy.command tiger_sentence_native/install_mohu_llm_scheme.command "$(MOHU_LLM_FLYPY_DESTDIR)/"
 	install -m 0644 tiger_sentence_native/mohu_llm_flypy.package.json "$(MOHU_LLM_FLYPY_DESTDIR)/package.json"
-	install -m 0644 tiger_sentence_native/mohu_llm_runtime.lua tiger_sentence_native/mohu_tiger_sentence.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(MOHU_LLM_FLYPY_DESTDIR)/lua/"
+	install -m 0644 tiger_sentence_native/mohu_llm_runtime.lua tiger_sentence_native/mohu_sentence.lua tiger_sentence_native/mohu_tiger_sentence.lua lua/mohu_personal_lexicon.lua tiger_sentence_native/mohu_tiger_reranker.lua tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_model_catalog.lua tiger_sentence_native/mohu_tiger_model_menu.lua "$(MOHU_LLM_FLYPY_DESTDIR)/lua/"
 	install -m 0755 tiger_sentence_native/run_qwen35_scorer.command tiger_sentence_native/install_qwen35_launch_agent.command tiger_sentence_native/switch_qwen_model.command "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/"
 	install -m 0644 tiger_sentence_native/libtigerengine.dylib tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/"
 	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/libtigerengine.dylib"; fi
@@ -276,6 +276,7 @@ test: dist mohu_llm_lexicons
 	lua tests/mohu_candidate_manager_test.lua
 	lua tests/mohu_candidate_manager_config_test.lua
 	lua tests/mohu_tiger_sentence_native_test.lua
+	lua tests/mohu_personal_lexicon_test.lua
 	lua tests/mohu_llm_path_test.lua
 	lua tests/mohu_llm_schema_split_test.lua
 	lua tests/mohu_tiger_no_early_commit_test.lua

@@ -21,6 +21,7 @@
 
 local M = {}
 local runtime = require("mohu_llm_runtime")
+local personal_lexicon = require("mohu_personal_lexicon")
 
 -- Neural reranking is optional.  Keep the native sentence decoder usable on
 -- installations that do not deploy the companion Lua module/profile.
@@ -229,6 +230,59 @@ local function ensure_engine(env)
   engine_handle = h
   engine_signature = signature
   return h
+end
+
+local function refresh_personal_lexicon(env)
+  local memory = env and env._mohu_personal_memory
+  if not memory or not tigerengine or not engine_handle or
+      type(tigerengine.set_personal_lexicon) ~= "function" then
+    return
+  end
+  local limit = 4096
+  local cfg = env and env.engine and env.engine.schema and env.engine.schema.config
+  if cfg and type(cfg.get_int) == "function" then
+    local ok, value = pcall(cfg.get_int, cfg, "tiger/personal_lexicon_max_rows")
+    if ok and type(value) == "number" and value >= 0 then
+      limit = math.floor(value)
+    end
+  end
+  local _, payload = personal_lexicon.snapshot(memory, { limit = limit })
+  local ok, err = pcall(tigerengine.set_personal_lexicon, engine_handle, payload)
+  if not ok and log and log.error then
+    log.error("mohu_sentence: personal lexicon update failed: " .. tostring(err))
+  end
+end
+
+local function init_personal_lexicon(env)
+  if Memory == nil or not env or not env.engine then return end
+  local cfg = env.engine.schema and env.engine.schema.config
+  local namespace = "translator"
+  if cfg and type(cfg.get_string) == "function" then
+    local ok, value = pcall(cfg.get_string, cfg, "tiger/personal_lexicon_namespace")
+    if ok and type(value) == "string" and value ~= "" then namespace = value end
+  end
+  local ok, memory = pcall(Memory, env.engine, env.engine.schema, namespace)
+  if not ok or memory == nil then return end
+  env._mohu_personal_memory = memory
+  refresh_personal_lexicon(env)
+  local context = env.engine.context
+  if context and context.commit_notifier then
+    env._mohu_personal_commit_notifier = context.commit_notifier:connect(function()
+      refresh_personal_lexicon(env)
+    end)
+  end
+end
+
+local function fini_personal_lexicon(env)
+  if not env then return end
+  if env._mohu_personal_commit_notifier ~= nil then
+    pcall(function() env._mohu_personal_commit_notifier:disconnect() end)
+    env._mohu_personal_commit_notifier = nil
+  end
+  if env._mohu_personal_memory ~= nil then
+    pcall(function() env._mohu_personal_memory:disconnect() end)
+    env._mohu_personal_memory = nil
+  end
 end
 
 local function retain_engine(env)
@@ -514,12 +568,14 @@ end
 M.translator = {}
 
 function M.translator.init(env)
-  retain_engine(env)
+  local handle = retain_engine(env)
+  if handle ~= nil then init_personal_lexicon(env) end
   pcall(reranker.init, env)
 end
 
 function M.translator.fini(env)
   pcall(reranker.fini, env)
+  fini_personal_lexicon(env)
   release_engine(env)
 end
 

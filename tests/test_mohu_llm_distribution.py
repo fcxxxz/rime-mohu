@@ -38,6 +38,8 @@ class MohuLlmDistributionTest(unittest.TestCase):
                 self.assertTrue((destination / f"install_mohu_llm_{scheme}.command").is_file())
                 self.assertTrue((destination / "install_mohu_llm_scheme.command").is_file())
                 self.assertTrue((destination / "lua" / "mohu_llm_runtime.lua").is_file())
+                self.assertTrue((destination / "lua" / "mohu_sentence.lua").is_file())
+                self.assertTrue((destination / "lua" / "mohu_personal_lexicon.lua").is_file())
                 self.assertTrue((destination / "lua" / "mohu_processor.lua").is_file())
                 self.assertTrue((destination / "lua" / "mohu_express_translator.lua").is_file())
                 self.assertTrue((destination / "runtime").is_dir())

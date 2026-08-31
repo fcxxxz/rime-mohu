@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-NATIVE_TRANSLATOR = "lua_translator@*mohu_tiger_sentence*translator"
+NATIVE_TRANSLATOR = "lua_translator@*mohu_sentence*translator"
 MODEL_MENU_TRANSLATOR = "lua_translator@*mohu_tiger_model_menu*translator"
 
 

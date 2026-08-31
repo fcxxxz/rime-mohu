@@ -43,7 +43,7 @@ grep -Fq "\"data_dir\": \"data/$scheme\"" "$manifest" || { print -u2 "manifest d
 grep -Fq '"runtime_dir": "runtime"' "$manifest" || { print -u2 "manifest runtime directory mismatch"; exit 1; }
 
 required_lua=(
-  mohu_llm_runtime.lua mohu_tiger_sentence.lua mohu_tiger_reranker.lua
+  mohu_llm_runtime.lua mohu_sentence.lua mohu_tiger_sentence.lua mohu_personal_lexicon.lua mohu_tiger_reranker.lua
   mohu_tiger_model_catalog.lua mohu_tiger_model_menu.lua option_sync.lua option_state.lua
 )
 required_runtime=(

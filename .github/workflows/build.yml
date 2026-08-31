@@ -89,8 +89,11 @@ jobs:
       - name: Sync Python environment
         run: uv sync --locked
 
-      - name: Download and verify TCSKNM n-gram
+      - name: Download and verify custom n-gram
         env:
+          # The public build uses the pinned TCSKNM02 candidate model. Local
+          # MHKNM01/v5 artifacts are injected through TIGER_NGRAM when building
+          # a package manually; they are not silently mislabeled as this CI input.
           NGRAM_URL: https://github.com/wallleap/huma-rime-config/releases/download/LTS/sentence-ngram-mobile.bin
           NGRAM_SHA256: e3953f8f1526b871eb81fe887a8ae4a6edf79edffd33e388b95e2915adadb2d3
         run: |
@@ -242,8 +245,26 @@ jobs:
 
           notes_file="$RUNNER_TEMP/release-notes.md"
           commit_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA"
-          printf '<!-- run-number: %s -->\nAutomated build from commit [%s](%s).\n' \
-            "$GITHUB_RUN_NUMBER" "${GITHUB_SHA::7}" "$commit_url" > "$notes_file"
+          printf '%s\n' \
+            '<!-- run-number: '"$GITHUB_RUN_NUMBER"' -->' \
+            '## 魔虎大模型方案' \
+            '' \
+            '本次 Release 提供魔虎自定义候选模型 addon，原生整句模型随方案包放在 `data/sentence-ngram-mobile.bin`。官方构建使用固定哈希的 TCSKNM02 原生候选模型；Qwen 仅作为可选的神经重排层，不会替换原生模型。' \
+            '' \
+            '### 下载与安装' \
+            '' \
+            '- 只用自然码：下载 `mohu-llm-zrm-latest.zip`，解压后双击 `install_mohu_llm_zrm.command`，然后在 Squirrel 菜单执行“重新部署”。' \
+            '- 小鹤用户：下载 `mohu-llm-flypy-latest.zip`，解压后双击 `install_mohu_llm_flypy.command`，然后重新部署。' \
+            '- `rime-mohu-llm-runtime-latest.zip` 是共享运行时包，不能代替具体方案包单独使用。' \
+            '- 安装器只注册所选方案，并保留已有 Rime 用户词库；自然码和小鹤包不要同时安装到同一个方案选择列表，除非确实需要两套方案。' \
+            '' \
+            '### Qwen 模型切换' \
+            '' \
+            'Qwen 权重不随 Release 分发。按包内 `models/*.manifest` 下载并校验后，放到 `~/Library/Rime/mohu_llm/models/` 对应目录。输入 `/model` 选择已安装模型，或运行 `runtime/switch_qwen_model.command qwen3-0.6b` 切换到 Qwen3 0.6B；切换后重新部署 Squirrel。模型缺失、校验失败或服务不可用时，输入法会继续使用包内的魔虎自定义候选模型。' \
+            '' \
+            '### 本次构建' \
+            '' \
+            '本次构建来自提交 ['"${GITHUB_SHA::7}"']('"$commit_url"').' > "$notes_file"
 
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/latest" >/dev/null 2>&1; then
             gh api --method PATCH \

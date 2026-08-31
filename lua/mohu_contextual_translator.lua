@@ -6,6 +6,11 @@
 
 local Module = {}
 
+local function canonical_input(raw)
+    if type(raw) ~= "string" then return "" end
+    return raw:gsub("[ \t\r\n]", ""):lower()
+end
+
 function Module.init_pair(env, name)
     env.contextual_translator_name = name
     env.contextual_translator = Component.Translator(
@@ -14,6 +19,27 @@ function Module.init_pair(env, name)
         "script_translator@" .. name
     )
     env.static_translator = nil
+
+    local config = env.engine.schema and env.engine.schema.config
+    local long_input_length = nil
+    local is_llm_schema = false
+    if config and type(config.get_string) == "function" then
+        local ok, value = pcall(config.get_string, config, "tiger/candidate_type")
+        is_llm_schema = ok and type(value) == "string" and value ~= ""
+    end
+    if is_llm_schema and config and type(config.get_int) == "function" then
+        local ok, value = pcall(config.get_int, config, "tiger/long_input_length")
+        if ok and type(value) == "number" then
+            long_input_length = value
+        end
+    end
+    if long_input_length == nil and is_llm_schema and config and type(config.get_string) == "function" then
+        local ok, value = pcall(config.get_string, config, "tiger/long_input_length")
+        if ok then long_input_length = tonumber(value) end
+    end
+    env.contextual_long_input_length =
+        (type(long_input_length) == "number" and long_input_length >= 1)
+        and math.floor(long_input_length) or nil
 
     local context = env.engine.context
     env.contextual_commit_notifier = context.commit_notifier:connect(function(ctx)
@@ -30,6 +56,25 @@ function Module.get(env)
     return env.contextual_translator
 end
 
+function Module.get_for_input(env, input)
+    local raw = canonical_input(input)
+    local threshold = env.contextual_long_input_length
+    if type(threshold) ~= "number" or #raw < threshold then
+        return Module.get(env)
+    end
+    if env.static_translator == nil then
+        env.static_translator = Component.Translator(
+            env.engine,
+            "",
+            "script_translator@smart_static"
+        )
+    end
+    if env.static_translator.contextual_suggestions ~= true then
+        env.static_translator.contextual_suggestions = true
+    end
+    return env.static_translator
+end
+
 function Module.fini_pair(env)
     if env.contextual_commit_notifier ~= nil then
         env.contextual_commit_notifier:disconnect()
@@ -38,6 +83,7 @@ function Module.fini_pair(env)
     env.contextual_translator = nil
     env.static_translator = nil
     env.contextual_translator_name = nil
+    env.contextual_long_input_length = nil
 end
 
 function Module.init_runtime_pair(env, option_name, primary_name, alternate_name)

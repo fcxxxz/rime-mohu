@@ -670,32 +670,31 @@ class FixedDictionaryTest(unittest.TestCase):
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in before.items()
             },
-            {1500: (0, 0), 3500: (29, 41), 6000: (119, 170), 8105: (242, 327)},
+            {1500: (0, 0), 3500: (29, 41), 6000: (121, 173), 8105: (244, 330)},
         )
         self.assertEqual(
             {
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in after.items()
             },
-            {1500: (0, 0), 3500: (1, 1), 6000: (5, 5), 8105: (10, 10)},
+            {1500: (0, 0), 3500: (1, 1), 6000: (7, 7), 8105: (9, 10)},
         )
-        self.assertEqual(after[8105].codeable_count, 3311)
+        self.assertEqual(after[8105].codeable_count, 3282)
         self.assertEqual(
             [
                 (group.code, "".join(group.characters), "".join(group.unresolved))
                 for group in after[8105].groups
             ],
             [
-                ("bilv", "芘荜", "荜"),
+                ("bifh", "弊敝祕", "祕"),
                 ("lixf", "厉励", "励"),
                 ("muqg", "牡睦", "睦"),
                 ("qiev", "栖杞桤", "桤"),
                 ("qifb", "祇郪", "郪"),
                 ("uijg", "侍仕", "仕"),
-                ("viuk", "执挚鸷贽絷", "絷"),
+                ("viuk", "执挚鸷贽絷", "鸷絷"),
                 ("xico", "螅屃", "屃"),
                 ("yizc", "奕弈", "弈"),
-                ("zihh", "孜孖", "孖"),
             ],
         )
 
@@ -1456,12 +1455,12 @@ class FixedDictionaryTest(unittest.TestCase):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
         expected_lengths = {
-            "zrm": {1: 42, 2: 434, 3: 4459, 4: 3866},
-            "flypy": {1: 42, 2: 434, 3: 4459, 4: 3222},
+            "zrm": {1: 42, 2: 434, 3: 4555, 4: 4091},
+            "flypy": {1: 42, 2: 434, 3: 4555, 4: 3420},
         }
         expected_duplicate_lengths = {
-            "zrm": {1, 2, 4},
-            "flypy": {1, 2},
+            "zrm": {1, 2, 3, 4},
+            "flypy": {1, 2, 3},
         }
         for scheme in ("zrm", "flypy"):
             filename = f"mohu_{scheme}_tiger_fixed_legacy.dict.yaml"
@@ -1479,6 +1478,11 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertIn(("宁", expected_ning[scheme]), pairs)
                 self.assertIn(("改", expected_gai[scheme]), pairs)
                 self.assertNotIn(("改", "glw"), pairs)
+                # mohu 侧把 jm 的次选简码位从「减」调整为「件」；
+                # 「减」按最短空闲前缀规则落到 jmw。
+                self.assertIn(("件", "jm"), pairs)
+                self.assertIn(("减", "jmw"), pairs)
+                self.assertNotIn(("减", "jm"), pairs)
 
                 owners = defaultdict(set)
                 for char, code in pairs:
@@ -1679,7 +1683,7 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertEqual(len({row["char"] for row in rows}), 83951)
         self.assertEqual(
             sum(row["classification"] == "compatibility" for row in rows),
-            94847,
+            94844,
         )
 
         readings_by_char = defaultdict(list)
@@ -1702,7 +1706,7 @@ class FixedDictionaryTest(unittest.TestCase):
                 categories["all-compat"] += 1
         self.assertEqual(
             categories,
-            {"all-modern": 8119, "all-compat": 75832},
+            {"all-modern": 8121, "mixed": 1, "all-compat": 75829},
         )
         self.assertEqual(classification[("吃", "chi")], "modern")
         self.assertNotIn(("吃", "ji"), classification)

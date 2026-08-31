@@ -138,13 +138,23 @@ int main() {
   expect_lua_error(state, "decode", 3);
   expect_valid_decode(state, handle);
 
-  push_method(state, "create");
-  lua_pushstring(state, model_path.c_str());
-  lua_pushstring(state, lexicon_path.c_str());
-  lua_pushinteger(state, static_cast<lua_Integer>(1) << 40);
-  expect_lua_error(state, "create", 3);
+  push_method(state, "set_personal_lexicon");
+  lua_pushliteral(state, "not an integer");
+  lua_pushliteral(state, "ab\t个人\t2\n");
+  expect_lua_error(state, "set_personal_lexicon", 2);
   expect_valid_status(state, handle);
 
+  push_method(state, "set_personal_lexicon");
+  lua_pushinteger(state, handle);
+  lua_pushliteral(state, "ab\t个人\t2\n");
+  assert(lua_pcall(state, 2, 0, 0) == LUA_OK);
+  expect_valid_decode(state, handle);
+
+  push_method(state, "set_personal_lexicon");
+  lua_pushinteger(state, static_cast<lua_Integer>(1) << 40);
+  lua_pushliteral(state, "ab\t个人\t2\n");
+  expect_lua_error(state, "set_personal_lexicon", 2);
+  expect_valid_status(state, handle);
   push_method(state, "free");
   lua_pushinteger(state, handle);
   assert(lua_pcall(state, 1, 0, 0) == LUA_OK);

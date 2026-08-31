@@ -221,7 +221,7 @@ import_tables:
 急	jix		0
 迹	jiz		0
 间	jm		0
-减	jmw		0
+件	jmj		0
 见	jme		0
 煎	jmh		0
 进	jn		0
@@ -732,7 +732,6 @@ import_tables:
 命	myj		1.36806e+06
 建	jmb		598616
 尔	erx		936690
-件	jmj		935235
 死	sig		1.97935e+06
 保	bkj		859752
 许	xus		1.29951e+06
@@ -1224,6 +1223,7 @@ import_tables:
 核	hee		96965
 核	hue		4000
 央	yhm		146296
+减	jmw		131292
 编	bmi		167598
 版	bja		138140
 齐	qiq		376615

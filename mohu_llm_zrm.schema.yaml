@@ -87,7 +87,7 @@ engine:
     - reverse_lookup_translator@reverse_tiger_backtick
     - table_translator@custom_phrase       # 自定义短语
     - lua_translator@*mohu_tiger_model_menu*translator
-    - lua_translator@*mohu_tiger_sentence*translator
+    - lua_translator@*mohu_sentence*translator
     - lua_translator@*mohu_express_translator@with_reorder # 翻译器
     - lua_translator@*mohu_shijian        # 日期orq 节气ojq 星期oxq 时间osj
     - lua_translator@*mohu_number         # 数字转大写, 大写S引导, 如 S123
@@ -142,7 +142,7 @@ smart:         # 整句输入模式设置，在 top_translator 中被调用
 
 smart_static:
   dictionary: mohu_zrm.extended
-  user_dict: mohu_zrm_tiger_prefix2
+  user_dict: ""
   prism: mohu_zrm
   initial_quality: 5
   max_homophones: 7
@@ -153,6 +153,7 @@ smart_static:
   core_word_length: 4
   max_word_length: 10
   max_sentences: 2
+  enable_user_dict: false
 
 fixed:         # 固顶输入模式设置，在 top_translator 中被调用
   dictionary: mohu_zrm_fixed
@@ -191,6 +192,7 @@ tiger:
   lexicon: mohu_llm/data/zrm/mohu_llm_zrm.lexicon.txt
   beam: 200
   all_ranks: true
+  long_input_length: 5
   initial_quality: 50
   rerank_service: ""
   rerank_socket: ""
@@ -198,6 +200,8 @@ tiger:
   rerank_http_endpoint: ""
   rerank_timeout_ms: 45
   rerank_full_timeout_ms: 140
+  personal_lexicon_namespace: smart
+  personal_lexicon_max_rows: 4096
 
 chaifen:
   option_name: chaifen

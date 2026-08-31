@@ -1,6 +1,6 @@
 -- The native sentence translator only yields candidates; early commit is
 -- intentionally absent from the runtime.
-package.path = "./tiger_sentence_native/?.lua;" .. package.path
+package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 
 local original_loadlib = package.loadlib
 

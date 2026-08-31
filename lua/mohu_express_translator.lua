@@ -523,7 +523,7 @@ function top.raw_query_smart(env, input, seg, with_comment)
         end
         return cand
     end
-    return mohu.query_translation(contextual.get(env), input, seg, transform)
+    return mohu.query_translation(contextual.get_for_input(env, input), input, seg, transform)
 end
 
 -- Merge non-nil values in l1 and l2 into a new list.

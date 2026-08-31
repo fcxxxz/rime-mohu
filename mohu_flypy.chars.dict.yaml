@@ -6,7 +6,7 @@
 
 ---
 name: mohu_flypy.chars
-version: "20260825"
+version: "20260831"
 sort: by_weight
 use_preset_vocabulary: false
 ...
@@ -9755,7 +9755,7 @@ use_preset_vocabulary: false
 仴	wj;jv	0
 仴	wo;jv	0
 仵	wu;je	1144
-件	jm;jq	935235
+件	jm;jq	1151704
 价	jx;jj	384863
 价	jp;jj	3500
 仸	fo;jt	0
@@ -10848,7 +10848,7 @@ use_preset_vocabulary: false
 剎	ua;be	0
 剏	il;hl	0
 剐	gx;dm	5067
-剑	jm;jk	1151704
+剑	jm;jk	935235
 剒	co;lo	0
 剒	vo;lo	0
 剓	li;xp	0

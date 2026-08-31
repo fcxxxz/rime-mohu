@@ -13,7 +13,9 @@
   ],
   "lua_files": [
     "mohu_llm_runtime.lua",
+    "mohu_sentence.lua",
     "mohu_tiger_sentence.lua",
+    "mohu_personal_lexicon.lua",
     "mohu_tiger_reranker.lua",
     "mohu_tiger_reranker_profile.lua",
     "mohu_tiger_model_catalog.lua",

@@ -31,6 +31,39 @@
 
 辅助码后缀使用 `编码/` 查询，使用 `编码//` 后按空格进入自由加词。
 
+## 魔虎大模型方案
+
+完整的魔虎大模型方案是独立 addon，不会自动混入普通魔虎方案。当前提供自然码和小鹤两个包；只使用自然码时，只需安装 `mohu-llm-zrm-latest.zip`。每个完整方案包都包含对应的 schema、双拼+虎码辅助码词库、原生整句动态库，以及 `data/sentence-ngram-mobile.bin` 原生候选模型。官方 CI 发布构建使用固定哈希的 TCSKNM02 模型；本地验证过的魔虎 v5 单文件模型可通过 `TIGER_NGRAM` 注入构建，不能把两者混称。
+
+### 安装自然码包
+
+1. 从 GitHub Release 下载 `mohu-llm-zrm-latest.zip`。
+2. 解压后双击 `install_mohu_llm_zrm.command`。
+3. 安装器会把自然码方案和共享运行时复制到 `~/Library/Rime/`，只注册 `mohu_llm_zrm`，不会注册小鹤方案。
+4. 在 Squirrel 菜单中执行“重新部署”，然后切换到“魔虎大模型·自然码”。
+
+安装器会保留已有的 Rime 用户词库和用户配置；重复执行是幂等的。若只想安装共享运行时，也可以单独安装 `rime-mohu-llm-runtime-latest.zip`，但仍需要一个具体方案包才能输入。
+
+### 切换神经重排模型
+
+包内的 `sentence-ngram-mobile.bin` 负责原生整句候选排序，是魔虎方案的默认候选模型。官方 Release 包使用固定哈希的 TCSKNM02 字符级模型；本地验证过的 v5 单文件模型也属于 TCSKNM02，可通过 `TIGER_NGRAM` 注入构建。Qwen 是可选的第二层神经重排，不会替代原生整句模型，也不会改变双拼或虎码辅助码编码。
+
+Qwen 权重不随方案包分发。安装 Qwen3 0.6B 4-bit 后，将模型目录放到：
+
+```text
+~/Library/Rime/mohu_llm/models/Qwen3-0.6B-4bit
+```
+
+然后在输入法中输入 `/model`，选择 `Qwen3-0.6B-4bit`；或在已安装的 runtime 目录执行：
+
+```bash
+~/Library/Rime/mohu_llm/runtime/switch_qwen_model.command qwen3-0.6b
+```
+
+切换脚本会先按 manifest 校验模型指纹，再切换服务配置；切换后重新部署 Squirrel。没有安装 Qwen、模型校验失败或神经服务不可用时，输入法仍使用原生魔虎候选，不会吞掉输入或假装切换成功。`/model` 显示的“当前模型”只表示可选神经重排模型；原生魔虎候选模型始终由包内 `data/sentence-ngram-mobile.bin` 提供。
+
+如果需要使用 Qwen3.5 0.8B，则下载对应 manifest 指定的目录并选择 `qwen35-0.8b`；本项目不会自动在 Qwen3.0 和 Qwen3.5 之间切换。
+
 # 方案维护
 
 master 分支可使用如下命令进行日常维护：

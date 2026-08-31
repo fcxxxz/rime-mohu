@@ -148,4 +148,58 @@ selector.fixed_static_selector.fini(static_env)
 assert(static_env.runtime_primary == nil)
 assert(static_env.runtime_alternate == nil)
 
+local threshold_env = {
+    engine = {
+        schema = {
+            config = {
+                get_int = function(_, key)
+                    assert(key == "tiger/long_input_length")
+                    return 5
+                end,
+                get_string = function(_, key)
+                    assert(key == "tiger/candidate_type")
+                    return "mohu_llm_zrm"
+                end,
+            },
+        },
+        context = {
+            get_option = function() return true end,
+            commit_history = { push = function() end },
+            commit_notifier = {
+                connect = function(_, callback)
+                    return { disconnect = function() end }
+                end,
+            },
+        },
+    },
+}
+selector.init_pair(threshold_env, "translator")
+assert(threshold_env.contextual_long_input_length == 5)
+assert(selector.get_for_input(threshold_env, "abcd").name == "script_translator@translator")
+assert(selector.get_for_input(threshold_env, "ab cd").name == "script_translator@translator")
+assert(selector.get_for_input(threshold_env, "abcde").name == "script_translator@smart_static")
+assert(selector.get_for_input(threshold_env, "abcdef").name == "script_translator@smart_static")
+selector.fini_pair(threshold_env)
+
+local ordinary_env = {
+    engine = {
+        schema = {
+            config = {
+                get_string = function(_, key)
+                    assert(key == "tiger/candidate_type")
+                    return nil
+                end,
+                get_int = function()
+                    error("ordinary schema must not read long_input_length")
+                end,
+            },
+        },
+        context = threshold_env.engine.context,
+    },
+}
+selector.init_pair(ordinary_env, "translator")
+assert(ordinary_env.contextual_long_input_length == nil)
+assert(selector.get_for_input(ordinary_env, "abcdef").name == "script_translator@translator")
+selector.fini_pair(ordinary_env)
+
 print("contextual translator tests passed")

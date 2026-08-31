@@ -6,7 +6,7 @@
 
 ---
 name: mohu_zrm.chars
-version: "20260825"
+version: "20260831"
 sort: by_weight
 use_preset_vocabulary: false
 ...
@@ -9784,7 +9784,7 @@ use_preset_vocabulary: false
 仵	wu;je	1144
 仵	wu;jn	1144
 仵	wu;js	1144
-件	jm;jq	935235
+件	jm;jq	1151704
 价	jw;jj	384863
 价	jx;jj	3500
 仸	fo;jt	0
@@ -10900,7 +10900,7 @@ use_preset_vocabulary: false
 剎	ua;be	0
 剏	id;hl	0
 剐	gw;dm	5067
-剑	jm;jk	1151704
+剑	jm;jk	935235
 剒	co;lo	0
 剒	vo;lo	0
 剓	li;xp	0
@@ -30745,6 +30745,8 @@ use_preset_vocabulary: false
 謅	ik;sn	0
 謆	uj;sm	0
 謇	jm;wq	614
+謇	jm;wh	614
+謇	jm;ws	614
 謈	bk;ol	0
 謈	bo;ol	0
 謈	po;ol	0

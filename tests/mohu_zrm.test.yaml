@@ -250,8 +250,8 @@ deploy:
         assert: eq(cand[1].text, '于英杰')
       - send: yuiv
         assert: eq(cand[1].text, '予')
-      - send: jmjq
-        assert: eq(cand[1].text, '件')
+      - send: jmj
+        assert: eq(cand[1].text, '剑')
       - send: yjjd
         assert: eq(cand[1].text, '演讲') and text_index(cand, '弇') > 1
 

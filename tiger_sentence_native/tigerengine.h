@@ -8,6 +8,8 @@ extern "C" {
 int tiger_engine_create(const char* model_path, const char* lexicon_path,
                         int beam_width, int all_ranks_always,
                         char* error, int error_capacity);
+/* Replace the personal phrase snapshot. Rows are code<TAB>text<TAB>commits. */
+int tiger_engine_set_personal_lexicon(int handle, const char* rows);
 void tiger_engine_free(int handle);
 /* include_early is a deprecated ABI compatibility flag; the canonical Lua
  * translator always passes 0 and never exposes early-commit results. */

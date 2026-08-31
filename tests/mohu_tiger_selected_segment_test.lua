@@ -1,7 +1,7 @@
 -- A selected Rime segment remains in Context.input while the translator gets
 -- only the active segment's input.  Native candidates must not re-display the
 -- selected segment's raw code in their preedit.
-package.path = "./tiger_sentence_native/?.lua;" .. package.path
+package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 
 local original_loadlib = package.loadlib
 local yielded = {}

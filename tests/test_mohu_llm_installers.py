@@ -16,13 +16,16 @@ def copy_package_lua(package: Path) -> None:
     shutil.copytree(ROOT / "lua", package / "lua")
     for name in (
         "mohu_llm_runtime.lua",
+        "mohu_sentence.lua",
         "mohu_tiger_sentence.lua",
+        "mohu_personal_lexicon.lua",
         "mohu_tiger_reranker.lua",
         "mohu_tiger_reranker_profile.lua",
         "mohu_tiger_model_catalog.lua",
         "mohu_tiger_model_menu.lua",
     ):
-        shutil.copy2(NATIVE / name, package / "lua" / name)
+        source_root = ROOT / "lua" if name == "mohu_personal_lexicon.lua" else NATIVE
+        shutil.copy2(source_root / name, package / "lua" / name)
 
 
 def copy_package_manifests(package: Path) -> None:
@@ -60,7 +63,9 @@ class MohuLlmInstallerTest(unittest.TestCase):
                 self.assertTrue(payload["data_files"])
                 self.assertTrue(payload["executable_files"])
                 self.assertIn("mohu_llm_runtime.lua", payload["lua_files"])
+                self.assertIn("mohu_sentence.lua", payload["lua_files"])
                 self.assertIn("mohu_tiger_sentence.lua", payload["lua_files"])
+                self.assertIn("mohu_personal_lexicon.lua", payload["lua_files"])
                 self.assertIn("mohu_tiger_reranker.lua", payload["lua_files"])
                 self.assertIn("mohu_tiger_model_catalog.lua", payload["lua_files"])
                 self.assertIn("mohu_tiger_model_menu.lua", payload["lua_files"])

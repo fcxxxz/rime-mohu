@@ -180,7 +180,7 @@ import_tables:
 极	ji		0
 及	ji		0
 间	jm		0
-减	jm		0
+件	jm		0
 进	jb		0
 今	jb		0
 均	jy		0
@@ -2057,7 +2057,7 @@ import_tables:
 歼	jmg		27594
 兼	jmh		68324
 舰	jmi		235654
-剑	jmj		1.1517e+06
+剑	jmj		935235
 渐	jmk		503123
 荐	jml		34960
 肩	jmm		292627
@@ -2069,7 +2069,7 @@ import_tables:
 鞬	jmt		381
 捡	jmu		50151
 毽	jmv		777
-蹇	jmw		1785
+减	jmw		131292
 柬	jmx		8238
 尖	jmy		232729
 键	jmz		510933
@@ -6131,7 +6131,6 @@ import_tables:
 僭	jmjd		1472
 俭	jmjj		11871
 牮	jmjp		405
-件	jmjq		935235
 涧	jmka		10131
 浅	jmkf		0
 湔	jmkh		564
@@ -6161,7 +6160,7 @@ import_tables:
 腱	jmvb		771
 鳒	jmwh		0
 鲣	jmwp		61
-謇	jmwq		614
+蹇	jmwq		1785
 锏	jmza		4191
 郊	jnab		36462
 姣	jnba		4585

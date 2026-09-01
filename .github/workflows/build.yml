@@ -80,12 +80,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Build Lua 5.4.6 host and runtime
+      - name: Build Lua 5.4.8 host and runtime
         shell: bash
         run: |
-          curl -sL -o lua546.tar.gz https://www.lua.org/ftp/lua-5.4.6.tar.gz
-          tar xzf lua546.tar.gz
-          cd lua-5.4.6/src
+          # The shipped lua54.dll MUST match the Lua version embedded in the
+          # target Weasel's rime.dll (Tiger weasel embeds 5.4.8).  A mismatched
+          # minor version corrupts strings returned across the Lua C API:
+          # libtigerengine.dll binds to this lua54.dll while the host state
+          # belongs to rime.dll's embedded runtime.
+          curl -sL -o lua548.tar.gz https://www.lua.org/ftp/lua-5.4.8.tar.gz
+          tar xzf lua548.tar.gz
+          cd lua-5.4.8/src
           core="lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c"
           lib="lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c"
           gcc -O2 -shared -DLUA_BUILD_AS_DLL $core $lib -o lua54.dll
@@ -95,9 +100,9 @@ jobs:
         shell: bash
         run: |
           g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ -static \
-            -I tiger_sentence_native -I lua-5.4.6/src \
+            -I tiger_sentence_native -I lua-5.4.8/src \
             tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
-            lua-5.4.6/src/lua54.dll -o libtigerengine.dll
+            lua-5.4.8/src/lua54.dll -o libtigerengine.dll
           objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
           # Weasel loads the engine from the user directory, where the OS
           # loader never looks for mingw runtime DLLs: only KERNEL32.dll and
@@ -120,7 +125,7 @@ jobs:
           ./nativetest.exe mohu-sentence-ngram-v5.bin \
             tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt keys.txt out.txt
           grep -q '迷茫' out.txt
-          cp lua-5.4.6/src/lua54.dll ./lua54.dll
+          cp lua-5.4.8/src/lua54.dll ./lua54.dll
           cat > smoke.lua <<'LUA'
           local dll, model, lexicon = ...
           local engine = assert(package.loadlib(dll, "luaopen_tigerengine"))()
@@ -131,7 +136,7 @@ jobs:
           engine.free(handle)
           print("WINDOWS_LUA_SMOKE_OK")
           LUA
-          ./lua-5.4.6/src/lua.exe smoke.lua "$PWD/libtigerengine.dll" \
+          ./lua-5.4.8/src/lua.exe smoke.lua "$PWD/libtigerengine.dll" \
             "$PWD/mohu-sentence-ngram-v5.bin" \
             "$PWD/tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt"
 

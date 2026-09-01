@@ -98,7 +98,9 @@ local segment = {
 
 native.translator.func("jyuf", segment, env)
 
-assert(decode_inputs[1] == "zljyuf",
+assert(decode_inputs[1] == "a",
+  "engine init must probe the lua runtime with the canary decode first")
+assert(decode_inputs[2] == "zljyuf",
   "native decode must retain the selected segment in the language-model context")
 assert(#yielded == 1, "selected-segment translation must yield one candidate")
 assert(yielded[1].text == "精神",

@@ -244,6 +244,20 @@ local function ensure_engine(env)
     report_engine_error("engine create: " .. tostring(e))
     return nil
   end
+  -- The bundled lua54.dll must embed the same Lua version as the host
+  -- weasel's rime.dll; a minor-version mismatch corrupts strings returned
+  -- through the C API (their length and contents disagree, e.g. #s and
+  -- s:byte disagree).  Probe once with a known input and reject the engine
+  -- instead of yielding garbage that fails parsing on every keystroke.
+  local canary_ok, canary = pcall(tigerengine.decode, h, "a", false)
+  if not canary_ok or type(canary) ~= "string" or #canary == 0 or
+      canary:byte(1) == nil or canary:byte(#canary) == nil or
+      not canary:match("^(%d+) (%d+) (%d+) (%d+) ") then
+    report_engine_error("lua runtime mismatch: the bundled lua54.dll and the " ..
+      "weasel rime.dll must embed the same Lua 5.4.x version")
+    pcall(tigerengine.free, h)
+    return nil
+  end
   engine_handle = h
   engine_signature = signature
   return h

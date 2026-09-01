@@ -28,6 +28,43 @@ if (-not (Test-Path (Join-Path $scriptDir "data/sentence-ngram-mobile.bin"))) {
 $lexicon = Join-Path $scriptDir "data/$Scheme/mohu_llm_$Scheme.lexicon.txt"
 if (-not (Test-Path $lexicon)) { Write-Error "missing lexicon: $lexicon"; exit 1 }
 
+# The native engine binds to the bundled runtime/lua54.dll while the host
+# weasel's rime.dll embeds its own Lua; both must be the same 5.4.x version
+# or strings returned by the engine are corrupted and the sentence translator
+# silently falls back to dictionary candidates.
+$bundledLua = $null
+$weaselLua = $null
+$bundledDll = Join-Path $scriptDir "runtime/lua54.dll"
+if (Test-Path $bundledDll) {
+    $m = [regex]::Match([Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($bundledDll)),
+        '\$LuaVersion: Lua (5\.\d+\.\d+)')
+    if ($m.Success) { $bundledLua = $m.Groups[1].Value }
+}
+$server = Get-Process WeaselServer -ErrorAction SilentlyContinue | Select-Object -First 1
+$weaselRime = $null
+if ($server -and $server.Path) {
+    $candidate = Join-Path (Split-Path -Parent $server.Path) "rime.dll"
+    if (Test-Path $candidate) { $weaselRime = $candidate }
+}
+if (-not $weaselRime) {
+    $weaselRime = Get-ChildItem "$env:ProgramFiles\Rime", "${env:ProgramFiles(x86)}\Rime" `
+        -Filter "rime.dll" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+        Select-Object -First 1 -ExpandProperty FullName
+}
+if ($weaselRime) {
+    $m = [regex]::Match([Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($weaselRime)),
+        '\$LuaVersion: Lua (5\.\d+\.\d+)')
+    if ($m.Success) { $weaselLua = $m.Groups[1].Value }
+}
+if ($bundledLua -and $weaselLua) {
+    if ($bundledLua -ne $weaselLua) {
+        Write-Warning ("Lua 版本不匹配: 安装包 lua54.dll=Lua {0}, 小狼毫 rime.dll=Lua {1}; " +
+            "整句引擎将不可用,请升级小狼毫至内嵌 Lua {0} 的版本" -f $bundledLua, $weaselLua)
+    } else {
+        Write-Host "Lua runtime check: bundled=Lua $bundledLua weasel=Lua $weaselLua (matched)"
+    }
+}
+
 $manifestText = Get-Content $manifest -Raw -Encoding UTF8
 foreach ($needle in @('"package_type": "mohu_llm"', "`"scheme`": `"$Scheme`"", "`"schema_id`": `"$schemaId`"")) {
     if (-not $manifestText.Contains($needle)) { Write-Error "manifest mismatch: $needle"; exit 1 }

@@ -135,6 +135,36 @@ do
     "the lua54.dll preload is Windows-only")
 end
 
+-- 5. A corrupted first decode (lua runtime mismatch between the bundled
+--    lua54.dll and the weasel's embedded Lua) must disable the engine once
+--    instead of yielding garbage on every keystroke.
+do
+  log = { error = function() end }
+  local decode_calls = 0
+  local native = fresh_translator(function()
+    return function()
+      return {
+        create = function() return 9 end,
+        free = function() end,
+        decode = function()
+          decode_calls = decode_calls + 1
+          return "\1corrupted", 0
+        end,
+      }
+    end
+  end)
+  local env = make_env()
+  native.translator.init(env)
+  assert(decode_calls == 1,
+    "the runtime canary must decode exactly once during init")
+  yielded = {}
+  native.translator.func("ufqyhfmimh", segment, env)
+  assert(decode_calls == 1,
+    "a mismatched engine must not decode again after the canary rejects it")
+  assert(#yielded == 0,
+    "a mismatched engine must not yield sentence candidates")
+end
+
 package.loadlib = original_loadlib
 package.config = original_config
 log = nil

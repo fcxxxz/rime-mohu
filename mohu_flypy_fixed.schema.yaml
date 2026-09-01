@@ -222,11 +222,7 @@ key_binder:
       - mohu:/key_bindings/mohu_semicolon_for_2
       - mohu:/key_bindings/mohu_keypad
 
-# 默认不开启语言模型
-# 在 mohu_flypy_fixed.custom.yaml 中输入如下内容以开启
-#   patch:
-#     __include: mohu:/octagram/enable_for_fixed
-# 输入「水满则」后继续输入 yidy 首选为「溢」则说明已生效。
+# 默认不开启语言模型（八股文模型已移除）
 
 mohu:
   charset: simp

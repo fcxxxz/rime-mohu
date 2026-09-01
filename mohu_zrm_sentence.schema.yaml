@@ -235,5 +235,5 @@ mohu:
   # trad: 只显示繁体字
   charset: simp
 
-# 默认启用语言模型
-__include: mohu:/octagram/enable_for_sentence
+# 默认不启用语言模型（八股文模型已移除）
+__include: mohu:/octagram/disable

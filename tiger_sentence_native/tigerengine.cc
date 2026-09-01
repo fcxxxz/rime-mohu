@@ -1063,12 +1063,63 @@ struct Lexicon {
     std::sort(lengths.begin(), lengths.end());
   }
 
-  bool set_personal(const char* rows) {
+  // 增量刷新状态：上次成功应用的负载原文与生效个人词键集（code\ttext -> boost）。
+  std::string personal_payload;
+  std::unordered_map<std::string, double> personal_boosts;
+
+  struct PersonalRow {
+    std::string code;
+    std::string text;
+    std::string key;
+    double boost;
+  };
+
+  // 个人词新增后增量登记编码元数据，等价于 rebuild_metadata 对该码的部分效果。
+  void note_personal_code(const std::string& code) {
+    const int length = static_cast<int>(code.size());
+    if (std::find(lengths.begin(), lengths.end(), length) == lengths.end()) {
+      lengths.insert(std::upper_bound(lengths.begin(), lengths.end(), length), length);
+    }
+    if (length > max_code_len) max_code_len = length;
+    for (size_t l = 1; l < code.size(); ++l)
+      proper_prefixes.insert(code.substr(0, l));
+  }
+
+  // 应用一行个人词：命中静态同码同词则只叠加 boost，否则新增个人条目并登记元数据。
+  void apply_personal_row(const PersonalRow& row) {
+    auto& entries = codes[row.code];
+    for (auto& existing : entries) {
+      if (existing.text == row.text) {
+        existing.personal_boost = row.boost;
+        return;
+      }
+    }
+    LexEntry entry;
+    entry.text = row.text;
+    entry.rank = 1;
+    entry.personal = true;
+    entry.personal_boost = row.boost;
+    for (auto& ch : utf8_split(row.text)) {
+      uint32_t cp;
+      size_t n;
+      utf8_next(ch.data(), ch.size(), 0, &cp, &n);
+      entry.chars.push_back(cp);
+    }
+    if (entry.chars.size() != 1) has_multi_char_entries = true;
+    entries.push_back(std::move(entry));
+    note_personal_code(row.code);
+  }
+
+  // 解析负载行到 parsed/index；require_terminated 为 true 时要求块以
+  // 换行结尾（分片 append 协议用它防止半行被拆到两个块里）。
+  // rows 为空指针返回 false，其余一律产出已解析行（非法行照旧跳过）。
+  static bool parse_personal_rows(const char* rows, bool require_terminated,
+                                  std::unordered_map<std::string, size_t>& index,
+                                  std::vector<PersonalRow>& parsed) {
     if (!rows) return false;
     const size_t payload_size = std::strlen(rows);
-    codes = base_codes;
-    freq_rank = base_freq_rank;
-    std::unordered_set<std::string> seen;
+    if (require_terminated && payload_size > 0 && rows[payload_size - 1] != '\n')
+      return false;
     size_t start = 0;
     while (start < payload_size) {
       size_t end = start;
@@ -1080,42 +1131,125 @@ struct Lexicon {
       size_t b = a == std::string::npos ? std::string::npos : line.find('\t', a + 1);
       if (a == std::string::npos || b == std::string::npos || line.find('\t', b + 1) != std::string::npos)
         continue;
-      std::string code = line.substr(0, a);
-      std::string text = line.substr(a + 1, b - a - 1);
+      PersonalRow row;
+      row.code = line.substr(0, a);
+      row.text = line.substr(a + 1, b - a - 1);
       int commits = Lexicon::parse_int(line.substr(b + 1), 0);
-      if (commits <= 0 || !valid_personal_row(code, text)) continue;
-      std::string key = code + "\t" + text;
-      if (!seen.insert(key).second) continue;
-      auto& entries = codes[code];
-      bool duplicate_static = false;
-      for (const auto& existing : entries) {
-        if (existing.text == text) {
-          duplicate_static = true;
-          break;
-        }
-      }
-      LexEntry entry;
-      entry.text = text;
-      entry.rank = 1;
-      entry.personal = true;
-      entry.personal_boost = std::min(3.0, std::log1p(static_cast<double>(commits)) * 0.35);
-      for (auto& ch : utf8_split(text)) {
-        uint32_t cp;
-        size_t n;
-        utf8_next(ch.data(), ch.size(), 0, &cp, &n);
-        entry.chars.push_back(cp);
-      }
-      if (duplicate_static) {
-        for (auto& existing : entries) {
-          if (existing.text == text && !existing.personal)
-            existing.personal_boost = entry.personal_boost;
-        }
-      } else {
-        entries.push_back(std::move(entry));
+      if (commits <= 0 || !valid_personal_row(row.code, row.text)) continue;
+      row.key = row.code + "\t" + row.text;
+      row.boost = std::min(3.0, std::log1p(static_cast<double>(commits)) * 0.35);
+      if (index.emplace(row.key, parsed.size()).second)
+        parsed.push_back(std::move(row));
+    }
+    return true;
+  }
+
+  // 应用已解析的行集（整体替换语义）：旧键全部保留时走增量路径，
+  // 只加新条目并更新 boost；键集收缩则恢复基线并整表重建。
+  // *changed 指示是否发生了任何实际变化。
+  void apply_personal_parsed(const std::unordered_map<std::string, size_t>& index,
+                             const std::vector<PersonalRow>& parsed,
+                             bool* changed) {
+    bool incremental = true;
+    for (const auto& applied : personal_boosts) {
+      if (index.find(applied.first) == index.end()) {
+        incremental = false;
+        break;
       }
     }
-    rebuild_metadata();
-    return true;
+
+    if (incremental) {
+      for (const auto& row : parsed) {
+        auto existing = personal_boosts.find(row.key);
+        if (existing != personal_boosts.end()) {
+          if (existing->second != row.boost) {
+            auto bucket = codes.find(row.code);
+            if (bucket != codes.end()) {
+              for (auto& entry : bucket->second) {
+                if (entry.text == row.text) {
+                  entry.personal_boost = row.boost;
+                  break;
+                }
+              }
+            }
+            existing->second = row.boost;
+            *changed = true;
+          }
+          continue;
+        }
+        apply_personal_row(row);
+        personal_boosts[row.key] = row.boost;
+        *changed = true;
+      }
+    } else {
+      codes = base_codes;
+      freq_rank = base_freq_rank;
+      personal_boosts.clear();
+      for (const auto& row : parsed) {
+        apply_personal_row(row);
+        personal_boosts[row.key] = row.boost;
+      }
+      rebuild_metadata();
+      *changed = true;
+    }
+  }
+
+  // 返回 0 = 负载与上次相同（未变更，调用方可保留解码缓存），
+  // 1 = 已应用，-1 = 参数错误。整体路径；分片路径见下方事务接口。
+  int set_personal(const char* rows) {
+    if (!rows) return -1;
+    const size_t payload_size = std::strlen(rows);
+    if (personal_payload == std::string(rows, payload_size)) return 0;
+    personal_txn.reset();  // 整体调用与挂起事务互斥：以整体结果为准
+    std::vector<PersonalRow> parsed;
+    std::unordered_map<std::string, size_t> index;
+    if (!parse_personal_rows(rows, false, index, parsed)) return -1;
+    bool changed = false;
+    apply_personal_parsed(index, parsed, &changed);
+    personal_payload.assign(rows, payload_size);
+    return 1;
+  }
+
+  // ---- 分片事务：begin / append*(整行块) / commit|abort ----
+  // 事务期间解码始终使用已应用的旧快照；commit 原子切换。
+  // 增长路径解析成本随 append 摊销，commit 只剩哈希层比对与应用。
+  struct PersonalTxn {
+    std::unordered_map<std::string, size_t> index;
+    std::vector<PersonalRow> parsed;
+  };
+  std::unique_ptr<PersonalTxn> personal_txn;
+
+  int personal_begin() {
+    personal_txn = std::make_unique<PersonalTxn>();  // 隐式丢弃旧事务
+    // 按当前已应用规模预留容量：扩容 rehash 若落在单次 append 上会造成
+    // 远超分片预算的尖刺（实测 50 万条时约 20ms）。
+    const size_t expected = personal_boosts.size() + 4096;
+    personal_txn->index.reserve(expected);
+    personal_txn->parsed.reserve(expected);
+    return 0;
+  }
+
+  int personal_append(const char* rows) {
+    if (!personal_txn || !rows) return -1;
+    if (!parse_personal_rows(rows, true, personal_txn->index, personal_txn->parsed))
+      return -1;
+    return 0;
+  }
+
+  // 返回 0 = 无变化（可保留解码缓存），1 = 已应用，-1 = 无事务或出错。
+  int personal_commit() {
+    if (!personal_txn) return -1;
+    bool changed = false;
+    apply_personal_parsed(personal_txn->index, personal_txn->parsed, &changed);
+    personal_txn.reset();
+    // 分片路径不持有整串负载；置空保证后续整体调用不会误判 no-op。
+    personal_payload.clear();
+    return changed ? 1 : 0;
+  }
+
+  int personal_abort() {
+    personal_txn.reset();
+    return 0;
   }
 
   int rank_of(const std::string& text) const {
@@ -1912,8 +2046,16 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
     if (beam_width > 0) e->beam = beam_width;
     if (all_ranks_always >= 0) e->all_ranks_always = all_ranks_always != 0;
     if (!e->wm.load(model_path)) {
-      // 非 MHKNM01 → 尝试字符级 TCSKNM
-      if (!e->model.load(model_path) || !e->lex.load(lexicon_path)) {
+      // 非 MHKNM01 → 尝试字符级 TCSKNM。两级加载器共用 last_error；
+      // 分别记录，避免把词级模型的报错误报成最终失败原因。
+      const std::string word_error = tiger_last_error();
+      if (!e->model.load(model_path)) {
+        set_error("char model: %s (word model was tried first: %s)",
+                  tiger_last_error(), word_error.c_str());
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (!e->lex.load(lexicon_path)) {
         copy_last_error(err, errcap);
         return -1;
       }
@@ -1938,6 +2080,8 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
       return -1;
     }
     g_engines.push_back(std::move(e));
+    // 成功路径清掉两级模型探测留下的诊断信息，避免它被误当成后续调用的错误。
+    g_last_error.clear();
     return (int)g_engines.size() - 1;
   } catch (const std::exception&) {
     set_error("engine allocation failed");
@@ -1957,14 +2101,76 @@ int tiger_engine_set_personal_lexicon(int handle, const char* rows) {
       set_error("invalid engine handle");
       return -1;
     }
-    if (!g_engines[handle]->lex.set_personal(rows)) return -1;
-    g_engines[handle]->invalidate_overlay_cache();
+    const int applied = g_engines[handle]->lex.set_personal(rows);
+    if (applied < 0) return -1;
+    // 负载未变化（no-op）时保留解码缓存；只有实际应用了变更才失效。
+    if (applied > 0) g_engines[handle]->invalidate_overlay_cache();
     return 0;
   } catch (const std::exception&) {
     set_error("personal lexicon update failed");
     return -1;
   } catch (...) {
     set_error("personal lexicon update failed");
+    return -1;
+  }
+}
+
+int tiger_engine_personal_begin(int handle) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    return g_engines[handle]->lex.personal_begin();
+  } catch (...) {
+    set_error("personal transaction failed");
+    return -1;
+  }
+}
+
+int tiger_engine_personal_append(int handle, const char* rows) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    return g_engines[handle]->lex.personal_append(rows);
+  } catch (...) {
+    set_error("personal transaction append failed");
+    return -1;
+  }
+}
+
+int tiger_engine_personal_commit(int handle) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    const int rc = g_engines[handle]->lex.personal_commit();
+    if (rc < 0) return -1;
+    // 0 = 无变化，保留解码缓存；1 = 已应用，失效缓存。
+    if (rc == 1) g_engines[handle]->invalidate_overlay_cache();
+    return 0;
+  } catch (...) {
+    set_error("personal transaction commit failed");
+    return -1;
+  }
+}
+
+int tiger_engine_personal_abort(int handle) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    return g_engines[handle]->lex.personal_abort();
+  } catch (...) {
+    set_error("personal transaction abort failed");
     return -1;
   }
 }

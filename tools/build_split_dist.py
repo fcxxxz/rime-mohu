@@ -28,7 +28,6 @@ COMMON_ROOT_PATHS = (
     "squirrel.yaml",
     "tiger.dict.yaml",
     "tiger.schema.yaml",
-    "zh-hans-t-essay-bgw.gram",
     "Rime皮肤编辑器",
 )
 

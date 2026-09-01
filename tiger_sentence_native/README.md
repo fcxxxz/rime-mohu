@@ -98,7 +98,26 @@ Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安�
 - `initial_quality`：原生候选质量（默认 50）。固顶候选为 100，默认 smart 候选为 5
 - `long_input_length`：达到该 canonical raw 输入长度后（Rime 双拼音节之间的空格会先移除），express translator 使用不读 userdb 的 `smart_static`（默认 5）
 - `personal_lexicon_namespace`：个人词 `Memory` 使用的 userdb 命名空间（LLM 方案为 `smart`）
-- `personal_lexicon_max_rows`：每次同步到 native 引擎的个人多字词上限（默认 4096）
+- `personal_lexicon_max_rows`：同步到 native 引擎的个人多字词上限（默认不限制；需要时可显式设回如 4096）
+- `personal_refresh_interval`：个人词快照的时间防抖秒数（默认 30；设为 0 关闭防抖）
+- 个人词快照的刷新时机（打字零影响的分片设计，三阶段状态机）：
+  1. 提交只递增代数计数并标记待刷新，纯 ASCII/标点上屏不标记；
+  2. 扫描以 ≤5ms CPU 预算的切片推进，且只在输入组合为空时启动/推进；
+     每片另有 512 条硬上限，即使时钟粒度粗也有与时钟无关的上界——
+     按键最坏只等一个切片（实测 5 万条 98 片、最差单片 5.0ms）；
+  3. 扫描完成后进入 native 事务（`personal_begin/append/commit/abort`）：
+     append 按同一预算逐行分片喂入（整行块、须以换行结尾），commit 原子
+     切换——解析成本已随 append 摊销，commit 只剩哈希层比对与应用；
+     无变化时保留解码缓存；事务期间解码始终使用旧快照。旧 ABI 的 dylib
+     自动回退整体 `set_personal` 路径。
+  4. 方案装载期做一次一次性全量（打字尚未开始）；设置
+     `tiger/personal_lexicon_max_rows` 时回退整体扫描路径（需全局排序取头部）。
+- 事务路径实测（512 行/块喂入）：5 千条 commit 0.4–0.6ms、5 万条约 6ms、
+  50 万条约 120ms；append 最差块 0.5ms（哈希容量已按现有词表预留，
+  避免 rehash 尖刺）。键集收缩的 commit 走全量重建（5 万条约 110ms），
+  正常使用中仅在清库/异常导入时出现。
+- `perf_log`：设为 `true` 时按候选轮次输出 `mohu_sentence perf len=… native=…ms lua=…ms phase=…` 日志，用于长句延迟归因（默认关闭）
+- `make tigerengine-bench TIGER_NGRAM=<模型路径>`：native 解码延迟基准，输出各输入长度 P50/P95/P99 与逐键增量打字延迟；`TIGER_BENCH_ARGS` 传 `beam all_ranks iterations personal_rows`
 
 ## 合并行为
 

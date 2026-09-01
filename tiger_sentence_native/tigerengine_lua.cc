@@ -108,6 +108,71 @@ int l_set_personal_lexicon(lua_State* L) {
   return 0;
 }
 
+int l_personal_begin(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_personal_begin((int)handle_value);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc != 0) return luaL_error(L, "%s", error[0] ? error : "personal transaction failed");
+  return 0;
+}
+
+int l_personal_append(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* rows = luaL_checkstring(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_personal_append((int)handle_value, rows);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc != 0) return luaL_error(L, "%s", error[0] ? error : "personal transaction append failed");
+  return 0;
+}
+
+int l_personal_commit(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_personal_commit((int)handle_value);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc != 0) return luaL_error(L, "%s", error[0] ? error : "personal transaction commit failed");
+  return 0;
+}
+
+int l_personal_abort(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_personal_abort((int)handle_value);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc != 0) return luaL_error(L, "%s", error[0] ? error : "personal transaction abort failed");
+  return 0;
+}
+
 int l_status(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -147,6 +212,10 @@ int luaopen_tigerengine(lua_State* L) {
       {"free", l_free},
       {"decode", l_decode},
       {"set_personal_lexicon", l_set_personal_lexicon},
+      {"personal_begin", l_personal_begin},
+      {"personal_append", l_personal_append},
+      {"personal_commit", l_personal_commit},
+      {"personal_abort", l_personal_abort},
       {"status", l_status},
       {"last_error", l_last_error},
       {nullptr, nullptr},

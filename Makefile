@@ -128,7 +128,6 @@ dist: quick
 	cp -a recipe.yaml recipes $(DESTDIR)
 	cp -a squirrel.yaml $(DESTDIR)
 	cp -a tiger.*.yaml $(DESTDIR)
-	cp -a *.gram $(DESTDIR)
 	cp -a Rime皮肤编辑器 $(DESTDIR)
 	rm -rf "$(DESTDIR)/Rime皮肤编辑器/local/__pycache__"
 
@@ -163,6 +162,15 @@ tigerengine-lua-safety:
 	else \
 		echo "tigerengine Lua safety tests skipped (Lua 5.4 static library not present)"; \
 	fi
+
+# Decode latency benchmark; pass the installed model explicitly, e.g.
+#   make tigerengine-bench TIGER_NGRAM=~/Library/Rime/mohu_llm/data/sentence-ngram-mobile.bin
+tigerengine-bench:
+	@test -n "$(TIGER_NGRAM)" || (echo "Error: set TIGER_NGRAM to sentence-ngram-mobile.bin" >&2; exit 2)
+	clang++ -std=c++17 -O2 -I tiger_sentence_native tiger_sentence_native/bench_decode.cc \
+		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_bench
+	/tmp/tigerengine_bench "$(TIGER_NGRAM)" tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt \
+		$(TIGER_BENCH_ARGS)
 
 dist-zrm: quick
 	uv run tools/build_split_dist.py zrm "$(ZRM_DESTDIR)"
@@ -300,4 +308,4 @@ test: dist mohu_llm_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_llm_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native mohu-llm-zrm-dist mohu-llm-flypy-dist tigerengine-safety tigerengine-lua-safety dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict mohu_llm_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native mohu-llm-zrm-dist mohu-llm-flypy-dist tigerengine-safety tigerengine-lua-safety tigerengine-bench dist-zrm dist-flypy test lint-python

@@ -364,5 +364,5 @@ mohu:
   # （如需要自定义/增加/删除略码，请编辑 mohu_processor.lua 中的 shorthands 定义。）
   shorthands: false
 
-# 默认启用语言模型
-__include: mohu:/octagram/enable_for_sentence
+# 默认不启用语言模型（八股文模型已移除）
+__include: mohu:/octagram/disable

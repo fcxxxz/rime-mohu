@@ -10,6 +10,12 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
                         char* error, int error_capacity);
 /* Replace the personal phrase snapshot. Rows are code<TAB>text<TAB>commits. */
 int tiger_engine_set_personal_lexicon(int handle, const char* rows);
+/* Chunked snapshot transaction: begin, append newline-terminated row
+ * batches, then commit. Decode keeps the previous snapshot until commit. */
+int tiger_engine_personal_begin(int handle);
+int tiger_engine_personal_append(int handle, const char* rows);
+int tiger_engine_personal_commit(int handle);
+int tiger_engine_personal_abort(int handle);
 void tiger_engine_free(int handle);
 /* include_early is a deprecated ABI compatibility flag; the canonical Lua
  * translator always passes 0 and never exposes early-commit results. */

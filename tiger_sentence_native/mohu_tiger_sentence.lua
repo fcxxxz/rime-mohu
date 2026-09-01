@@ -18,6 +18,9 @@
 --   tiger/rerank_http_endpoint: 仅供测试注入，生产路径禁用
 --   tiger/rerank_timeout_ms: five-row scorer deadline（默认 45）
 --   tiger/rerank_full_timeout_ms: adaptive >5-row deadline（默认 140）
+--   tiger/personal_lexicon_max_rows: 个人词快照可选行数上限（默认不限制）
+--   tiger/personal_refresh_interval: 提交边界快照刷新防抖秒数（默认 30，0=每次提交刷新）
+--   tiger/perf_log: 输出逐句 native/Lua 分层耗时日志（默认 false）
 
 local M = {}
 local runtime = require("mohu_llm_runtime")
@@ -57,6 +60,7 @@ end
 local beam_width = 200
 local candidate_limit = 20
 local candidate_quality = 50
+local personal_refresh_interval = 30
 
 local function finite_number(value)
   return type(value) == "number" and value == value and
@@ -166,6 +170,29 @@ local function configure(env)
       if string_ok then quality = tonumber(string_value) end
     end
     if finite_number(quality) then candidate_quality = quality else candidate_quality = 50 end
+    local interval
+    local interval_ok, interval_value = pcall(cfg.get_int, cfg,
+      "tiger/personal_refresh_interval")
+    if interval_ok then interval = interval_value end
+    if interval == nil then
+      local s_ok, s_value = pcall(cfg.get_string, cfg,
+        "tiger/personal_refresh_interval")
+      if s_ok then interval = tonumber(s_value) end
+    end
+    if finite_number(interval) and interval >= 0 then
+      personal_refresh_interval = math.floor(interval)
+    end
+    if env then
+      env._tiger_perf = false
+      local perf_ok, perf_value = pcall(cfg.get_string, cfg, "tiger/perf_log")
+      if perf_ok and (perf_value == "true" or perf_value == "1") then
+        env._tiger_perf = true
+      end
+      if not env._tiger_perf then
+        local perf_int_ok, perf_int = pcall(cfg.get_int, cfg, "tiger/perf_log")
+        if perf_int_ok and perf_int == 1 then env._tiger_perf = true end
+      end
+    end
   end
   return cfg
 end
@@ -263,25 +290,187 @@ local function ensure_engine(env)
   return h
 end
 
-local function refresh_personal_lexicon(env)
+-- 个人词快照的刷新时机（打字零影响的分片设计，三阶段）：
+--   1. 提交只递增代数计数并标记 dirty，不做任何扫描工作；
+--   2. 扫描以 ≤5ms CPU 预算的切片推进，只在输入组合为空时启动/推进；
+--   3. 扫描完成后进入 native 事务喂入阶段：personal_append 按同一预算
+--      分片喂入整行块，personal_commit 一次性原子切换（解析成本已随
+--      append 摊销，commit 只剩哈希层比对与应用；无变化时 native 保留
+--      解码缓存）。事务期间解码始终使用旧快照。
+-- 旧 ABI（无事务函数的 dylib）自动回退整体 set_personal 路径。
+-- 初始化时做一次一次性全量（方案装载期，打字尚未开始）。
+-- tiger/personal_refresh_interval 秒数设为 0 可关闭时间防抖。
+-- 设置 tiger/personal_lexicon_max_rows 时回退整体扫描路径（需全局排序）。
+-- 例外：--sync 从其他设备合并进来的词不触发提交事件，将在下一次
+-- 含中文的上屏之后被带入快照。
+local personal_scan_budget = 0.005  -- 每片 CPU 秒预算（扫描与喂入共用）
+
+local function personal_scan_options(env)
+  -- 默认无上限走分片路径；显式设置上限则保留整体路径（排序取头部）。
+  local value = env._mohu_personal_max_rows
+  if type(value) == "number" and value >= 0 then
+    return { limit = math.floor(value) }, true
+  end
+  return nil, false
+end
+
+local function personal_cycle_complete(env)
+  env._mohu_personal_refresh_at = os.time()
+  -- 扫描/喂入期间又有提交：保持脏，下一周期再来。
+  env._mohu_personal_dirty =
+    (env._mohu_personal_generation or 0) ~= env._mohu_personal_scan_generation
+end
+
+local function personal_txn_available()
+  return tigerengine ~= nil and
+    type(tigerengine.personal_begin) == "function" and
+    type(tigerengine.personal_append) == "function" and
+    type(tigerengine.personal_commit) == "function"
+end
+
+-- 整体回退路径（旧 ABI / 事务失败 / max_rows 限额）。
+local function personal_apply_monolithic(env, payload)
+  if payload ~= env._mohu_personal_last_payload then
+    env._mohu_personal_last_payload = payload
+    local ok, err = pcall(tigerengine.set_personal_lexicon, engine_handle, payload)
+    if not ok then
+      log_error("mohu_sentence: personal lexicon update failed: " .. tostring(err))
+    end
+  end
+  personal_cycle_complete(env)
+end
+
+-- 事务喂入：每个空闲事件喂入预算内的整行块；全部喂完则 commit。
+-- 返回 true 表示本轮事务链已结束（无论成败）。
+local function personal_feed_tick(env)
+  local feed = env._mohu_personal_feed
+  if feed == nil then return true end
+  local deadline = os.clock() + personal_scan_budget
+  local fed = 0
+  while feed.index <= #feed.parts do
+    local part = feed.parts[feed.index]
+    local ok, err = pcall(tigerengine.personal_append, engine_handle, part)
+    if not ok then
+      pcall(tigerengine.personal_abort, engine_handle)
+      env._mohu_personal_feed = nil
+      log_error("mohu_sentence: personal append failed: " .. tostring(err))
+      personal_apply_monolithic(env, table.concat(feed.parts))
+      return true
+    end
+    feed.index = feed.index + 1
+    fed = fed + 1
+    if fed >= 2048 then break end
+    if fed % 64 == 0 and os.clock() >= deadline then break end
+  end
+  if feed.index > #feed.parts then
+    env._mohu_personal_feed = nil
+    local ok, err = pcall(tigerengine.personal_commit, engine_handle)
+    if not ok then
+      pcall(tigerengine.personal_abort, engine_handle)
+      log_error("mohu_sentence: personal commit failed: " .. tostring(err))
+      personal_apply_monolithic(env, table.concat(feed.parts))
+      return true
+    end
+    personal_cycle_complete(env)
+  end
+  return env._mohu_personal_feed == nil
+end
+
+-- 扫描完成后的衔接：有事务 ABI 则进入喂入阶段，否则整体应用。
+local function personal_start_apply(env, state)
+  if personal_txn_available() then
+    local ok = pcall(tigerengine.personal_begin, engine_handle)
+    if ok then
+      env._mohu_personal_feed = { parts = state.parts, index = 1 }
+      -- 顺势喂入第一片。
+      personal_feed_tick(env)
+      return
+    end
+    pcall(tigerengine.personal_abort, engine_handle)
+  end
+  personal_apply_monolithic(env, personal_lexicon.scan_finish(state))
+end
+
+local function personal_scan_tick(env, ctx)
+  -- 组合非空时绝不推进（打字避让）。
+  if ctx then
+    local ok, input = pcall(function() return ctx.input end)
+    if ok and type(input) == "string" and #input > 0 then return end
+  end
+  -- 阶段 3：事务喂入进行中。
+  if env._mohu_personal_feed ~= nil then
+    personal_feed_tick(env)
+    return
+  end
+  -- 阶段 2：扫描进行中。
+  local state = env._mohu_personal_scan
+  if state ~= nil then
+    if not personal_lexicon.scan_step(state, personal_scan_budget) then return end
+    env._mohu_personal_scan = nil
+    personal_start_apply(env, state)
+    return
+  end
+  -- 阶段 1：条件启动。
+  if not env._mohu_personal_dirty then return end
+  if personal_refresh_interval > 0 then
+    local last = env._mohu_personal_refresh_at
+    if last and (os.time() - last) < personal_refresh_interval then return end
+  end
+  local memory = env._mohu_personal_memory
+  if not memory or not tigerengine or not engine_handle or
+      type(tigerengine.set_personal_lexicon) ~= "function" then
+    return
+  end
+  local _, monolithic = personal_scan_options(env)
+  if monolithic then
+    local options = personal_scan_options(env)
+    local _, payload = personal_lexicon.snapshot(memory, options)
+    personal_apply_monolithic(env, payload)
+    return
+  end
+  local scan, status = personal_lexicon.scan_begin(memory)
+  if scan == nil then
+    env._mohu_personal_refresh_at = os.time()
+    env._mohu_personal_dirty = false
+    if status == "empty" and env._mohu_personal_last_payload ~= "" then
+      -- userdb 被清空：必须立即重置 native 叠加层。
+      env._mohu_personal_last_payload = ""
+      pcall(tigerengine.set_personal_lexicon, engine_handle, "")
+    end
+    return
+  end
+  env._mohu_personal_scan = scan
+  env._mohu_personal_scan_generation = env._mohu_personal_generation or 0
+  if not personal_lexicon.scan_step(scan, personal_scan_budget) then return end
+  env._mohu_personal_scan = nil
+  personal_start_apply(env, scan)
+end
+
+local function refresh_personal_lexicon(env, force)
   local memory = env and env._mohu_personal_memory
   if not memory or not tigerengine or not engine_handle or
       type(tigerengine.set_personal_lexicon) ~= "function" then
     return
   end
-  local limit = 4096
-  local cfg = env and env.engine and env.engine.schema and env.engine.schema.config
-  if cfg and type(cfg.get_int) == "function" then
-    local ok, value = pcall(cfg.get_int, cfg, "tiger/personal_lexicon_max_rows")
-    if ok and type(value) == "number" and value >= 0 then
-      limit = math.floor(value)
-    end
+  if not force and personal_refresh_interval > 0 then
+    local last = env._mohu_personal_refresh_at
+    if last and (os.time() - last) < personal_refresh_interval then return end
   end
-  local _, payload = personal_lexicon.snapshot(memory, { limit = limit })
-  local ok, err = pcall(tigerengine.set_personal_lexicon, engine_handle, payload)
-  if not ok then
-    log_error("mohu_sentence: personal lexicon update failed: " .. tostring(err))
+  local options = personal_scan_options(env)
+  local _, payload = personal_lexicon.snapshot(memory, options)
+  personal_apply_monolithic(env, payload)
+end
+
+-- 只有含非 ASCII 字符的上屏才可能写入 userdb（词选择/造词）；
+-- 纯英文与标点上屏不标脏。读取提交文本失败时保守视为有变化。
+local function commit_could_touch_userdb(ctx)
+  local ok, text = pcall(function() return ctx and ctx:get_commit_text() end)
+  if not ok or type(text) ~= "string" then return true end
+  if text == "" then return false end
+  for index = 1, #text do
+    if text:byte(index) >= 0x80 then return true end
   end
+  return false
 end
 
 local function init_personal_lexicon(env)
@@ -292,20 +481,43 @@ local function init_personal_lexicon(env)
     local ok, value = pcall(cfg.get_string, cfg, "tiger/personal_lexicon_namespace")
     if ok and type(value) == "string" and value ~= "" then namespace = value end
   end
+  if cfg and type(cfg.get_int) == "function" then
+    local ok, value = pcall(cfg.get_int, cfg, "tiger/personal_lexicon_max_rows")
+    if ok and type(value) == "number" and value >= 0 then
+      env._mohu_personal_max_rows = value
+    end
+  end
   local ok, memory = pcall(Memory, env.engine, env.engine.schema, namespace)
   if not ok or memory == nil then return end
   env._mohu_personal_memory = memory
-  refresh_personal_lexicon(env)
+  env._mohu_personal_generation = 0
+  -- 方案装载期的一次性全量：此刻打字尚未开始，不会影响输入。
+  refresh_personal_lexicon(env, true)
   local context = env.engine.context
   if context and context.commit_notifier then
-    env._mohu_personal_commit_notifier = context.commit_notifier:connect(function()
-      refresh_personal_lexicon(env)
+    env._mohu_personal_commit_notifier = context.commit_notifier:connect(function(ctx)
+      env._mohu_personal_generation = (env._mohu_personal_generation or 0) + 1
+      if commit_could_touch_userdb(ctx) then
+        env._mohu_personal_dirty = true
+      end
+      -- 上屏瞬间组合为空，是推进一个切片的天然时机。
+      personal_scan_tick(env, ctx)
+    end)
+  end
+  if context and context.update_notifier then
+    env._mohu_personal_update_notifier = context.update_notifier:connect(function(ctx)
+      -- 扫描进行中即使不脏也要推进；未开始时 tick 内部自会检查条件。
+      personal_scan_tick(env, ctx)
     end)
   end
 end
 
 local function fini_personal_lexicon(env)
   if not env then return end
+  if env._mohu_personal_update_notifier ~= nil then
+    pcall(function() env._mohu_personal_update_notifier:disconnect() end)
+    env._mohu_personal_update_notifier = nil
+  end
   if env._mohu_personal_commit_notifier ~= nil then
     pcall(function() env._mohu_personal_commit_notifier:disconnect() end)
     env._mohu_personal_commit_notifier = nil
@@ -314,6 +526,19 @@ local function fini_personal_lexicon(env)
     pcall(function() env._mohu_personal_memory:disconnect() end)
     env._mohu_personal_memory = nil
   end
+  if env._mohu_personal_feed ~= nil then
+    if tigerengine and engine_handle and type(tigerengine.personal_abort) == "function" then
+      pcall(tigerengine.personal_abort, engine_handle)
+    end
+    env._mohu_personal_feed = nil
+  end
+  env._mohu_personal_scan = nil
+  env._mohu_personal_scan_generation = nil
+  env._mohu_personal_generation = nil
+  env._mohu_personal_dirty = nil
+  env._mohu_personal_last_payload = nil
+  env._mohu_personal_refresh_at = nil
+  env._mohu_personal_max_rows = nil
 end
 
 local function retain_engine(env)
@@ -596,6 +821,23 @@ end
 
 -- ---------------------------------------------------------------- 候选输出
 
+-- tiger/perf_log 开启时按轮次输出 native/Lua 分层耗时，用于长句延迟归因；
+-- 默认关闭。native 耗时来自引擎自报的 decode_ms，lua 耗时覆盖解析与候选构造。
+local function perf_begin(env)
+  if env and env._tiger_perf then env._tiger_perf_clock = os.clock() end
+end
+
+local function perf_end(env, raw, phase)
+  if not (env and env._tiger_perf and env._tiger_perf_clock) then return end
+  local started = env._tiger_perf_clock
+  env._tiger_perf_clock = nil
+  if not log or not log.info then return end
+  pcall(log.info, string.format(
+    "mohu_sentence perf len=%d native=%.2fms lua=%.2fms phase=%s",
+    #raw, tonumber(decode_ms) or 0, (os.clock() - started) * 1000,
+    tostring(phase)))
+end
+
 M.translator = {}
 
 function M.translator.init(env)
@@ -636,6 +878,7 @@ function M.translator.func(input, seg, env)
   -- Keep the complete raw input for native/LM scoring.  The candidate view is
   -- trimmed to the active segment below.
   local raw = context_input
+  perf_begin(env)
   local decoded = decode(raw, false)
   local sentence_items = {}
   for index = 1, #decoded.items do
@@ -644,7 +887,10 @@ function M.translator.func(input, seg, env)
       sentence_items[#sentence_items + 1] = item
     end
   end
-  if #sentence_items == 0 then return end
+  if #sentence_items == 0 then
+    perf_end(env, raw, "empty")
+    return
+  end
   decoded.items = sentence_items
 
   -- Reranking remains optional and fail-open.  Candidate metadata is retained
@@ -678,10 +924,14 @@ function M.translator.func(input, seg, env)
         cand.quality = candidate_quality - yielded * 0.001
         yield(cand)
         yielded = yielded + 1
-        if yielded >= candidate_limit then return end
+        if yielded >= candidate_limit then
+          perf_end(env, raw, "limit")
+          return
+        end
       end
     end
   end
+  perf_end(env, raw, "ok")
 end
 
 return M

@@ -695,6 +695,131 @@ void expect_personal_overlay_large_payload_is_accepted() {
   tiger_engine_free(handle);
 }
 
+// 增量刷新路径：无增长 no-op、纯增长、频次变化、收缩回退全量重建，
+// 各状态下解码行为都必须与整表替换语义一致。
+void expect_personal_incremental_refresh_paths() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+  char output[8192] = {};
+
+  // 基础应用：个人词甲乙可作为完整输入命中。
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t8\n") == 0);
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  // 无增长不刷新：相同负载重复应用，行为不得回退。
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t8\n") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  // 纯增长：追加个人词丙丁后，新旧词同时可用。
+  assert(tiger_engine_set_personal_lexicon(handle,
+                                           "abcd\t甲乙\t8\ncdef\t丙丁\t5\n") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") != nullptr);
+
+  // 频次变化：commits 提升只更新 boost，词仍然可解。
+  assert(tiger_engine_set_personal_lexicon(handle,
+                                           "abcd\t甲乙\t20\ncdef\t丙丁\t5\n") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") != nullptr);
+
+  // 收缩：移除丙丁必须回退全量重建，其边消失而甲乙保留。
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t20\n") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") == nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  tiger_engine_free(handle);
+}
+
+// 分片事务协议：与整体路径等价、事务中解码用旧快照、abort 回退、
+// 半行块拒绝、缺 begin 拒绝、事务收缩、no-op 提交。
+void expect_personal_transaction_paths() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+  char output[8192] = {};
+
+  // 无事务时 append/commit 必须失败。
+  assert(tiger_engine_personal_append(handle, "abcd\t甲乙\t8\n") == -1);
+  assert(tiger_engine_personal_commit(handle) == -1);
+
+  // 半行块（不以换行结尾）必须被拒绝，且不破坏后续正确块。
+  assert(tiger_engine_personal_begin(handle) == 0);
+  assert(tiger_engine_personal_append(handle, "abcd\t甲乙\t8") == -1);
+  assert(tiger_engine_personal_append(handle, "abcd\t甲乙\t8\ncdef\t丙丁\t5\n") == 0);
+
+  // 事务提交前解码必须仍用旧快照：甲乙/丙丁都不可见。
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") == nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") == nullptr);
+
+  // commit 后两个个人词同时可用（与整体路径语义一致）。
+  assert(tiger_engine_personal_commit(handle) == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") != nullptr);
+
+  // no-op 提交：同样的行集再走一遍事务，行为不变。
+  assert(tiger_engine_personal_begin(handle) == 0);
+  assert(tiger_engine_personal_append(handle, "abcd\t甲乙\t8\ncdef\t丙丁\t5\n") == 0);
+  assert(tiger_engine_personal_commit(handle) == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  // abort 回退：喂入但放弃，新词不出现（cdef 静态可分解为 丁戊）。
+  assert(tiger_engine_personal_begin(handle) == 0);
+  assert(tiger_engine_personal_append(handle, "cdef\t新词\t9\n") == 0);
+  assert(tiger_engine_personal_abort(handle) == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "新词") == nullptr);
+
+  // 事务收缩：只保留甲乙，丙丁的边必须消失。
+  assert(tiger_engine_personal_begin(handle) == 0);
+  assert(tiger_engine_personal_append(handle, "abcd\t甲乙\t8\n") == 0);
+  assert(tiger_engine_personal_commit(handle) == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") == nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  tiger_engine_free(handle);
+  // stale handle 上的全部事务调用必须失败。
+  assert(tiger_engine_personal_begin(handle) == -1);
+  assert(tiger_engine_personal_append(handle, "abcd\t甲乙\t8\n") == -1);
+  assert(tiger_engine_personal_commit(handle) == -1);
+  assert(tiger_engine_personal_abort(handle) == -1);
+}
+
 void expect_stale_engine_handles_are_rejected() {
   const std::string model_path = write_many_candidate_model();
   const std::string lexicon_path = write_single_candidate_lexicon();
@@ -777,6 +902,8 @@ int main() {
   expect_final_candidates_include_pathmaps();
   expect_personal_overlay_replacement_and_internal_edges();
   expect_personal_overlay_large_payload_is_accepted();
+  expect_personal_incremental_refresh_paths();
+  expect_personal_transaction_paths();
   expect_stale_engine_handles_are_rejected();
   expect_null_api_rejected();
 

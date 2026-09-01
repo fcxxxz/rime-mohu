@@ -87,11 +87,11 @@ class SplitDistributionTest(unittest.TestCase):
                     "lua/zrmdb.txt",
                     "opencc/mohu_chaifen.ocd2",
                     "opencc/mohu_emoji.ocd2",
-                    "zh-hans-t-essay-bgw.gram",
                 ):
                     self.assertTrue((output / relative).is_file(), relative)
 
                 self.assertEqual([], sorted(output.glob(f"mohu_{other}*")))
+                self.assertFalse((output / "zh-hans-t-essay-bgw.gram").exists())
                 self.assertFalse((output / "zh-hans-t-essay-bgc.gram").exists())
 
 

@@ -214,7 +214,7 @@ class MohuConfigTest(unittest.TestCase):
         )
         self.assertNotIn("mohu_tiger_sentence_early_commit", tiger_sentence)
 
-    def test_native_schema_is_named_for_llm_and_keeps_octagram_on_mohu_zrm(self) -> None:
+    def test_native_schema_is_named_for_llm_and_mohu_zrm_disables_octagram(self) -> None:
         native = read("mohu_llm_zrm.schema.yaml")
         self.assertIn("  schema_id: mohu_llm_zrm\n", native)
         self.assertIn("  name: 魔虎大模型·自然码\n", native)
@@ -224,7 +224,7 @@ class MohuConfigTest(unittest.TestCase):
         )
         self.assertNotIn("__include: mohu:/octagram/enable_for_sentence", native)
         self.assertIn(
-            "__include: mohu:/octagram/enable_for_sentence\n",
+            "__include: mohu:/octagram/disable\n",
             read("mohu_zrm.schema.yaml"),
         )
 

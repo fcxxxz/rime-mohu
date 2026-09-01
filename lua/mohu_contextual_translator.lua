@@ -41,6 +41,20 @@ function Module.init_pair(env, name)
         (type(long_input_length) == "number" and long_input_length >= 1)
         and math.floor(long_input_length) or nil
 
+    -- 长句方案在装载期预建 smart_static，避免长输入的第一个按键
+    -- 付出 script_translator 构建成本（词典打开、Memory 装配等）。
+    if env.contextual_long_input_length ~= nil and env.static_translator == nil then
+        local ok = pcall(function()
+            env.static_translator = Component.Translator(
+                env.engine,
+                "",
+                "script_translator@smart_static"
+            )
+            env.static_translator.contextual_suggestions = true
+        end)
+        if not ok then env.static_translator = nil end
+    end
+
     local context = env.engine.context
     env.contextual_commit_notifier = context.commit_notifier:connect(function(ctx)
         if not ctx:get_option("contextual_order") then

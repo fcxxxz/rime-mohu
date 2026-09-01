@@ -1,0 +1,252 @@
+{
+  "manifest_version": 1,
+  "benchmark": {
+    "name": "mohu-sentence-model-benchmark",
+    "date": "2026-08-29",
+    "input_repository_commit": "002c0562379ac49b82bc072f94711f08581f859a",
+    "benchmark_code_commit": "a095b7d515f786592e7777cb98cddb14565983b2",
+    "seed": 20260829,
+    "cases": 20000,
+    "split": {
+      "news": 10000,
+      "daily": 10000
+    },
+    "text_filter": {
+      "min_cjk_chars": 6,
+      "max_cjk_chars": 24,
+      "pure_cjk": true,
+      "deduplicate_text": true
+    },
+    "encoding": {
+      "schema": "mohu_zrm",
+      "double_pinyin": "自然码",
+      "auxiliary_key": "Tiger longest-main-code first key",
+      "max_match_word_length": 10,
+      "modes": {
+        "pure": "double pinyin only",
+        "sparse": "one key at the first character of words 1, 5, 9, ...",
+        "word1": "one key at the first character of every maximum-match word",
+        "char1": "one key after every character"
+      }
+    },
+    "statistics": {
+      "top1_ci": "Wilson 95% interval",
+      "paired_delta": "10000-sample paired bootstrap, seed 20260829",
+      "candidate_limit": 20,
+      "latency_comparability": false,
+      "latency_scope": {
+        "rime": "clear composition + candidate iteration + probe output write",
+        "tiger": "native tiger_decode only"
+      }
+    }
+  },
+  "sources": {
+    "news": {
+      "name": "CLUE TNews train split",
+      "url": "https://storage.googleapis.com/cluebenchmark/tasks/tnews_public.zip",
+      "revision": "CLUE:tnews_public-2021-07-25",
+      "bytes": 5123575,
+      "sha256": "77c476e70cfe0b014a81b84c6e1db2142a8a2f52f4ae0a8216aa75e673933462",
+      "license_note": "CLUE public dataset; consult the source terms before redistribution",
+      "committed": false
+    },
+    "daily": {
+      "name": "silver/lccc lccc_base_test",
+      "url": "https://huggingface.co/datasets/silver/lccc/resolve/5bd582fa28cd7143f2f9c852e08e23089d677c44/lccc_base_test.jsonl.gz?download=true",
+      "revision": "silver/lccc@5bd582fa28cd7143f2f9c852e08e23089d677c44",
+      "bytes": 549124,
+      "sha256": "cf8757587bdb8f360cc94fc38baadf9e185bad65a26155527a8430c048676016",
+      "license_note": "HF mirror metadata is MIT; original LCCC corpus terms still apply",
+      "committed": false
+    },
+    "encoded_cases": {
+      "path": "research/lm_sentence_compare/cases.jsonl",
+      "bytes": 10865150,
+      "sha256": "da0887f98bb72d66536e82f5438fe03cd5659dbfc77fbf9aa8bfe421825c7205",
+      "committed": false
+    }
+  },
+  "models": {
+    "bgw": {
+      "name": "八股文",
+      "grammar": "zh-hans-t-essay-bgw.gram",
+      "bytes": 40925228,
+      "sha256": "d3cb2438c1fdcd6a855dd6ca8f5c1060a29273c6b64c2c2c69af67cd71b6aa7e",
+      "rime_schema": "mohu_zrm_sentence",
+      "committed": true,
+      "grammar_parameters": {
+        "language": "zh-hans-t-essay-bgw",
+        "collocation_max_length": 4,
+        "collocation_min_length": 3
+      }
+    },
+    "wx": {
+      "name": "万象 LTS",
+      "grammar": "research/lm_sentence_compare/wanxiang-lts-zh-hans.gram",
+      "source_url": "https://github.com/amzxyz/RIME-LMDG/releases/download/LTS/wanxiang-lts-zh-hans.gram",
+      "source_revision": "amzxyz/rime_wanxiang@f6fe650",
+      "license_note": "RIME-LMDG/rime_wanxiang terms; verify before redistribution",
+      "bytes": 420248620,
+      "sha256": "4554bbe1ba683c416e64ab15d65c944743bdad5251285032681f12d24ee87102",
+      "rime_schema": "mohu_zrm_sentence_wx",
+      "committed": false,
+      "grammar_parameters": {
+        "language": "wanxiang-lts-zh-hans",
+        "collocation_max_length": 6,
+        "collocation_min_length": 3,
+        "collocation_penalty": -14,
+        "non_collocation_penalty": -6,
+        "weak_collocation_penalty": -100,
+        "rear_penalty": -20
+      }
+    },
+    "tiger": {
+      "name": "虎码 TCSKNM",
+      "engine": "tiger_sentence_native/libtigerengine.dylib",
+      "engine_bytes": 160080,
+      "engine_sha256": "20709c141a236034d26605c00ad5813f56043a8b75e9a5e5e264f575eab06947",
+      "ngram": "/Users/fuchuxuan/Library/Rime/mohu_llm/data/sentence-ngram-mobile.bin",
+      "ngram_bytes": 224475584,
+      "ngram_sha256": "e3953f8f1526b871eb81fe887a8ae4a6edf79edffd33e388b95e2915adadb2d3",
+      "lexicon": "tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt",
+      "lexicon_bytes": 3798781,
+      "lexicon_sha256": "666a29cfdaaf5566a6431d270275c637e48679042c180cd1cecbd73830a97ee3",
+      "engine_and_lexicon_committed": true,
+      "ngram_committed": false,
+      "beam": 200,
+      "all_ranks": true,
+      "qwen_rerank": false
+    }
+  },
+  "runtime": {
+    "frontend": "Squirrel",
+    "squirrel_bundle_version": "1.1.2",
+    "librime": {
+      "path": "/Library/Input Methods/Squirrel.app/Contents/Frameworks/librime.1.dylib",
+      "bytes": 7177888,
+      "sha256": "abb06aa5b3f53de375bc401512b49a7a31b7ed5ee62b2ef7a438512abee5958f"
+    },
+    "librime_lua": {
+      "path": "/Library/Input Methods/Squirrel.app/Contents/Frameworks/rime-plugins/librime-lua.dylib",
+      "bytes": 4364624,
+      "sha256": "a0862901b4d36d35aba7012f05c132dd087890cca564609c5d1ea3ba9de7c12b"
+    },
+    "librime_octagram": {
+      "path": "/Library/Input Methods/Squirrel.app/Contents/Frameworks/rime-plugins/librime-octagram.dylib",
+      "bytes": 646672,
+      "sha256": "70f587ca908e1b857f4180dc50584b8843ec0852dbc2013248badc5fb0571525"
+    },
+    "rime_probe": {
+      "path": "research/lm_sentence_compare/probes/rime_candidate_dump_squirrel",
+      "bytes": 42304,
+      "sha256": "878055e7509f790c6bea8ca6673bc0bce752919bc5ba437092bee18ad211b639",
+      "committed": false,
+      "hash_policy": "observed benchmark binary; runner defaults to Squirrel ABI check and accepts a fresh ABI-valid rebuild unless --probe-sha256 is supplied"
+    },
+    "schemas": {
+      "default.yaml": "376e877a95f20bbeb744d6062143d6e841f3ba19459a729f3e1052de607859a9",
+      "mohu.yaml": "8af5b146ab93bb33d13224c4f9f86c0d18f62b0a9a328bd998cec3ea2a001c6f",
+      "mohu_zrm.schema.yaml": "c010df2f5d515d0549efb969c7a5791c0ffa17d403f07c41870b4ef412339be4",
+      "mohu_zrm_sentence.schema.yaml": "59f256074d8f4d63d0077c2a0d72cbe8f14742261313c1f878766575e6ac5dc0",
+      "mohu_zrm_fixed.schema.yaml": "b68f1314f599cba22612eeb7f7cf41967ccad4459ff1b6f46eee06dffec4a0e2",
+      "mohu_flypy_aux.schema.yaml": "179b8f1da6dac288fc27b52528df84b099ea56d228dcd10720c61a82158a46d5",
+      "mohu_llm_zrm.schema.yaml": "b5203f7ebc11653eeb586809f9cf42b55a1be697cbc7392b62824e46f383aa69",
+      "tiger.schema.yaml": "7ea9a096a28a2923bd028ae5087a82fd4fb5aa5f0842c89db8f8bb0b29de6a90",
+      "tools/data/tiger_aux.txt": "d4b5201ab612b14e661629c1968768149c130cb86a75c6c4860a477a250d51a0"
+    }
+  },
+  "code": {
+    "research/lm_sentence_compare/corpus/build_corpus.py": "4ce1c0816d20c20f6f82bd8314304f10582b5e65836da845d3f0649d2eda52f5",
+    "research/lm_sentence_compare/encode_sentences.py": "f52c65b6621ff2a9e56c633b755d3257f694facbacc8ff750f7e559ecd5c1d22",
+    "research/lm_sentence_compare/prepare_staging.py": "dc8102c3a4cb6386214b9cce7f34656be46896e3ffc630475818f386c579621e",
+    "research/lm_sentence_compare/run_rime_eval.py": "31aeb5073e0868da48a28c40a1aaaa9732b1d79feafdef2e7cd9afb772408a30",
+    "research/lm_sentence_compare/run_tiger_eval.py": "567b55c8026ab40654a2191925c5305ab6cb75c9cbe938cba80d4c361ed012fc",
+    "research/lm_sentence_compare/merge_tiger_shards.py": "1a472ccdf83fac780eba2e614bd651392d0114f3e70129a9e37df9120a4d6ec2",
+    "research/lm_sentence_compare/metrics.py": "16de770170730e7bc9e6a66ba58f1a41b2c7894c62e178fe3eec6f0fc3306c15",
+    "research/lm_sentence_compare/report_results.py": "41be3d148f61618d1c8cfc3c576cad7e609ebe22440936551b99a9dbc22e98c3",
+    "research/lm_sentence_compare/README.md": "d88d5437c3ff2abae5dc3d4497faf54945646e17bde42ac66fbafcc6da2a8b80",
+    "research/lm_sentence_compare/probes/rime_candidate_dump.cc": "1ee271f1d44711ac58f3fd33889977d7b80a77730daddfa408487bed27f94945"
+  },
+  "integrity": {
+    "cases": {
+      "rows": 20000,
+      "unique_ids": 20000,
+      "unique_texts": 20000,
+      "unique_raws": {
+        "pure": 20000,
+        "sparse": 20000,
+        "word1": 20000,
+        "char1": 20000
+      },
+      "fallback_reading_rows": 7,
+      "fallback_reading_chars": 9
+    },
+    "rime": {
+      "rows_per_model_mode": 20000,
+      "models": ["bgw", "wx"],
+      "c_e_count_mismatch": 0,
+      "truncated_rows_per_mode": {
+        "pure": 19750,
+        "sparse": 16795,
+        "word1": 16519,
+        "char1": 15844
+      },
+      "empty_rows": 0,
+      "error_rows": 0
+    },
+    "tiger": {
+      "rows_per_mode": 20000,
+      "duplicate_raws": 0,
+      "data_latency_raw_mismatch": 0,
+      "empty_rows": {
+        "pure": 0,
+        "sparse": 4,
+        "word1": 6,
+        "char1": 6
+      },
+      "error_rows": 0
+    }
+  },
+  "outputs": {
+    "run_directory": "/tmp/mohu-lm-final-results.IaurbN",
+    "run_directory_scope": "local-only temporary path; use external_raw file hashes for durable verification",
+    "retained_summary": {
+      "markdown": {
+        "path": "docs/reports/2026-08-29-sentence-model-benchmark.md",
+        "bytes": 29700,
+        "sha256": "5b84f8630fbeb29317cc13bc3cccbd84e64d8074ead50f6af3d0517a15816a23"
+      },
+      "json": {
+        "path": "docs/reports/2026-08-29-sentence-model-benchmark.summary.json",
+        "bytes": 77148,
+        "sha256": "8c598ed30beb8d473502fc64ae76f057d41a02cf9c72dd497802559b61e7a9ea"
+      },
+      "csv": {
+        "path": "docs/reports/2026-08-29-sentence-model-benchmark.summary.csv",
+        "bytes": 2218,
+        "sha256": "1e566788fc6bacbc44e2b3d778dc6f18624fcb7f503a5b5fd0fc844ccfb0ed2f"
+      }
+    },
+    "external_raw": {
+      "committed": false,
+      "files": {
+        "rime_bgw_pure.tsv": {"bytes": 17807346, "sha256": "25d6191d1e26ff79fbbb3b63ed6f4289eca69b7e7a3f1b90b4087b71d9cef5d1"},
+        "rime_bgw_sparse.tsv": {"bytes": 17528624, "sha256": "e419e0756b50028bdb97649f8bcbcea4397a566959d0a22be25d0cc6f11d5203"},
+        "rime_bgw_word1.tsv": {"bytes": 19301703, "sha256": "4b69c84f923b839bbb2ffd7c348819ec9d87c83bb4c2eb11b5d9a44071767680"},
+        "rime_bgw_char1.tsv": {"bytes": 20859172, "sha256": "debf046a4aedb54b5f17a511422a4cd7f658153e7f81ee595a23513259a808f7"},
+        "rime_wx_pure.tsv": {"bytes": 17808443, "sha256": "2bd3185afceba1abaac4eb1a5e33a1eeb2d0467a044fb5f5a63dd92140f6616b"},
+        "rime_wx_sparse.tsv": {"bytes": 17529232, "sha256": "cbfd30ce2f3102a870da3baea1ef3d129a513982b60125d78e04af4f47901101"},
+        "rime_wx_word1.tsv": {"bytes": 19302725, "sha256": "81061cf5b8b75d22ca2c2ed32be657bcc5a7af479684e61103816a0fccaff757"},
+        "rime_wx_char1.tsv": {"bytes": 20860840, "sha256": "f125cf483a14b2916ab358756eb8cd106a78079a7cd9e9afc0969bc31b0bde90"},
+        "tiger_pure.tsv": {"bytes": 19715056, "sha256": "016023eb4e1b1d1ca937981641b5e3f1425fb0f3d6a7497e4873192166e01a52"},
+        "tiger_sparse.tsv": {"bytes": 19767500, "sha256": "e433759afdad91d0d4bdcde66c699c7db3976d5cae4771fa66ee31ef76a519cb"},
+        "tiger_word1.tsv": {"bytes": 20010995, "sha256": "9217e58284bd913301830dd8ad562310d8c9d3345991705af61a58bb2b1a7906"},
+        "tiger_char1.tsv": {"bytes": 20564935, "sha256": "3a21aa5d99e3130ae257b7d8a0eb001faabe54617aa56106b1968277067804a0"},
+        "tiger_pure.latency.tsv": {"bytes": 608612, "sha256": "48b65bcf62b081299c50a0d69eacd85e43b243c04abce5756b7ec6d2f8da4eeb"},
+        "tiger_sparse.latency.tsv": {"bytes": 651051, "sha256": "b54a7d94eec57b77310526f81330292129c2cdaa80391b9608e51a0d21572cd4"},
+        "tiger_word1.latency.tsv": {"bytes": 748889, "sha256": "464637c7dd4684b06803866f35ea173fffb4a6f539e02a241ec2fe834a4df714"},
+        "tiger_char1.latency.tsv": {"bytes": 844662, "sha256": "dc8c411ac3a9860f8a85bc19422dabaff4674d87645e5978587d78cb081f052d"}
+      }
+    }
+  }
+}

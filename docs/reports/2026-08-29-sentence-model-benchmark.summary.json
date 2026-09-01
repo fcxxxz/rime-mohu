@@ -1,0 +1,2940 @@
+{
+  "bootstrap": {
+    "tiger_vs_bgw/char1": {
+      "ci_high": 0.0147,
+      "ci_low": 0.0052,
+      "n": 20000,
+      "observed_delta": 0.00985,
+      "samples": 10000
+    },
+    "tiger_vs_bgw/pure": {
+      "ci_high": 0.11525124999999999,
+      "ci_low": 0.1005,
+      "n": 20000,
+      "observed_delta": 0.10785,
+      "samples": 10000
+    },
+    "tiger_vs_bgw/sparse": {
+      "ci_high": 0.10780124999999999,
+      "ci_low": 0.0929,
+      "n": 20000,
+      "observed_delta": 0.1003,
+      "samples": 10000
+    },
+    "tiger_vs_bgw/word1": {
+      "ci_high": 0.06275,
+      "ci_low": 0.0501,
+      "n": 20000,
+      "observed_delta": 0.05635,
+      "samples": 10000
+    },
+    "wx_vs_bgw/char1": {
+      "ci_high": -0.0044,
+      "ci_low": -0.01035,
+      "n": 20000,
+      "observed_delta": -0.0074,
+      "samples": 10000
+    },
+    "wx_vs_bgw/pure": {
+      "ci_high": 0.0506,
+      "ci_low": 0.04075,
+      "n": 20000,
+      "observed_delta": 0.0456,
+      "samples": 10000
+    },
+    "wx_vs_bgw/sparse": {
+      "ci_high": 0.0427,
+      "ci_low": 0.03255,
+      "n": 20000,
+      "observed_delta": 0.0376,
+      "samples": 10000
+    },
+    "wx_vs_bgw/word1": {
+      "ci_high": 0.02255,
+      "ci_low": 0.01335,
+      "n": 20000,
+      "observed_delta": 0.01795,
+      "samples": 10000
+    }
+  },
+  "bootstrap_common_coverage": {
+    "tiger_vs_bgw/char1": {
+      "baseline_top1": 1.0,
+      "challenger_top1": 0.9464896284476864,
+      "ci_high": -0.05020515158422612,
+      "ci_low": -0.05687257807157511,
+      "n": 17548,
+      "observed_delta": -0.053510371552313654,
+      "samples": 10000
+    },
+    "tiger_vs_bgw/pure": {
+      "baseline_top1": 0.9998722534491569,
+      "challenger_top1": 0.839294839039346,
+      "ci_high": -0.15252618804292287,
+      "ci_low": -0.1687531936637711,
+      "n": 7828,
+      "observed_delta": -0.16057741440981094,
+      "samples": 10000
+    },
+    "tiger_vs_bgw/sparse": {
+      "baseline_top1": 1.0,
+      "challenger_top1": 0.8550972430006412,
+      "ci_high": -0.13784729643086133,
+      "ci_low": -0.15206240649711478,
+      "n": 9358,
+      "observed_delta": -0.14490275699935884,
+      "samples": 10000
+    },
+    "tiger_vs_bgw/word1": {
+      "baseline_top1": 1.0,
+      "challenger_top1": 0.9141745053519299,
+      "ci_high": -0.08141420694129095,
+      "ci_low": -0.09030165423289004,
+      "n": 15415,
+      "observed_delta": -0.08582549464807006,
+      "samples": 10000
+    },
+    "wx_vs_bgw/char1": {
+      "baseline_top1": 1.0,
+      "challenger_top1": 1.0,
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "n": 17132,
+      "observed_delta": 0.0,
+      "samples": 10000
+    },
+    "wx_vs_bgw/pure": {
+      "baseline_top1": 0.9998687319506432,
+      "challenger_top1": 0.9998687319506432,
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "n": 7618,
+      "observed_delta": 0.0,
+      "samples": 10000
+    },
+    "wx_vs_bgw/sparse": {
+      "baseline_top1": 1.0,
+      "challenger_top1": 1.0,
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "n": 9020,
+      "observed_delta": 0.0,
+      "samples": 10000
+    },
+    "wx_vs_bgw/word1": {
+      "baseline_top1": 1.0,
+      "challenger_top1": 1.0,
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "n": 14688,
+      "observed_delta": 0.0,
+      "samples": 10000
+    }
+  },
+  "input_profile": {
+    "char1": {
+      "mean_aux_chars": 11.76295,
+      "mean_aux_ratio": 1.0
+    },
+    "pure": {
+      "mean_aux_chars": 0,
+      "mean_aux_ratio": 0.0
+    },
+    "sparse": {
+      "mean_aux_chars": 2.1236,
+      "mean_aux_ratio": 0.18662019545346742
+    },
+    "word1": {
+      "mean_aux_chars": 7.0002,
+      "mean_aux_ratio": 0.6020540462149893
+    }
+  },
+  "slices": {
+    "bgw": {
+      "char1": {
+        "all": {
+          "char_accuracy": 0.9852354480078166,
+          "coverage": 17665,
+          "mrr": 0.88325,
+          "n": 20000,
+          "top1": 17665,
+          "top10": 17665,
+          "top20": 17665,
+          "top5": 17665
+        },
+        "daily": {
+          "char_accuracy": 0.9837990147946122,
+          "coverage": 8873,
+          "mrr": 0.8873,
+          "n": 10000,
+          "top1": 8873,
+          "top10": 8873,
+          "top20": 8873,
+          "top5": 8873
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.9793408724151215,
+          "coverage": 514,
+          "mrr": 0.8250401284109149,
+          "n": 623,
+          "top1": 514,
+          "top10": 514,
+          "top20": 514,
+          "top5": 514
+        },
+        "label:news_car": {
+          "char_accuracy": 0.985565514107778,
+          "coverage": 551,
+          "mrr": 0.8582554517133957,
+          "n": 642,
+          "top1": 551,
+          "top10": 551,
+          "top20": 551,
+          "top5": 551
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9837103604467288,
+          "coverage": 626,
+          "mrr": 0.8682385575589459,
+          "n": 721,
+          "top1": 626,
+          "top10": 626,
+          "top20": 626,
+          "top5": 626
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.990402715399791,
+          "coverage": 779,
+          "mrr": 0.9068684516880093,
+          "n": 859,
+          "top1": 779,
+          "top10": 779,
+          "top20": 779,
+          "top5": 779
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9864125235417457,
+          "coverage": 549,
+          "mrr": 0.8769968051118211,
+          "n": 626,
+          "top1": 549,
+          "top10": 549,
+          "top20": 549,
+          "top5": 549
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9868623769828095,
+          "coverage": 1006,
+          "mrr": 0.8755439512619669,
+          "n": 1149,
+          "top1": 1006,
+          "top10": 1006,
+          "top20": 1006,
+          "top5": 1006
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9876211999191576,
+          "coverage": 380,
+          "mrr": 0.8796296296296297,
+          "n": 432,
+          "top1": 380,
+          "top10": 380,
+          "top20": 380,
+          "top5": 380
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9901072476122637,
+          "coverage": 433,
+          "mrr": 0.9077568134171907,
+          "n": 477,
+          "top1": 433,
+          "top10": 433,
+          "top20": 433,
+          "top5": 433
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9889538305385339,
+          "coverage": 655,
+          "mrr": 0.8997252747252747,
+          "n": 728,
+          "top1": 655,
+          "top10": 655,
+          "top20": 655,
+          "top5": 655
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.9851407873616513,
+          "coverage": 489,
+          "mrr": 0.8548951048951049,
+          "n": 572,
+          "top1": 489,
+          "top10": 489,
+          "top20": 489,
+          "top5": 489
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9895220865370118,
+          "coverage": 63,
+          "mrr": 0.9402985074626866,
+          "n": 67,
+          "top1": 63,
+          "top10": 63,
+          "top20": 63,
+          "top5": 63
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9800894618202312,
+          "coverage": 58,
+          "mrr": 0.8923076923076924,
+          "n": 65,
+          "top1": 58,
+          "top10": 58,
+          "top20": 58,
+          "top5": 58
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9895955624643072,
+          "coverage": 1129,
+          "mrr": 0.907556270096463,
+          "n": 1244,
+          "top1": 1129,
+          "top10": 1129,
+          "top20": 1129,
+          "top5": 1129
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9850597395055005,
+          "coverage": 720,
+          "mrr": 0.876979293544458,
+          "n": 821,
+          "top1": 720,
+          "top10": 720,
+          "top20": 720,
+          "top5": 720
+        },
+        "label:news_world": {
+          "char_accuracy": 0.985892217867095,
+          "coverage": 840,
+          "mrr": 0.8624229979466119,
+          "n": 974,
+          "top1": 840,
+          "top10": 840,
+          "top20": 840,
+          "top5": 840
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9860937318448236,
+          "coverage": 4324,
+          "mrr": 0.839774713536609,
+          "n": 5149,
+          "top1": 4324,
+          "top10": 4324,
+          "top20": 4324,
+          "top5": 4324
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9873864323829481,
+          "coverage": 6421,
+          "mrr": 0.8949128919860627,
+          "n": 7175,
+          "top1": 6421,
+          "top10": 6421,
+          "top20": 6421,
+          "top5": 6421
+        },
+        "news": {
+          "char_accuracy": 0.9866718812210209,
+          "coverage": 8792,
+          "mrr": 0.8792,
+          "n": 10000,
+          "top1": 8792,
+          "top10": 8792,
+          "top20": 8792,
+          "top5": 8792
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9826491248748935,
+          "coverage": 6920,
+          "mrr": 0.9015112037519541,
+          "n": 7676,
+          "top1": 6920,
+          "top10": 6920,
+          "top20": 6920,
+          "top5": 6920
+        }
+      },
+      "pure": {
+        "all": {
+          "char_accuracy": 0.8751110492188092,
+          "coverage": 8419,
+          "mrr": 0.420925,
+          "n": 20000,
+          "top1": 8418,
+          "top10": 8419,
+          "top20": 8419,
+          "top5": 8419
+        },
+        "daily": {
+          "char_accuracy": 0.8782849762405002,
+          "coverage": 4480,
+          "mrr": 0.448,
+          "n": 10000,
+          "top1": 4480,
+          "top10": 4480,
+          "top20": 4480,
+          "top5": 4480
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.8224664678352203,
+          "coverage": 177,
+          "mrr": 0.2841091492776886,
+          "n": 623,
+          "top1": 177,
+          "top10": 177,
+          "top20": 177,
+          "top5": 177
+        },
+        "label:news_car": {
+          "char_accuracy": 0.8719360468122423,
+          "coverage": 240,
+          "mrr": 0.37383177570093457,
+          "n": 642,
+          "top1": 240,
+          "top10": 240,
+          "top20": 240,
+          "top5": 240
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.8527678187505435,
+          "coverage": 289,
+          "mrr": 0.40083217753120665,
+          "n": 721,
+          "top1": 289,
+          "top10": 289,
+          "top20": 289,
+          "top5": 289
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9030273123580237,
+          "coverage": 415,
+          "mrr": 0.4831199068684517,
+          "n": 859,
+          "top1": 415,
+          "top10": 415,
+          "top20": 415,
+          "top5": 415
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.870399766989547,
+          "coverage": 239,
+          "mrr": 0.3817891373801917,
+          "n": 626,
+          "top1": 239,
+          "top10": 239,
+          "top20": 239,
+          "top5": 239
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.8725855631962249,
+          "coverage": 441,
+          "mrr": 0.3838120104438642,
+          "n": 1149,
+          "top1": 441,
+          "top10": 441,
+          "top20": 441,
+          "top5": 441
+        },
+        "label:news_game": {
+          "char_accuracy": 0.8938489905142737,
+          "coverage": 186,
+          "mrr": 0.42939814814814814,
+          "n": 432,
+          "top1": 185,
+          "top10": 186,
+          "top20": 186,
+          "top5": 186
+        },
+        "label:news_house": {
+          "char_accuracy": 0.8728280969165748,
+          "coverage": 190,
+          "mrr": 0.39832285115303984,
+          "n": 477,
+          "top1": 190,
+          "top10": 190,
+          "top20": 190,
+          "top5": 190
+        },
+        "label:news_military": {
+          "char_accuracy": 0.8876866493634259,
+          "coverage": 292,
+          "mrr": 0.4010989010989011,
+          "n": 728,
+          "top1": 292,
+          "top10": 292,
+          "top20": 292,
+          "top5": 292
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.858303123874881,
+          "coverage": 200,
+          "mrr": 0.34965034965034963,
+          "n": 572,
+          "top1": 200,
+          "top10": 200,
+          "top20": 200,
+          "top5": 200
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.883677775984624,
+          "coverage": 26,
+          "mrr": 0.3880597014925373,
+          "n": 67,
+          "top1": 26,
+          "top10": 26,
+          "top20": 26,
+          "top5": 26
+        },
+        "label:news_story": {
+          "char_accuracy": 0.8578991274132974,
+          "coverage": 25,
+          "mrr": 0.38461538461538464,
+          "n": 65,
+          "top1": 25,
+          "top10": 25,
+          "top20": 25,
+          "top5": 25
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9021574039367226,
+          "coverage": 594,
+          "mrr": 0.477491961414791,
+          "n": 1244,
+          "top1": 594,
+          "top10": 594,
+          "top20": 594,
+          "top5": 594
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.8334329708695938,
+          "coverage": 262,
+          "mrr": 0.31912302070645554,
+          "n": 821,
+          "top1": 262,
+          "top10": 262,
+          "top20": 262,
+          "top5": 262
+        },
+        "label:news_world": {
+          "char_accuracy": 0.8706420718638054,
+          "coverage": 363,
+          "mrr": 0.3726899383983573,
+          "n": 974,
+          "top1": 363,
+          "top10": 363,
+          "top20": 363,
+          "top5": 363
+        },
+        "long_15_24": {
+          "char_accuracy": 0.8804865636347867,
+          "coverage": 1575,
+          "mrr": 0.30588463779374636,
+          "n": 5149,
+          "top1": 1575,
+          "top10": 1575,
+          "top20": 1575,
+          "top5": 1575
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.8850824668943136,
+          "coverage": 3058,
+          "mrr": 0.4262020905923345,
+          "n": 7175,
+          "top1": 3058,
+          "top10": 3058,
+          "top20": 3058,
+          "top5": 3058
+        },
+        "news": {
+          "char_accuracy": 0.8719371221971184,
+          "coverage": 3939,
+          "mrr": 0.39385,
+          "n": 10000,
+          "top1": 3938,
+          "top10": 3939,
+          "top20": 3939,
+          "top5": 3939
+        },
+        "short_6_9": {
+          "char_accuracy": 0.8621845972191204,
+          "coverage": 3786,
+          "mrr": 0.49316050026055236,
+          "n": 7676,
+          "top1": 3785,
+          "top10": 3786,
+          "top20": 3786,
+          "top5": 3786
+        }
+      },
+      "sparse": {
+        "all": {
+          "char_accuracy": 0.9077611586207162,
+          "coverage": 9941,
+          "mrr": 0.49705,
+          "n": 20000,
+          "top1": 9941,
+          "top10": 9941,
+          "top20": 9941,
+          "top5": 9941
+        },
+        "daily": {
+          "char_accuracy": 0.9080091805428385,
+          "coverage": 5240,
+          "mrr": 0.524,
+          "n": 10000,
+          "top1": 5240,
+          "top10": 5240,
+          "top20": 5240,
+          "top5": 5240
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.8702961886853746,
+          "coverage": 231,
+          "mrr": 0.3707865168539326,
+          "n": 623,
+          "top1": 231,
+          "top10": 231,
+          "top20": 231,
+          "top5": 231
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9087012101112956,
+          "coverage": 292,
+          "mrr": 0.45482866043613707,
+          "n": 642,
+          "top1": 292,
+          "top10": 292,
+          "top20": 292,
+          "top5": 292
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.8940332741408679,
+          "coverage": 333,
+          "mrr": 0.4618585298196949,
+          "n": 721,
+          "top1": 333,
+          "top10": 333,
+          "top20": 333,
+          "top5": 333
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9287288441922371,
+          "coverage": 480,
+          "mrr": 0.5587892898719441,
+          "n": 859,
+          "top1": 480,
+          "top10": 480,
+          "top20": 480,
+          "top5": 480
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9096353991309248,
+          "coverage": 289,
+          "mrr": 0.46166134185303515,
+          "n": 626,
+          "top1": 289,
+          "top10": 289,
+          "top20": 289,
+          "top5": 289
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9092339685728467,
+          "coverage": 531,
+          "mrr": 0.4621409921671018,
+          "n": 1149,
+          "top1": 531,
+          "top10": 531,
+          "top20": 531,
+          "top5": 531
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9253690583165282,
+          "coverage": 218,
+          "mrr": 0.5046296296296297,
+          "n": 432,
+          "top1": 218,
+          "top10": 218,
+          "top20": 218,
+          "top5": 218
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9102354993157736,
+          "coverage": 227,
+          "mrr": 0.4758909853249476,
+          "n": 477,
+          "top1": 227,
+          "top10": 227,
+          "top20": 227,
+          "top5": 227
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9200503511433012,
+          "coverage": 348,
+          "mrr": 0.47802197802197804,
+          "n": 728,
+          "top1": 348,
+          "top10": 348,
+          "top20": 348,
+          "top5": 348
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.8971969228960441,
+          "coverage": 240,
+          "mrr": 0.4195804195804196,
+          "n": 572,
+          "top1": 240,
+          "top10": 240,
+          "top20": 240,
+          "top5": 240
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9160107622355208,
+          "coverage": 34,
+          "mrr": 0.5074626865671642,
+          "n": 67,
+          "top1": 34,
+          "top10": 34,
+          "top20": 34,
+          "top5": 34
+        },
+        "label:news_story": {
+          "char_accuracy": 0.8854609807646244,
+          "coverage": 29,
+          "mrr": 0.4461538461538462,
+          "n": 65,
+          "top1": 29,
+          "top10": 29,
+          "top20": 29,
+          "top5": 29
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9289472457578466,
+          "coverage": 687,
+          "mrr": 0.5522508038585209,
+          "n": 1244,
+          "top1": 687,
+          "top10": 687,
+          "top20": 687,
+          "top5": 687
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.8793533256284511,
+          "coverage": 333,
+          "mrr": 0.4056029232643118,
+          "n": 821,
+          "top1": 333,
+          "top10": 333,
+          "top20": 333,
+          "top5": 333
+        },
+        "label:news_world": {
+          "char_accuracy": 0.903091176798992,
+          "coverage": 429,
+          "mrr": 0.4404517453798768,
+          "n": 974,
+          "top1": 429,
+          "top10": 429,
+          "top20": 429,
+          "top5": 429
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9114499462316812,
+          "coverage": 1941,
+          "mrr": 0.3769664012429598,
+          "n": 5149,
+          "top1": 1941,
+          "top10": 1941,
+          "top20": 1941,
+          "top5": 1941
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9163797271253716,
+          "coverage": 3641,
+          "mrr": 0.5074564459930314,
+          "n": 7175,
+          "top1": 3641,
+          "top10": 3641,
+          "top20": 3641,
+          "top5": 3641
+        },
+        "news": {
+          "char_accuracy": 0.9075131366985941,
+          "coverage": 4701,
+          "mrr": 0.4701,
+          "n": 10000,
+          "top1": 4701,
+          "top10": 4701,
+          "top20": 4701,
+          "top5": 4701
+        },
+        "short_6_9": {
+          "char_accuracy": 0.8972307005136604,
+          "coverage": 4359,
+          "mrr": 0.5678738926524232,
+          "n": 7676,
+          "top1": 4359,
+          "top10": 4359,
+          "top20": 4359,
+          "top5": 4359
+        }
+      },
+      "word1": {
+        "all": {
+          "char_accuracy": 0.9718254568893737,
+          "coverage": 15584,
+          "mrr": 0.7792,
+          "n": 20000,
+          "top1": 15584,
+          "top10": 15584,
+          "top20": 15584,
+          "top5": 15584
+        },
+        "daily": {
+          "char_accuracy": 0.9711316737327111,
+          "coverage": 8030,
+          "mrr": 0.803,
+          "n": 10000,
+          "top1": 8030,
+          "top10": 8030,
+          "top20": 8030,
+          "top5": 8030
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.9640107791770612,
+          "coverage": 442,
+          "mrr": 0.709470304975923,
+          "n": 623,
+          "top1": 442,
+          "top10": 442,
+          "top20": 442,
+          "top5": 442
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9729466019150342,
+          "coverage": 483,
+          "mrr": 0.7523364485981309,
+          "n": 642,
+          "top1": 483,
+          "top10": 483,
+          "top20": 483,
+          "top5": 483
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9688008761569351,
+          "coverage": 541,
+          "mrr": 0.7503467406380028,
+          "n": 721,
+          "top1": 541,
+          "top10": 541,
+          "top20": 541,
+          "top5": 541
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9788728375091644,
+          "coverage": 690,
+          "mrr": 0.8032596041909197,
+          "n": 859,
+          "top1": 690,
+          "top10": 690,
+          "top20": 690,
+          "top5": 690
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9772332132595932,
+          "coverage": 493,
+          "mrr": 0.7875399361022364,
+          "n": 626,
+          "top1": 493,
+          "top10": 493,
+          "top20": 493,
+          "top5": 493
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9704734769837937,
+          "coverage": 840,
+          "mrr": 0.7310704960835509,
+          "n": 1149,
+          "top1": 840,
+          "top10": 840,
+          "top20": 840,
+          "top5": 840
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9742628812671513,
+          "coverage": 332,
+          "mrr": 0.7685185185185185,
+          "n": 432,
+          "top1": 332,
+          "top10": 332,
+          "top20": 332,
+          "top5": 332
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9729929411923336,
+          "coverage": 367,
+          "mrr": 0.7693920335429769,
+          "n": 477,
+          "top1": 367,
+          "top10": 367,
+          "top20": 367,
+          "top5": 367
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9736387813521796,
+          "coverage": 539,
+          "mrr": 0.7403846153846154,
+          "n": 728,
+          "top1": 539,
+          "top10": 539,
+          "top20": 539,
+          "top5": 539
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.9723475869372943,
+          "coverage": 420,
+          "mrr": 0.7342657342657343,
+          "n": 572,
+          "top1": 420,
+          "top10": 420,
+          "top20": 420,
+          "top5": 420
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9785526394393821,
+          "coverage": 54,
+          "mrr": 0.8059701492537313,
+          "n": 67,
+          "top1": 54,
+          "top10": 54,
+          "top20": 54,
+          "top5": 54
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9685383460972887,
+          "coverage": 53,
+          "mrr": 0.8153846153846154,
+          "n": 65,
+          "top1": 53,
+          "top10": 53,
+          "top20": 53,
+          "top5": 53
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9782376920487316,
+          "coverage": 995,
+          "mrr": 0.7998392282958199,
+          "n": 1244,
+          "top1": 995,
+          "top10": 995,
+          "top20": 995,
+          "top5": 995
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9652711061499007,
+          "coverage": 598,
+          "mrr": 0.728380024360536,
+          "n": 821,
+          "top1": 598,
+          "top10": 598,
+          "top20": 598,
+          "top5": 598
+        },
+        "label:news_world": {
+          "char_accuracy": 0.9711277354353903,
+          "coverage": 707,
+          "mrr": 0.7258726899383984,
+          "n": 974,
+          "top1": 707,
+          "top10": 707,
+          "top20": 707,
+          "top5": 707
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9739656309967705,
+          "coverage": 3614,
+          "mrr": 0.7018838609438726,
+          "n": 5149,
+          "top1": 3614,
+          "top10": 3614,
+          "top20": 3614,
+          "top5": 3614
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9747333920434965,
+          "coverage": 5665,
+          "mrr": 0.7895470383275262,
+          "n": 7175,
+          "top1": 5665,
+          "top10": 5665,
+          "top20": 5665,
+          "top5": 5665
+        },
+        "news": {
+          "char_accuracy": 0.9725192400460363,
+          "coverage": 7554,
+          "mrr": 0.7554,
+          "n": 10000,
+          "top1": 7554,
+          "top10": 7554,
+          "top20": 7554,
+          "top5": 7554
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9676717060803826,
+          "coverage": 6305,
+          "mrr": 0.8213913496612819,
+          "n": 7676,
+          "top1": 6305,
+          "top10": 6305,
+          "top20": 6305,
+          "top5": 6305
+        }
+      }
+    },
+    "tiger": {
+      "char1": {
+        "all": {
+          "char_accuracy": 0.9852855562612034,
+          "coverage": 19714,
+          "mrr": 0.928840124151734,
+          "n": 20000,
+          "top1": 17862,
+          "top10": 19628,
+          "top20": 19714,
+          "top5": 19446
+        },
+        "daily": {
+          "char_accuracy": 0.9824243940980237,
+          "coverage": 9868,
+          "mrr": 0.9252433815857345,
+          "n": 10000,
+          "top1": 8864,
+          "top10": 9822,
+          "top20": 9868,
+          "top5": 9733
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.981349662991601,
+          "coverage": 607,
+          "mrr": 0.9001772244478317,
+          "n": 623,
+          "top1": 530,
+          "top10": 604,
+          "top20": 607,
+          "top5": 598
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9901179348023335,
+          "coverage": 631,
+          "mrr": 0.9400070464322801,
+          "n": 642,
+          "top1": 582,
+          "top10": 631,
+          "top20": 631,
+          "top5": 627
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9827180344686905,
+          "coverage": 705,
+          "mrr": 0.9179551608816519,
+          "n": 721,
+          "top1": 636,
+          "top10": 702,
+          "top20": 705,
+          "top5": 693
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9905626743497656,
+          "coverage": 845,
+          "mrr": 0.9440101290508741,
+          "n": 859,
+          "top1": 787,
+          "top10": 843,
+          "top20": 845,
+          "top5": 842
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9884499634683269,
+          "coverage": 621,
+          "mrr": 0.9285057793644055,
+          "n": 626,
+          "top1": 558,
+          "top10": 617,
+          "top20": 621,
+          "top5": 608
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9878716109661532,
+          "coverage": 1130,
+          "mrr": 0.9288004125433091,
+          "n": 1149,
+          "top1": 1033,
+          "top10": 1119,
+          "top20": 1130,
+          "top5": 1106
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9873027448886554,
+          "coverage": 426,
+          "mrr": 0.929846272554606,
+          "n": 432,
+          "top1": 385,
+          "top10": 425,
+          "top20": 426,
+          "top5": 419
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9893154360434254,
+          "coverage": 467,
+          "mrr": 0.9299334758361766,
+          "n": 477,
+          "top1": 430,
+          "top10": 466,
+          "top20": 467,
+          "top5": 461
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9921657855426885,
+          "coverage": 723,
+          "mrr": 0.9530464727580112,
+          "n": 728,
+          "top1": 674,
+          "top10": 721,
+          "top20": 723,
+          "top5": 716
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.9856954799909762,
+          "coverage": 561,
+          "mrr": 0.9084024245956065,
+          "n": 572,
+          "top1": 495,
+          "top10": 559,
+          "top20": 561,
+          "top5": 551
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9941203075531434,
+          "coverage": 67,
+          "mrr": 0.9710272168568921,
+          "n": 67,
+          "top1": 64,
+          "top10": 66,
+          "top20": 67,
+          "top5": 66
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9809965034965035,
+          "coverage": 63,
+          "mrr": 0.9179487179487179,
+          "n": 65,
+          "top1": 57,
+          "top10": 63,
+          "top20": 63,
+          "top5": 63
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9902367625876024,
+          "coverage": 1230,
+          "mrr": 0.9450530311060857,
+          "n": 1244,
+          "top1": 1143,
+          "top10": 1226,
+          "top20": 1230,
+          "top5": 1216
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9853230691725281,
+          "coverage": 806,
+          "mrr": 0.9257581886099739,
+          "n": 821,
+          "top1": 730,
+          "top10": 802,
+          "top20": 806,
+          "top5": 795
+        },
+        "label:news_world": {
+          "char_accuracy": 0.9912269720840073,
+          "coverage": 964,
+          "mrr": 0.9443247005105322,
+          "n": 974,
+          "top1": 894,
+          "top10": 962,
+          "top20": 964,
+          "top5": 952
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9867886634662597,
+          "coverage": 5021,
+          "mrr": 0.8982447211063846,
+          "n": 5149,
+          "top1": 4396,
+          "top10": 4982,
+          "top20": 5021,
+          "top5": 4903
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9873042126282544,
+          "coverage": 7091,
+          "mrr": 0.9352959532326206,
+          "n": 7175,
+          "top1": 6467,
+          "top10": 7064,
+          "top20": 7091,
+          "top5": 7010
+        },
+        "news": {
+          "char_accuracy": 0.9881467184243831,
+          "coverage": 9846,
+          "mrr": 0.9324368667177336,
+          "n": 10000,
+          "top1": 8998,
+          "top10": 9806,
+          "top20": 9846,
+          "top5": 9713
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9823903818953323,
+          "coverage": 7602,
+          "mrr": 0.9433288105281206,
+          "n": 7676,
+          "top1": 6999,
+          "top10": 7582,
+          "top20": 7602,
+          "top5": 7533
+        }
+      },
+      "pure": {
+        "all": {
+          "char_accuracy": 0.9042246426557508,
+          "coverage": 15863,
+          "mrr": 0.6116986678094437,
+          "n": 20000,
+          "top1": 10575,
+          "top10": 15205,
+          "top20": 15863,
+          "top5": 14292
+        },
+        "daily": {
+          "char_accuracy": 0.8993059710116464,
+          "coverage": 8384,
+          "mrr": 0.6334518695915368,
+          "n": 10000,
+          "top1": 5405,
+          "top10": 8007,
+          "top20": 8384,
+          "top5": 7472
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.877917084004176,
+          "coverage": 430,
+          "mrr": 0.5011854351149383,
+          "n": 623,
+          "top1": 262,
+          "top10": 403,
+          "top20": 430,
+          "top5": 371
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9145658318090678,
+          "coverage": 498,
+          "mrr": 0.6220636628424671,
+          "n": 642,
+          "top1": 349,
+          "top10": 482,
+          "top20": 498,
+          "top5": 464
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.8782386002071797,
+          "coverage": 510,
+          "mrr": 0.5438615852426114,
+          "n": 721,
+          "top1": 335,
+          "top10": 489,
+          "top20": 510,
+          "top5": 461
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9298384692883798,
+          "coverage": 684,
+          "mrr": 0.6639950020777501,
+          "n": 859,
+          "top1": 515,
+          "top10": 664,
+          "top20": 684,
+          "top5": 637
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9058118980967769,
+          "coverage": 463,
+          "mrr": 0.5519858357069284,
+          "n": 626,
+          "top1": 294,
+          "top10": 441,
+          "top20": 463,
+          "top5": 406
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9151827318226101,
+          "coverage": 893,
+          "mrr": 0.6035798991091249,
+          "n": 1149,
+          "top1": 606,
+          "top10": 855,
+          "top20": 893,
+          "top5": 804
+        },
+        "label:news_game": {
+          "char_accuracy": 0.8932870637232811,
+          "coverage": 274,
+          "mrr": 0.487854435467417,
+          "n": 432,
+          "top1": 185,
+          "top10": 256,
+          "top20": 274,
+          "top5": 242
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9157965515277207,
+          "coverage": 365,
+          "mrr": 0.6174084725786538,
+          "n": 477,
+          "top1": 261,
+          "top10": 352,
+          "top20": 365,
+          "top5": 341
+        },
+        "label:news_military": {
+          "char_accuracy": 0.928670691305151,
+          "coverage": 575,
+          "mrr": 0.6359339931283613,
+          "n": 728,
+          "top1": 407,
+          "top10": 560,
+          "top20": 575,
+          "top5": 535
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.8939425339408937,
+          "coverage": 394,
+          "mrr": 0.5381275734126927,
+          "n": 572,
+          "top1": 270,
+          "top10": 379,
+          "top20": 394,
+          "top5": 357
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9396924617183616,
+          "coverage": 54,
+          "mrr": 0.6994437983243953,
+          "n": 67,
+          "top1": 44,
+          "top10": 53,
+          "top20": 54,
+          "top5": 49
+        },
+        "label:news_story": {
+          "char_accuracy": 0.8976122213369176,
+          "coverage": 48,
+          "mrr": 0.608974358974359,
+          "n": 65,
+          "top1": 34,
+          "top10": 48,
+          "top20": 48,
+          "top5": 47
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9267217878124304,
+          "coverage": 982,
+          "mrr": 0.6464678736764625,
+          "n": 1244,
+          "top1": 717,
+          "top10": 957,
+          "top20": 982,
+          "top5": 916
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.8862490239971074,
+          "coverage": 569,
+          "mrr": 0.5197094165235505,
+          "n": 821,
+          "top1": 366,
+          "top10": 544,
+          "top20": 569,
+          "top5": 503
+        },
+        "label:news_world": {
+          "char_accuracy": 0.9188050835193322,
+          "coverage": 740,
+          "mrr": 0.6087674594522929,
+          "n": 974,
+          "top1": 525,
+          "top10": 715,
+          "top20": 740,
+          "top5": 687
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9113538344160134,
+          "coverage": 3465,
+          "mrr": 0.48805071101447145,
+          "n": 5149,
+          "top1": 2100,
+          "top10": 3297,
+          "top20": 3465,
+          "top5": 3047
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9110482572015672,
+          "coverage": 5690,
+          "mrr": 0.6161140877984331,
+          "n": 7175,
+          "top1": 3840,
+          "top10": 5460,
+          "top20": 5690,
+          "top5": 5142
+        },
+        "news": {
+          "char_accuracy": 0.9091433142998548,
+          "coverage": 7479,
+          "mrr": 0.5899454660273508,
+          "n": 10000,
+          "top1": 5170,
+          "top10": 7198,
+          "top20": 7479,
+          "top5": 6820
+        },
+        "short_6_9": {
+          "char_accuracy": 0.8930641889376908,
+          "coverage": 6708,
+          "mrr": 0.6905135051096409,
+          "n": 7676,
+          "top1": 4635,
+          "top10": 6448,
+          "top20": 6708,
+          "top5": 6103
+        }
+      },
+      "sparse": {
+        "all": {
+          "char_accuracy": 0.9300600290974488,
+          "coverage": 16976,
+          "mrr": 0.6793010207263497,
+          "n": 20000,
+          "top1": 11947,
+          "top10": 16406,
+          "top20": 16976,
+          "top5": 15625
+        },
+        "daily": {
+          "char_accuracy": 0.9255571027653007,
+          "coverage": 8878,
+          "mrr": 0.6992193303914008,
+          "n": 10000,
+          "top1": 6071,
+          "top10": 8574,
+          "top20": 8878,
+          "top5": 8121
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.9078260683185486,
+          "coverage": 473,
+          "mrr": 0.5656879937499903,
+          "n": 623,
+          "top1": 297,
+          "top10": 452,
+          "top20": 473,
+          "top5": 423
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9415454790244544,
+          "coverage": 539,
+          "mrr": 0.6994764536382979,
+          "n": 642,
+          "top1": 402,
+          "top10": 524,
+          "top20": 539,
+          "top5": 509
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9173418011490926,
+          "coverage": 552,
+          "mrr": 0.6156535228744772,
+          "n": 721,
+          "top1": 389,
+          "top10": 535,
+          "top20": 552,
+          "top5": 510
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9477416820381697,
+          "coverage": 729,
+          "mrr": 0.7212286061130206,
+          "n": 859,
+          "top1": 570,
+          "top10": 709,
+          "top20": 729,
+          "top5": 682
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9368262986591416,
+          "coverage": 505,
+          "mrr": 0.6419875366590962,
+          "n": 626,
+          "top1": 353,
+          "top10": 489,
+          "top20": 505,
+          "top5": 463
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9384867144106349,
+          "coverage": 951,
+          "mrr": 0.6710188831397677,
+          "n": 1149,
+          "top1": 690,
+          "top10": 912,
+          "top20": 951,
+          "top5": 875
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9243858605450541,
+          "coverage": 318,
+          "mrr": 0.5758713440698735,
+          "n": 432,
+          "top1": 219,
+          "top10": 303,
+          "top20": 318,
+          "top5": 283
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9339919327272349,
+          "coverage": 390,
+          "mrr": 0.6773404073626049,
+          "n": 477,
+          "top1": 288,
+          "top10": 381,
+          "top20": 390,
+          "top5": 369
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9506565351883516,
+          "coverage": 629,
+          "mrr": 0.7057050464682064,
+          "n": 728,
+          "top1": 457,
+          "top10": 607,
+          "top20": 629,
+          "top5": 584
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.9208628587886319,
+          "coverage": 438,
+          "mrr": 0.6082222592722252,
+          "n": 572,
+          "top1": 308,
+          "top10": 417,
+          "top20": 438,
+          "top5": 401
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.953234916239745,
+          "coverage": 58,
+          "mrr": 0.7535832741056622,
+          "n": 67,
+          "top1": 47,
+          "top10": 57,
+          "top20": 58,
+          "top5": 54
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9339636476883441,
+          "coverage": 55,
+          "mrr": 0.6998076923076922,
+          "n": 65,
+          "top1": 40,
+          "top10": 53,
+          "top20": 55,
+          "top5": 51
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.945818050767057,
+          "coverage": 1030,
+          "mrr": 0.7027342108205484,
+          "n": 1244,
+          "top1": 793,
+          "top10": 1007,
+          "top20": 1030,
+          "top5": 978
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9184566498600807,
+          "coverage": 625,
+          "mrr": 0.5911468662176192,
+          "n": 821,
+          "top1": 421,
+          "top10": 607,
+          "top20": 625,
+          "top5": 568
+        },
+        "label:news_world": {
+          "char_accuracy": 0.940871023813516,
+          "coverage": 806,
+          "mrr": 0.6848033204085852,
+          "n": 974,
+          "top1": 602,
+          "top10": 779,
+          "top20": 806,
+          "top5": 754
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9345701824723753,
+          "coverage": 3877,
+          "mrr": 0.5655431041325354,
+          "n": 5149,
+          "top1": 2478,
+          "top10": 3693,
+          "top20": 3877,
+          "top5": 3469
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9348110588598394,
+          "coverage": 6076,
+          "mrr": 0.6811940544464088,
+          "n": 7175,
+          "top1": 4319,
+          "top10": 5883,
+          "top20": 6076,
+          "top5": 5594
+        },
+        "news": {
+          "char_accuracy": 0.9345629554295969,
+          "coverage": 8098,
+          "mrr": 0.6593827110612985,
+          "n": 10000,
+          "top1": 5876,
+          "top10": 7832,
+          "top20": 8098,
+          "top5": 7504
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9225937161385311,
+          "coverage": 7023,
+          "mrr": 0.7538394516278772,
+          "n": 7676,
+          "top1": 5150,
+          "top10": 6830,
+          "top20": 7023,
+          "top5": 6562
+        }
+      },
+      "word1": {
+        "all": {
+          "char_accuracy": 0.9779341168459499,
+          "coverage": 19542,
+          "mrr": 0.8884404024810759,
+          "n": 20000,
+          "top1": 16711,
+          "top10": 19365,
+          "top20": 19542,
+          "top5": 19083
+        },
+        "daily": {
+          "char_accuracy": 0.9750346644762783,
+          "coverage": 9800,
+          "mrr": 0.8923967560887685,
+          "n": 10000,
+          "top1": 8381,
+          "top10": 9717,
+          "top20": 9800,
+          "top5": 9602
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.9678398719782553,
+          "coverage": 603,
+          "mrr": 0.8331610359499606,
+          "n": 623,
+          "top1": 468,
+          "top10": 597,
+          "top20": 603,
+          "top5": 584
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9806066010638849,
+          "coverage": 624,
+          "mrr": 0.8939557349019966,
+          "n": 642,
+          "top1": 542,
+          "top10": 620,
+          "top20": 624,
+          "top5": 614
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9769942183578874,
+          "coverage": 699,
+          "mrr": 0.8737294586289038,
+          "n": 721,
+          "top1": 591,
+          "top10": 691,
+          "top20": 699,
+          "top5": 675
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9847452832818356,
+          "coverage": 842,
+          "mrr": 0.9055657316425652,
+          "n": 859,
+          "top1": 738,
+          "top10": 838,
+          "top20": 842,
+          "top5": 828
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9826510875582987,
+          "coverage": 616,
+          "mrr": 0.8887365407932502,
+          "n": 626,
+          "top1": 525,
+          "top10": 603,
+          "top20": 616,
+          "top5": 594
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9788824165417404,
+          "coverage": 1118,
+          "mrr": 0.8758401689211089,
+          "n": 1149,
+          "top1": 944,
+          "top10": 1108,
+          "top20": 1118,
+          "top5": 1091
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9796609144351569,
+          "coverage": 417,
+          "mrr": 0.8741367043450377,
+          "n": 432,
+          "top1": 354,
+          "top10": 414,
+          "top20": 417,
+          "top5": 404
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9824172871685256,
+          "coverage": 463,
+          "mrr": 0.8949607596909814,
+          "n": 477,
+          "top1": 405,
+          "top10": 461,
+          "top20": 463,
+          "top5": 454
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9854437894824802,
+          "coverage": 716,
+          "mrr": 0.9056914041993929,
+          "n": 728,
+          "top1": 624,
+          "top10": 708,
+          "top20": 716,
+          "top5": 703
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.979724253335777,
+          "coverage": 557,
+          "mrr": 0.8655711906586032,
+          "n": 572,
+          "top1": 464,
+          "top10": 551,
+          "top20": 557,
+          "top5": 534
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9862012987012987,
+          "coverage": 66,
+          "mrr": 0.9340796019900498,
+          "n": 67,
+          "top1": 60,
+          "top10": 65,
+          "top20": 66,
+          "top5": 65
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9815437632542896,
+          "coverage": 61,
+          "mrr": 0.9012820512820513,
+          "n": 65,
+          "top1": 57,
+          "top10": 61,
+          "top20": 61,
+          "top5": 61
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9846438221425867,
+          "coverage": 1219,
+          "mrr": 0.8988093471241996,
+          "n": 1244,
+          "top1": 1063,
+          "top10": 1205,
+          "top20": 1219,
+          "top5": 1183
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9782655975474749,
+          "coverage": 794,
+          "mrr": 0.8793494038637958,
+          "n": 821,
+          "top1": 681,
+          "top10": 787,
+          "top20": 794,
+          "top5": 772
+        },
+        "label:news_world": {
+          "char_accuracy": 0.9836517373866586,
+          "coverage": 947,
+          "mrr": 0.8841144689175693,
+          "n": 974,
+          "top1": 814,
+          "top10": 939,
+          "top20": 947,
+          "top5": 919
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9789856730159047,
+          "coverage": 4927,
+          "mrr": 0.8312353478807468,
+          "n": 5149,
+          "top1": 3928,
+          "top10": 4847,
+          "top20": 4927,
+          "top5": 4726
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9811011265157606,
+          "coverage": 7046,
+          "mrr": 0.8995366676661,
+          "n": 7175,
+          "top1": 6096,
+          "top10": 6990,
+          "top20": 7046,
+          "top5": 6896
+        },
+        "news": {
+          "char_accuracy": 0.9808335692156216,
+          "coverage": 9742,
+          "mrr": 0.8844840488733833,
+          "n": 10000,
+          "top1": 8330,
+          "top10": 9648,
+          "top20": 9742,
+          "top5": 9481
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9742684371820641,
+          "coverage": 7569,
+          "mrr": 0.9164410699425852,
+          "n": 7676,
+          "top1": 6687,
+          "top10": 7528,
+          "top20": 7569,
+          "top5": 7461
+        }
+      }
+    },
+    "wx": {
+      "char1": {
+        "all": {
+          "char_accuracy": 0.982946544450147,
+          "coverage": 17517,
+          "mrr": 0.87585,
+          "n": 20000,
+          "top1": 17517,
+          "top10": 17517,
+          "top20": 17517,
+          "top5": 17517
+        },
+        "daily": {
+          "char_accuracy": 0.9816394052969958,
+          "coverage": 8804,
+          "mrr": 0.8804,
+          "n": 10000,
+          "top1": 8804,
+          "top10": 8804,
+          "top20": 8804,
+          "top5": 8804
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.9768184750531005,
+          "coverage": 506,
+          "mrr": 0.812199036918138,
+          "n": 623,
+          "top1": 506,
+          "top10": 506,
+          "top20": 506,
+          "top5": 506
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9840991616817331,
+          "coverage": 556,
+          "mrr": 0.8660436137071651,
+          "n": 642,
+          "top1": 556,
+          "top10": 556,
+          "top20": 556,
+          "top5": 556
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9790353644056703,
+          "coverage": 618,
+          "mrr": 0.8571428571428571,
+          "n": 721,
+          "top1": 618,
+          "top10": 618,
+          "top20": 618,
+          "top5": 618
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9883960536445191,
+          "coverage": 770,
+          "mrr": 0.8963911525029103,
+          "n": 859,
+          "top1": 770,
+          "top10": 770,
+          "top20": 770,
+          "top5": 770
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.984129583668738,
+          "coverage": 544,
+          "mrr": 0.8690095846645367,
+          "n": 626,
+          "top1": 544,
+          "top10": 544,
+          "top20": 544,
+          "top5": 544
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9849891382277913,
+          "coverage": 993,
+          "mrr": 0.8642297650130548,
+          "n": 1149,
+          "top1": 993,
+          "top10": 993,
+          "top20": 993,
+          "top5": 993
+        },
+        "label:news_game": {
+          "char_accuracy": 0.988665101194792,
+          "coverage": 385,
+          "mrr": 0.8912037037037037,
+          "n": 432,
+          "top1": 385,
+          "top10": 385,
+          "top20": 385,
+          "top5": 385
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9861978294285986,
+          "coverage": 422,
+          "mrr": 0.8846960167714885,
+          "n": 477,
+          "top1": 422,
+          "top10": 422,
+          "top20": 422,
+          "top5": 422
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9863432791447383,
+          "coverage": 645,
+          "mrr": 0.885989010989011,
+          "n": 728,
+          "top1": 645,
+          "top10": 645,
+          "top20": 645,
+          "top5": 645
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.979370844584803,
+          "coverage": 481,
+          "mrr": 0.8409090909090909,
+          "n": 572,
+          "top1": 481,
+          "top10": 481,
+          "top20": 481,
+          "top5": 481
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.994949494949495,
+          "coverage": 64,
+          "mrr": 0.9552238805970149,
+          "n": 67,
+          "top1": 64,
+          "top10": 64,
+          "top20": 64,
+          "top5": 64
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9757584082584083,
+          "coverage": 56,
+          "mrr": 0.8615384615384616,
+          "n": 65,
+          "top1": 56,
+          "top10": 56,
+          "top20": 56,
+          "top5": 56
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9892817016538603,
+          "coverage": 1132,
+          "mrr": 0.909967845659164,
+          "n": 1244,
+          "top1": 1132,
+          "top10": 1132,
+          "top20": 1132,
+          "top5": 1132
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9814537579046059,
+          "coverage": 710,
+          "mrr": 0.8647990255785627,
+          "n": 821,
+          "top1": 710,
+          "top10": 710,
+          "top20": 710,
+          "top5": 710
+        },
+        "label:news_world": {
+          "char_accuracy": 0.9826995008098226,
+          "coverage": 831,
+          "mrr": 0.8531827515400411,
+          "n": 974,
+          "top1": 831,
+          "top10": 831,
+          "top20": 831,
+          "top5": 831
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9833171757253226,
+          "coverage": 4244,
+          "mrr": 0.8242377160613712,
+          "n": 5149,
+          "top1": 4244,
+          "top10": 4244,
+          "top20": 4244,
+          "top5": 4244
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9848047393953318,
+          "coverage": 6364,
+          "mrr": 0.8869686411149825,
+          "n": 7175,
+          "top1": 6364,
+          "top10": 6364,
+          "top20": 6364,
+          "top5": 6364
+        },
+        "news": {
+          "char_accuracy": 0.9842536836032979,
+          "coverage": 8713,
+          "mrr": 0.8713,
+          "n": 10000,
+          "top1": 8713,
+          "top10": 8713,
+          "top20": 8713,
+          "top5": 8713
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9809610143345162,
+          "coverage": 6909,
+          "mrr": 0.9000781657113079,
+          "n": 7676,
+          "top1": 6909,
+          "top10": 6909,
+          "top20": 6909,
+          "top5": 6909
+        }
+      },
+      "pure": {
+        "all": {
+          "char_accuracy": 0.8870909071440461,
+          "coverage": 9331,
+          "mrr": 0.466525,
+          "n": 20000,
+          "top1": 9330,
+          "top10": 9331,
+          "top20": 9331,
+          "top5": 9331
+        },
+        "daily": {
+          "char_accuracy": 0.8938207815658974,
+          "coverage": 5006,
+          "mrr": 0.5006,
+          "n": 10000,
+          "top1": 5006,
+          "top10": 5006,
+          "top20": 5006,
+          "top5": 5006
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.8216227920157058,
+          "coverage": 181,
+          "mrr": 0.29052969502407705,
+          "n": 623,
+          "top1": 181,
+          "top10": 181,
+          "top20": 181,
+          "top5": 181
+        },
+        "label:news_car": {
+          "char_accuracy": 0.8841461705153407,
+          "coverage": 274,
+          "mrr": 0.42679127725856697,
+          "n": 642,
+          "top1": 274,
+          "top10": 274,
+          "top20": 274,
+          "top5": 274
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.8515414168303196,
+          "coverage": 298,
+          "mrr": 0.4133148404993065,
+          "n": 721,
+          "top1": 298,
+          "top10": 298,
+          "top20": 298,
+          "top5": 298
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.908250246293989,
+          "coverage": 440,
+          "mrr": 0.5122235157159488,
+          "n": 859,
+          "top1": 440,
+          "top10": 440,
+          "top20": 440,
+          "top5": 440
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.8740749331351627,
+          "coverage": 251,
+          "mrr": 0.4009584664536741,
+          "n": 626,
+          "top1": 251,
+          "top10": 251,
+          "top20": 251,
+          "top5": 251
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.8820587790951138,
+          "coverage": 483,
+          "mrr": 0.42036553524804177,
+          "n": 1149,
+          "top1": 483,
+          "top10": 483,
+          "top20": 483,
+          "top5": 483
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9111367713071131,
+          "coverage": 220,
+          "mrr": 0.5081018518518519,
+          "n": 432,
+          "top1": 219,
+          "top10": 220,
+          "top20": 220,
+          "top5": 220
+        },
+        "label:news_house": {
+          "char_accuracy": 0.8841072480393483,
+          "coverage": 216,
+          "mrr": 0.4528301886792453,
+          "n": 477,
+          "top1": 216,
+          "top10": 216,
+          "top20": 216,
+          "top5": 216
+        },
+        "label:news_military": {
+          "char_accuracy": 0.8919115607931707,
+          "coverage": 323,
+          "mrr": 0.44368131868131866,
+          "n": 728,
+          "top1": 323,
+          "top10": 323,
+          "top20": 323,
+          "top5": 323
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.8682647082898219,
+          "coverage": 207,
+          "mrr": 0.3618881118881119,
+          "n": 572,
+          "top1": 207,
+          "top10": 207,
+          "top20": 207,
+          "top5": 207
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.8961616851103242,
+          "coverage": 29,
+          "mrr": 0.43283582089552236,
+          "n": 67,
+          "top1": 29,
+          "top10": 29,
+          "top20": 29,
+          "top5": 29
+        },
+        "label:news_story": {
+          "char_accuracy": 0.86292104993522,
+          "coverage": 25,
+          "mrr": 0.38461538461538464,
+          "n": 65,
+          "top1": 25,
+          "top10": 25,
+          "top20": 25,
+          "top5": 25
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9174518924327861,
+          "coverage": 669,
+          "mrr": 0.5377813504823151,
+          "n": 1244,
+          "top1": 669,
+          "top10": 669,
+          "top20": 669,
+          "top5": 669
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.8403419097996706,
+          "coverage": 298,
+          "mrr": 0.3629719853836784,
+          "n": 821,
+          "top1": 298,
+          "top10": 298,
+          "top20": 298,
+          "top5": 298
+        },
+        "label:news_world": {
+          "char_accuracy": 0.8836343764912467,
+          "coverage": 411,
+          "mrr": 0.4219712525667351,
+          "n": 974,
+          "top1": 411,
+          "top10": 411,
+          "top20": 411,
+          "top5": 411
+        },
+        "long_15_24": {
+          "char_accuracy": 0.8856920695069422,
+          "coverage": 1703,
+          "mrr": 0.330743833754127,
+          "n": 5149,
+          "top1": 1703,
+          "top10": 1703,
+          "top20": 1703,
+          "top5": 1703
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.8967607978548746,
+          "coverage": 3402,
+          "mrr": 0.4741463414634146,
+          "n": 7175,
+          "top1": 3402,
+          "top10": 3402,
+          "top20": 3402,
+          "top5": 3402
+        },
+        "news": {
+          "char_accuracy": 0.8803610327221948,
+          "coverage": 4325,
+          "mrr": 0.43245,
+          "n": 10000,
+          "top1": 4324,
+          "top10": 4325,
+          "top20": 4325,
+          "top5": 4325
+        },
+        "short_6_9": {
+          "char_accuracy": 0.8789904836348297,
+          "coverage": 4226,
+          "mrr": 0.5504820218863992,
+          "n": 7676,
+          "top1": 4225,
+          "top10": 4226,
+          "top20": 4226,
+          "top5": 4226
+        }
+      },
+      "sparse": {
+        "all": {
+          "char_accuracy": 0.9164437615351159,
+          "coverage": 10693,
+          "mrr": 0.53465,
+          "n": 20000,
+          "top1": 10693,
+          "top10": 10693,
+          "top20": 10693,
+          "top5": 10693
+        },
+        "daily": {
+          "char_accuracy": 0.920464356683086,
+          "coverage": 5718,
+          "mrr": 0.5718,
+          "n": 10000,
+          "top1": 5718,
+          "top10": 5718,
+          "top20": 5718,
+          "top5": 5718
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.8667363574865183,
+          "coverage": 221,
+          "mrr": 0.3547351524879615,
+          "n": 623,
+          "top1": 221,
+          "top10": 221,
+          "top20": 221,
+          "top5": 221
+        },
+        "label:news_car": {
+          "char_accuracy": 0.9194785610419499,
+          "coverage": 325,
+          "mrr": 0.5062305295950156,
+          "n": 642,
+          "top1": 325,
+          "top10": 325,
+          "top20": 325,
+          "top5": 325
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.8913986079204143,
+          "coverage": 338,
+          "mrr": 0.46879334257975036,
+          "n": 721,
+          "top1": 338,
+          "top10": 338,
+          "top20": 338,
+          "top5": 338
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9321156128565887,
+          "coverage": 497,
+          "mrr": 0.5785797438882422,
+          "n": 859,
+          "top1": 497,
+          "top10": 497,
+          "top20": 497,
+          "top5": 497
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9133436130339591,
+          "coverage": 296,
+          "mrr": 0.4728434504792332,
+          "n": 626,
+          "top1": 296,
+          "top10": 296,
+          "top20": 296,
+          "top5": 296
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9126814416027452,
+          "coverage": 556,
+          "mrr": 0.48389904264577893,
+          "n": 1149,
+          "top1": 556,
+          "top10": 556,
+          "top20": 556,
+          "top5": 556
+        },
+        "label:news_game": {
+          "char_accuracy": 0.933865372658377,
+          "coverage": 249,
+          "mrr": 0.5763888888888888,
+          "n": 432,
+          "top1": 249,
+          "top10": 249,
+          "top20": 249,
+          "top5": 249
+        },
+        "label:news_house": {
+          "char_accuracy": 0.9157366139492534,
+          "coverage": 250,
+          "mrr": 0.5241090146750524,
+          "n": 477,
+          "top1": 250,
+          "top10": 250,
+          "top20": 250,
+          "top5": 250
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9217274459003509,
+          "coverage": 366,
+          "mrr": 0.5027472527472527,
+          "n": 728,
+          "top1": 366,
+          "top10": 366,
+          "top20": 366,
+          "top5": 366
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.9062907001449682,
+          "coverage": 246,
+          "mrr": 0.43006993006993005,
+          "n": 572,
+          "top1": 246,
+          "top10": 246,
+          "top20": 246,
+          "top5": 246
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9252072517766109,
+          "coverage": 35,
+          "mrr": 0.5223880597014925,
+          "n": 67,
+          "top1": 35,
+          "top10": 35,
+          "top20": 35,
+          "top5": 35
+        },
+        "label:news_story": {
+          "char_accuracy": 0.899445607249251,
+          "coverage": 33,
+          "mrr": 0.5076923076923077,
+          "n": 65,
+          "top1": 33,
+          "top10": 33,
+          "top20": 33,
+          "top5": 33
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.938118897204967,
+          "coverage": 741,
+          "mrr": 0.5956591639871383,
+          "n": 1244,
+          "top1": 741,
+          "top10": 741,
+          "top20": 741,
+          "top5": 741
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.8848383089153122,
+          "coverage": 361,
+          "mrr": 0.4397076735688185,
+          "n": 821,
+          "top1": 361,
+          "top10": 361,
+          "top20": 361,
+          "top5": 361
+        },
+        "label:news_world": {
+          "char_accuracy": 0.9102287618376873,
+          "coverage": 461,
+          "mrr": 0.473305954825462,
+          "n": 974,
+          "top1": 461,
+          "top10": 461,
+          "top20": 461,
+          "top5": 461
+        },
+        "long_15_24": {
+          "char_accuracy": 0.9145294699775346,
+          "coverage": 2010,
+          "mrr": 0.3903670615653525,
+          "n": 5149,
+          "top1": 2010,
+          "top10": 2010,
+          "top20": 2010,
+          "top5": 2010
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9243134635399444,
+          "coverage": 3935,
+          "mrr": 0.5484320557491289,
+          "n": 7175,
+          "top1": 3935,
+          "top10": 3935,
+          "top20": 3935,
+          "top5": 3935
+        },
+        "news": {
+          "char_accuracy": 0.9124231663871456,
+          "coverage": 4975,
+          "mrr": 0.4975,
+          "n": 10000,
+          "top1": 4975,
+          "top10": 4975,
+          "top20": 4975,
+          "top5": 4975
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9103717937583232,
+          "coverage": 4748,
+          "mrr": 0.6185513288170922,
+          "n": 7676,
+          "top1": 4748,
+          "top10": 4748,
+          "top20": 4748,
+          "top5": 4748
+        }
+      },
+      "word1": {
+        "all": {
+          "char_accuracy": 0.9730830736533941,
+          "coverage": 15943,
+          "mrr": 0.79715,
+          "n": 20000,
+          "top1": 15943,
+          "top10": 15943,
+          "top20": 15943,
+          "top5": 15943
+        },
+        "daily": {
+          "char_accuracy": 0.9740634404171755,
+          "coverage": 8282,
+          "mrr": 0.8282,
+          "n": 10000,
+          "top1": 8282,
+          "top10": 8282,
+          "top20": 8282,
+          "top5": 8282
+        },
+        "label:news_agriculture": {
+          "char_accuracy": 0.9594151193561469,
+          "coverage": 426,
+          "mrr": 0.6837881219903692,
+          "n": 623,
+          "top1": 426,
+          "top10": 426,
+          "top20": 426,
+          "top5": 426
+        },
+        "label:news_car": {
+          "char_accuracy": 0.973405777923491,
+          "coverage": 499,
+          "mrr": 0.7772585669781932,
+          "n": 642,
+          "top1": 499,
+          "top10": 499,
+          "top20": 499,
+          "top5": 499
+        },
+        "label:news_culture": {
+          "char_accuracy": 0.9666937031350193,
+          "coverage": 544,
+          "mrr": 0.7545076282940361,
+          "n": 721,
+          "top1": 544,
+          "top10": 544,
+          "top20": 544,
+          "top5": 544
+        },
+        "label:news_edu": {
+          "char_accuracy": 0.9795678536313517,
+          "coverage": 702,
+          "mrr": 0.8172293364377182,
+          "n": 859,
+          "top1": 702,
+          "top10": 702,
+          "top20": 702,
+          "top5": 702
+        },
+        "label:news_entertainment": {
+          "char_accuracy": 0.9753957905992373,
+          "coverage": 486,
+          "mrr": 0.7763578274760383,
+          "n": 626,
+          "top1": 486,
+          "top10": 486,
+          "top20": 486,
+          "top5": 486
+        },
+        "label:news_finance": {
+          "char_accuracy": 0.9697945745058456,
+          "coverage": 851,
+          "mrr": 0.7406440382941688,
+          "n": 1149,
+          "top1": 851,
+          "top10": 851,
+          "top20": 851,
+          "top5": 851
+        },
+        "label:news_game": {
+          "char_accuracy": 0.9752523842724081,
+          "coverage": 338,
+          "mrr": 0.7824074074074074,
+          "n": 432,
+          "top1": 338,
+          "top10": 338,
+          "top20": 338,
+          "top5": 338
+        },
+        "label:news_house": {
+          "char_accuracy": 0.973835991687671,
+          "coverage": 377,
+          "mrr": 0.790356394129979,
+          "n": 477,
+          "top1": 377,
+          "top10": 377,
+          "top20": 377,
+          "top5": 377
+        },
+        "label:news_military": {
+          "char_accuracy": 0.9724351497580755,
+          "coverage": 543,
+          "mrr": 0.7458791208791209,
+          "n": 728,
+          "top1": 543,
+          "top10": 543,
+          "top20": 543,
+          "top5": 543
+        },
+        "label:news_sports": {
+          "char_accuracy": 0.9694613367289115,
+          "coverage": 416,
+          "mrr": 0.7272727272727273,
+          "n": 572,
+          "top1": 416,
+          "top10": 416,
+          "top20": 416,
+          "top5": 416
+        },
+        "label:news_stock": {
+          "char_accuracy": 0.9812072816462631,
+          "coverage": 56,
+          "mrr": 0.835820895522388,
+          "n": 67,
+          "top1": 56,
+          "top10": 56,
+          "top20": 56,
+          "top5": 56
+        },
+        "label:news_story": {
+          "char_accuracy": 0.9587132896343423,
+          "coverage": 50,
+          "mrr": 0.7692307692307693,
+          "n": 65,
+          "top1": 50,
+          "top10": 50,
+          "top20": 50,
+          "top5": 50
+        },
+        "label:news_tech": {
+          "char_accuracy": 0.9806224678374275,
+          "coverage": 1024,
+          "mrr": 0.8231511254019293,
+          "n": 1244,
+          "top1": 1024,
+          "top10": 1024,
+          "top20": 1024,
+          "top5": 1024
+        },
+        "label:news_travel": {
+          "char_accuracy": 0.9654530203362088,
+          "coverage": 622,
+          "mrr": 0.7576126674786845,
+          "n": 821,
+          "top1": 622,
+          "top10": 622,
+          "top20": 622,
+          "top5": 622
+        },
+        "label:news_world": {
+          "char_accuracy": 0.971433531624757,
+          "coverage": 727,
+          "mrr": 0.7464065708418891,
+          "n": 974,
+          "top1": 727,
+          "top10": 727,
+          "top20": 727,
+          "top5": 727
+        },
+        "long_15_24": {
+          "char_accuracy": 0.97238079562199,
+          "coverage": 3625,
+          "mrr": 0.7040201980967178,
+          "n": 5149,
+          "top1": 3625,
+          "top10": 3625,
+          "top20": 3625,
+          "top5": 3625
+        },
+        "medium_10_14": {
+          "char_accuracy": 0.9758508570407526,
+          "coverage": 5804,
+          "mrr": 0.8089198606271777,
+          "n": 7175,
+          "top1": 5804,
+          "top10": 5804,
+          "top20": 5804,
+          "top5": 5804
+        },
+        "news": {
+          "char_accuracy": 0.9721027068896129,
+          "coverage": 7661,
+          "mrr": 0.7661,
+          "n": 10000,
+          "top1": 7661,
+          "top10": 7661,
+          "top20": 7661,
+          "top5": 7661
+        },
+        "short_6_9": {
+          "char_accuracy": 0.9709670215141815,
+          "coverage": 6514,
+          "mrr": 0.8486190724335592,
+          "n": 7676,
+          "top1": 6514,
+          "top10": 6514,
+          "top20": 6514,
+          "top5": 6514
+        }
+      }
+    }
+  },
+  "summary": {
+    "bgw": {
+      "char1": {
+        "char_accuracy": 0.9852354480078136,
+        "coverage": 17665,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 3515.2418,
+        "latency_p50_us": 3257.0,
+        "latency_p95_us": 6273.049999999999,
+        "latency_p99_us": 7945.019999999997,
+        "missing": 0,
+        "mrr": 0.88325,
+        "n": 20000,
+        "top1": 17665,
+        "top10": 17665,
+        "top1_ci_high": 0.8876270276121666,
+        "top1_ci_low": 0.8787257767508291,
+        "top20": 17665,
+        "top5": 17665
+      },
+      "pure": {
+        "char_accuracy": 0.8751110492187985,
+        "coverage": 8419,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 4148.199,
+        "latency_p50_us": 3815.0,
+        "latency_p95_us": 7367.0,
+        "latency_p99_us": 9402.039999999994,
+        "missing": 0,
+        "mrr": 0.420925,
+        "n": 20000,
+        "top1": 8418,
+        "top10": 8419,
+        "top1_ci_high": 0.42775680620961654,
+        "top1_ci_low": 0.4140735738944592,
+        "top20": 8419,
+        "top5": 8419
+      },
+      "sparse": {
+        "char_accuracy": 0.9077611586207055,
+        "coverage": 9941,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 3914.3421,
+        "latency_p50_us": 3589.0,
+        "latency_p95_us": 7013.049999999999,
+        "latency_p99_us": 8789.05999999999,
+        "missing": 0,
+        "mrr": 0.49705,
+        "n": 20000,
+        "top1": 9941,
+        "top10": 9941,
+        "top1_ci_high": 0.5039792996628167,
+        "top1_ci_low": 0.49012183334991416,
+        "top20": 9941,
+        "top5": 9941
+      },
+      "word1": {
+        "char_accuracy": 0.9718254568893668,
+        "coverage": 15584,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 3644.0584,
+        "latency_p50_us": 3344.0,
+        "latency_p95_us": 6522.0,
+        "latency_p99_us": 8220.009999999998,
+        "missing": 0,
+        "mrr": 0.7792,
+        "n": 20000,
+        "top1": 15584,
+        "top10": 15584,
+        "top1_ci_high": 0.7848946155398601,
+        "top1_ci_low": 0.7733981515264111,
+        "top20": 15584,
+        "top5": 15584
+      }
+    },
+    "tiger": {
+      "char1": {
+        "char_accuracy": 0.9852855562612016,
+        "coverage": 19714,
+        "empty": 6,
+        "errors": 0,
+        "latency_mean_us": 36907.43675,
+        "latency_p50_us": 31901.5,
+        "latency_p95_us": 82076.54999999999,
+        "latency_p99_us": 105078.38999999993,
+        "missing": 0,
+        "mrr": 0.928840124151736,
+        "n": 20000,
+        "top1": 17862,
+        "top10": 19628,
+        "top1_ci_high": 0.8973070145537243,
+        "top1_ci_low": 0.8887420066989662,
+        "top20": 19714,
+        "top5": 19446
+      },
+      "pure": {
+        "char_accuracy": 0.9042246426557405,
+        "coverage": 15863,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 28966.69265,
+        "latency_p50_us": 24649.0,
+        "latency_p95_us": 64414.84999999999,
+        "latency_p99_us": 84534.21999999996,
+        "missing": 0,
+        "mrr": 0.6116986678094544,
+        "n": 20000,
+        "top1": 10575,
+        "top10": 15205,
+        "top1_ci_high": 0.5356618711530332,
+        "top1_ci_low": 0.5218270867737409,
+        "top20": 15863,
+        "top5": 14292
+      },
+      "sparse": {
+        "char_accuracy": 0.9300600290974378,
+        "coverage": 16976,
+        "empty": 4,
+        "errors": 0,
+        "latency_mean_us": 29865.58845,
+        "latency_p50_us": 25288.5,
+        "latency_p95_us": 67208.69999999995,
+        "latency_p99_us": 90184.06,
+        "missing": 0,
+        "mrr": 0.6793010207263618,
+        "n": 20000,
+        "top1": 11947,
+        "top10": 16406,
+        "top1_ci_high": 0.6041275861474239,
+        "top1_ci_low": 0.5905350244324526,
+        "top20": 16976,
+        "top5": 15625
+      },
+      "word1": {
+        "char_accuracy": 0.9779341168459452,
+        "coverage": 19542,
+        "empty": 6,
+        "errors": 0,
+        "latency_mean_us": 32477.05725,
+        "latency_p50_us": 27800.5,
+        "latency_p95_us": 72513.04999999999,
+        "latency_p99_us": 94328.29999999996,
+        "missing": 0,
+        "mrr": 0.8884404024810805,
+        "n": 20000,
+        "top1": 16711,
+        "top10": 19365,
+        "top1_ci_high": 0.8406227888361141,
+        "top1_ci_low": 0.830348335766634,
+        "top20": 19542,
+        "top5": 19083
+      }
+    },
+    "wx": {
+      "char1": {
+        "char_accuracy": 0.9829465444501436,
+        "coverage": 17517,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 3430.06495,
+        "latency_p50_us": 3174.5,
+        "latency_p95_us": 6131.0,
+        "latency_p99_us": 7707.119999999981,
+        "missing": 0,
+        "mrr": 0.87585,
+        "n": 20000,
+        "top1": 17517,
+        "top10": 17517,
+        "top1_ci_high": 0.8803480082979703,
+        "top1_ci_low": 0.8712076381986559,
+        "top20": 17517,
+        "top5": 17517
+      },
+      "pure": {
+        "char_accuracy": 0.887090907144035,
+        "coverage": 9331,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 4191.43905,
+        "latency_p50_us": 3861.0,
+        "latency_p95_us": 7483.0,
+        "latency_p99_us": 9442.049999999992,
+        "missing": 0,
+        "mrr": 0.466525,
+        "n": 20000,
+        "top1": 9330,
+        "top10": 9331,
+        "top1_ci_high": 0.47341972062765003,
+        "top1_ci_low": 0.45959314578810906,
+        "top20": 9331,
+        "top5": 9331
+      },
+      "sparse": {
+        "char_accuracy": 0.9164437615351037,
+        "coverage": 10693,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 3888.24385,
+        "latency_p50_us": 3572.5,
+        "latency_p95_us": 6997.199999999997,
+        "latency_p99_us": 8734.009999999998,
+        "missing": 0,
+        "mrr": 0.53465,
+        "n": 20000,
+        "top1": 10693,
+        "top10": 10693,
+        "top1_ci_high": 0.5415555449851714,
+        "top1_ci_low": 0.5277311469161403,
+        "top20": 10693,
+        "top5": 10693
+      },
+      "word1": {
+        "char_accuracy": 0.9730830736533888,
+        "coverage": 15943,
+        "empty": 0,
+        "errors": 0,
+        "latency_mean_us": 3446.9915,
+        "latency_p50_us": 3173.0,
+        "latency_p95_us": 6214.299999999996,
+        "latency_p99_us": 7771.019999999997,
+        "missing": 0,
+        "mrr": 0.79715,
+        "n": 20000,
+        "top1": 15943,
+        "top10": 15943,
+        "top1_ci_high": 0.8026657138064799,
+        "top1_ci_low": 0.7915201591653771,
+        "top20": 15943,
+        "top5": 15943
+      }
+    }
+  }
+}

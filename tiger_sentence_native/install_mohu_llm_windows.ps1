@@ -26,12 +26,12 @@ foreach ($rel in @(
     "data/sentence-ngram-mobile.bin"
 )) {
     if (-not (Test-Path (Join-Path $scriptDir $rel))) {
-        Write-Error "missing package file: $rel"; exit 1
+        Write-Error "missing package file: $rel" -ErrorAction Continue; exit 1
     }
 }
-if (-not (Test-Path $manifest)) { Write-Error "missing package manifest"; exit 1 }
+if (-not (Test-Path $manifest)) { Write-Error "missing package manifest" -ErrorAction Continue; exit 1 }
 $lexicon = Join-Path $scriptDir "data/$Scheme/mohu_llm_$Scheme.lexicon.txt"
-if (-not (Test-Path $lexicon)) { Write-Error "missing lexicon: $lexicon"; exit 1 }
+if (-not (Test-Path $lexicon)) { Write-Error "missing lexicon: $lexicon" -ErrorAction Continue; exit 1 }
 
 # The native engine binds to the bundled runtime/lua54.dll while the host
 # weasel's rime.dll embeds its own Lua; both must be the same 5.4.x version
@@ -72,7 +72,7 @@ if ($bundledLua -and $weaselLua) {
 
 $manifestText = Get-Content $manifest -Raw -Encoding UTF8
 foreach ($needle in @('"package_type": "mohu_llm"', "`"scheme`": `"$Scheme`"", "`"schema_id`": `"$schemaId`"", '"base_dir": "base"')) {
-    if (-not $manifestText.Contains($needle)) { Write-Error "manifest mismatch: $needle"; exit 1 }
+    if (-not $manifestText.Contains($needle)) { Write-Error "manifest mismatch: $needle" -ErrorAction Continue; exit 1 }
 }
 
 $userMaintained = @{

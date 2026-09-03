@@ -7,6 +7,17 @@ $testRoot = Join-Path ([IO.Path]::GetTempPath()) ("mohu-llm-windows-" + [guid]::
 $utf8 = [Text.UTF8Encoding]::new($false)
 $powerShell = (Get-Process -Id $PID).Path
 
+# The installer must parse under the edition running this suite (pwsh 7 and
+# Windows PowerShell 5.1 in CI); surface parser errors instead of opaque
+# child failures.
+$parseErrors = $null
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $installerSource, [ref]$null, [ref]$parseErrors) | Out-Null
+if ($parseErrors -and $parseErrors.Count -gt 0) {
+    throw ("install_mohu_llm_windows.ps1 does not parse under " + $PSVersionTable.PSVersion +
+        ": " + (($parseErrors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }) -join "; "))
+}
+
 function Assert-True {
     param([bool]$Condition, [string]$Message)
     if (-not $Condition) { throw $Message }
@@ -64,7 +75,10 @@ function Invoke-TestInstaller {
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
-        $output = & $powerShell -NoProfile -File $installer -Scheme $Scheme -RimeDir $RimeDir 2>&1 | Out-String
+        # Render every stream object (5.1 wraps redirected child stderr in
+        # ErrorRecords) into plain strings so both editions capture alike.
+        $streams = & $powerShell -NoProfile -File $installer -Scheme $Scheme -RimeDir $RimeDir 2>&1
+        $output = ($streams | ForEach-Object { "{0}" -f $_ }) -join [Environment]::NewLine
         $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousPreference
@@ -85,8 +99,8 @@ try {
     $missingRuntimePackage = New-TestPackage $missingRuntimeRoot "zrm"
     Remove-Item (Join-Path $missingRuntimePackage "runtime/lua54.dll")
     $missingResult = Invoke-TestInstaller $missingRuntimePackage "zrm" (Join-Path $missingRuntimeRoot "Rime")
-    Assert-True ($missingResult.ExitCode -ne 0) "installer must fail when runtime/lua54.dll is missing"
-    Assert-True ($missingResult.Output -match "lua54\.dll") "missing-runtime error must name lua54.dll"
+    Assert-True ($missingResult.ExitCode -ne 0) ("installer must fail when runtime/lua54.dll is missing; exit=$($missingResult.ExitCode) output=<$($missingResult.Output)>")
+    Assert-True ($missingResult.Output -match "lua54\.dll") ("missing-runtime error must name lua54.dll; output=<$($missingResult.Output)>")
 
     foreach ($scheme in @("zrm", "flypy")) {
         $upgradeRoot = Join-Path $testRoot "upgrade-$scheme"

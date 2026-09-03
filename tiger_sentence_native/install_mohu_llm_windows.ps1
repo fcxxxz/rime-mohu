@@ -1,4 +1,4 @@
-# Shared installer for the mohu_llm scheme packages on Windows (Weasel).
+﻿# Shared installer for the mohu_llm scheme packages on Windows (Weasel).
 # Windows ships the native v5 engine only; the optional Qwen neural reranker
 # is macOS-only and intentionally not installed here.
 param(

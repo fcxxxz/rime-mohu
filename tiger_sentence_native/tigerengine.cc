@@ -108,9 +108,53 @@ inline double logsumexp(double a, double b) {
 struct MappedFile {
   uint8_t* data = nullptr;
   size_t size = 0;
+  bool owned = true;  // false = 容器内视图，指向宿主映射，析构不 unmap
 #ifdef _WIN32
   HANDLE mapping = nullptr;
 #endif
+  MappedFile() = default;
+  MappedFile(MappedFile&& o) noexcept : data(o.data), size(o.size), owned(o.owned) {
+#ifdef _WIN32
+    mapping = o.mapping;
+    o.mapping = nullptr;
+#endif
+    o.data = nullptr;
+    o.size = 0;
+    o.owned = true;
+  }
+  MappedFile& operator=(MappedFile&& o) noexcept {
+    if (this != &o) {
+      release();
+      data = o.data;
+      size = o.size;
+      owned = o.owned;
+#ifdef _WIN32
+      mapping = o.mapping;
+      o.mapping = nullptr;
+#endif
+      o.data = nullptr;
+      o.size = 0;
+      o.owned = true;
+    }
+    return *this;
+  }
+  // 在既有映射上开非持有视图（单文件容器内嵌多模型时复用同一次 mmap）。
+  void set_view(const uint8_t* base, size_t len) {
+    data = const_cast<uint8_t*>(base);
+    size = len;
+    owned = false;
+  }
+  void release() {
+#ifdef _WIN32
+    if (data) UnmapViewOfFile(data);
+    if (mapping) CloseHandle(mapping);
+    mapping = nullptr;
+#else
+    if (owned && data) munmap(data, size);
+#endif
+    data = nullptr;
+    size = 0;
+  }
   bool open(const char* path) {
 #ifdef _WIN32
     HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
@@ -157,12 +201,11 @@ struct MappedFile {
 #endif
   }
 #ifdef _WIN32
-  ~MappedFile() {
-    if (data) UnmapViewOfFile(data);
-    if (mapping) CloseHandle(mapping);
-  }
+  ~MappedFile() { release(); }
 #else
-  ~MappedFile() { if (data) munmap(data, size); }
+  ~MappedFile() {
+    if (owned && data) munmap(data, size);
+  }
 #endif
 };
 
@@ -239,6 +282,21 @@ struct KnModel {
   bool load(const char* p) {
     if (!file.open(p)) return false;
     path = p;
+    return load_common(p);
+  }
+
+  // 容器内视图加载：[base, base+len) 视作独立模型文件（内部偏移自洽）。
+  bool load_view(const uint8_t* base, uint64_t len, const char* label) {
+    if (len > (uint64_t)SIZE_MAX) {
+      set_error("model view too large: %s", label);
+      return false;
+    }
+    file.set_view(base, (size_t)len);
+    path = label;
+    return load_common(label);
+  }
+
+  bool load_common(const char* p) {
     if (file.size < 32) { set_error("empty n-gram: %s", p); return false; }
     if (memcmp(file.data, "TCSKNM02", 8) == 0) return load_mobile();
     if (memcmp(file.data, "TCSKNM01", 8) == 0) return load_legacy();
@@ -735,6 +793,20 @@ struct WordModel {
 
   bool load(const char* p) {
     if (!file.open(p)) return false;
+    return load_common(p);
+  }
+
+  // 容器内视图加载：与非持有 MappedFile 视图配合，从单文件容器取词级层。
+  bool load_view(const uint8_t* base, uint64_t len, const char* label) {
+    if (len > (uint64_t)SIZE_MAX) {
+      set_error("model view too large: %s", label);
+      return false;
+    }
+    file.set_view(base, (size_t)len);
+    return load_common(label);
+  }
+
+  bool load_common(const char* p) {
     const uint8_t* d = file.data;
     if (file.size < 120 || std::memcmp(d, "MHKNM01", 7) != 0) {
       set_error("not an MHKNM01 model: %s", p);
@@ -1378,21 +1450,236 @@ struct DecodeResult {
   bool visible_consensus = false;
 };
 
+// ---------------------------------------------------------------- 用户调频层
+// 小型用户三元模型：统计用户实际提交文本的字符 trigram 计数，在
+// Engine::logp 的融合槽位与静态主模型做概率域插值。静态模型（V5）文件
+// 永不改写；该表全内存、容量有上限，跨会话由 Lua 侧快照持久化
+// （引擎自身零文件 IO，见 tiger_engine_user_model_export/import）。
+struct UserNgram {
+  // 与 logp_cache 同构的键位打包（码点 < 2^21）。
+  static uint64_t tri_key(uint32_t a, uint32_t b, uint32_t c) {
+    return ((uint64_t)a << 42) | ((uint64_t)b << 21) | c;
+  }
+  static uint64_t bi_key(uint32_t a, uint32_t b) {
+    return ((uint64_t)a << 21) | b;
+  }
+
+  std::unordered_map<uint64_t, uint32_t> tri;
+  std::unordered_map<uint64_t, uint32_t> bi;
+  std::unordered_map<uint32_t, uint32_t> uni;
+  uint64_t total = 0;  // unigram 总计数（含哨兵）
+  size_t max_tri_entries = 100000;
+
+  bool empty() const { return total == 0; }
+
+  // Jelinek-Mercer 级联回退：上下文未见时权重自动落到低阶，kFloor 保证非零。
+  double logp(uint32_t a, uint32_t b, uint32_t c) const {
+    static const double kTriW = 0.6, kBiW = 0.3, kUniW = 0.09;
+    static const double kFloor = 1e-12;
+    double p = kFloor;
+    auto ctx = bi.find(bi_key(a, b));
+    if (ctx != bi.end() && ctx->second > 0) {
+      auto it = tri.find(tri_key(a, b, c));
+      if (it != tri.end())
+        p += kTriW * (double)it->second / (double)ctx->second;
+    }
+    auto ub = uni.find(b);
+    if (ub != uni.end() && ub->second > 0) {
+      auto it = bi.find(bi_key(b, c));
+      if (it != bi.end())
+        p += kBiW * (double)it->second / (double)ub->second;
+    }
+    if (total > 0) {
+      auto uc = uni.find(c);
+      if (uc != uni.end())
+        p += kUniW * (double)uc->second / (double)total;
+    }
+    return std::log(p);
+  }
+
+  void note(uint32_t a, uint32_t b, uint32_t c) {
+    ++tri[tri_key(a, b, c)];
+    ++bi[bi_key(a, b)];
+    ++uni[b];
+    ++uni[c];
+    ++total;
+  }
+
+  // 喂入一段提交文本：BOS/EOS 框架内逐码点计数。
+  bool observe(const std::string& text) {
+    if (text.empty()) return false;
+    uint32_t p2 = kBOS, p1 = kBOS;
+    size_t i = 0;
+    while (i < text.size()) {
+      uint32_t cp; size_t n;
+      utf8_next(text.data(), text.size(), i, &cp, &n);
+      if (n == 0) break;  // 非法 UTF-8 截断，保守放弃尾部
+      note(p2, p1, cp);
+      p2 = p1;
+      p1 = cp;
+      i += n;
+    }
+    note(p2, p1, kEOS);
+    decay_if_large();
+    return true;
+  }
+
+  // 超过容量后全表衰减 ×0.9 并剔除零计数，保持近期输入的相对优势。
+  void decay_if_large() {
+    if (tri.size() <= max_tri_entries) return;
+    decay_map(tri);
+    decay_map(bi);
+    for (auto it = uni.begin(); it != uni.end();) {
+      it->second = (uint32_t)(it->second * 0.9);
+      it = it->second == 0 ? uni.erase(it) : std::next(it);
+    }
+    total = (uint64_t)(total * 0.9);
+  }
+
+  template <typename K>
+  static void decay_map(std::unordered_map<K, uint32_t>& m) {
+    for (auto it = m.begin(); it != m.end();) {
+      it->second = (uint32_t)(it->second * 0.9);
+      it = it->second == 0 ? m.erase(it) : std::next(it);
+    }
+  }
+
+  // 快照格式（小端二进制）："MHUG01\n" + 8 字节 total +
+  // {u32 条数, (u64 key, u32 count)*} × (tri, bi) + {u32 条数, (u32 key, u32 count)*}。
+  std::string export_blob() const {
+    std::string out;
+    out.reserve(16 + tri.size() * 12 + bi.size() * 12 + uni.size() * 8);
+    auto append_u32 = [&out](uint32_t v) {
+      out.append((const char*)&v, 4);
+    };
+    auto append_u64 = [&out](uint64_t v) {
+      out.append((const char*)&v, 8);
+    };
+    out += "MHUG01\n";
+    append_u64(total);
+    append_u32((uint32_t)tri.size());
+    for (const auto& kv : tri) { append_u64(kv.first); append_u32(kv.second); }
+    append_u32((uint32_t)bi.size());
+    for (const auto& kv : bi) { append_u64(kv.first); append_u32(kv.second); }
+    append_u32((uint32_t)uni.size());
+    for (const auto& kv : uni) { append_u32(kv.first); append_u32(kv.second); }
+    return out;
+  }
+
+  // 解析快照；任何尺寸越界或魔数不符都整体拒绝，不影响现有计数。
+  static bool import_blob(const std::string& blob, UserNgram* into) {
+    struct Reader {
+      const char* p; const char* end; bool ok = true;
+      void take(char* dst, size_t n) {
+        if (!ok || (size_t)(end - p) < n) { ok = false; return; }
+        memcpy(dst, p, n);
+        p += n;
+      }
+      uint32_t u32() { uint32_t v = 0; take((char*)&v, 4); return v; }
+      uint64_t u64() { uint64_t v = 0; take((char*)&v, 8); return v; }
+    } r{blob.data(), blob.data() + blob.size()};
+    char magic[7] = {};
+    r.take(magic, 7);
+    if (!r.ok || memcmp(magic, "MHUG01", 6) != 0) return false;
+    uint64_t total = r.u64();
+    if (!r.ok) return false;
+    UserNgram fresh;
+    fresh.total = total > (1ull << 40) ? (1ull << 40) : total;
+    uint32_t n_tri = r.u32();
+    if (!r.ok || n_tri > 4000000u) return false;
+    for (uint32_t i = 0; i < n_tri && r.ok; i++) {
+      uint64_t k = r.u64();
+      uint32_t c = r.u32();
+      if (c > 0) fresh.tri[k] = c > 1000000u ? 1000000u : c;
+    }
+    uint32_t n_bi = r.u32();
+    if (!r.ok || n_bi > 4000000u) return false;
+    for (uint32_t i = 0; i < n_bi && r.ok; i++) {
+      uint64_t k = r.u64();
+      uint32_t c = r.u32();
+      if (c > 0) fresh.bi[k] = c > 1000000u ? 1000000u : c;
+    }
+    uint32_t n_uni = r.u32();
+    if (!r.ok || n_uni > 4000000u) return false;
+    for (uint32_t i = 0; i < n_uni && r.ok; i++) {
+      uint32_t k = r.u32();
+      uint32_t c = r.u32();
+      if (c > 0) fresh.uni[k] = c > 1000000u ? 1000000u : c;
+    }
+    if (!r.ok) return false;
+    *into = std::move(fresh);
+    return true;
+  }
+};
+
 struct Engine {
+  // 单文件容器（MHCTN01）的宿主映射；model/wm 以非持有视图指向其中区段。
+  // 声明在最前，保证视图（非持有）先于宿主析构。
+  MappedFile container;
   KnModel model;
   WordModel wm;              // 词级+词义模型（MHKNM01）
   bool word_mode = false;
+  bool packed_word_scorer = false;  // 容器词层：仅供候选评分，不改变解码路径
+  WordModel scorer;          // 显式加载的独立词级评分模型（覆盖用）
+  bool explicit_scorer = false;
   KnModel blend;             // 可选第二字符模型（概率域插值）
   bool blend_mode = false;
   double blend_alpha = 0.6;  // 主模型权重
+  UserNgram user;            // 用户调频层（提交文本的 trigram 计数）
+  double user_weight = 0.85; // 静态模型（含 blend 后）权重；>=1 等价关闭用户层
+  // 跨候选调频：上屏历史尾部的 CJK 字作为解码左上文（字符级 trigram
+  // 条件窗口恰为 2 字）。词级上下文（pw2/pw1）不参与播种，维持 <s>。
+  bool has_decode_context = false;
+  uint32_t ctx_prev2 = kBOS, ctx_prev1 = kBOS;
+
+  // 整段最近上屏文本 -> 尾部至多 window 个 CJK 码点作左上文；无汉字则
+  // 清除（与 librime 整段传递、模型侧定窗口的口径一致）。上下文变化
+  // 时整帧 beam 缓存作废（旧状态内嵌的是旧条件下的分数）。
+  bool set_decode_context(const std::string& text, int window) {
+    if (window < 1 || window > 2) window = 2;  // 字符级三元结构窗口 = 2
+    uint32_t last1 = 0, last2 = 0;
+    int found = 0;
+    size_t i = 0;
+    while (i < text.size()) {
+      uint32_t cp; size_t n;
+      utf8_next(text.data(), text.size(), i, &cp, &n);
+      if (n == 0) break;  // 非法 UTF-8 截断，保守放弃尾部
+      const bool cjk = (cp >= 0x3400 && cp <= 0x9FFF) ||
+                       (cp >= 0xF900 && cp <= 0xFAFF) || cp >= 0x20000;
+      if (cjk) {
+        last2 = last1;  // 不足窗口时保持 0，由下方 kBOS 兜底
+        last1 = cp;
+        if (found < window) found++;
+      }
+      i += n;
+    }
+    const bool new_has = found > 0;
+    const uint32_t new_p2 = found >= 2 ? last2 : kBOS;
+    const uint32_t new_p1 = found >= 1 ? last1 : kBOS;
+    if (new_has == has_decode_context && new_p2 == ctx_prev2 &&
+        new_p1 == ctx_prev1) {
+      return false;  // 逐键重复设置同一历史时保持零开销
+    }
+    has_decode_context = new_has;
+    ctx_prev2 = new_p2;
+    ctx_prev1 = new_p1;
+    cache_valid = false;
+    has_terminal_phrase_states = false;
+    cached_raw.clear();
+    return true;
+  }
   Lexicon lex;
   int beam = 200;
   bool all_ranks_always = true;      // 魔虎模式：>4 键也允许全部档位竞争
 
   // 码表词条 -> 词 id（词表含码表全部词条，正常都有；未命中用 OOV 地板）
   uint32_t word_id(const std::string& text) const {
-    auto it = wm.ids.find(text);
-    return it == wm.ids.end() ? 0xFFFFFFFFu : it->second;
+    return word_id_in(&wm, text);
+  }
+
+  static uint32_t word_id_in(const WordModel* m, const std::string& text) {
+    auto it = m->ids.find(text);
+    return it == m->ids.end() ? 0xFFFFFFFFu : it->second;
   }
 
   std::vector<std::unique_ptr<State>> pool;
@@ -1427,6 +1714,170 @@ struct Engine {
     return v;
   }
 
+  // ---- 词级候选评分（跨候选调频：4 键词码的上下文重排信号） ----
+
+  // 词级评分模型：显式加载的独立词模型优先；其次主模型自带的词层
+  // （MHKNM01 主模型或 MHCTN01 容器词层）。都没有则评分不可用。
+  // 非 const：WordModel::logp 会写页内查找缓存。
+  WordModel* word_scorer() {
+    if (explicit_scorer) return &scorer;
+    if (word_mode || packed_word_scorer) return &wm;
+    return nullptr;
+  }
+
+  std::unordered_map<uint64_t, double> scorer_logp_cache;  // 独立词模型 id 空间
+  std::string word_ctx_text;      // 上文切词缓存（单条目：同一历史逐键重复零开销）
+  uint32_t word_ctx_pw2 = 0, word_ctx_pw1 = 0;
+  int word_ctx_window = 2;
+  bool word_ctx_valid = false;
+
+  // 上文尾部逆向最大匹配切出末 1–2 词（词表含全部单字）。只看末 16 个
+  // CJK 字：边界误差至多影响窗口首词，不影响末两词。无词可切时 pw2/pw1
+  // 保持 0（<s>）。
+  bool resolve_word_context(const std::string& text, int window_words) {
+    if (window_words < 1 || window_words > 2) window_words = 2;
+    WordModel* m = word_scorer();
+    if (!m) {
+      set_error("word scorer not loaded");
+      return false;
+    }
+    if (word_ctx_valid && word_ctx_window == window_words && word_ctx_text == text)
+      return true;
+    std::vector<std::string> tail;  // 末 16 个 CJK 字
+    size_t i = 0;
+    while (i < text.size()) {
+      uint32_t cp; size_t n;
+      utf8_next(text.data(), text.size(), i, &cp, &n);
+      if (n == 0) break;  // 非法 UTF-8 截断，保守放弃剩余
+      const bool cjk = (cp >= 0x3400 && cp <= 0x9FFF) ||
+                       (cp >= 0xF900 && cp <= 0xFAFF) || cp >= 0x20000;
+      if (cjk) {
+        tail.push_back(text.substr(i, n));
+        if (tail.size() > 16) tail.erase(tail.begin());
+      }
+      i += n;
+    }
+    std::vector<uint32_t> rev;  // 从尾往头方向的词 id
+    size_t end = tail.size();
+    while (end > 0 && rev.size() < (size_t)window_words) {
+      size_t taken = 0;
+      uint32_t id = 0xFFFFFFFFu;
+      const size_t max_len = std::min<size_t>(8, end);
+      std::string w;
+      for (size_t len = max_len; len >= 1; --len) {
+        w.clear();
+        for (size_t k = end - len; k < end; ++k) w += tail[k];
+        auto it = m->ids.find(w);
+        if (it != m->ids.end()) {
+          id = it->second;
+          taken = len;
+          break;
+        }
+      }
+      if (taken == 0) {
+        --end;  // 该字不在词表（极罕见，词表含全部单字）→ 跳过
+        continue;
+      }
+      rev.push_back(id);
+      end -= taken;
+    }
+    word_ctx_pw1 = rev.size() >= 1 ? rev[0] : 0;  // 0 = <s>
+    word_ctx_pw2 = rev.size() >= 2 ? rev[1] : 0;
+    word_ctx_text = text;
+    word_ctx_window = window_words;
+    word_ctx_valid = true;
+    return true;
+  }
+
+  double scorer_word_logp(WordModel* m, uint32_t a, uint32_t b, uint32_t c) {
+    if (c == 0xFFFFFFFFu) return -20.0;  // OOV：无信号，Lua 侧不提升
+    if (m->vocab.size() >= kShift) {
+      // 词表超出 21 位键打包范围：直查不缓存（常规模型远小于此）。
+      double v = m->logp(a, b, c);
+      return std::isfinite(v) ? v : -20.0;
+    }
+    // 与主词模型共享 logp_cache（容器/词级主模型场景下 id 空间一致）；
+    // 独立词模型用单独缓存，避免 id 撞键。
+    std::unordered_map<uint64_t, double>& cache =
+        (m == &wm) ? logp_cache : scorer_logp_cache;
+    uint64_t key = ((uint64_t)a << 42) | ((uint64_t)b << 21) | (c & 0x1FFFFF);
+    auto it = cache.find(key);
+    if (it != cache.end()) return it->second;
+    double v = m->logp(a, b, c);
+    if (!std::isfinite(v)) v = -20.0;
+    if (cache.size() > 65536) cache.clear();
+    cache[key] = v;
+    return v;
+  }
+
+  // 批量词级评分：out[i] = logP(候选 i | 上文尾部词)。返回写入个数。
+  int context_word_scores(const std::string& context_text,
+                          const std::vector<std::string>& candidates,
+                          int window_words, double* out) {
+    WordModel* m = word_scorer();
+    if (!m) {
+      set_error("word scorer not loaded");
+      return -1;
+    }
+    if (!resolve_word_context(context_text, window_words)) return -1;
+    for (size_t i = 0; i < candidates.size(); ++i)
+      out[i] = scorer_word_logp(m, word_ctx_pw2, word_ctx_pw1,
+                                word_id_in(m, candidates[i]));
+    return (int)candidates.size();
+  }
+
+  // 批量字符级续写评分（octagram 同型机制）：out[i] = Σ_codepoints
+  // logP(cp | 上文末 2 个 CJK 字与候选已出字)。空上文时从 BOS 起步，
+  // 返回值即基线分（供上层做 lift：score(上文) − score(空上文) 剥离
+  // 词频成分，只留上下文增益）。字符模型路径专用；word_mode 主模型
+  // 无字符层时返回 -1。不动解码状态。
+  int context_char_scores(const std::string& context_text,
+                          const std::vector<std::string>& candidates,
+                          double* out) {
+    if (word_mode) {
+      set_error("char scoring requires a char-level model");
+      return -1;
+    }
+    uint32_t p2 = kBOS, p1 = kBOS;
+    {
+      uint32_t last1 = 0, last2 = 0;
+      int found = 0;
+      size_t i = 0;
+      while (i < context_text.size()) {
+        uint32_t cp; size_t n;
+        utf8_next(context_text.data(), context_text.size(), i, &cp, &n);
+        if (n == 0) break;
+        const bool cjk = (cp >= 0x3400 && cp <= 0x9FFF) ||
+                         (cp >= 0xF900 && cp <= 0xFAFF) || cp >= 0x20000;
+        if (cjk) {
+          last2 = last1;
+          last1 = cp;
+          if (found < 2) found++;
+        }
+        i += n;
+      }
+      if (found >= 1) p1 = last1;
+      if (found >= 2) p2 = last2;
+    }
+    for (size_t i = 0; i < candidates.size(); ++i) {
+      const std::string& cand = candidates[i];
+      double s = 0;
+      uint32_t a = p2, b = p1;
+      size_t j = 0;
+      while (j < cand.size()) {
+        uint32_t cp; size_t n;
+        utf8_next(cand.data(), cand.size(), j, &cp, &n);
+        if (n == 0) break;
+        s += logp(a, b, cp);
+        a = b;
+        b = cp;
+        j += n;
+      }
+      out[i] = s;
+    }
+    return (int)candidates.size();
+  }
+
   double logp(uint32_t a, uint32_t b, uint32_t c) {
     uint64_t key = ((uint64_t)a << 42) | ((uint64_t)b << 21) | c;
     auto it = logp_cache.find(key);
@@ -1439,6 +1890,12 @@ struct Engine {
         double p2 = std::exp(std::max(-700.0, w));
         v = std::log(blend_alpha * p1 + (1.0 - blend_alpha) * p2);
       }
+    }
+    if (user_weight < 1.0 && !user.empty()) {
+      double pu = user.logp(a, b, c);
+      double p1 = std::exp(std::max(-700.0, v));
+      double p2 = std::exp(std::max(-700.0, pu));
+      v = std::log(user_weight * p1 + (1.0 - user_weight) * p2);
     }
     if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
     if (logp_cache.size() > 65536) logp_cache.clear();
@@ -1972,6 +2429,12 @@ struct Engine {
     states.resize(length + 1);
     for (auto& s : states) s = new_bucket();
     State* root = new_state();
+    if (has_decode_context) {
+      // 跨候选左上文：beam 起步条件改为 P(首字|上文尾部两字)，
+      // 与后续字的 trigram 打分天然同构，候选间比较保持一致。
+      root->prev2 = ctx_prev2;
+      root->prev1 = ctx_prev1;
+    }
     states[0]->add(root);
     expand_range(raw, 0, length, -1);
     cached_result = emit(raw, include_early);
@@ -2045,26 +2508,68 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
     auto e = std::make_unique<Engine>();
     if (beam_width > 0) e->beam = beam_width;
     if (all_ranks_always >= 0) e->all_ranks_always = all_ranks_always != 0;
-    if (!e->wm.load(model_path)) {
+    // 单文件容器（MHCTN01）：一次 mmap 同携字符与词级模型。词层仅供
+    // 候选评分（packed_word_scorer），解码仍走字符级，与非容器行为一致；
+    // 词层缺失/损坏时降级为纯字符引擎（评分接口报错，解码不受影响）。
+    std::string container_error;
+    bool container_done = false;
+    if (e->container.open(model_path)) {
+      if (e->container.size >= 64 &&
+          memcmp(e->container.data, "MHCTN01", 7) == 0) {
+        const uint8_t* cd = e->container.data;
+        size_t q = 8;
+        auto u32c = [&]() { uint32_t v = rd_u32(cd + q); q += 4; return v; };
+        auto u64c = [&]() { uint64_t v = rd_u64(cd + q); q += 8; return v; };
+        const uint32_t version = u32c();
+        const uint32_t header_size = u32c();
+        const uint64_t file_size = u64c();
+        const uint32_t flags = u32c();
+        (void)u32c();  // reserved
+        const uint64_t char_off = u64c(), char_len = u64c();
+        const uint64_t word_off = u64c(), word_len = u64c();
+        const bool has_char = (flags & 1u) != 0, has_word = (flags & 2u) != 0;
+        auto section_ok = [&](uint64_t off, uint64_t len) {
+          return off >= (uint64_t)header_size && off <= e->container.size &&
+                 len <= e->container.size - off;
+        };
+        if (version != 1 || header_size != 64 || file_size != e->container.size ||
+            q > header_size) {
+          container_error = "invalid MHCTN01 container header";
+        } else if (!has_char || !section_ok(char_off, char_len)) {
+          container_error = "container requires a valid char section";
+        } else if (!e->model.load_view(e->container.data + char_off, char_len,
+                                       model_path)) {
+          container_error = tiger_last_error();
+        } else {
+          container_done = true;
+          if (has_word && section_ok(word_off, word_len) &&
+              e->wm.load_view(e->container.data + word_off, word_len, model_path)) {
+            e->packed_word_scorer = true;
+          }
+        }
+      } else {
+        // 打开成功但不是容器：释放宿主映射，走传统两级加载。
+        e->container.release();
+      }
+    }
+    if (!container_done && !e->wm.load(model_path)) {
       // 非 MHKNM01 → 尝试字符级 TCSKNM。两级加载器共用 last_error；
       // 分别记录，避免把词级模型的报错误报成最终失败原因。
       const std::string word_error = tiger_last_error();
       if (!e->model.load(model_path)) {
-        set_error("char model: %s (word model was tried first: %s)",
-                  tiger_last_error(), word_error.c_str());
+        set_error("char model: %s (word model was tried first: %s%s%s)",
+                  tiger_last_error(), word_error.c_str(),
+                  container_error.empty() ? "" : "; container: ",
+                  container_error.c_str());
         copy_last_error(err, errcap);
         return -1;
       }
-      if (!e->lex.load(lexicon_path)) {
-        copy_last_error(err, errcap);
-        return -1;
-      }
-    } else {
+    } else if (!container_done) {
       e->word_mode = true;
-      if (!e->lex.load(lexicon_path)) {
-        copy_last_error(err, errcap);
-        return -1;
-      }
+    }
+    if (!e->lex.load(lexicon_path)) {
+      copy_last_error(err, errcap);
+      return -1;
     }
     // 可选第二字符模型（研究用：MH_BLEND 指向 TCSKNM 路径做概率域融合）
     if (const char* bp = getenv("MH_BLEND")) {
@@ -2175,6 +2680,238 @@ int tiger_engine_personal_abort(int handle) {
   }
 }
 
+int tiger_engine_update_user_model(int handle, const char* text) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!text) {
+      set_error("user model update requires text");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (!e->user.observe(text)) return 0;  // 空文本，无变化
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (const std::exception&) {
+    set_error("user model update failed");
+    return -1;
+  } catch (...) {
+    set_error("user model update failed");
+    return -1;
+  }
+}
+
+int tiger_engine_set_user_model_weight(int handle, double static_weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (!(static_weight > 0.0 && static_weight <= 1.0)) {
+      set_error("user model weight must be in (0, 1]");
+      return -1;
+    }
+    if (e->user_weight == static_weight) return 0;
+    e->user_weight = static_weight;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("user model weight update failed");
+    return -1;
+  }
+}
+
+/* 返回 malloc 分配的快照 blob 与其字节数（*size_out），调用方负责 free()；
+ * 空模型返回 ""，错误返回 NULL。blob 是二进制，可能含 NUL，禁止当 C 字符串用。 */
+char* tiger_engine_user_model_export(int handle, size_t* size_out) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (size_out) *size_out = 0;
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return nullptr;
+    }
+    const std::string blob = g_engines[handle]->user.export_blob();
+    char* out = (char*)malloc(blob.size() + 1);
+    if (!out) {
+      set_error("user model export allocation failed");
+      return nullptr;
+    }
+    blob.copy(out, blob.size());
+    out[blob.size()] = 0;
+    if (size_out) *size_out = blob.size();
+    return out;
+  } catch (...) {
+    set_error("user model export failed");
+    return nullptr;
+  }
+}
+
+int tiger_engine_set_decode_context(int handle, const char* text, int window_chars) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!text) {
+      set_error("decode context requires text");
+      return -1;
+    }
+    return g_engines[handle]->set_decode_context(text, window_chars) ? 1 : 0;
+  } catch (...) {
+    set_error("decode context update failed");
+    return -1;
+  }
+}
+
+/* 显式加载独立词级评分模型（MHKNM01）。容器（MHCTN01）或词级主模型已
+ * 自带词层时可省略；显式加载优先。0 成功，-1 失败（引擎本体不受影响）。 */
+int tiger_engine_load_word_scorer(int handle, const char* model_path) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!model_path || !model_path[0]) {
+      set_error("word scorer requires a model path");
+      return -1;
+    }
+    WordModel fresh;
+    if (!fresh.load(model_path)) return -1;  // set_error 已携带路径信息
+    Engine* e = g_engines[handle].get();
+    e->scorer = std::move(fresh);
+    e->explicit_scorer = true;
+    e->word_ctx_valid = false;
+    e->scorer_logp_cache.clear();
+    return 0;
+  } catch (...) {
+    set_error("word scorer load failed");
+    return -1;
+  }
+}
+
+/* 批量词级上下文评分：candidates 为 '\n' 分隔的候选文本，out_scores 按
+ * 顺序写 logP(候选 | 上文尾部词)，OOV 写 -20（无信号）。window_words
+ * <= 0 取默认 2，>2 截到 2。返回写入个数，<0 出错。 */
+int tiger_engine_context_word_scores(int handle, const char* context_text,
+                                     const char* candidates, int candidate_count,
+                                     int window_words, double* out_scores) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!context_text || !candidates || !out_scores) {
+      set_error("word scores require context, candidates and output buffer");
+      return -1;
+    }
+    if (candidate_count <= 0 || candidate_count > 4096) {
+      set_error("candidate count out of range");
+      return -1;
+    }
+    std::vector<std::string> cands;
+    cands.reserve((size_t)candidate_count);
+    const char* p = candidates;
+    for (int i = 0; i < candidate_count; ++i) {
+      const char* nl = strchr(p, '\n');
+      if (!nl) {
+        if (i + 1 < candidate_count) {
+          set_error("candidates fewer than count");
+          return -1;
+        }
+        cands.emplace_back(p);
+      } else {
+        cands.emplace_back(p, (size_t)(nl - p));
+        p = nl + 1;
+      }
+    }
+    return g_engines[handle]->context_word_scores(context_text, cands,
+                                                  window_words, out_scores);
+  } catch (...) {
+    set_error("word scores failed");
+    return -1;
+  }
+}
+
+/* 批量字符级续写评分（octagram 同型）：out_scores[i] = Σ logP(候选 i 的
+ * 码点 | 上文末 2 个 CJK 字及候选已出字)。空上文返回 BOS 基线分（供
+ * lift 计算）。字符级主模型专用；word_mode 主模型返回 -1。 */
+int tiger_engine_context_char_scores(int handle, const char* context_text,
+                                     const char* candidates, int candidate_count,
+                                     double* out_scores) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!context_text || !candidates || !out_scores) {
+      set_error("char scores require context, candidates and output buffer");
+      return -1;
+    }
+    if (candidate_count <= 0 || candidate_count > 4096) {
+      set_error("candidate count out of range");
+      return -1;
+    }
+    std::vector<std::string> cands;
+    cands.reserve((size_t)candidate_count);
+    const char* p = candidates;
+    for (int i = 0; i < candidate_count; ++i) {
+      const char* nl = strchr(p, '\n');
+      if (!nl) {
+        if (i + 1 < candidate_count) {
+          set_error("candidates fewer than count");
+          return -1;
+        }
+        cands.emplace_back(p);
+      } else {
+        cands.emplace_back(p, (size_t)(nl - p));
+        p = nl + 1;
+      }
+    }
+    return g_engines[handle]->context_char_scores(context_text, cands, out_scores);
+  } catch (...) {
+    set_error("char scores failed");
+    return -1;
+  }
+}
+
+int tiger_engine_user_model_import(int handle, const char* blob, size_t blob_size) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!blob || blob_size == 0) {
+      set_error("user model import requires a snapshot blob");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    UserNgram fresh;
+    // blob 是二进制（可含 NUL），必须按显式长度构造。
+    if (!UserNgram::import_blob(std::string(blob, blob_size), &fresh)) {
+      set_error("user model snapshot is corrupt");
+      return -1;
+    }
+    const bool had = !e->user.empty();
+    e->user = std::move(fresh);
+    if (had || !e->user.empty()) e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("user model import failed");
+    return -1;
+  }
+}
+
 void tiger_engine_free(int handle) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
@@ -2259,10 +2996,13 @@ int tiger_status(int handle, char* out, int outcap) {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
     if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) return -1;
     Engine* e = g_engines[handle].get();
+    const WordModel* ws = e->word_scorer();
+    const char* ws_state = e->explicit_scorer ? "explicit"
+                           : e->word_mode ? "primary"
+                           : e->packed_word_scorer ? "packed" : "off";
     char buf[1024];
-    snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d",
-             e->model.path.c_str(), e->model.mobile ? "TCSKNM02" : "TCSKNM01",
-             (unsigned long long)e->model.file.size, e->lex.codes.size(), e->beam);
+    const int written = snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d\tuser_tri=%zu\tuser_weight=%.3f\tword_scorer=%s\tword_vocab=%zu", e->model.path.c_str(), e->model.mobile ? "TCSKNM02" : "TCSKNM01", (unsigned long long)e->model.file.size, e->lex.codes.size(), e->beam, e->user.tri.size(), e->user_weight, ws_state, ws ? ws->vocab.size() : (size_t)0);
+    (void)written;
     if (out && outcap > 0) snprintf(out, outcap, "%s", buf);
     return 0;
   } catch (...) {

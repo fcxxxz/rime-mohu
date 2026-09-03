@@ -163,6 +163,26 @@ tigerengine-lua-safety:
 		echo "tigerengine Lua safety tests skipped (Lua 5.4 static library not present)"; \
 	fi
 
+# 用户调频层引擎测试：真实模型上的翻转/快照回环/权重开关；
+# 模型缺失（未安装或未设 TIGER_NGRAM）时自动跳过。
+tigerengine-user-model:
+	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_user_model_test.cc \
+		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_user_model_test
+	/tmp/tigerengine_user_model_test
+
+tigerengine-context:
+	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_context_test.cc \
+		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_context_test
+	/tmp/tigerengine_context_test
+
+# 词级上下文候选评分引擎测试：load_word_scorer/context_word_scores 的
+# 可用性语义、方向性、OOV、确定性与 MHCTN01 容器词层等价；模型缺失
+# （未安装或未设 TIGER_NGRAM/TIGER_WORD_NGRAM）时自动跳过。
+tigerengine-word-score:
+	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_word_score_test.cc \
+		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_word_score_test
+	/tmp/tigerengine_word_score_test
+
 # Decode latency benchmark; pass the installed model explicitly, e.g.
 #   make tigerengine-bench TIGER_NGRAM=~/Library/Rime/mohu_llm/data/sentence-ngram-mobile.bin
 tigerengine-bench:
@@ -245,6 +265,8 @@ mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
 test: dist mohu_llm_lexicons
 	$(MAKE) tigerengine-safety
 	$(MAKE) tigerengine-lua-safety
+	$(MAKE) tigerengine-user-model
+	$(MAKE) tigerengine-context
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
 	uv run python -m unittest tests.test_tiger_aux -v
@@ -272,6 +294,9 @@ test: dist mohu_llm_lexicons
 	lua tests/mohu_candidate_manager_config_test.lua
 	lua tests/mohu_tiger_sentence_native_test.lua
 	lua tests/mohu_tiger_log_compat_test.lua
+	lua tests/mohu_tiger_user_model_test.lua
+	lua tests/mohu_tiger_context_test.lua
+	lua tests/mohu_tiger_two_char_test.lua
 	lua tests/mohu_personal_lexicon_test.lua
 	lua tests/mohu_llm_path_test.lua
 	lua tests/mohu_llm_schema_split_test.lua
@@ -281,6 +306,7 @@ test: dist mohu_llm_lexicons
 	lua tests/mohu_tiger_reranker_test.lua
 	lua tests/mohu_tiger_reranker_socket_recovery_test.lua
 	lua tests/mohu_reorder_filter_lexicon_test.lua
+	lua tests/mohu_word_order_filter_test.lua
 	lua tests/mohu_freestyle_config_test.lua
 	lua tests/tiger_aux_config_test.lua
 	lua tests/mohu_contextual_translator_test.lua
@@ -308,4 +334,4 @@ test: dist mohu_llm_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_llm_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native mohu-llm-zrm-dist mohu-llm-flypy-dist tigerengine-safety tigerengine-lua-safety tigerengine-bench dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict mohu_llm_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict dist tigerengine-native mohu-llm-zrm-dist mohu-llm-flypy-dist tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench dist-zrm dist-flypy test lint-python

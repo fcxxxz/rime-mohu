@@ -1,6 +1,6 @@
 {
   "package_type": "mohu_llm",
-  "package_version": 1,
+  "package_version": 2,
   "scheme": "zrm",
   "schema_id": "mohu_llm_zrm",
   "display_name": "魔虎大模型·自然码",
@@ -20,6 +20,7 @@
     "mohu_tiger_reranker_profile.lua",
     "mohu_tiger_model_catalog.lua",
     "mohu_tiger_model_menu.lua",
+    "mohu_word_order_filter.lua",
     "option_sync.lua",
     "option_state.lua"
   ],

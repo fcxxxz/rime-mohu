@@ -1,0 +1,116 @@
+name: Wanxiang sync
+
+'on':
+  schedule:
+    # 20:30 UTC = 次日 04:30 北京时间，低峰运行。
+    - cron: "30 20 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: wanxiang-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install OpenCC
+        run: bash tools/install_opencc_ubuntu.sh
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Sync Python environment
+        run: uv sync --locked
+
+      - name: Update Wanxiang snapshots
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: uv run tools/sync_wanxiang.py update
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "upstream unchanged; nothing to sync"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Guard daily delta
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          python3 - <<'EOF'
+          import re
+          import sys
+          from pathlib import Path
+
+          report = Path("tools/data/wanxiang/sync_report.md").read_text(encoding="utf-8")
+          limits = {"added": 100000, "removed": 50000}
+          for name, limit in limits.items():
+              match = re.search(rf"^- {name}: (\d+)$", report, re.MULTILINE)
+              if match is None:
+                  sys.exit(f"sync report is missing stat: {name}")
+              value = int(match.group(1))
+              print(f"{name}={value} (limit {limit})")
+              if value > limit:
+                  sys.exit(f"{name} {value} exceeds guard limit {limit}")
+          EOF
+
+      - name: Verify snapshots and determinism
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: uv run tools/sync_wanxiang.py check
+
+      - name: Build, test, and validate distribution
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          make quick
+          uv run python -m unittest tests.test_wanxiang_sync -v
+          uv run --with ruff ruff check tools/sync_wanxiang.py
+          git diff --check
+          make dist-zrm dist-flypy
+
+      - name: Open and merge sync pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          revision=$(python3 -c 'import json; print(json.load(open("tools/data/wanxiang/manifest.json"))["revision"][:12])')
+          branch="automation/wanxiang-sync"
+          git checkout -b "$branch"
+          git add tools/data/wanxiang/manifest.json \
+            tools/data/wanxiang/SOURCE.md \
+            tools/data/wanxiang/sync_report.md \
+            mohu_zrm.wanxiang.dict.yaml \
+            mohu_flypy.wanxiang.dict.yaml
+          git commit -m "dict: sync wanxiang dictionaries ${revision}"
+          git push --force origin "$branch"
+          body="$(cat tools/data/wanxiang/sync_report.md)
+
+          上游: https://github.com/amzxyz/rime-wanxiang/commit/${revision}
+          许可: CC BY 4.0，改动与署名说明见 tools/data/wanxiang/SOURCE.md。
+
+          以上检查（快照哈希、确定性重建、make quick、单测、lint、dist）均在本 workflow 内通过后自动合并。"
+          if gh pr list --head "$branch" --state open --json number --jq 'length' | grep -q 1; then
+            gh pr edit "$branch" --title "dict: sync wanxiang dictionaries ${revision}" --body "$body"
+          else
+            gh pr create --base main --head "$branch" \
+              --title "dict: sync wanxiang dictionaries ${revision}" --body "$body"
+          fi
+          gh pr merge "$branch" --squash --delete-branch

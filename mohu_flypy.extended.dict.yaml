@@ -14,6 +14,7 @@ import_tables:
   - mohu_flypy.computer   # 计算机术语
   - mohu_flypy.moe
   - mohu_flypy.classics   # 经审核的古诗文与经典文本
+  - mohu_flypy.wanxiang   # 万象拼音普通词库的可复现改编
 ...
 
 # 用户自定义词库

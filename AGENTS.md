@@ -23,6 +23,11 @@
 - **mohu_aux** options: https://zrmfans.cn/book/schemas/fushai/features.md
 - **mohu_sentence** is a cut-down version of mohu, see the yaml file and compare to mohu.schema.yaml
 
+## Project knowledge base
+
+- Before touching the llm sentence engine (tiger_sentence_native/), cross-candidate ordering (`contextual_order`), candidate reordering, or the word-order feature, read **docs/knowledge/cross-candidate-ordering.md** — it holds the architecture map, mechanism findings (incl. how octagram/wanxiang grammar actually works), benchmark methodology, fixed-bug list, and current metrics.
+- Benchmark reports live under `docs/reports/` (latest: `2026-09-02-word-order-cross-candidate.md`).
+
 ## Commit message conventions
 
 - Follow the repository's existing commit style. Prefer short imperative subjects with a lowercase prefix such as `dict:`, `dict(chai):`, `fix:`, `fix(lua):`, `ci:`, `docs:`, `feat:` when applicable.

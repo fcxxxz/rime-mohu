@@ -1,10 +1,13 @@
 -- Mohu Reorder Filter
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.3.1
+-- Ver: 0.3.2
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.3.2: 两字 native 候选独立输出：两字终态只可能来自两音节带辅码的
+--        输入（用户已显式消歧），不再要求词库也存在同文本。
 --
 -- 0.3.1: 修复重构引入的 bug。
 --
@@ -66,7 +69,9 @@ end
 --   [pinned]* [fixed1]* [native]* smart1{1} [fixed2]* smart2+
 -- native 候选有独立身份，不参与 fixed -> smart 替换，输出在 fixed 与 smart 之间。
 -- 当词库候选存在时，native 只允许输出词库也能覆盖的文本；这样模型只负责
--- 在词库可行集合内排序，不会用静态码表绕过用户词造出错误分词。
+-- 在词库可行集合内排序，不会用静态码表绕过用户词造出错误分词。例外是
+-- >=5 字候选与两字候选：两字终态候选只可能在两音节带辅码的输入上产生
+-- （更多音节的输入无法被两段消费完），用户已显式消歧，独立输出。
 --
 -- + kCollecting   收集 pinned, fixed1, smart1
 -- + kMatching     碰到了 smart2，且还有一些候选等待匹配
@@ -212,8 +217,10 @@ function Top.flush(env, ctx, include_delay_slot)
     end
     for _, c in ipairs(ctx.native_list) do
         local text_length = utf8.len(c.text) or 0
+        -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
         if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
-            or text_length >= native_independent_min_length then
+            or text_length >= native_independent_min_length
+            or text_length == 2 then
             Top.yield_exact(env, c)
         end
     end

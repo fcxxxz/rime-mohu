@@ -22,6 +22,7 @@ ZRM_DICTIONARIES = {
     "mohu_zrm.computer.dict.yaml": "mohu_flypy.computer",
     "mohu_zrm.moe.dict.yaml": "mohu_flypy.moe",
     "mohu_zrm.classics.dict.yaml": "mohu_flypy.classics",
+    "mohu_zrm.wanxiang.dict.yaml": "mohu_flypy.wanxiang",
 }
 
 FIXED_DICTIONARIES = {

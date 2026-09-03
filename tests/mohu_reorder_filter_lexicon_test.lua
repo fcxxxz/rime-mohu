@@ -60,4 +60,14 @@ local long_sentence = run({
 assert(long_sentence[1] and long_sentence[1].text == "你不要再精神内耗了",
   "long native sentences must not require an exact dictionary duplicate")
 
+-- 两字终态只可能来自两音节带辅码的输入，独立输出，不要求词库同文本。
+local two_char = run({
+  candidate("mohu_llm_zrm", "杨娇", "yh jcbt"),
+  candidate("sentence", "样娇", "yh jc"),
+})
+assert(two_char[1] and two_char[1].text == "杨娇",
+  "two-character native candidates must stay independent of the lexicon set")
+assert(#two_char == 2 and two_char[2].text == "样娇",
+  "dictionary candidates keep flowing after the native pair")
+
 print("Mohu reorder lexicon-first tests passed")

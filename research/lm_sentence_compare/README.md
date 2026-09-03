@@ -117,7 +117,61 @@ For the canonical run, use
 `rime-run-manifest.json` and `tiger-run-manifest.json` files are per-run
 diagnostics, not substitutes for the artifact hash manifest.
 
-Run the focused test suite:
+## Cross-candidate audit
+
+Build the canonical frequency-ranked input universe from the first 30,000 rows
+of the supplied frequency list, keeping up to four real corpus prefixes per
+target. With the pinned inputs, the expected result is 1,000 target words and
+3,357 target/context cases (source ranks 2 through 2,455):
+
+```bash
+uv run python -m research.lm_sentence_compare.build_cross_candidate_cases \
+  --frequency-list /path/to/二字词表2.0.txt \
+  --output-root /tmp/mohu-cross-candidate-homophone-v1
+```
+
+Run the five schemes in isolated Rime deployment directories. The runner
+rejects a model path resolving inside live `~/Library/Rime`, disables adaptive
+user dictionaries, builds every staged workspace before cloning workers, and
+requires the dynamically referenced dictionaries to exist. Moran must be built
+as the complete staged workspace, not only with `--compile moran.schema.yaml`,
+because Lua creates `script_translator@smart` dynamically. Its required outputs
+are `moran.extended.table.bin`, `moran.prism.bin`,
+`moran_fixed_simp.table.bin`, and `moran_english.table.bin`:
+
+```bash
+uv run python -m research.lm_sentence_compare.run_cross_candidate \
+  --root /tmp/mohu-cross-candidate-homophone-v1 \
+  --model /path/to/mohu-sentence-ngram-v5.bin \
+  --workers 5 --units-per-shard 1200 --max-candidates 5
+```
+
+Generate the auditable JSON and Markdown reports without rerunning the probes:
+
+```bash
+uv run python -m research.lm_sentence_compare.cross_candidate \
+  --kua3 /tmp/mohu-cross-candidate-homophone-v1 \
+  --json /tmp/mohu-cross-candidate-homophone-v1/cross_candidate_report.json \
+  --markdown /tmp/mohu-cross-candidate-homophone-v1/cross_candidate_report.md
+```
+
+`cross_candidate.py` treats `A=0` as `prefix_failed`, empty menus as
+`empty_candidates`, and a target not found in the exported menu as
+`target_absent_exported_topN`. The probe exports Top-5, so that state is not
+evidence that the complete candidate pool lacks the target. Auxiliary-code
+remediation is paired by case id across `pure/head/tail/both`; context lift is
+reported separately and only uses rows with a successful prefix commit. The
+JSON contains every per-case, per-scheme, per-mode row. The Markdown shows
+explicit numerators and denominators, case-weighted and target-word-equal
+statistics, and complete five-scheme rankings for every reported metric. The
+common-prefix sensitivity section intersects prefix-success case IDs across all
+five schemes; the pinned run contains 1,641 cases and 833 target words. Metrics
+with a zero denominator are rendered as not applicable and receive neither a
+numeric value nor a rank. The canonical rendered result is
+`docs/reports/2026-09-02-cross-candidate-ordering-frequency-ranked.md`; the
+earlier benchmark, implementation, and 32,976-case audit reports are preserved
+as historical measurements and are not current rankings.
+
 
 ```bash
 uv run python -m unittest discover \

@@ -11,10 +11,12 @@
 #include "lua-5.4.6/src/lua.hpp"
 #include "tigerengine.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -173,6 +175,212 @@ int l_personal_abort(lua_State* L) {
   return 0;
 }
 
+int l_update_user_model(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* text = luaL_checkstring(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_update_user_model((int)handle_value, text);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "user model update failed");
+  lua_pushinteger(L, rc);  // 0 = 无变化，1 = 已应用
+  return 1;
+}
+
+int l_set_decode_context(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* text = luaL_checkstring(L, 2);
+  const int window = lua_isnoneornil(L, 3) ? 0 : (int)luaL_checkinteger(L, 3);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_decode_context((int)handle_value, text, window);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "decode context update failed");
+  lua_pushinteger(L, rc);  // 0 = 无变化，1 = 已应用
+  return 1;
+}
+
+int l_load_word_scorer(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* path = luaL_checkstring(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_load_word_scorer((int)handle_value, path);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc != 0) {
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, error[0] ? error : "word scorer load failed");
+    return 2;
+  }
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+int l_context_word_scores(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* context = luaL_checkstring(L, 2);
+  luaL_checktype(L, 3, LUA_TTABLE);
+  const int window = lua_isnoneornil(L, 4) ? 0 : (int)luaL_checkinteger(L, 4);
+  const lua_Integer n = luaL_len(L, 3);
+  luaL_argcheck(L, n >= 0 && n <= 256, 3, "candidate count out of range");
+  // 候选拼接与类型检查在锁外完成（luaL_* 可能抛 Lua 错误，不可持锁）。
+  std::string joined;
+  if (n > 0) {
+    for (lua_Integer i = 1; i <= n; ++i) {
+      lua_rawgeti(L, 3, i);
+      const char* text = luaL_checkstring(L, -1);
+      if (i > 1) joined.push_back('\n');
+      joined.append(text);
+      lua_pop(L, 1);
+    }
+  }
+  std::vector<double> scores((size_t)n, 0.0);
+  int rc = 0;
+  char error[512] = {0};
+  if (n > 0) {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_context_word_scores((int)handle_value, context,
+                                          joined.c_str(), (int)n, window,
+                                          scores.data());
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) {
+    lua_pushnil(L);
+    lua_pushstring(L, error[0] ? error : "word scores failed");
+    return 2;
+  }
+  lua_createtable(L, (int)n, 0);
+  for (lua_Integer i = 0; i < n; ++i) {
+    lua_pushnumber(L, scores[(size_t)i]);
+    lua_rawseti(L, -2, i + 1);
+  }
+  return 1;
+}
+
+int l_context_char_scores(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* context = luaL_checkstring(L, 2);
+  luaL_checktype(L, 3, LUA_TTABLE);
+  const lua_Integer n = luaL_len(L, 3);
+  luaL_argcheck(L, n >= 0 && n <= 256, 3, "candidate count out of range");
+  // 候选拼接与类型检查在锁外完成（luaL_* 可能抛 Lua 错误，不可持锁）。
+  std::string joined;
+  if (n > 0) {
+    for (lua_Integer i = 1; i <= n; ++i) {
+      lua_rawgeti(L, 3, i);
+      const char* text = luaL_checkstring(L, -1);
+      if (i > 1) joined.push_back('\n');
+      joined.append(text);
+      lua_pop(L, 1);
+    }
+  }
+  std::vector<double> scores((size_t)n, 0.0);
+  int rc = 0;
+  char error[512] = {0};
+  if (n > 0) {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_context_char_scores((int)handle_value, context,
+                                          joined.c_str(), (int)n, scores.data());
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) {
+    lua_pushnil(L);
+    lua_pushstring(L, error[0] ? error : "char scores failed");
+    return 2;
+  }
+  lua_createtable(L, (int)n, 0);
+  for (lua_Integer i = 0; i < n; ++i) {
+    lua_pushnumber(L, scores[(size_t)i]);
+    lua_rawseti(L, -2, i + 1);
+  }
+  return 1;
+}
+
+int l_set_user_model_weight(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double weight = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_user_model_weight((int)handle_value, weight);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "user model weight update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+int l_user_model_export(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  char* blob;
+  size_t blob_size = 0;
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    blob = tiger_engine_user_model_export((int)handle_value, &blob_size);
+  }
+  if (!blob) {
+    lua_pushnil(L);
+    lua_pushstring(L, "user model export failed");
+    return 2;
+  }
+  lua_pushlstring(L, blob, blob_size);  // 二进制 blob，可能含 NUL
+  std::free(blob);
+  return 1;
+}
+
+int l_user_model_import(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  size_t blob_size = 0;
+  const char* blob = luaL_checklstring(L, 2, &blob_size);
+  if (blob_size == 0) {
+    return luaL_error(L, "user model snapshot is empty");
+  }
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_user_model_import((int)handle_value, blob, blob_size);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "user model import failed");
+  lua_pushinteger(L, rc);
+  return 1;
+}
+
 int l_status(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -216,6 +424,14 @@ int luaopen_tigerengine(lua_State* L) {
       {"personal_append", l_personal_append},
       {"personal_commit", l_personal_commit},
       {"personal_abort", l_personal_abort},
+      {"update_user_model", l_update_user_model},
+      {"set_decode_context", l_set_decode_context},
+      {"load_word_scorer", l_load_word_scorer},
+      {"context_word_scores", l_context_word_scores},
+      {"context_char_scores", l_context_char_scores},
+      {"set_user_model_weight", l_set_user_model_weight},
+      {"user_model_export", l_user_model_export},
+      {"user_model_import", l_user_model_import},
       {"status", l_status},
       {"last_error", l_last_error},
       {nullptr, nullptr},

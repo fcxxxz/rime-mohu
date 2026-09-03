@@ -27,6 +27,7 @@ import_tables:
 
 #----------置顶词----------#
 哪里	nal
+什么	s
 
 #----------生成单字----------#
 啊	a		0
@@ -410,7 +411,7 @@ import_tables:
 容	rs		0
 如	ru		0
 瑞	rv		0
-三	s		0
+三	sj		0
 撒	sa		0
 搜	sz		0
 色	se		0
@@ -419,7 +420,7 @@ import_tables:
 丧	sh		0
 四	si		0
 巳	siv		0
-散	sj		0
+散	sjl		0
 扫	sc		0
 塞	sd		0
 所	so		0
@@ -693,7 +694,7 @@ import_tables:
 己	jiv		456925
 立	lii		1.29382e+06
 代	ddj		932729
-斯	siz		1.10572e+06
+斯	s		1.10572e+06
 世	uil		1.30545e+06
 便	bmj		1.73526e+06
 便	pmj		2676
@@ -3964,6 +3965,7 @@ import_tables:
 逄	phh		597
 煅	drc		1250
 讧	hss		2114
+锶	siz		262
 黾	mmd		0
 砉	hxa		273
 砉	xua		273
@@ -22902,6 +22904,7 @@ D盘	dyj
 二重简码	eijm
 恶尘无染	eiwr
 已经	ej
+以及	ej
 耳机	ej
 已经不是	ejbs
 已经不再	ejbz

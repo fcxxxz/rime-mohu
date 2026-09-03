@@ -105,6 +105,18 @@ local function utf8_length(text)
   return count
 end
 
+local function utf_chars(text)
+  local chars = {}
+  local i = 1
+  while i <= #text do
+    local c = text:byte(i)
+    local len = c < 0x80 and 1 or c < 0xE0 and 2 or c < 0xF0 and 3 or 4
+    chars[#chars + 1] = text:sub(i, i + len - 1)
+    i = i + len
+  end
+  return chars
+end
+
 -- ---------------------------------------------------------------- 引擎装载
 
 local engine_handle = nil
@@ -116,6 +128,8 @@ local decode_ms = 0
 local engine_references = 0
 local engine_signature = nil
 local engine_config_error_logged = false
+local word_scorer_ready = nil       -- nil=未知 true=词层可用 false=不可用
+local word_scorer_error_logged = false
 
 local function report_engine_error(message)
   engine_error = message
@@ -221,7 +235,9 @@ local function ensure_engine(env)
   end
   local all_ranks_value =
     (all_ranks == nil or all_ranks == "true" or all_ranks == "1") and 1 or 0
-  local signature = table.concat({ lib, model, lexicon, beam_value, all_ranks_value }, "\28")
+  local scorer_override = conf("word_scorer_model")
+  local signature = table.concat(
+    { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "" }, "\28")
 
   if engine_handle ~= nil then
     if engine_signature == signature then return engine_handle end
@@ -284,6 +300,32 @@ local function ensure_engine(env)
       "weasel rime.dll must embed the same Lua 5.4.x version")
     pcall(tigerengine.free, h)
     return nil
+  end
+  -- 词级评分层：tiger/word_scorer_model 显式指定独立 MHKNM01 时加载
+  -- （研究/覆盖用）；常规路径由容器模型（MHCTN01）自带词层。加载失败
+  -- 只记一次日志，引擎本体不受影响。随后读一次 status 判定词层可用性；
+  -- 旧 dylib（无该 ABI / status 无该字段）自动视为不可用。
+  word_scorer_ready = false
+  if scorer_override then
+    local scorer_path = resolve_runtime_path(scorer_override, paths)
+    if type(tigerengine.load_word_scorer) == "function" then
+      local ok, loaded, why = pcall(tigerengine.load_word_scorer, h, scorer_path)
+      if not ok or loaded ~= true then
+        if not word_scorer_error_logged then
+          word_scorer_error_logged = true
+          log_error("mohu_tiger_sentence: word scorer load failed: " ..
+            tostring(why or loaded))
+        end
+      end
+    end
+  end
+  if type(tigerengine.context_word_scores) == "function" then
+    local ok_status, status = pcall(tigerengine.status, h)
+    if ok_status and type(status) == "string" and
+        status:find("word_scorer=", 1, true) ~= nil and
+        status:find("word_scorer=off", 1, true) == nil then
+      word_scorer_ready = true
+    end
   end
   engine_handle = h
   engine_signature = signature
@@ -473,6 +515,247 @@ local function commit_could_touch_userdb(ctx)
   return false
 end
 
+-- native 候选不是 script 翻译器产出的短语，librime 的 Memorize 认领不了它；
+-- 且 >=5 键输入由 express 走不读 userdb 的 smart_static，整句上屏也不学习。
+-- 提交时按候选自带的分段码（preedit，每字一段）确定基码与首辅码，再经
+-- ReverseLookup 反查每个字的完整音节码（如 yh;ea），拼成 userdb 的键
+-- （音节表字符串，与词库词的键同构），经 smart 命名空间的 Memory 写入，
+-- 恢复「打过辅码的词，裸双拼也跟得上调频」。
+local native_memorize_max_syllables = 10  -- 与 smart/max_word_length 对齐
+
+local function native_reverse_lookup(env)
+  if env._tiger_reverse ~= nil then return env._tiger_reverse end
+  env._tiger_reverse = false
+  if type(ReverseLookup) ~= "function" then return nil end
+  local cfg = env.engine and env.engine.schema and env.engine.schema.config
+  local dictionary = config_string(cfg, "smart/dictionary") or
+    ("mohu_" .. (env._tiger_scheme or "zrm") .. ".extended")
+  local ok, db = pcall(ReverseLookup, dictionary)
+  if ok and db and type(db.lookup) == "function" then
+    env._tiger_reverse = db
+  end
+  return env._tiger_reverse
+end
+
+-- token 是候选 preedit 里的单字分段码（裸双拼或含辅码/码形后缀）；
+-- codes 是该字的全部完整码（空格分隔，如 "yh;ea yh;eb"）。
+-- 返回与 token 基码一致、且首辅码一致（若 token 带辅码）的完整码。
+local function pick_full_char_code(codes, token)
+  local base = token:sub(1, 2)
+  local aux_first = token:sub(3, 3)
+  if aux_first == ";" or aux_first == "/" then aux_first = "" end
+  local fallback = nil
+  for code in codes:gmatch("%S+") do
+    if code:sub(1, 2) == base then
+      local semicolon = code:find(";", 3, true)
+      local code_aux = semicolon and code:sub(semicolon + 1, semicolon + 1) or ""
+      if aux_first == "" or code_aux == aux_first then
+        return code
+      end
+      fallback = fallback or code
+    end
+  end
+  return fallback
+end
+
+local function memorize_native_candidates(env, ctx)
+  local memory = env._mohu_personal_memory
+  if not memory or type(memory.update_userdict) ~= "function" then return end
+  if type(DictEntry) ~= "function" then return end
+  local reverse = native_reverse_lookup(env)
+  if not reverse then return end
+  local candidate_type = env._tiger_candidate_type
+  if not candidate_type then return end
+  local composition_ok, composition = pcall(function() return ctx.composition end)
+  if not composition_ok or not composition or
+    type(composition.toSegmentation) ~= "function" then return end
+  local ok, segmentation = pcall(composition.toSegmentation, composition)
+  if not ok or not segmentation or type(segmentation.get_segments) ~= "function" then
+    return
+  end
+  local segments_ok, segments = pcall(segmentation.get_segments, segmentation)
+  if not segments_ok or type(segments) ~= "table" then return end
+  for _, segment in ipairs(segments) do
+    local cand_ok, cand = pcall(function()
+      return segment and segment.get_selected_candidate and
+        segment:get_selected_candidate()
+    end)
+    if cand_ok and cand then
+      local type_ok, cand_type = pcall(function() return cand.type end)
+      local preedit_ok, preedit = pcall(function() return cand.preedit end)
+      local text_ok, text = pcall(function() return cand.text end)
+      if type_ok and cand_type == candidate_type and preedit_ok and text_ok and
+        type(text) == "string" and text ~= "" then
+        local chars = utf_chars(text)
+        local tokens = {}
+        for token in tostring(preedit):gmatch("%S+") do
+          tokens[#tokens + 1] = token
+        end
+        if #chars == #tokens and #tokens > 1 and
+          #tokens <= native_memorize_max_syllables then
+          local full_codes = {}
+          for index = 1, #chars do
+            local lookup_ok, codes = pcall(reverse.lookup, reverse, chars[index])
+            local full_code = lookup_ok and type(codes) == "string" and
+              pick_full_char_code(codes, tokens[index]) or nil
+            if not full_code then full_codes = nil break end
+            full_codes[index] = full_code
+          end
+          if full_codes then
+            local entry_ok, entry = pcall(DictEntry)
+            if entry_ok and entry then
+              local set_ok = pcall(function()
+                entry.text = text
+                -- userdb 的键是音节表串且每个音节后跟一个空格
+                -- （TranslateCodeToString 的格式，查找侧按此前缀匹配）。
+                entry.custom_code = table.concat(full_codes, " ") .. " "
+              end)
+              if set_ok then
+                pcall(memory.update_userdict, memory, entry, 1, "")
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+-- ── 用户调频层（V5 + 用户小模型查询融合）───────────────────────────
+-- 上屏文本喂入 native 引擎的内存三元计数表；解码时每个 trigram 查询按
+-- P = w·P_V5 + (1-w)·P_用户 概率域融合（w = tiger/user_model_weight，
+-- 默认 0.85，V5 主导）。静态模型文件永不改写；计数经二进制快照跨会话
+-- 持久化（默认 mohu_llm/config/user-ngram.snapshot，安装器不触碰该
+-- 目录，重装存活）。旧 ABI dylib（无 update_user_model）自动停用本层。
+local user_model_weight_default = 0.85
+local user_model_snapshot_interval_default = 64
+
+local function user_model_available()
+  return tigerengine ~= nil and engine_handle ~= nil and
+    type(tigerengine.update_user_model) == "function" and
+    type(tigerengine.user_model_export) == "function" and
+    type(tigerengine.user_model_import) == "function" and
+    type(tigerengine.set_user_model_weight) == "function"
+end
+
+local function config_flag(cfg, key, default)
+  local value = config_string(cfg, key)
+  if value == "true" or value == "1" then return true end
+  if value == "false" or value == "0" then return false end
+  return default
+end
+
+local function ensure_snapshot_directory(directory)
+  -- 与 mohu_tiger_model_menu.write_selection 相同的容错创建；
+  -- 失败时后续 io.open 自然失败，快照被安全跳过。
+  if package.config:sub(1, 1) == "\\" then
+    pcall(os.execute, 'md "' .. directory .. '" 2>nul')
+  else
+    pcall(os.execute, "mkdir -p '" .. directory:gsub("'", "'\\''") .. "'")
+  end
+end
+
+local function user_model_write_snapshot(env)
+  if not (env and env._tiger_user_model_on) then return end
+  if not user_model_available() then return end
+  local ok, blob = pcall(tigerengine.user_model_export, engine_handle)
+  if not ok or type(blob) ~= "string" then return end
+  local path = env._tiger_user_model_path
+  if not path then return end
+  local directory = path:match("^(.*)[/\\][^/\\]+$")
+  if directory then ensure_snapshot_directory(directory) end
+  local temporary = path .. ".tmp-" .. tostring(os.time()) .. "-" ..
+    tostring(math.random(1000000))
+  local file = io.open(temporary, "wb")  -- blob 是二进制，可含 NUL
+  if not file then return end
+  local ok_write = file:write(blob)
+  if ok_write and file.flush then ok_write = file:flush() end
+  file:close()
+  if not ok_write then
+    os.remove(temporary)
+    return
+  end
+  if os.rename(temporary, path) then
+    env._tiger_user_model_dirty = false
+  else
+    os.remove(temporary)
+  end
+end
+
+local function init_user_model(env)
+  if not env or not env.engine then return end
+  local cfg = env.engine.schema and env.engine.schema.config
+  env._tiger_user_model_path = resolve_runtime_path(
+    config_string(cfg, "tiger/user_model_snapshot") or
+    "mohu_llm/config/user-ngram.snapshot", runtime.paths())
+  env._tiger_user_model_on = config_flag(cfg, "tiger/user_model", true)
+  env._tiger_user_model_dirty = false
+  env._tiger_user_model_commits = 0
+  local interval = tonumber(config_string(cfg, "tiger/user_model_snapshot_interval")) or
+    user_model_snapshot_interval_default
+  if not finite_number(interval) or interval < 1 then
+    interval = user_model_snapshot_interval_default
+  end
+  env._tiger_user_model_interval = math.floor(interval)
+  local weight = tonumber(config_string(cfg, "tiger/user_model_weight")) or
+    user_model_weight_default
+  if not finite_number(weight) or weight <= 0 or weight > 1 then
+    weight = user_model_weight_default
+  end
+  env._tiger_user_model_weight = weight
+  if not env._tiger_user_model_on then return end
+  -- 旧 ABI dylib：静默停用（非错误，升级 dylib 后自然恢复）。
+  if not user_model_available() then
+    env._tiger_user_model_on = false
+    return
+  end
+  pcall(tigerengine.set_user_model_weight, engine_handle, weight)
+  local file = io.open(env._tiger_user_model_path, "rb")
+  if file then
+    local blob = file:read("*a")
+    file:close()
+    if type(blob) == "string" and #blob > 0 then
+      pcall(tigerengine.user_model_import, engine_handle, blob)
+    end
+  end
+  local context = env.engine.context
+  if context and context.commit_notifier then
+    env._tiger_user_model_commit_notifier = context.commit_notifier:connect(function(ctx)
+      if not env._tiger_user_model_on or not user_model_available() then return end
+      local ok, text = pcall(function() return ctx and ctx:get_commit_text() end)
+      if not ok or type(text) ~= "string" or text == "" then return end
+      local has_cjk = false
+      for index = 1, #text do
+        if text:byte(index) >= 0x80 then has_cjk = true break end
+      end
+      if not has_cjk then return end
+      pcall(tigerengine.update_user_model, engine_handle, text)
+      env._tiger_user_model_dirty = true
+      env._tiger_user_model_commits = env._tiger_user_model_commits + 1
+      if env._tiger_user_model_commits % env._tiger_user_model_interval == 0 then
+        user_model_write_snapshot(env)
+      end
+    end)
+  end
+end
+
+local function fini_user_model(env)
+  if not env then return end
+  if env._tiger_user_model_commit_notifier ~= nil then
+    pcall(function() env._tiger_user_model_commit_notifier:disconnect() end)
+    env._tiger_user_model_commit_notifier = nil
+  end
+  if env._tiger_user_model_dirty then
+    user_model_write_snapshot(env)
+  end
+  env._tiger_user_model_on = nil
+  env._tiger_user_model_dirty = nil
+  env._tiger_user_model_commits = nil
+  env._tiger_user_model_path = nil
+  env._tiger_user_model_interval = nil
+  env._tiger_user_model_weight = nil
+end
+
 local function init_personal_lexicon(env)
   if Memory == nil or not env or not env.engine then return end
   local cfg = env.engine.schema and env.engine.schema.config
@@ -497,6 +780,7 @@ local function init_personal_lexicon(env)
   if context and context.commit_notifier then
     env._mohu_personal_commit_notifier = context.commit_notifier:connect(function(ctx)
       env._mohu_personal_generation = (env._mohu_personal_generation or 0) + 1
+      memorize_native_candidates(env, ctx)
       if commit_could_touch_userdb(ctx) then
         env._mohu_personal_dirty = true
       end
@@ -570,6 +854,8 @@ local function release_engine(env)
   decode_ms = 0
   engine_signature = nil
   engine_config_error_logged = false
+  word_scorer_ready = nil
+  word_scorer_error_logged = false
 end
 
 -- 解析 C 输出协议：
@@ -731,17 +1017,6 @@ local function normalize_raw(raw)
   raw = raw:gsub("[ \t\r\n]", "")
   return raw:lower()
 end
-local function utf_chars(text)
-  local chars = {}
-  local i = 1
-  while i <= #text do
-    local c = text:byte(i)
-    local len = c < 0x80 and 1 or c < 0xE0 and 2 or c < 0xF0 and 3 or 4
-    chars[#chars + 1] = text:sub(i, i + len - 1)
-    i = i + len
-  end
-  return chars
-end
 
 local function trim_segmented_after_raw_prefix(segmented, raw_prefix_length)
   if not segmented or segmented == "" or raw_prefix_length <= 0 then
@@ -842,14 +1117,126 @@ M.translator = {}
 
 function M.translator.init(env)
   local handle = retain_engine(env)
-  if handle ~= nil then init_personal_lexicon(env) end
+  if handle ~= nil then
+    init_personal_lexicon(env)
+    init_user_model(env)
+  end
   pcall(reranker.init, env)
 end
 
 function M.translator.fini(env)
   pcall(reranker.fini, env)
   fini_personal_lexicon(env)
+  fini_user_model(env)
   release_engine(env)
+end
+
+-- 供词级上下文重排 filter（lua/mohu_word_order_filter.lua）复用引擎句柄
+-- 做批量候选评分。返回 score_fn, handle；词层不可用（旧 dylib、非容器
+-- 模型、显式加载失败、引擎未就绪）返回 nil，调用方应直通。引擎生命周期
+-- 由 translator 的引用计数管理，filter 不重复持有；打分不依赖码表，
+-- 跨方案共享同一句柄也安全。
+function M.acquire_word_scorer(env)
+  if word_scorer_ready ~= true then return nil end
+  if tigerengine == nil or type(tigerengine.context_word_scores) ~= "function" then
+    return nil
+  end
+  local ok, handle = pcall(ensure_engine, env)
+  if ok and handle then
+    return tigerengine.context_word_scores, handle
+  end
+  return nil
+end
+
+-- 字符续写评分（octagram 同型机制）：字符级主模型即可，不要求词层。
+-- 引擎未装载时返回 nil（与 ensure_decode_context 同触发条件，有 CJK
+-- 历史的组合 translator 已装载引擎）。
+function M.acquire_char_scorer(env)
+  if tigerengine == nil or type(tigerengine.context_char_scores) ~= "function" then
+    return nil
+  end
+  local ok, handle = pcall(ensure_engine, env)
+  if ok and handle then
+    return tigerengine.context_char_scores, handle
+  end
+  return nil
+end
+
+-- tiger/decode_context_chars 缓存读取（schema 变更前不会变化）。
+local function decode_context_chars(env)
+  if env and env._tiger_decode_context_chars == nil then
+    local value
+    local ok_cfg, cfg = pcall(function()
+      return env.engine and env.engine.schema and env.engine.schema.config
+    end)
+    if ok_cfg and cfg and type(cfg.get_int) == "function" then
+      local ok, n = pcall(cfg.get_int, cfg, "tiger/decode_context_chars")
+      if ok and type(n) == "number" and n >= 1 then value = n end
+    end
+    if value == nil and ok_cfg and cfg and type(cfg.get_string) == "function" then
+      local ok, s = pcall(cfg.get_string, cfg, "tiger/decode_context_chars")
+      if ok then value = tonumber(s) end
+    end
+    env._tiger_decode_context_chars = value  -- nil = 默认 2
+  end
+  return env and env._tiger_decode_context_chars or nil
+end
+
+-- 把整段最近上屏文本喂给引擎作解码左上文——与 librime 的
+-- GetPrecedingText/commit_history:latest_text() 同源同形（整段传递，
+-- 尾部窗口由模型侧决定：octagram 是词级三元窗口，V5 是字符级窗口，
+-- 窗口大小经 tiger/decode_context_chars 配置）。开关关闭（单次候选
+-- 调频）或历史为空时传空串清空引擎上下文。旧 ABI dylib 无
+-- set_decode_context 时静默降级。返回历史是否携带汉字（供 4 键早退
+-- 判断；尾部截取是引擎内部的事）。
+local function ensure_decode_context(env, context)
+  local latest = ""
+  if context and context.get_option and context:get_option("contextual_order") then
+    local ok, text = pcall(function()
+      local hist = context.commit_history
+      if not hist then return "" end
+      if type(hist.latest_text) == "function" then return hist:latest_text() end
+      if type(hist.latest_text) == "string" then return hist.latest_text end
+      return ""
+    end)
+    if ok and type(text) == "string" then latest = text end
+  end
+  -- 历史里没有任何汉字字节（E3-E9 覆盖 CJK 基本区首字节）则视为无上下文。
+  local has_cjk = latest ~= "" and latest:find("[\228-\233]") ~= nil
+  -- 引擎未装载且无上文时保持零成本：不为 4 键短码空载引擎。
+  if tigerengine == nil then
+    if not has_cjk then return false end
+    if not pcall(ensure_engine, env) or tigerengine == nil then return false end
+  end
+  -- 旧 ABI dylib：静默降级（4 键继续走 smart，无上下文能力）。
+  if not tigerengine.set_decode_context then return false end
+  local ok_engine, handle = pcall(ensure_engine, env)
+  if not (ok_engine and handle) then return false end
+  local window = decode_context_chars(env)
+  if window then
+    pcall(tigerengine.set_decode_context, handle, latest, window)
+  else
+    pcall(tigerengine.set_decode_context, handle, latest)
+  end
+  return has_cjk
+end
+
+-- tiger/decode_context_takeover：存在上文时是否让 native 接管 4 键纯双拼
+-- 词码（默认 false，保留 smart 已学词频权威；实测字符级模型裸排 4 键
+-- 低于词库词频约 7pp，接管仅在明确需要时开启）。缓存读取。
+local function decode_context_takeover(env)
+  if env and env._tiger_decode_context_takeover == nil then
+    local value = false
+    local ok_cfg, cfg = pcall(function()
+      return env.engine and env.engine.schema and env.engine.schema.config
+    end)
+    if ok_cfg and cfg and type(cfg.get_string) == "function" then
+      local ok, s = pcall(cfg.get_string, cfg, "tiger/decode_context_takeover")
+      if ok and (s == "true" or s == "1") then value = true end
+    end
+    env._tiger_decode_context_takeover = value
+  end
+  return env and env._tiger_decode_context_takeover or false
 end
 
 function M.translator.func(input, seg, env)
@@ -863,9 +1250,18 @@ function M.translator.func(input, seg, env)
   local context_input = normalize_raw(context_input_raw)
   local segment_input = normalize_raw(input or "")
   if context_input == "" then context_input = segment_input end
+  -- 跨候选调频开启且上屏历史含汉字时，先把整段历史喂给引擎作左上文。
+  local has_history_context = ensure_decode_context(env, context)
   -- A single two-syllable word belongs to the normal smart translator so its
-  -- learned frequency remains authoritative.
-  if #context_input <= 4 and not context_input:find("'") then return end
+  -- learned frequency remains authoritative.  With cross-commit context the
+  -- native model MAY take over bare 4-key word codes when
+  -- tiger/decode_context_takeover is enabled: P(首字|上文) outranks learned
+  -- frequency.  Default off — the char-level model ranks bare 4-key codes
+  -- below the dictionary's learned frequencies.
+  if #context_input <= 4 and not context_input:find("'") and
+      not (has_history_context and decode_context_takeover(env)) then
+    return
+  end
 
   local segment_start = segment_start_position(seg)
   local selected_text = selected_text_before(context, segment_start)
@@ -880,10 +1276,16 @@ function M.translator.func(input, seg, env)
   local raw = context_input
   perf_begin(env)
   local decoded = decode(raw, false)
+  -- Two-character finals can only consume a two-syllable input; every key
+  -- beyond the bare double pinyin is an auxiliary code the user typed to
+  -- disambiguate the characters, so the native LM ordering (not raw char
+  -- frequency) should lead there.  Bare four-key inputs never reach this
+  -- point (early return above), keeping smart's learned frequency
+  -- authoritative for them.
   local sentence_items = {}
   for index = 1, #decoded.items do
     local item = decoded.items[index]
-    if type(item.text) == "string" and #utf_chars(item.text) > 2 then
+    if type(item.text) == "string" and #utf_chars(item.text) > 1 then
       sentence_items[#sentence_items + 1] = item
     end
   end

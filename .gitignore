@@ -6,6 +6,8 @@ zrlf.dict.yaml
 opencc/*.ocd2
 opencc/moran_chaifen.txt
 lua/zrmdb.txt
+tools/data/wanxiang/raw/
+tools/data/wanxiang/entries.tsv
 dist/
 dist-zrm/
 dist-flypy/
@@ -36,7 +38,17 @@ __pycache__/
 tiger_sentence_native/lua-5.4.6/src/*.o
 tiger_sentence_native/lua-5.4.6/src/lua
 tiger_sentence_native/lua-5.4.6/src/luac
-/research/
+/research/*
+!/research/lm_sentence_compare/
+/research/lm_sentence_compare/*
+!/research/lm_sentence_compare/audit_training_overlap.py
+!/research/lm_sentence_compare/build_cross_candidate_cases.py
+!/research/lm_sentence_compare/build_tail_aux_cases.py
+!/research/lm_sentence_compare/cross_candidate.py
+!/research/lm_sentence_compare/run_cross_candidate.py
+!/research/lm_sentence_compare/probes/
+/research/lm_sentence_compare/probes/*
+!/research/lm_sentence_compare/probes/rime_wordgroup_dump.cc
 /docs/superpowers/specs/
 **/[Pp][Ll][Aa][Nn]*/
 **/[Ss][Pp][Ee][Cc]*/
@@ -48,6 +60,11 @@ tiger_sentence_native/lua-5.4.6/src/luac
 **/*.[Tt][Ee][Ss][Tt].*
 !/tests/
 !/tests/**
+!/research/lm_sentence_compare/tests/
+/research/lm_sentence_compare/tests/*
+!/research/lm_sentence_compare/tests/test_build_cross_candidate_cases.py
+!/research/lm_sentence_compare/tests/test_cross_candidate.py
+!/research/lm_sentence_compare/tests/test_run_cross_candidate.py
 **/__pycache__/
 /MEMORY.md
 

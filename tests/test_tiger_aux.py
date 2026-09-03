@@ -679,7 +679,7 @@ class FixedDictionaryTest(unittest.TestCase):
             },
             {1500: (0, 0), 3500: (1, 1), 6000: (7, 7), 8105: (9, 10)},
         )
-        self.assertEqual(after[8105].codeable_count, 3282)
+        self.assertEqual(after[8105].codeable_count, 3281)
         self.assertEqual(
             [
                 (group.code, "".join(group.characters), "".join(group.unresolved))
@@ -1455,8 +1455,8 @@ class FixedDictionaryTest(unittest.TestCase):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
         expected_lengths = {
-            "zrm": {1: 42, 2: 434, 3: 4555, 4: 4091},
-            "flypy": {1: 42, 2: 434, 3: 4555, 4: 3420},
+            "zrm": {1: 42, 2: 434, 3: 4556, 4: 4090},
+            "flypy": {1: 42, 2: 434, 3: 4556, 4: 3419},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1483,6 +1483,14 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertIn(("件", "jm"), pairs)
                 self.assertIn(("减", "jmw"), pairs)
                 self.assertNotIn(("减", "jm"), pairs)
+                # mohu 侧把 s 的首选让给置顶词「什么」：「三」移到 sj、
+                # 「散」移到 sjl；空出的 s 由「斯」按最短空闲前缀规则
+                # 顶上，「锶」落到 siz。
+                self.assertIn(("三", "sj"), pairs)
+                self.assertIn(("散", "sjl"), pairs)
+                self.assertNotIn(("三", "s"), pairs)
+                self.assertNotIn(("散", "sj"), pairs)
+                self.assertIn(("斯", "s"), pairs)
 
                 owners = defaultdict(set)
                 for char, code in pairs:

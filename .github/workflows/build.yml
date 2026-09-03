@@ -365,17 +365,18 @@ jobs:
       - name: Package distributions
         run: |
           # The artifact upload/download round-trip drops the exec bit, so
-          # restore it before zipping; 启动.command must stay executable.
-          chmod +x dist-zrm/Rime皮肤编辑器/启动.command
-          chmod +x dist-flypy/Rime皮肤编辑器/启动.command
-          chmod +x dist-mohu-llm-zrm/install_mohu_llm_*.command dist-mohu-llm-zrm/runtime/*.command
-          chmod +x dist-mohu-llm-flypy/install_mohu_llm_*.command dist-mohu-llm-flypy/runtime/*.command
+          # restore it on every .command before zipping (top-level installers,
+          # runtime helpers, and base/Rime皮肤编辑器/启动.command alike).
+          find dist-zrm dist-flypy dist-mohu-llm-zrm dist-mohu-llm-flypy \
+            -type f -name '*.command' -exec chmod +x {} +
           (cd dist-zrm && zip -r ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -r ../rime-mohu-flypy-latest.zip .)
           (cd dist-mohu-llm-zrm && zip -r ../mohu-llm-zrm-latest.zip .)
           (cd dist-mohu-llm-flypy && zip -r ../mohu-llm-flypy-latest.zip .)
-          for archive in mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip; do
+          for archive in rime-mohu-zrm-latest.zip rime-mohu-flypy-latest.zip mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip; do
             test -z "$(unzip -Z1 "$archive" | awk '/^\// || /(^|\/)\.\.($|\/)/ { print; exit }')"
+            zipinfo "$archive" | awk -v a="$archive" \
+              '$NF ~ /\.command$/ && $1 !~ /^-rwx/ { print a ": " $NF " not executable (" $1 ")"; bad=1 } END { exit bad }'
           done
 
       - name: Update latest release

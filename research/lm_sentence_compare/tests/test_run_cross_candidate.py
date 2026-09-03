@@ -7,7 +7,9 @@ from pathlib import Path
 from research.lm_sentence_compare.run_cross_candidate import (
     COMPETITOR_PATCHES,
     SchemeRun,
+    WorkerJob,
     _input_units,
+    reusable_job_record,
     stage_mohu_template,
     validate_candidate_output,
     validate_model_path,
@@ -127,6 +129,34 @@ class CrossCandidateRunnerTest(unittest.TestCase):
                 validate_candidate_output(path),
                 {"candidate_streams": 2, "nonempty_candidate_streams": 1},
             )
+
+    def test_reusable_job_requires_complete_candidate_and_prefix_records(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path = root / "afterA.tsv"
+            output_path = root / "output.tsv"
+            input_path.write_text(
+                "W\ti0\tprefix\t00\nB\ti0\ttail1=aaaa\te8af8d\t0\t词\n",
+                encoding="utf-8",
+            )
+            run = SchemeRun("demo", "demo", root, "demo.schema.yaml", "demo")
+            job = WorkerJob(run, "afterA", 0, input_path, output_path, root / "run", root / "log")
+            output_path.write_text(
+                "A\ti0\t1\t00\nC\ti0\ttail1\t1\te8af8d\nE\ti0\ttail1\t1\t0\t12\n",
+                encoding="utf-8",
+            )
+            record = reusable_job_record(job)
+            self.assertIsNotNone(record)
+            self.assertTrue(record["reused"])
+
+            output_path.write_text(
+                "C\ti0\ttail1\t1\te8af8d\nE\ti0\ttail1\t1\t0\t12\n",
+                encoding="utf-8",
+            )
+            self.assertIsNone(reusable_job_record(job))
+
+            output_path.write_text("A\ti0\t1\t00\n", encoding="utf-8")
+            self.assertIsNone(reusable_job_record(job))
 
     def test_mohu_run_uses_report_name_but_keeps_schema_id(self) -> None:
         from unittest.mock import patch

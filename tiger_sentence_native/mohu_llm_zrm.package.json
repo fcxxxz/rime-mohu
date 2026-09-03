@@ -1,10 +1,11 @@
 {
   "package_type": "mohu_llm",
-  "package_version": 2,
+  "package_version": 3,
   "scheme": "zrm",
   "schema_id": "mohu_llm_zrm",
   "display_name": "魔虎大模型·自然码",
   "schema": "mohu_llm_zrm.schema.yaml",
+  "base_dir": "base",
   "data_dir": "data/zrm",
   "runtime_dir": "runtime",
   "model_manifests": [

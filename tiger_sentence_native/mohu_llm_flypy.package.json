@@ -1,10 +1,11 @@
 {
   "package_type": "mohu_llm",
-  "package_version": 2,
+  "package_version": 3,
   "scheme": "flypy",
   "schema_id": "mohu_llm_flypy",
   "display_name": "魔虎大模型·小鹤",
   "schema": "mohu_llm_flypy.schema.yaml",
+  "base_dir": "base",
   "data_dir": "data/flypy",
   "runtime_dir": "runtime",
   "model_manifests": [

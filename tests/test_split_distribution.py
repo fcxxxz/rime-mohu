@@ -91,6 +91,13 @@ class SplitDistributionTest(unittest.TestCase):
                     self.assertTrue((output / relative).is_file(), relative)
 
                 self.assertEqual([], sorted(output.glob(f"mohu_{other}*")))
+                self.assertTrue(
+                    (output / "lua" / f"four_code_yield_pairs_{scheme}.txt").is_file()
+                )
+                self.assertFalse(
+                    (output / "lua" / f"four_code_yield_pairs_{other}.txt").exists()
+                )
+                self.assertEqual([], sorted(output.glob("*.userdb*")))
                 self.assertFalse((output / "zh-hans-t-essay-bgw.gram").exists())
                 self.assertFalse((output / "zh-hans-t-essay-bgc.gram").exists())
 

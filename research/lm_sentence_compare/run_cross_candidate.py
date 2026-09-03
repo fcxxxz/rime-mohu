@@ -20,6 +20,8 @@ from typing import Iterable, Sequence
 from research.lm_sentence_compare.cross_candidate import (
     SCHEME_SPECS,
     SCHEMES,
+    _parse_b_line,
+    _parse_candidate_files,
     _validate_result_keys,
     build_report,
     case_modes,
@@ -489,12 +491,21 @@ def write_shards(source: Path, mode: str, destination: Path, units_per_shard: in
     return shards
 
 
-def make_jobs(root: Path, runs: dict[str, SchemeRun], units_per_shard: int) -> list[WorkerJob]:
+def make_jobs(
+    root: Path,
+    runs: dict[str, SchemeRun],
+    units_per_shard: int,
+    *,
+    preserve_outputs: bool = False,
+) -> list[WorkerJob]:
     chunks = root / "chunks"
     outputs = root / "out"
     run_dirs = root / "runs"
     logs = root / "logs"
-    for path in (chunks, outputs, run_dirs, logs):
+    reset_paths = (chunks, run_dirs, logs)
+    if not preserve_outputs:
+        reset_paths += (outputs,)
+    for path in reset_paths:
         remove_owned(path, root)
     jobs: list[WorkerJob] = []
     for scheme in SCHEMES:
@@ -517,6 +528,60 @@ def make_jobs(root: Path, runs: dict[str, SchemeRun], units_per_shard: int) -> l
                     log_path=logs / f"{scheme}-{mode}-{index:02d}.log",
                 ))
     return jobs
+
+
+def _expected_shard_keys(job: WorkerJob) -> tuple[set[tuple[str, str]], set[str]]:
+    cases = []
+    prefix_ids: set[str] = set()
+    for line in job.input_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("B\t"):
+            cases.append(_parse_b_line(line))
+        elif line.startswith("W\t"):
+            fields = line.split("\t")
+            if len(fields) < 2 or not fields[1]:
+                raise ValueError(f"invalid W row in shard {job.input_path}")
+            prefix_ids.add(fields[1])
+    expected = {(case.case_id, mode) for case in cases for mode in case.modes}
+    if not expected:
+        raise ValueError(f"no candidate streams in shard {job.input_path}")
+    if job.mode == "afterA" and prefix_ids != {case.case_id for case in cases}:
+        raise ValueError(f"invalid W/B coverage in shard {job.input_path}")
+    return expected, prefix_ids
+
+
+def reusable_job_record(job: WorkerJob) -> dict[str, object] | None:
+    """Return auditable metadata only for a fully complete prior shard output."""
+
+    if not job.output_path.is_file() or job.output_path.stat().st_size == 0:
+        return None
+    try:
+        validation = validate_candidate_output(job.output_path)
+        results = _parse_candidate_files([job.output_path])
+        expected_keys, expected_prefix_ids = _expected_shard_keys(job)
+        if set(results) != expected_keys:
+            return None
+        if job.mode == "afterA":
+            prefix_ids: set[str] = set()
+            for line in job.output_path.read_text(encoding="utf-8").splitlines():
+                fields = line.split("\t")
+                if fields and fields[0] == "A":
+                    if len(fields) != 4 or not fields[1] or fields[1] in prefix_ids:
+                        return None
+                    prefix_ids.add(fields[1])
+            if prefix_ids != expected_prefix_ids:
+                return None
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return {
+        "scheme": job.run.scheme,
+        "condition": job.run.condition,
+        "mode": job.mode,
+        "shard": job.shard,
+        "input": file_metadata(job.input_path),
+        "output": file_metadata(job.output_path),
+        "output_validation": validation,
+        "reused": True,
+    }
 
 
 def validate_candidate_output(path: Path) -> dict[str, int]:
@@ -649,6 +714,7 @@ def run_benchmark(
     workers: int = 5,
     units_per_shard: int = 1200,
     max_candidates: int = 5,
+    resume: bool = False,
 ) -> dict[str, object]:
     root = validate_root(root)
     ensure_run_marker(root)
@@ -664,7 +730,15 @@ def run_benchmark(
         scheme: deploy_template(run)
         for scheme, run in runs.items()
     }
-    jobs = make_jobs(root, runs, units_per_shard)
+    jobs = make_jobs(root, runs, units_per_shard, preserve_outputs=resume)
+    reused_jobs: list[dict[str, object]] = []
+    pending_jobs: list[WorkerJob] = []
+    for job in jobs:
+        record = reusable_job_record(job) if resume else None
+        if record is None:
+            pending_jobs.append(job)
+        else:
+            reused_jobs.append(record)
     manifest: dict[str, object] = {
         "version": 1,
         "root": str(root),
@@ -672,6 +746,7 @@ def run_benchmark(
         "max_candidates": max_candidates,
         "units_per_shard": units_per_shard,
         "workers": workers,
+        "resume": resume,
         "isolation": {
             "user_directory": "one cloned directory per scheme, condition, and shard",
             "session": "one Rime session per case",
@@ -691,12 +766,15 @@ def run_benchmark(
             }
             for scheme, run in runs.items()
         },
-        "jobs": [],
+        "jobs": reused_jobs,
     }
     write_manifest(root, manifest)
     failures: list[BaseException] = []
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {executor.submit(run_job, job, PROBE_BINARY, max_candidates): job for job in jobs}
+        futures = {
+            executor.submit(run_job, job, PROBE_BINARY, max_candidates): job
+            for job in pending_jobs
+        }
         for future in as_completed(futures):
             try:
                 manifest["jobs"].append(future.result())
@@ -724,6 +802,7 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=5)
     parser.add_argument("--units-per-shard", type=int, default=1200)
     parser.add_argument("--max-candidates", type=int, default=5)
+    parser.add_argument("--resume", action="store_true", help="reuse only fully validated shard outputs")
     args = parser.parse_args()
     manifest = run_benchmark(
         args.root,
@@ -731,6 +810,7 @@ def main() -> int:
         workers=args.workers,
         units_per_shard=args.units_per_shard,
         max_candidates=args.max_candidates,
+        resume=args.resume,
     )
     print(json.dumps(manifest["validation"], ensure_ascii=False, sort_keys=True))
     return 0

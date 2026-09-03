@@ -35,6 +35,65 @@ def copy_package_manifests(package: Path) -> None:
         shutil.copy2(NATIVE / "models" / name, models / name)
 
 
+def copy_package_base(package: Path, scheme: str) -> None:
+    base = package / "base"
+    base.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / "default.yaml", base / "default.yaml")
+    shutil.copy2(ROOT / f"mohu_{scheme}.schema.yaml", base / f"mohu_{scheme}.schema.yaml")
+    (base / "mohu.yaml").write_text("packaged mohu config\n", encoding="utf-8")
+    (base / "squirrel.yaml").write_text("packaged squirrel config\n", encoding="utf-8")
+    (base / f"mohu_{scheme}_custom_phrases.txt").write_text(
+        "packaged custom phrases\n", encoding="utf-8"
+    )
+    (base / f"mohu_{scheme}.extended.dict.yaml").write_text(
+        "packaged extended dictionary\n", encoding="utf-8"
+    )
+
+
+def create_installer_package(package: Path, scheme: str) -> None:
+    for relative in (
+        f"install_mohu_llm_{scheme}.command",
+        "install_mohu_llm_scheme.command",
+        f"mohu_llm_{scheme}.package.json",
+        f"mohu_llm_{scheme}.schema.yaml",
+    ):
+        source = ROOT / relative if relative.endswith(".schema.yaml") else NATIVE / relative
+        shutil.copy2(source, package / relative)
+    shutil.copy2(package / f"mohu_llm_{scheme}.package.json", package / "package.json")
+    copy_package_base(package, scheme)
+    copy_package_lua(package)
+    (package / "lua" / "mohu_processor.lua").write_text(
+        "packaged processor\n", encoding="utf-8"
+    )
+    (package / "lua" / f"four_code_yield_pairs_{scheme}.txt").write_text(
+        "packaged yield pairs\n", encoding="utf-8"
+    )
+    copy_package_manifests(package)
+    runtime = package / "runtime"
+    runtime.mkdir()
+    for source in (
+        NATIVE / "libtigerengine.dylib",
+        NATIVE / "qwen35_scorer.py",
+        NATIVE / "run_qwen35_scorer.command",
+        NATIVE / "install_qwen35_launch_agent.command",
+        NATIVE / "scorer_models.zsh",
+        NATIVE / "switch_qwen_model.command",
+        NATIVE / "mohu_tiger_reranker_profile.lua",
+        NATIVE / "mohu_tiger_reranker_profile_qwen3_06b.lua",
+    ):
+        shutil.copy2(source, runtime / source.name)
+    for filename in (
+        "run_qwen35_scorer.command",
+        "install_qwen35_launch_agent.command",
+        "switch_qwen_model.command",
+    ):
+        os.chmod(runtime / filename, 0o755)
+    shutil.copytree(NATIVE / "data" / scheme, package / "data" / scheme)
+    (package / "data" / "sentence-ngram-mobile.bin").write_bytes(b"test-ngram")
+    os.chmod(package / f"install_mohu_llm_{scheme}.command", 0o755)
+    os.chmod(package / "install_mohu_llm_scheme.command", 0o755)
+
+
 class MohuLlmInstallerTest(unittest.TestCase):
     CASES = (("zrm", "魔虎大模型·自然码"), ("flypy", "魔虎大模型·小鹤"))
 
@@ -52,6 +111,7 @@ class MohuLlmInstallerTest(unittest.TestCase):
                 self.assertEqual(f"mohu_llm_{scheme}", payload["schema_id"])
                 self.assertEqual(display_name, payload["display_name"])
                 self.assertEqual(f"mohu_llm_{scheme}.schema.yaml", payload["schema"])
+                self.assertEqual("base", payload["base_dir"])
                 self.assertEqual(f"data/{scheme}", payload["data_dir"])
                 self.assertEqual("runtime", payload["runtime_dir"])
                 self.assertEqual(
@@ -85,6 +145,7 @@ class MohuLlmInstallerTest(unittest.TestCase):
                     source = ROOT / relative if relative.endswith(".schema.yaml") else NATIVE / relative
                     shutil.copy2(source, package / relative)
                 shutil.copy2(package / f"mohu_llm_{scheme}.package.json", package / "package.json")
+                copy_package_base(package, scheme)
                 copy_package_lua(package)
                 copy_package_manifests(package)
                 runtime = package / "runtime"
@@ -116,6 +177,8 @@ class MohuLlmInstallerTest(unittest.TestCase):
                 self.assertEqual(0, second.returncode, second.stdout + second.stderr)
 
                 self.assertTrue((Path(rime_tmp) / f"mohu_llm_{scheme}.schema.yaml").is_file())
+                self.assertTrue((Path(rime_tmp) / f"mohu_{scheme}.schema.yaml").is_file())
+                self.assertTrue((Path(rime_tmp) / "default.yaml").is_file())
                 self.assertTrue((Path(rime_tmp) / "mohu_llm" / "runtime").is_dir())
                 self.assertTrue((Path(rime_tmp) / "mohu_llm" / "data" / scheme).is_dir())
                 self.assertFalse((Path(rime_tmp) / "tiger").exists())
@@ -124,6 +187,51 @@ class MohuLlmInstallerTest(unittest.TestCase):
                 self.assertEqual(1, merged.count(f"schema: mohu_llm_{scheme}"))
                 self.assertIn("menu: {page_size: 9}", merged)
                 self.assertTrue((Path(rime_tmp) / "mohu_llm" / "config" / "model-selection").is_file())
+
+    def test_installer_preserves_user_maintained_scheme_files_on_upgrade(self) -> None:
+        for scheme, _display_name in self.CASES:
+            with self.subTest(scheme=scheme), tempfile.TemporaryDirectory() as package_tmp, tempfile.TemporaryDirectory() as rime_tmp:
+                package = Path(package_tmp)
+                create_installer_package(package, scheme)
+                rime = Path(rime_tmp)
+                expected = {
+                    "default.yaml": "user default\n",
+                    "mohu.yaml": "user mohu config\n",
+                    f"mohu_{scheme}_custom_phrases.txt": "user custom phrases\n",
+                    f"mohu_{scheme}.extended.dict.yaml": "user extended dictionary\n",
+                    "lua/mohu_processor.lua": "user processor\n",
+                    f"lua/four_code_yield_pairs_{scheme}.txt": "user yield pairs\n",
+                }
+                for relative, content in expected.items():
+                    path = rime / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(content, encoding="utf-8")
+                installed_schema = rime / f"mohu_{scheme}.schema.yaml"
+                installed_schema.write_text("stale schema\n", encoding="utf-8")
+                installed_squirrel = rime / "squirrel.yaml"
+                installed_squirrel.write_text("stale squirrel config\n", encoding="utf-8")
+
+                env = {
+                    **os.environ,
+                    "MOHU_RIME_DIR": rime_tmp,
+                    "MOHU_SQUIRREL_BIN": "/does/not/exist",
+                    "MOHU_SKIP_SCORER_INSTALL": "1",
+                }
+                result = subprocess.run(
+                    [str(package / f"install_mohu_llm_{scheme}.command")],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                for relative, content in expected.items():
+                    self.assertEqual(content, (rime / relative).read_text(encoding="utf-8"))
+                self.assertNotEqual("stale schema\n", installed_schema.read_text(encoding="utf-8"))
+                self.assertEqual(
+                    "packaged squirrel config\n",
+                    installed_squirrel.read_text(encoding="utf-8"),
+                )
 
     def test_installer_fails_closed_when_required_lua_or_lexicon_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as package_tmp, tempfile.TemporaryDirectory() as rime_tmp:
@@ -137,6 +245,7 @@ class MohuLlmInstallerTest(unittest.TestCase):
                 source = ROOT / relative if relative.endswith(".schema.yaml") else NATIVE / relative
                 shutil.copy2(source, package / relative)
             shutil.copy2(package / "mohu_llm_zrm.package.json", package / "package.json")
+            copy_package_base(package, "zrm")
             copy_package_lua(package)
             copy_package_manifests(package)
             runtime = package / "runtime"
@@ -186,6 +295,7 @@ class MohuLlmInstallerTest(unittest.TestCase):
                     source = ROOT / relative if relative.endswith(".schema.yaml") else NATIVE / relative
                     shutil.copy2(source, package / relative)
                 shutil.copy2(package / f"mohu_llm_{scheme}.package.json", package / "package.json")
+                copy_package_base(package, scheme)
                 copy_package_lua(package)
                 copy_package_manifests(package)
                 runtime = package / "runtime"
@@ -246,7 +356,12 @@ class MohuLlmInstallerTest(unittest.TestCase):
             "patch:\n  menu: {page_size: 9}\n",
             "patch:\n  menu: {page_size: 9}",
             "patch: {menu: {page_size: 9}} # keep this\n",
+            "patch: {} # empty map\n",
             "patch: {schema_list/+: []} # empty\n",
+            "patch: {schema_list/+: [ ]} # spaced empty\n",
+            "patch:\n  schema_list/+: [] # block flow empty\n",
+            "patch:\n  schema_list/+: [ ] # block flow spaced empty\n",
+            "patch:\n  schema_list/+: [{schema: existing}] # block flow item\n",
             "patch:\n  schema_list/+:\n    - schema: mohu_llm_zrm # existing\n",
         )
         installer = NATIVE / "install_mohu_llm_zrm.command"
@@ -262,6 +377,7 @@ class MohuLlmInstallerTest(unittest.TestCase):
                     source = ROOT / relative if relative.endswith(".schema.yaml") else NATIVE / relative
                     shutil.copy2(source, package / relative)
                 shutil.copy2(package / "mohu_llm_zrm.package.json", package / "package.json")
+                copy_package_base(package, "zrm")
                 copy_package_lua(package)
                 copy_package_manifests(package)
                 runtime = package / "runtime"

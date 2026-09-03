@@ -18,12 +18,12 @@ local function join(root, suffix)
   return root .. "/" .. suffix
 end
 
--- Windows (Weasel) ships libtigerengine.dll; macOS ships libtigerengine.dylib.
+-- Cross-platform packages contain both engines.  Select by host platform;
+-- probing by file existence would make macOS try the bundled Windows DLL.
 local function engine_library(runtime)
-  local dll = join(runtime, "libtigerengine.dll")
-  if package.config:sub(1, 1) == "\\" then return dll end
-  local handle = io.open(dll, "r")
-  if handle then handle:close() return dll end
+  if package.config:sub(1, 1) == "\\" then
+    return join(runtime, "libtigerengine.dll")
+  end
   return join(runtime, "libtigerengine.dylib")
 end
 

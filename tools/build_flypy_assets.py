@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import re
 from pathlib import Path
 
@@ -362,6 +363,16 @@ def write(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def build_flypy_custom_phrases() -> None:
+    custom = T2S.convert((ROOT / "mohu_zrm_custom_phrases.txt").read_text(encoding="utf-8"))
+    custom = custom.replace("mohu_custom_phrases", "mohu_zrm_custom_phrases")
+    custom = custom.replace("mohu.extended", "mohu_zrm.extended")
+    write(
+        ROOT / "mohu_flypy_custom_phrases.txt",
+        custom.replace("mohu_zrm", "mohu_flypy"),
+    )
+
+
 def build() -> None:
     for source, target_name in ZRM_DICTIONARIES.items():
         source_path = ROOT / source
@@ -397,10 +408,7 @@ def build() -> None:
     custom = custom.replace("mohu_custom_phrases", "mohu_zrm_custom_phrases")
     custom = custom.replace("mohu.extended", "mohu_zrm.extended")
     write(ROOT / "mohu_zrm_custom_phrases.txt", custom)
-    write(
-        ROOT / "mohu_flypy_custom_phrases.txt",
-        custom.replace("mohu_zrm", "mohu_flypy"),
-    )
+    build_flypy_custom_phrases()
 
     for filename, (schema_id, display_name) in SCHEMAS.items():
         path = ROOT / filename
@@ -409,5 +417,19 @@ def build() -> None:
         write(ROOT / filename.replace("mohu_zrm", "mohu_flypy"), flypy_schema(zrm_text))
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build Flypy assets")
+    parser.add_argument(
+        "--custom-phrases-only",
+        action="store_true",
+        help="generate only mohu_flypy_custom_phrases.txt",
+    )
+    args = parser.parse_args()
+    if args.custom_phrases_only:
+        build_flypy_custom_phrases()
+    else:
+        build()
+
+
 if __name__ == "__main__":
-    build()
+    main()

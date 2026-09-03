@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -21,7 +22,7 @@ class MohuLlmDistributionTest(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
-    def test_scheme_packages_have_explicit_boundaries(self) -> None:
+    def test_scheme_packages_are_self_contained_and_isolated(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             ngram = root / "sentence-ngram-mobile.bin"
@@ -44,13 +45,74 @@ class MohuLlmDistributionTest(unittest.TestCase):
                 self.assertTrue((destination / "runtime").is_dir())
                 self.assertTrue((destination / "data" / scheme / f"mohu_llm_{scheme}.lexicon.txt").is_file())
                 self.assertTrue((destination / "data" / "sentence-ngram-mobile.bin").is_file())
+                self.assertTrue((destination / "base" / "default.yaml").is_file())
+                self.assertTrue((destination / "base" / f"mohu_{scheme}.schema.yaml").is_file())
+                self.assertTrue((destination / "base" / f"mohu_{scheme}.extended.dict.yaml").is_file())
+                self.assertTrue((destination / "base" / f"mohu_{scheme}_custom_phrases.txt").is_file())
+                self.assertTrue((destination / "base" / "mohu_charset.schema.yaml").is_file())
+                self.assertTrue((destination / "base" / "tiger.schema.yaml").is_file())
+                self.assertTrue((destination / "base" / "opencc" / "mohu_emoji.json").is_file())
+                for relative in (
+                    "lua/zrmdb.txt",
+                    "opencc/mohu_TSCharacters.ocd2",
+                    "opencc/mohu_chaifen.ocd2",
+                    "opencc/mohu_dzing_variants.ocd2",
+                    "opencc/mohu_emoji.ocd2",
+                    "opencc/mohu_pinyinhint.ocd2",
+                ):
+                    self.assertTrue((destination / "base" / relative).is_file(), relative)
+                self.assertTrue(
+                    (destination / "lua" / f"four_code_yield_pairs_{scheme}.txt").is_file()
+                )
+                self.assertFalse(
+                    (destination / "lua" / f"four_code_yield_pairs_{other}.txt").exists()
+                )
+                self.assertTrue(
+                    (destination / "base" / "lua" / f"four_code_yield_pairs_{scheme}.txt").is_file()
+                )
+                self.assertFalse(
+                    (destination / "base" / "lua" / f"four_code_yield_pairs_{other}.txt").exists()
+                )
                 self.assertFalse((destination / f"mohu_llm_{other}.schema.yaml").exists())
                 self.assertFalse((destination / "data" / other).exists())
+                self.assertFalse(any((destination / "base").glob(f"mohu_{other}*")))
+                self.assertFalse(any(destination.rglob("*.userdb*")))
                 self.assertFalse(any(destination.rglob("*.safetensors")))
                 self.assertFalse(any(destination.rglob("*.gguf")))
                 payload = (destination / "package.json").read_text(encoding="utf-8")
                 self.assertIn(f'"schema_id": "mohu_llm_{scheme}"', payload)
+                self.assertIn('"base_dir": "base"', payload)
                 self.assertNotIn(f'"schema_id": "mohu_llm_{other}"', payload)
+
+                rime = root / f"rime-{scheme}"
+                env = {
+                    **os.environ,
+                    "MOHU_RIME_DIR": str(rime),
+                    "MOHU_SQUIRREL_BIN": str(root / "missing-squirrel"),
+                    "MOHU_SKIP_SCORER_INSTALL": "1",
+                }
+                result = subprocess.run(
+                    [str(destination / f"install_mohu_llm_{scheme}.command")],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                for relative in (
+                    "default.yaml",
+                    "mohu.yaml",
+                    "mohu_charset.schema.yaml",
+                    "tiger.schema.yaml",
+                    f"mohu_{scheme}.schema.yaml",
+                    f"mohu_{scheme}.extended.dict.yaml",
+                    "opencc/mohu_emoji.json",
+                    f"mohu_llm_{scheme}.schema.yaml",
+                ):
+                    self.assertTrue((rime / relative).is_file(), relative)
+                self.assertFalse(any(rime.glob(f"mohu_{other}*")))
+                custom = (rime / "default.custom.yaml").read_text(encoding="utf-8")
+                self.assertEqual(1, custom.count(f"schema: mohu_llm_{scheme}"))
 
     def test_windows_engine_is_staged_when_provided(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -74,6 +136,47 @@ class MohuLlmDistributionTest(unittest.TestCase):
             self.assertTrue((destination / "runtime" / "libtigerengine.dll").is_file())
             self.assertTrue((destination / "runtime" / "lua54.dll").is_file())
             self.assertTrue((destination / "install_mohu_llm_windows.ps1").is_file())
+
+    def test_windows_engine_requires_matching_lua_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ngram = root / "sentence-ngram-mobile.bin"
+            ngram.write_bytes(b"test-ngram")
+            engine = root / "libtigerengine.dll"
+            engine.write_bytes(b"test-dll")
+            destination = root / "zrm"
+            env = {
+                **os.environ,
+                "TIGER_NGRAM": str(ngram),
+                "MOHU_LLM_ZRM_DESTDIR": str(destination),
+                "TIGER_ENGINE_DLL": str(engine),
+            }
+            result = subprocess.run(
+                ["make", "mohu-llm-zrm-dist"], cwd=ROOT, env=env, text=True,
+                capture_output=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("lua54.dll", result.stdout + result.stderr)
+
+    def test_llm_targets_generate_only_required_standard_assets(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        for target in ("mohu-llm-zrm-dist", "mohu-llm-flypy-dist"):
+            with self.subTest(target=target):
+                match = re.search(rf"(?m)^{re.escape(target)}:([^\n]*)$", makefile)
+                self.assertIsNotNone(match)
+                dependencies = match.group(1).split()
+                self.assertIn("zrmdb", dependencies)
+                self.assertIn("opencc", dependencies)
+                if target == "mohu-llm-flypy-dist":
+                    self.assertIn("mohu_flypy_custom_phrases.txt", dependencies)
+                self.assertNotIn("quick", dependencies)
+
+    def test_llm_lexicon_target_reads_tracked_dictionary_without_rebuilding_it(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        match = re.search(r"(?m)^mohu_llm_lexicons:([^\n]*)$", makefile)
+        self.assertIsNotNone(match)
+        self.assertNotIn("mohu_zrm.chars.dict.yaml", match.group(1).split())
+        self.assertIn("test -f mohu_zrm.chars.dict.yaml", makefile)
 
     def test_reusing_custom_destination_does_not_leak_other_scheme(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

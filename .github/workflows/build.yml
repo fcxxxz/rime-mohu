@@ -80,6 +80,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Test Windows installer with PowerShell 7
+        shell: pwsh
+        run: ./tests/test_mohu_llm_windows.ps1
+
+      - name: Test Windows installer with Windows PowerShell 5.1
+        shell: powershell
+        run: ./tests/test_mohu_llm_windows.ps1
+
       - name: Build Lua 5.4.8 host and runtime
         shell: bash
         run: |
@@ -141,7 +149,6 @@ jobs:
             "$PWD/tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt"
 
       - name: Upload Windows engine
-        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: mohu-tigerengine-win64-${{ github.run_number }}-${{ github.run_attempt }}
@@ -167,6 +174,9 @@ jobs:
       - name: Sync Python environment
         run: uv sync --locked
 
+      - name: Install OpenCC
+        run: brew install opencc
+
       - name: Download and verify custom n-gram
         env:
           # The custom Mohu v5 model ships as a release asset; CI downloads
@@ -181,7 +191,6 @@ jobs:
           printf '%s  %s\n' "$NGRAM_SHA256" mohu-sentence-ngram-v5.bin | shasum -a 256 -c -
 
       - name: Download Windows engine artifact
-        if: github.event_name != 'pull_request'
         uses: actions/download-artifact@v4
         with:
           name: mohu-tigerengine-win64-${{ github.run_number }}-${{ github.run_attempt }}
@@ -204,6 +213,22 @@ jobs:
         run: |
           test -f dist-mohu-llm-zrm/mohu_llm_zrm.schema.yaml
           test -f dist-mohu-llm-flypy/mohu_llm_flypy.schema.yaml
+          test -f dist-mohu-llm-zrm/base/default.yaml
+          test -f dist-mohu-llm-flypy/base/default.yaml
+          test -f dist-mohu-llm-zrm/base/mohu_zrm.schema.yaml
+          test -f dist-mohu-llm-flypy/base/mohu_flypy.schema.yaml
+          test -f dist-mohu-llm-zrm/base/mohu_zrm.extended.dict.yaml
+          test -f dist-mohu-llm-flypy/base/mohu_flypy.extended.dict.yaml
+          test -f dist-mohu-llm-zrm/base/opencc/mohu_emoji.json
+          test -f dist-mohu-llm-flypy/base/opencc/mohu_emoji.json
+          test -f dist-mohu-llm-zrm/base/lua/zrmdb.txt
+          test -f dist-mohu-llm-flypy/base/lua/zrmdb.txt
+          test -f dist-mohu-llm-zrm/base/opencc/mohu_chaifen.ocd2
+          test -f dist-mohu-llm-flypy/base/opencc/mohu_chaifen.ocd2
+          for name in mohu_TSCharacters mohu_chaifen mohu_dzing_variants mohu_emoji mohu_pinyinhint; do
+            test -f "dist-mohu-llm-zrm/base/opencc/$name.ocd2"
+            test -f "dist-mohu-llm-flypy/base/opencc/$name.ocd2"
+          done
           test -f dist-mohu-llm-zrm/package.json
           test -f dist-mohu-llm-flypy/package.json
           test -f dist-mohu-llm-zrm/lua/mohu_llm_runtime.lua
@@ -228,8 +253,18 @@ jobs:
           test -f dist-mohu-llm-flypy/models/qwen3-0.6b.manifest
           codesign --verify --strict dist-mohu-llm-zrm/runtime/libtigerengine.dylib
           codesign --verify --strict dist-mohu-llm-flypy/runtime/libtigerengine.dylib
+          test -f dist-mohu-llm-zrm/runtime/libtigerengine.dll
+          test -f dist-mohu-llm-zrm/runtime/lua54.dll
+          test -f dist-mohu-llm-flypy/runtime/libtigerengine.dll
+          test -f dist-mohu-llm-flypy/runtime/lua54.dll
           test ! -e dist-mohu-llm-zrm/mohu_llm_flypy.schema.yaml
           test ! -e dist-mohu-llm-flypy/mohu_llm_zrm.schema.yaml
+          test -z "$(find dist-mohu-llm-zrm/base -maxdepth 1 -name 'mohu_flypy*' -print)"
+          test -z "$(find dist-mohu-llm-flypy/base -maxdepth 1 -name 'mohu_zrm*' -print)"
+          test ! -e dist-mohu-llm-zrm/lua/four_code_yield_pairs_flypy.txt
+          test ! -e dist-mohu-llm-zrm/base/lua/four_code_yield_pairs_flypy.txt
+          test ! -e dist-mohu-llm-flypy/lua/four_code_yield_pairs_zrm.txt
+          test ! -e dist-mohu-llm-flypy/base/lua/four_code_yield_pairs_zrm.txt
           test -z "$(find dist-mohu-llm-zrm dist-mohu-llm-flypy -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print)"
 
       - name: Upload Natural-code LLM distribution
@@ -333,7 +368,8 @@ jobs:
             '- 自然码：下载 `mohu-llm-zrm-latest.zip`，解压后双击 `install_mohu_llm_zrm.command`，然后在 Squirrel 菜单执行“重新部署”。' \
             '- 小鹤：下载 `mohu-llm-flypy-latest.zip`，解压后双击 `install_mohu_llm_flypy.command`，然后重新部署。' \
             '- Windows（小狼毫）：解压同一 zip，右键 `install_mohu_llm_windows.ps1` 选择“使用 PowerShell 运行”，然后在小狼毫中“重新部署”；Windows 版仅提供原生 v5 候选，不含 Qwen 重排。' \
-            '- 安装器只注册所选方案，保留已有用户词库和配置，可重复运行。' \
+            '- 每个 zip 已包含对应的标准魔虎方案、词库、Lua 与 OpenCC 资源，可直接安装到空的 Rime 用户目录；无需先安装标准包。' \
+            '- 安装器只注册所选方案，升级安装时保留已有 `default.yaml`、用户词库和配置，可重复运行。' \
             '' \
             '### 模型' \
             '' \

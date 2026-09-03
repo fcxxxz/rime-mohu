@@ -15,7 +15,11 @@ dict: classics tiger_aux chars fixed_tiger update-compact-dicts
 	uv run tools/build_flypy_assets.py
 all: quick dict
 
-mohu_llm_lexicons: tiger_sentence_native/mohu_tiger.lexicon.txt mohu_zrm.chars.dict.yaml tools/build_mohu_llm_lexicons.py tools/flypyify.py tools/zrmify.py
+mohu_flypy_custom_phrases.txt: mohu_zrm_custom_phrases.txt tools/build_flypy_assets.py
+	uv run tools/build_flypy_assets.py --custom-phrases-only
+
+mohu_llm_lexicons: tiger_sentence_native/mohu_tiger.lexicon.txt tools/build_mohu_llm_lexicons.py tools/flypyify.py tools/zrmify.py
+	test -f mohu_zrm.chars.dict.yaml
 	uv run tools/build_mohu_llm_lexicons.py
 	test -f tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt
 	test -f tiger_sentence_native/data/flypy/mohu_llm_flypy.lexicon.txt
@@ -198,7 +202,7 @@ dist-zrm: quick
 dist-flypy: quick
 	uv run tools/build_split_dist.py flypy "$(FLYPY_DESTDIR)"
 
-mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
+mohu-llm-zrm-dist: zrmdb opencc tigerengine-native mohu_llm_lexicons
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	zrm_dest="$(abspath $(MOHU_LLM_ZRM_DESTDIR))"; repo_root="$(abspath .)"; zrm_base="$${zrm_dest##*/}"; \
 	case "$$zrm_dest" in /|"$$HOME"|"$$repo_root") echo "unsafe zrm destination" >&2; exit 1;; esac; \
@@ -206,7 +210,9 @@ mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	case "$$repo_root/" in "$$zrm_dest/"*) echo "unsafe zrm destination" >&2; exit 1;; esac
 	rm -rf "$(MOHU_LLM_ZRM_DESTDIR)"
 	mkdir -p "$(MOHU_LLM_ZRM_DESTDIR)/lua" "$(MOHU_LLM_ZRM_DESTDIR)/runtime" "$(MOHU_LLM_ZRM_DESTDIR)/data/zrm" "$(MOHU_LLM_ZRM_DESTDIR)/models"
+	uv run tools/build_split_dist.py zrm "$(MOHU_LLM_ZRM_DESTDIR)/base"
 	cp -a lua/. "$(MOHU_LLM_ZRM_DESTDIR)/lua/"
+	rm -f "$(MOHU_LLM_ZRM_DESTDIR)/lua/four_code_yield_pairs_flypy.txt"
 	install -m 0644 mohu_llm_zrm.schema.yaml "$(MOHU_LLM_ZRM_DESTDIR)/mohu_llm_zrm.schema.yaml"
 	install -m 0755 tiger_sentence_native/install_mohu_llm_zrm.command tiger_sentence_native/install_mohu_llm_scheme.command "$(MOHU_LLM_ZRM_DESTDIR)/"
 	install -m 0644 tiger_sentence_native/install_mohu_llm_windows.ps1 "$(MOHU_LLM_ZRM_DESTDIR)/"
@@ -216,8 +222,10 @@ mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	install -m 0644 tiger_sentence_native/libtigerengine.dylib tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_ZRM_DESTDIR)/runtime/"
 	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_ZRM_DESTDIR)/runtime/libtigerengine.dylib"; fi
 	if [ -n "$(TIGER_ENGINE_DLL)" ]; then \
+		lua_dll="$(dir $(TIGER_ENGINE_DLL))lua54.dll"; \
+		test -f "$$lua_dll" || (echo "Error: lua54.dll not found next to TIGER_ENGINE_DLL" >&2; exit 1); \
 		install -m 0644 "$(TIGER_ENGINE_DLL)" "$(MOHU_LLM_ZRM_DESTDIR)/runtime/libtigerengine.dll"; \
-		if [ -f "$(dir $(TIGER_ENGINE_DLL))lua54.dll" ]; then install -m 0644 "$(dir $(TIGER_ENGINE_DLL))lua54.dll" "$(MOHU_LLM_ZRM_DESTDIR)/runtime/lua54.dll"; fi; \
+		install -m 0644 "$$lua_dll" "$(MOHU_LLM_ZRM_DESTDIR)/runtime/lua54.dll"; \
 	fi
 	install -m 0644 "$(TIGER_NGRAM)" "$(MOHU_LLM_ZRM_DESTDIR)/data/sentence-ngram-mobile.bin"
 	install -m 0644 tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt "$(MOHU_LLM_ZRM_DESTDIR)/data/zrm/"
@@ -230,7 +238,7 @@ mohu-llm-zrm-dist: tigerengine-native mohu_llm_lexicons
 	test -x "$(MOHU_LLM_ZRM_DESTDIR)/install_mohu_llm_zrm.command"
 	! find "$(MOHU_LLM_ZRM_DESTDIR)" -type f \( -name '*.safetensors' -o -name '*.gguf' \) -print -quit | grep -q .
 
-mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
+mohu-llm-flypy-dist: zrmdb opencc mohu_flypy_custom_phrases.txt tigerengine-native mohu_llm_lexicons
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: TIGER_NGRAM not found at $(TIGER_NGRAM); set TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin" >&2; exit 1)
 	flypy_dest="$(abspath $(MOHU_LLM_FLYPY_DESTDIR))"; repo_root="$(abspath .)"; flypy_base="$${flypy_dest##*/}"; \
 	case "$$flypy_dest" in /|"$$HOME"|"$$repo_root") echo "unsafe flypy destination" >&2; exit 1;; esac; \
@@ -238,7 +246,9 @@ mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
 	case "$$repo_root/" in "$$flypy_dest/"*) echo "unsafe flypy destination" >&2; exit 1;; esac
 	rm -rf "$(MOHU_LLM_FLYPY_DESTDIR)"
 	mkdir -p "$(MOHU_LLM_FLYPY_DESTDIR)/lua" "$(MOHU_LLM_FLYPY_DESTDIR)/runtime" "$(MOHU_LLM_FLYPY_DESTDIR)/data/flypy" "$(MOHU_LLM_FLYPY_DESTDIR)/models"
+	uv run tools/build_split_dist.py flypy "$(MOHU_LLM_FLYPY_DESTDIR)/base"
 	cp -a lua/. "$(MOHU_LLM_FLYPY_DESTDIR)/lua/"
+	rm -f "$(MOHU_LLM_FLYPY_DESTDIR)/lua/four_code_yield_pairs_zrm.txt"
 	install -m 0644 mohu_llm_flypy.schema.yaml "$(MOHU_LLM_FLYPY_DESTDIR)/mohu_llm_flypy.schema.yaml"
 	install -m 0755 tiger_sentence_native/install_mohu_llm_flypy.command tiger_sentence_native/install_mohu_llm_scheme.command "$(MOHU_LLM_FLYPY_DESTDIR)/"
 	install -m 0644 tiger_sentence_native/install_mohu_llm_windows.ps1 "$(MOHU_LLM_FLYPY_DESTDIR)/"
@@ -248,8 +258,10 @@ mohu-llm-flypy-dist: tigerengine-native mohu_llm_lexicons
 	install -m 0644 tiger_sentence_native/libtigerengine.dylib tiger_sentence_native/qwen35_scorer.py tiger_sentence_native/scorer_models.zsh tiger_sentence_native/mohu_tiger_reranker_profile.lua tiger_sentence_native/mohu_tiger_reranker_profile_qwen3_06b.lua "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/"
 	if command -v codesign >/dev/null 2>&1; then codesign --verify --strict "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/libtigerengine.dylib"; fi
 	if [ -n "$(TIGER_ENGINE_DLL)" ]; then \
+		lua_dll="$(dir $(TIGER_ENGINE_DLL))lua54.dll"; \
+		test -f "$$lua_dll" || (echo "Error: lua54.dll not found next to TIGER_ENGINE_DLL" >&2; exit 1); \
 		install -m 0644 "$(TIGER_ENGINE_DLL)" "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/libtigerengine.dll"; \
-		if [ -f "$(dir $(TIGER_ENGINE_DLL))lua54.dll" ]; then install -m 0644 "$(dir $(TIGER_ENGINE_DLL))lua54.dll" "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/lua54.dll"; fi; \
+		install -m 0644 "$$lua_dll" "$(MOHU_LLM_FLYPY_DESTDIR)/runtime/lua54.dll"; \
 	fi
 	install -m 0644 "$(TIGER_NGRAM)" "$(MOHU_LLM_FLYPY_DESTDIR)/data/sentence-ngram-mobile.bin"
 	install -m 0644 tiger_sentence_native/data/flypy/mohu_llm_flypy.lexicon.txt "$(MOHU_LLM_FLYPY_DESTDIR)/data/flypy/"

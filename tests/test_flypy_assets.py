@@ -59,6 +59,27 @@ class FlypyAssetConversionTest(unittest.TestCase):
         self.assertEqual("ylld", convert_fixed_code("有来来", "ylll"))
         self.assertEqual("yllx", convert_fixed_code("有来小心", "yllx"))
 
+    def test_builds_flypy_custom_phrases_without_rewriting_source(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "mohu_zrm_custom_phrases.txt"
+            original = (
+                "#@db/db_name\tmohu_zrm_custom_phrases\n"
+                "# add entries to mohu_zrm.extended.dict.yaml\n"
+                "自定义\tzdy\t0\n"
+            )
+            source.write_text(original, encoding="utf-8")
+            with mock.patch.object(build_flypy_assets, "ROOT", root):
+                build_flypy_assets.build_flypy_custom_phrases()
+
+            self.assertEqual(original, source.read_text(encoding="utf-8"))
+            generated = (root / "mohu_flypy_custom_phrases.txt").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("mohu_flypy_custom_phrases", generated)
+            self.assertIn("mohu_flypy.extended.dict.yaml", generated)
+            self.assertIn("自定义\tzdy\t0", generated)
+
     def test_fixed_dictionary_keeps_priority_words_before_generated_characters(
         self,
     ) -> None:

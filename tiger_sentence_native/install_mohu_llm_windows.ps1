@@ -13,18 +13,23 @@ $schemaFile = "$schemaId.schema.yaml"
 $manifest = Join-Path $scriptDir "package.json"
 if (-not (Test-Path $manifest)) { $manifest = Join-Path $scriptDir "mohu_llm_$Scheme.package.json" }
 
-foreach ($rel in @($schemaFile, "lua", "runtime", "data/$Scheme")) {
+foreach ($rel in @(
+    $schemaFile,
+    "base",
+    "base/default.yaml",
+    "base/mohu_$Scheme.schema.yaml",
+    "lua",
+    "runtime",
+    "runtime/libtigerengine.dll",
+    "runtime/lua54.dll",
+    "data/$Scheme",
+    "data/sentence-ngram-mobile.bin"
+)) {
     if (-not (Test-Path (Join-Path $scriptDir $rel))) {
         Write-Error "missing package file: $rel"; exit 1
     }
 }
 if (-not (Test-Path $manifest)) { Write-Error "missing package manifest"; exit 1 }
-if (-not (Test-Path (Join-Path $scriptDir "runtime/libtigerengine.dll"))) {
-    Write-Error "missing runtime/libtigerengine.dll"; exit 1
-}
-if (-not (Test-Path (Join-Path $scriptDir "data/sentence-ngram-mobile.bin"))) {
-    Write-Error "missing data/sentence-ngram-mobile.bin"; exit 1
-}
 $lexicon = Join-Path $scriptDir "data/$Scheme/mohu_llm_$Scheme.lexicon.txt"
 if (-not (Test-Path $lexicon)) { Write-Error "missing lexicon: $lexicon"; exit 1 }
 
@@ -66,13 +71,22 @@ if ($bundledLua -and $weaselLua) {
 }
 
 $manifestText = Get-Content $manifest -Raw -Encoding UTF8
-foreach ($needle in @('"package_type": "mohu_llm"', "`"scheme`": `"$Scheme`"", "`"schema_id`": `"$schemaId`"")) {
+foreach ($needle in @('"package_type": "mohu_llm"', "`"scheme`": `"$Scheme`"", "`"schema_id`": `"$schemaId`"", '"base_dir": "base"')) {
     if (-not $manifestText.Contains($needle)) { Write-Error "manifest mismatch: $needle"; exit 1 }
 }
 
+$userMaintained = @{
+    "default.yaml" = $true
+    "mohu.yaml" = $true
+    "mohu_${Scheme}_custom_phrases.txt" = $true
+    "mohu_$Scheme.extended.dict.yaml" = $true
+    "lua/mohu_processor.lua" = $true
+    "lua/four_code_yield_pairs_$Scheme.txt" = $true
+}
 $targets = @(
+    @{ Source = Join-Path $scriptDir "base"; Destination = $RimeDir; PreserveUserFiles = $true; RelativePrefix = "" },
     @{ Source = Join-Path $scriptDir $schemaFile; Destination = Join-Path $RimeDir $schemaFile },
-    @{ Source = Join-Path $scriptDir "lua"; Destination = Join-Path $RimeDir "lua" },
+    @{ Source = Join-Path $scriptDir "lua"; Destination = Join-Path $RimeDir "lua"; PreserveUserFiles = $true; RelativePrefix = "lua/" },
     @{ Source = Join-Path $scriptDir "runtime"; Destination = Join-Path $RimeDir "mohu_llm/runtime" },
     @{ Source = Join-Path $scriptDir "data/$Scheme"; Destination = Join-Path $RimeDir "mohu_llm/data/$Scheme" },
     @{ Source = Join-Path $scriptDir "data/sentence-ngram-mobile.bin"; Destination = Join-Path $RimeDir "mohu_llm/data/sentence-ngram-mobile.bin" }
@@ -92,8 +106,14 @@ foreach ($target in $targets) {
         } | ForEach-Object {
             $relative = $_.FullName.Substring($target.Source.Length).TrimStart("\", "/")
             $destination = Join-Path $target.Destination $relative
-            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
-            Copy-Item $_.FullName $destination -Force
+            $managedRelative = (($target.RelativePrefix + $relative) -replace "\\", "/")
+            $preserve = $target.PreserveUserFiles -and
+                $userMaintained.ContainsKey($managedRelative) -and
+                (Test-Path $destination)
+            if (-not $preserve) {
+                New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+                Copy-Item $_.FullName $destination -Force
+            }
         }
     }
 }
@@ -102,46 +122,75 @@ foreach ($target in $targets) {
 $custom = Join-Path $RimeDir "default.custom.yaml"
 $entryLine = "    - schema: $schemaId"
 if (Test-Path $custom) {
-    $lines = Get-Content $custom -Encoding UTF8
+    $lines = @(Get-Content $custom -Encoding UTF8)
     $body = ($lines | Where-Object { $_ -notmatch "^\s*#" }) -join "`n"
     if ($body -match "(?m)^[\s]*-[\s]*schema:[\s]*$schemaId([\s}]|,|$)" -or
         $body -match "(?m)[{,][\s]*schema:[\s]*$schemaId([\s}]|,|$)") {
         Write-Output "schema $schemaId already registered"
     } elseif ($lines -match "^\s*schema_list/\+:") {
-        $listIndent = ($lines | Where-Object { $_ -match "^\s*schema_list/\+:" } | Select-Object -First 1) -replace "^(\s*).*", '$1'
-        $insertAt = $lines.Count
+        $listIndex = 0
         for ($i = 0; $i -lt $lines.Count; $i++) {
-            if ($lines[$i] -match "^\s*schema_list/\+:") {
-                for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-                    $line = $lines[$j]
-                    if ($line -match "^\s*#" -or $line.Trim() -eq "") { continue }
-                    $indent = ($line -replace "^( *).*", '$1').Length
-                    if ($indent -le $listIndent.Length -and $line -notmatch "^\s*-") { $insertAt = $j; break }
-                    if ($line -match "^\s*-\s*schema:") { $insertAt = $j + 1; continue }
-                    if ($indent -le $listIndent.Length) { break }
-                    $insertAt = $j + 1
-                }
-                break
-            }
+            if ($lines[$i] -match "^\s*schema_list/\+:") { $listIndex = $i; break }
         }
-        $newLines = $lines[0..($insertAt - 1)] + $entryLine + $lines[$insertAt..($lines.Count - 1)]
-        [System.IO.File]::WriteAllLines($custom, $newLines)
+        $listIndent = (($lines[$listIndex] -replace "^(\s*).*", '$1')).Length
+        if ($lines[$listIndex] -match "schema_list/\+:\s*\[\s*\]") {
+            $lines[$listIndex] = $lines[$listIndex] -replace
+                "schema_list/\+:\s*\[\s*\]", "schema_list/+: [{schema: $schemaId}]"
+            [System.IO.File]::WriteAllLines($custom, $lines)
+        } elseif ($lines[$listIndex] -match "schema_list/\+:\s*\[") {
+            $lines[$listIndex] = $lines[$listIndex] -replace
+                "\](\s*(?:#.*)?)$", ", {schema: $schemaId}]`$1"
+            [System.IO.File]::WriteAllLines($custom, $lines)
+        } else {
+            $insertAt = $lines.Count
+            for ($j = $listIndex + 1; $j -lt $lines.Count; $j++) {
+                $line = $lines[$j]
+                if ($line -match "^\s*#" -or $line.Trim() -eq "") { continue }
+                $indent = (($line -replace "^(\s*).*", '$1')).Length
+                if ($indent -le $listIndent -and $line -notmatch "^\s*-") { $insertAt = $j; break }
+                if ($line -match "^\s*-\s*schema:") { $insertAt = $j + 1; continue }
+                if ($indent -le $listIndent) { $insertAt = $j; break }
+                $insertAt = $j + 1
+            }
+            $newLines = New-Object System.Collections.Generic.List[string]
+            for ($i = 0; $i -lt $insertAt; $i++) { $newLines.Add($lines[$i]) }
+            $newLines.Add($entryLine)
+            for ($i = $insertAt; $i -lt $lines.Count; $i++) { $newLines.Add($lines[$i]) }
+            [System.IO.File]::WriteAllLines($custom, $newLines)
+        }
     } elseif ($lines -match "^patch:\s*\{") {
         if ($lines -match "schema_list/\+:") {
             $newLines = $lines | ForEach-Object {
-                if ($_ -match "schema_list/\+:\s*\[\]") {
-                    $_ -replace "schema_list/\+:\s*\[\]", "schema_list/+: [{schema: $schemaId}]"
+                if ($_ -match "schema_list/\+:\s*\[\s*\]") {
+                    $_ -replace "schema_list/\+:\s*\[\s*\]", "schema_list/+: [{schema: $schemaId}]"
                 } elseif ($_ -match "schema_list/\+:") {
-                    $_ -replace "\]\s*$", ", {schema: $schemaId}]"
+                    $_ -replace "\](\s*\}\s*(?:#.*)?)$", ", {schema: $schemaId}]`$1"
                 } else { $_ }
             }
             [System.IO.File]::WriteAllLines($custom, $newLines)
         } else {
-            $updated = ($lines -join "`n") -replace "^(patch:\s*\{)(.*)\}(\s*(#.*)?)$", "`$1`$2, schema_list/+: [{schema: $schemaId}]`}`$3"
-            [System.IO.File]::WriteAllText($custom, $updated)
+            $newLines = $lines | ForEach-Object {
+                if ($_ -match "^(\s*patch:\s*\{)(.*)\}(\s*(?:#.*)?)$") {
+                    $prefix = $Matches[1]
+                    $content = $Matches[2]
+                    $suffix = $Matches[3]
+                    $separator = if ($content.Trim()) { ", " } else { "" }
+                    "$prefix$content${separator}schema_list/+: [{schema: $schemaId}]}$suffix"
+                } else { $_ }
+            }
+            [System.IO.File]::WriteAllLines($custom, $newLines)
         }
-    } elseif ($lines -match "^patch:") {
-        $newLines = @("patch:", "  schema_list/+:") + $entryLine + $lines[1..($lines.Count - 1)]
+    } elseif ($lines -match "^patch:\s*(?:#.*)?$") {
+        $newLines = New-Object System.Collections.Generic.List[string]
+        $added = $false
+        foreach ($line in $lines) {
+            $newLines.Add($line)
+            if (-not $added -and $line -match "^patch:\s*(?:#.*)?$") {
+                $newLines.Add("  schema_list/+:")
+                $newLines.Add($entryLine)
+                $added = $true
+            }
+        }
         [System.IO.File]::WriteAllLines($custom, $newLines)
     } else {
         Add-Content $custom "`npatch:`n  schema_list/+:`n$entryLine" -Encoding UTF8

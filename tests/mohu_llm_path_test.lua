@@ -1,3 +1,5 @@
+local original_config = package.config
+
 package.path = "./tiger_sentence_native/?.lua;" .. package.path
 
 local root = os.tmpname()
@@ -26,13 +28,18 @@ assert(custom.root == "/tmp/example-rime/mohu_llm")
 assert(custom.models == "/tmp/example-rime/mohu_llm/models")
 assert(custom.selection == "/tmp/example-rime/mohu_llm/config/model-selection")
 
--- When a Windows engine is present alongside the dylib it must win, so the
--- same deployed tree serves both platforms.
+-- Cross-platform packages contain both engines.  A POSIX host must keep using
+-- the dylib even when the Windows DLL is present.
 os.execute("mkdir -p " .. root .. "/mohu_llm/runtime")
 local dll = io.open(root .. "/mohu_llm/runtime/libtigerengine.dll", "w")
 dll:write("stub")
 dll:close()
+assert(runtime.paths().engine == root .. "/mohu_llm/runtime/libtigerengine.dylib")
+
+-- Weasel exposes the Windows path separator through package.config.
+package.config = "\\" .. original_config:sub(2)
 assert(runtime.paths().engine == root .. "/mohu_llm/runtime/libtigerengine.dll")
+package.config = original_config
 
 for _, name in ipairs({
   "mohu_llm_runtime.lua",

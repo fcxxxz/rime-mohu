@@ -18,6 +18,9 @@ schema_file="mohu_llm_${scheme}.schema.yaml"
 
 [[ -f "$manifest" ]] || { print -u2 "missing package manifest: $manifest"; exit 1; }
 [[ -f "$script_dir/$schema_file" ]] || { print -u2 "missing package schema: $script_dir/$schema_file"; exit 1; }
+[[ -d "$script_dir/base" ]] || { print -u2 "missing package base directory"; exit 1; }
+[[ -f "$script_dir/base/default.yaml" ]] || { print -u2 "missing base default.yaml"; exit 1; }
+[[ -f "$script_dir/base/mohu_${scheme}.schema.yaml" ]] || { print -u2 "missing base scheme: mohu_${scheme}.schema.yaml"; exit 1; }
 [[ -d "$script_dir/lua" ]] || { print -u2 "missing package lua directory"; exit 1; }
 [[ -d "$script_dir/runtime" ]] || { print -u2 "missing package runtime directory"; exit 1; }
 [[ -d "$script_dir/data/$scheme" ]] || { print -u2 "missing package data directory: data/$scheme"; exit 1; }
@@ -39,6 +42,7 @@ grep -Fq '"package_type": "mohu_llm"' "$manifest" || { print -u2 "invalid packag
 grep -Fq "\"scheme\": \"$scheme\"" "$manifest" || { print -u2 "manifest scheme mismatch"; exit 1; }
 grep -Fq "\"schema_id\": \"$schema_id\"" "$manifest" || { print -u2 "manifest schema mismatch"; exit 1; }
 grep -Fq "\"schema\": \"$schema_file\"" "$manifest" || { print -u2 "manifest schema file mismatch"; exit 1; }
+grep -Fq '"base_dir": "base"' "$manifest" || { print -u2 "manifest base directory mismatch"; exit 1; }
 grep -Fq "\"data_dir\": \"data/$scheme\"" "$manifest" || { print -u2 "manifest data directory mismatch"; exit 1; }
 grep -Fq '"runtime_dir": "runtime"' "$manifest" || { print -u2 "manifest runtime directory mismatch"; exit 1; }
 
@@ -92,11 +96,23 @@ copy_atomic() {
   mv -f "$temporary" "$destination"
 }
 
+is_user_maintained() {
+  local relative="$1"
+  case "$relative" in
+    default.yaml|mohu.yaml|mohu_${scheme}_custom_phrases.txt|mohu_${scheme}.extended.dict.yaml|lua/mohu_processor.lua|lua/four_code_yield_pairs_${scheme}.txt) return 0 ;;
+  esac
+  return 1
+}
+
 copy_tree() {
-  local source_dir="$1" destination_dir="$2" source relative mode
+  local source_dir="$1" destination_dir="$2" preserve_user_files="${3:-0}" relative_prefix="${4:-}" source relative mode
   while IFS= read -r -d '' source; do
     relative="${source#$source_dir/}"
     [[ "$relative" == */__pycache__/* || "$relative" == *.pyc ]] && continue
+    if [[ "$preserve_user_files" == 1 && -f "$destination_dir/$relative" ]] && \
+      is_user_maintained "$relative_prefix$relative"; then
+      continue
+    fi
     mode=0644
     [[ "$relative" == *.command ]] && mode=0755
     mkdir -p "$destination_dir/${relative:h}"
@@ -104,8 +120,9 @@ copy_tree() {
   done < <(find "$source_dir" -type f -print0)
 }
 
+copy_tree "$script_dir/base" "$rime_dir" 1
 copy_atomic "$script_dir/$schema_file" "$rime_dir/$schema_file"
-copy_tree "$script_dir/lua" "$rime_dir/lua"
+copy_tree "$script_dir/lua" "$rime_dir/lua" 1 "lua/"
 copy_tree "$script_dir/runtime" "$rime_dir/mohu_llm/runtime"
 copy_tree "$script_dir/data/$scheme" "$rime_dir/mohu_llm/data/$scheme"
 for filename in "${required_data[@]}"; do
@@ -143,13 +160,13 @@ if [[ ! -f "$custom" ]]; then
   mv -f "$temporary" "$custom"
 elif ! schema_registered; then
   temporary="$(mktemp "${custom}.tmp.XXXXXX")"
-  if grep -Eq '^[[:space:]]*patch:[[:space:]]*\{.*\}[[:space:]]*(#.*)?$' "$custom"; then
-    if grep -Eq 'schema_list/\+:' "$custom"; then
-      if grep -Eq 'schema_list/\+:[[:space:]]*\[\]' "$custom"; then
-        sed -E "s|(schema_list/\+:[[:space:]]*)\[\]|\1[{schema: $schema_id}]|" "$custom" > "$temporary"
-      else
-        sed -E "s|(schema_list/\+:[[:space:]]*\[[^]]*)\]|\1, {schema: $schema_id}]|" "$custom" > "$temporary"
-      fi
+  if grep -Eq 'schema_list/\+:[[:space:]]*\[[[:space:]]*\]' "$custom"; then
+    sed -E "s|(schema_list/\+:[[:space:]]*)\[[[:space:]]*\]|\1[{schema: $schema_id}]|" "$custom" > "$temporary"
+  elif grep -Eq 'schema_list/\+:[[:space:]]*\[' "$custom"; then
+    sed -E "s|(schema_list/\+:[[:space:]]*\[[^]]*)\]|\1, {schema: $schema_id}]|" "$custom" > "$temporary"
+  elif grep -Eq '^[[:space:]]*patch:[[:space:]]*\{.*\}[[:space:]]*(#.*)?$' "$custom"; then
+    if grep -Eq '^[[:space:]]*patch:[[:space:]]*\{[[:space:]]*\}[[:space:]]*(#.*)?$' "$custom"; then
+      sed -E "s|^([[:space:]]*patch:[[:space:]]*)\{[[:space:]]*\}([[:space:]]*(#.*))?$|\1{schema_list/+: [{schema: $schema_id}]}\2|" "$custom" > "$temporary"
     else
       sed -E "s|^([[:space:]]*patch:[[:space:]]*\{)(.*)\}([[:space:]]*(#.*))?$|\1\2, schema_list/+: [{schema: $schema_id}]\}\3|" "$custom" > "$temporary"
     fi

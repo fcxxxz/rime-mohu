@@ -58,8 +58,11 @@ def recreate_destination(destination: Path) -> None:
     destination.mkdir(parents=True)
 
 
-def copy_runtime_directories(destination: Path) -> None:
-    copy_path(ROOT / "lua", destination / "lua")
+def copy_runtime_directories(scheme: str, destination: Path) -> None:
+    lua_destination = destination / "lua"
+    copy_path(ROOT / "lua", lua_destination)
+    other_scheme = "flypy" if scheme == "zrm" else "zrm"
+    (lua_destination / f"four_code_yield_pairs_{other_scheme}.txt").unlink()
 
     opencc_destination = destination / "opencc"
     opencc_destination.mkdir()
@@ -96,8 +99,9 @@ def build_distribution(scheme: str, destination: Path) -> None:
     for relative in COMMON_ROOT_PATHS:
         copy_path(ROOT / relative, destination / relative)
     for source in sorted(ROOT.glob(f"mohu_{scheme}*")):
-        copy_path(source, destination / source.name)
-    copy_runtime_directories(destination)
+        if source.is_file():
+            copy_path(source, destination / source.name)
+    copy_runtime_directories(scheme, destination)
     write_filtered_default(scheme, destination / "default.yaml")
 
 

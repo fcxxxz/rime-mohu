@@ -123,7 +123,7 @@ jobs:
           Set-Content $marked $installer -Encoding UTF8
           $sw = [Diagnostics.Stopwatch]::StartNew()
           $p = Start-Process -FilePath powershell -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "{0}" -Scheme zrm -RimeDir "{1}"' -f $marked, $rime) -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $tmp 'out.log') -RedirectStandardError (Join-Path $tmp 'err.log')
-          if ($p.WaitForExit(60000)) { "installer finished in $($sw.Elapsed.TotalSeconds)s exit=$($p.ExitCode)" } else { $p.Kill(); $p.WaitForExit(); "installer TIMED OUT after $($sw.Elapsed.TotalSeconds)s" }
+          if ($p.WaitForExit(60000)) { $null = $p.WaitForExit(); "installer finished in $($sw.Elapsed.TotalSeconds)s exit=$($p.ExitCode)" } else { $p.Kill(); $p.WaitForExit(); "installer TIMED OUT after $($sw.Elapsed.TotalSeconds)s" }
           "--- stdout:"; Get-Content (Join-Path $tmp 'out.log') -ErrorAction SilentlyContinue
           "--- stderr:"; Get-Content (Join-Path $tmp 'err.log') -ErrorAction SilentlyContinue
           "--- primitives:"

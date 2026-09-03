@@ -72,25 +72,25 @@ function New-TestPackage {
 function Invoke-TestInstaller {
     param([string]$Package, [string]$Scheme, [string]$RimeDir)
     $installer = Join-Path $Package "install_mohu_llm_windows.ps1"
-    $stdout = Join-Path $Package "child-stdout.log"
-    $stderr = Join-Path $Package "child-stderr.log"
-    # File-based redirection avoids the 5.1 native stderr pipe/ErrorRecord
-    # plumbing entirely, and the watchdog surfaces hangs with partial output
-    # instead of stalling the job for hours.
-    $arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Scheme {1} -RimeDir "{2}"' -f $installer, $Scheme, $RimeDir
-    $process = Start-Process -FilePath $powerShell -ArgumentList $arguments `
-        -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    # Pure .NET Process: Start-Process -PassThru leaves ExitCode empty on
+    # Windows PowerShell 5.1 when output is redirected.  Child output is well
+    # under the 4KB pipe buffer, so reading after exit cannot deadlock.
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $powerShell
+    $psi.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Scheme {1} -RimeDir "{2}"' -f $installer, $Scheme, $RimeDir
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.CreateNoWindow = $true
+    $process = [System.Diagnostics.Process]::Start($psi)
     if (-not $process.WaitForExit(90000)) {
         $process.Kill()
         $process.WaitForExit()
-        $partial = ""
-        if (Test-Path $stdout) { $partial += Get-Content $stdout -Raw }
-        if (Test-Path $stderr) { $partial += Get-Content $stderr -Raw }
+        $partial = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
         throw ("installer did not finish within 90s (scheme=$Scheme); partial output: <" + $partial + ">")
     }
-    $output = ""
-    if (Test-Path $stdout) { $output += (Get-Content $stdout -Raw -ErrorAction SilentlyContinue) }
-    if (Test-Path $stderr) { $output += [Environment]::NewLine + (Get-Content $stderr -Raw -ErrorAction SilentlyContinue) }
+    $process.WaitForExit()
+    $output = $process.StandardOutput.ReadToEnd() + [Environment]::NewLine + $process.StandardError.ReadToEnd()
     return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output }
 }
 

@@ -1,13 +1,13 @@
 # 万象同步报告
 
-- upstream revision: `a94e820e0e61cd9c87f46398d1bf7cff5f2447d9`
-- selected entries: 1212281
-- added: 0
-- removed: 0
-- pronunciation changed: 1212281
-- duplicate existing words: 933624
+- upstream revision: `c7d11ccddc81e85aeb34c00ff3b68f6f3c2c7cd5`
+- selected entries: 1214441
+- added: 2161
+- removed: 1
+- pronunciation changed: 1212280
+- duplicate existing words: 934089
 - pronunciation conflicts: 1698
-- rejected source rows: 419
+- rejected source rows: 417
 - dropped for missing auxiliary: 4
 
 The generated dictionary uses a fixed local weight of 20; upstream weights are retained only in entries.tsv.

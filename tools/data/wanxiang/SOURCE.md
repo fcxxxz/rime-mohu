@@ -37,6 +37,7 @@
 ## 使用
 
 - `uv run tools/sync_wanxiang.py sync`：按 manifest 固定 revision 下载并校验全部快照，生成词典。
+- `uv run tools/sync_wanxiang.py restore`：按 manifest 固定 revision 只恢复并校验 raw 快照，不生成词典，供 nightly 发布失败后的重试使用。
 - `uv run tools/sync_wanxiang.py update`：查询上游分支头，revision 变化时同步，无变化时正常退出。
 - `uv run tools/sync_wanxiang.py build`：仅从本地快照重建（需要先 sync 过）。
 - `uv run tools/sync_wanxiang.py check`：校验快照哈希并复现构建结果。

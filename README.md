@@ -77,6 +77,15 @@ make test                            # 执行单元测试
 
 注意：master 分支必须首先 `make quick` 后才能部署。
 
+### 万象 nightly
+
+万象词库每日自动同步。同步检查通过并合并到 `main` 后，GitHub Actions 会更新 [nightly 滚动 Release](https://github.com/fcxxxz/rime-mohu/releases/tag/nightly)，其中提供：
+
+- [自然码 nightly](https://github.com/fcxxxz/rime-mohu/releases/download/nightly/rime-mohu-zrm-nightly.zip)
+- [小鹤 nightly](https://github.com/fcxxxz/rime-mohu/releases/download/nightly/rime-mohu-flypy-nightly.zip)
+
+这是预发布版本，固定使用 `nightly` 标签和资产名。Release 说明会记录万象上游 revision、主分支合并提交、增删统计和 CC BY 4.0 署名信息；如果某次发布失败，下一次定时运行会检查 revision 或资产是否缺失并自动补发。
+
 ## 从魔然迁移
 
 这次方案 ID 改名不保留兼容入口。先退出输入法，再预览迁移：

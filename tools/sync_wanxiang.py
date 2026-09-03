@@ -349,11 +349,11 @@ def verify_snapshots(manifest: dict) -> None:
 def check() -> dict[str, int]:
     manifest = load_manifest()
     verify_snapshots(manifest)
-    stats = build()
-    entries, _ = select_candidates()
+    entries, stats = select_candidates()
     expected = render_dictionary(entries, manifest["revision"][:12], load_auxiliary())
-    if OUTPUT.read_text(encoding="utf-8") != expected:
+    if not OUTPUT.is_file() or OUTPUT.read_text(encoding="utf-8") != expected:
         raise ValueError("generated dictionary is not deterministic")
+    stats["selected"] = len(entries)
     return stats
 
 
@@ -437,6 +437,15 @@ def sync() -> None:
     build()
 
 
+def restore() -> None:
+    manifest = load_manifest()
+    revision = manifest["revision"]
+    if not isinstance(revision, str) or not COMMIT_RE.fullmatch(revision):
+        raise ValueError("manifest revision must be a 40-character commit SHA")
+    download_revision(manifest, revision)
+    save_manifest(manifest)
+
+
 def update() -> bool:
     manifest = load_manifest()
     payload = json.loads(fetch(API_URL, expected_host="api.github.com", allowed_prefix="/repos/amzxyz/rime-wanxiang/commits/"))
@@ -454,12 +463,13 @@ def update() -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("sync", "build", "check", "update"))
+    parser.add_argument("command", choices=("sync", "restore", "build", "check", "update"))
     args = parser.parse_args(argv)
     try:
         if args.command == "sync":
             sync()
-            build()
+        elif args.command == "restore":
+            restore()
         elif args.command == "build":
             build()
         elif args.command == "check":

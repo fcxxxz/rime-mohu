@@ -72,18 +72,26 @@ function New-TestPackage {
 function Invoke-TestInstaller {
     param([string]$Package, [string]$Scheme, [string]$RimeDir)
     $installer = Join-Path $Package "install_mohu_llm_windows.ps1"
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        # Render every stream object (5.1 wraps redirected child stderr in
-        # ErrorRecords) into plain strings so both editions capture alike.
-        $streams = & $powerShell -NoProfile -File $installer -Scheme $Scheme -RimeDir $RimeDir 2>&1
-        $output = ($streams | ForEach-Object { "{0}" -f $_ }) -join [Environment]::NewLine
-        $exitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousPreference
+    $stdout = Join-Path $Package "child-stdout.log"
+    $stderr = Join-Path $Package "child-stderr.log"
+    # File-based redirection avoids the 5.1 native stderr pipe/ErrorRecord
+    # plumbing entirely, and the watchdog surfaces hangs with partial output
+    # instead of stalling the job for hours.
+    $arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Scheme {1} -RimeDir "{2}"' -f $installer, $Scheme, $RimeDir
+    $process = Start-Process -FilePath $powerShell -ArgumentList $arguments `
+        -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if (-not $process.WaitForExit(90000)) {
+        $process.Kill()
+        $process.WaitForExit()
+        $partial = ""
+        if (Test-Path $stdout) { $partial += Get-Content $stdout -Raw }
+        if (Test-Path $stderr) { $partial += Get-Content $stderr -Raw }
+        throw ("installer did not finish within 90s (scheme=$Scheme); partial output: <" + $partial + ">")
     }
-    return [pscustomobject]@{ ExitCode = $exitCode; Output = $output }
+    $output = ""
+    if (Test-Path $stdout) { $output += (Get-Content $stdout -Raw -ErrorAction SilentlyContinue) }
+    if (Test-Path $stderr) { $output += [Environment]::NewLine + (Get-Content $stderr -Raw -ErrorAction SilentlyContinue) }
+    return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output }
 }
 
 function Assert-RegisteredOnce {
@@ -98,6 +106,7 @@ try {
     $missingRuntimeRoot = Join-Path $testRoot "missing-runtime"
     $missingRuntimePackage = New-TestPackage $missingRuntimeRoot "zrm"
     Remove-Item (Join-Path $missingRuntimePackage "runtime/lua54.dll")
+    Write-Host "case: missing-runtime"
     $missingResult = Invoke-TestInstaller $missingRuntimePackage "zrm" (Join-Path $missingRuntimeRoot "Rime")
     Assert-True ($missingResult.ExitCode -ne 0) ("installer must fail when runtime/lua54.dll is missing; exit=$($missingResult.ExitCode) output=<$($missingResult.Output)>")
     Assert-True ($missingResult.Output -match "lua54\.dll") ("missing-runtime error must name lua54.dll; output=<$($missingResult.Output)>")
@@ -121,6 +130,7 @@ try {
         Write-TestFile (Join-Path $rime "squirrel.yaml") "stale squirrel config`n"
 
         foreach ($attempt in 1..2) {
+            Write-Host "case: upgrade-$scheme attempt=$attempt"
             $result = Invoke-TestInstaller $package $scheme $rime
             Assert-Equal 0 $result.ExitCode "$scheme upgrade attempt $attempt failed: $($result.Output)"
         }
@@ -153,6 +163,7 @@ try {
             $custom = Join-Path $rime "default.custom.yaml"
             Write-TestFile $custom $case.Content
             foreach ($attempt in 1..2) {
+                Write-Host "case: $scheme/$($case.Name) attempt=$attempt"
                 $result = Invoke-TestInstaller $package $scheme $rime
                 Assert-Equal 0 $result.ExitCode "$scheme/$($case.Name) attempt $attempt failed: $($result.Output)"
             }

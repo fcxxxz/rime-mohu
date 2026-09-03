@@ -82,10 +82,12 @@ jobs:
 
       - name: Test Windows installer with PowerShell 7
         shell: pwsh
+        timeout-minutes: 15
         run: ./tests/test_mohu_llm_windows.ps1
 
       - name: Test Windows installer with Windows PowerShell 5.1
         shell: powershell
+        timeout-minutes: 15
         run: ./tests/test_mohu_llm_windows.ps1
 
       - name: Build Lua 5.4.8 host and runtime

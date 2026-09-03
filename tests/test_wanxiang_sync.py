@@ -371,5 +371,61 @@ class BuildDeltaTest(unittest.TestCase):
             self.assertEqual(sync_wanxiang.build()["added"], 0)
 
 
+class ReadOnlyCheckTest(unittest.TestCase):
+    def test_check_does_not_rewrite_generated_files(self) -> None:
+        with WanxiangEnvironment() as root:
+            data = root / "tools/data/wanxiang"
+            raw = data / "raw/one.dict.yaml"
+            write_snapshot(raw, ["新增\txin1 zeng1\t10"])
+            payload = raw.read_bytes()
+            manifest = {
+                "revision": REVISION,
+                "files": {
+                    "one": {
+                        "path": "dicts/one.dict.yaml",
+                        "raw_path": "raw/one.dict.yaml",
+                        "sha256": hashlib.sha256(payload).hexdigest(),
+                    }
+                },
+            }
+            data.mkdir(parents=True, exist_ok=True)
+            (data / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            write_aux(root, {"新": "xx", "增": "zz"})
+            auxiliary = {"新": ["xx"], "增": ["zz"]}
+            entry = sync_wanxiang.Candidate("新增", "xin zeng", "one", 10)
+            sync_wanxiang.OUTPUT.write_text(
+                sync_wanxiang.render_dictionary([entry], REVISION[:12], auxiliary),
+                encoding="utf-8",
+            )
+            sync_wanxiang.ENTRIES.write_text("entries sentinel\n", encoding="utf-8")
+            sync_wanxiang.REPORT.write_text("report sentinel\n", encoding="utf-8")
+            paths = (raw, sync_wanxiang.ENTRIES, sync_wanxiang.REPORT, sync_wanxiang.OUTPUT)
+            before = {path: path.read_bytes() for path in paths}
+
+            stats = sync_wanxiang.check()
+
+            self.assertEqual(stats["selected"], 1)
+            self.assertEqual(before, {path: path.read_bytes() for path in paths})
+
+
+class RestoreTest(unittest.TestCase):
+    def test_restore_downloads_snapshots_without_building(self) -> None:
+        with WanxiangEnvironment() as root:
+            data = root / "tools/data/wanxiang"
+            data.mkdir(parents=True, exist_ok=True)
+            manifest = {"revision": REVISION, "files": {"one": {"path": "dicts/one.dict.yaml"}}}
+            (data / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            with mock.patch.object(sync_wanxiang, "download_revision") as download:
+                with mock.patch.object(sync_wanxiang, "build") as build:
+                    sync_wanxiang.restore()
+            download.assert_called_once_with(manifest, REVISION)
+            build.assert_not_called()
+
+    def test_main_dispatches_restore(self) -> None:
+        with mock.patch.object(sync_wanxiang, "restore") as restore:
+            self.assertEqual(sync_wanxiang.main(["restore"]), 0)
+        restore.assert_called_once_with()
+
+
 if __name__ == "__main__":
     unittest.main()

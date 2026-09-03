@@ -17,10 +17,13 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 180
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Install OpenCC
         run: bash tools/install_opencc_ubuntu.sh
@@ -41,13 +44,70 @@ jobs:
 
       - name: Detect changes
         id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           if git diff --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "upstream unchanged; nothing to sync"
+            changed=false
+            echo "upstream unchanged"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            changed=true
           fi
+          current_revision="$(python3 -c 'import json; print(json.load(open("tools/data/wanxiang/manifest.json"))["revision"])')"
+          current_main_sha="$(git rev-parse HEAD)"
+          nightly_ready=false
+          nightly_revision=""
+          nightly_merge_sha=""
+          if nightly_release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/nightly" 2>/dev/null)"; then
+            nightly_body="$(jq -r '.body // ""' <<< "$nightly_release")"
+            nightly_draft="$(jq -r '.draft' <<< "$nightly_release")"
+            nightly_prerelease="$(jq -r '.prerelease' <<< "$nightly_release")"
+            nightly_revision="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- upstream-revision: \([0-9a-f]\{40\}\) -->$/\1/p' | head -n 1)"
+            nightly_merge_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- merge-sha: \([0-9a-f]\{40\}\) -->$/\1/p' | head -n 1)"
+            nightly_complete="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- publish-status: \(complete\) -->$/\1/p' | head -n 1)"
+            nightly_zrm_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- zrm-sha256: \([0-9a-f]\{64\}\) -->$/\1/p' | head -n 1)"
+            nightly_flypy_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- flypy-sha256: \([0-9a-f]\{64\}\) -->$/\1/p' | head -n 1)"
+            nightly_release_id="$(jq -r '.id // empty' <<< "$nightly_release")"
+            nightly_assets="$(gh api --paginate --slurp \
+              "repos/$GITHUB_REPOSITORY/releases/$nightly_release_id/assets?per_page=100" | jq 'add')"
+            nightly_total_assets="$(jq 'length' <<< "$nightly_assets")"
+            nightly_asset_count="$(jq '[.[] | select(.name == "rime-mohu-zrm-nightly.zip" or .name == "rime-mohu-flypy-nightly.zip")] | length' <<< "$nightly_assets")"
+            nightly_zrm_digest="$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].digest // empty' <<< "$nightly_assets")"
+            nightly_flypy_digest="$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$nightly_assets")"
+            nightly_zrm_state="$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].state // empty' <<< "$nightly_assets")"
+            nightly_flypy_state="$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].state // empty' <<< "$nightly_assets")"
+            nightly_tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/nightly" --jq .object.sha 2>/dev/null || true)"
+            if [[ "$nightly_draft" == false \
+              && "$nightly_prerelease" == true \
+              && "$nightly_complete" == complete \
+              && "$nightly_revision" == "$current_revision" \
+              && "$nightly_merge_sha" == "$current_main_sha" \
+              && "$nightly_tag_sha" == "$current_main_sha" \
+              && "$nightly_asset_count" == 2 \
+              && "$nightly_total_assets" == 2 \
+              && "$nightly_zrm_state" == uploaded \
+              && "$nightly_flypy_state" == uploaded \
+              && "$nightly_zrm_digest" == "sha256:$nightly_zrm_sha" \
+              && "$nightly_flypy_digest" == "sha256:$nightly_flypy_sha" ]]; then
+              nightly_ready=true
+            fi
+          fi
+          if [[ "$changed" == true || "$nightly_ready" != true ]]; then
+            publish=true
+          else
+            publish=false
+          fi
+          printf 'changed=%s\npublish=%s\n' "$changed" "$publish" >> "$GITHUB_OUTPUT"
+          printf 'current upstream revision: %s\n' "$current_revision"
+          printf 'nightly upstream revision: %s\n' "${nightly_revision:-missing}"
+          printf 'nightly ready: %s\n' "$nightly_ready"
+
+      - name: Restore snapshots for nightly recovery
+        if: steps.changes.outputs.publish == 'true' && steps.changes.outputs.changed != 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: uv run tools/sync_wanxiang.py restore
 
       - name: Guard daily delta
         if: steps.changes.outputs.changed == 'true'
@@ -70,28 +130,64 @@ jobs:
           EOF
 
       - name: Verify snapshots and determinism
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.changes.outputs.publish == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: uv run tools/sync_wanxiang.py check
 
       - name: Build, test, and validate distribution
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.changes.outputs.publish == 'true'
         run: |
+          set -euo pipefail
           make quick
-          uv run python -m unittest tests.test_wanxiang_sync -v
+          uv run python -m unittest tests.test_wanxiang_sync tests.test_flypy_assets -v
           uv run --with ruff ruff check tools/sync_wanxiang.py
           git diff --check
           make dist-zrm dist-flypy
 
-      - name: Open and merge sync pull request
+      - name: Guard generated diff
         if: steps.changes.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo 'build changed an unexpected tracked file:' >&2
+            printf '%s\n' "$unexpected" >&2
+            exit 1
+          fi
+
+      - name: Open and merge sync pull request
+        id: merge
+        if: steps.changes.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          CHANGED: ${{ steps.changes.outputs.changed }}
         run: |
+          set -euo pipefail
+          if [[ "$CHANGED" != 'true' ]]; then
+            git fetch --no-tags origin main
+            main_sha="$(git rev-parse origin/main)"
+            echo "merge_sha=$main_sha" >> "$GITHUB_OUTPUT"
+            echo "nightly is missing or incomplete; publishing current main commit $main_sha"
+            exit 0
+          fi
+          git fetch --no-tags origin main
+          base_sha="$(git rev-parse origin/main)"
+          local_sha="$(git rev-parse HEAD)"
+          if [[ "$base_sha" != "$local_sha" ]]; then
+            echo "main moved during synchronization; retry against $base_sha" >&2
+            exit 1
+          fi
+          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo 'synchronizer changed an unexpected tracked file:' >&2
+            printf '%s\n' "$unexpected" >&2
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          revision=$(python3 -c 'import json; print(json.load(open("tools/data/wanxiang/manifest.json"))["revision"][:12])')
+          revision_full="$(python3 -c 'import json; print(json.load(open("tools/data/wanxiang/manifest.json"))["revision"])')"
+          revision="${revision_full:0:12}"
           branch="automation/wanxiang-sync"
           git checkout -b "$branch"
           git add tools/data/wanxiang/manifest.json \
@@ -99,18 +195,296 @@ jobs:
             tools/data/wanxiang/sync_report.md \
             mohu_zrm.wanxiang.dict.yaml \
             mohu_flypy.wanxiang.dict.yaml
+          git diff --cached --check
           git commit -m "dict: sync wanxiang dictionaries ${revision}"
+          head_sha="$(git rev-parse HEAD)"
           git push --force origin "$branch"
           body="$(cat tools/data/wanxiang/sync_report.md)
 
-          上游: https://github.com/amzxyz/rime-wanxiang/commit/${revision}
+          上游: https://github.com/amzxyz/rime-wanxiang/commit/${revision_full}
           许可: CC BY 4.0，改动与署名说明见 tools/data/wanxiang/SOURCE.md。
 
           以上检查（快照哈希、确定性重建、make quick、单测、lint、dist）均在本 workflow 内通过后自动合并。"
-          if gh pr list --head "$branch" --state open --json number --jq 'length' | grep -q 1; then
-            gh pr edit "$branch" --title "dict: sync wanxiang dictionaries ${revision}" --body "$body"
+          pr_number="$(gh pr list --base main --head "$branch" --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr_number" ]]; then
+            gh pr edit "$pr_number" --title "dict: sync wanxiang dictionaries ${revision}" --body "$body"
           else
             gh pr create --base main --head "$branch" \
-              --title "dict: sync wanxiang dictionaries ${revision}" --body "$body"
+              --title "dict: sync wanxiang dictionaries ${revision}" --body "$body" >/dev/null
+            pr_number="$(gh pr list --base main --head "$branch" --state open --json number --jq '.[0].number // empty')"
           fi
-          gh pr merge "$branch" --squash --delete-branch
+          if [[ ! "$pr_number" =~ ^[0-9]+$ ]]; then
+            echo "could not resolve sync pull request number" >&2
+            exit 1
+          fi
+          pr_state="$(gh pr view "$pr_number" --json baseRefName,headRefName,headRefOid,state \
+            --jq '[.baseRefName, .headRefName, .headRefOid, .state] | @tsv')"
+          IFS=$'\t' read -r base_ref head_ref remote_head state <<< "$pr_state"
+          if [[ "$base_ref" != main || "$head_ref" != "$branch" || "$remote_head" != "$head_sha" || "$state" != OPEN ]]; then
+            echo "sync pull request does not match expected base, head, or state" >&2
+            printf 'base=%s head=%s remote_head=%s state=%s\n' "$base_ref" "$head_ref" "$remote_head" "$state" >&2
+            exit 1
+          fi
+          allow_auto_merge="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.allow_auto_merge')"
+          if [[ "$allow_auto_merge" == true ]]; then
+            gh pr merge "$pr_number" --auto --squash --match-head-commit "$head_sha"
+          else
+            gh pr merge "$pr_number" --squash --match-head-commit "$head_sha"
+          fi
+
+          merge_sha=""
+          merged=false
+          merge_state=""
+          auto_merge="disabled"
+          for _ in {1..3600}; do
+            pr_state="$(gh pr view "$pr_number" --json state,mergeCommit,mergeStateStatus,autoMergeRequest \
+              --jq '[.state, (.mergeCommit.oid // ""), (.mergeStateStatus // ""), (if .autoMergeRequest then "enabled" else "disabled" end)] | @tsv' || true)"
+            IFS=$'\t' read -r state merge_sha merge_state auto_merge <<< "$pr_state"
+            if [[ "$state" == MERGED && "$merge_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              merged=true
+              break
+            fi
+            if [[ "$state" == CLOSED ]]; then
+              break
+            fi
+            printf 'waiting for pull request merge: state=%s merge_state=%s auto_merge=%s\n' \
+              "$state" "$merge_state" "$auto_merge"
+            sleep 2
+          done
+          if [[ "$merged" != true ]]; then
+            echo "pull request #${pr_number} was not merged" >&2
+            printf 'state=%s merge_state=%s auto_merge=%s merge_sha=%s\n' \
+              "$state" "$merge_state" "$auto_merge" "$merge_sha" >&2
+            exit 1
+          fi
+          echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Build nightly distributions from main
+        if: steps.changes.outputs.publish == 'true'
+        env:
+          MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          current_main_sha="$(git rev-parse origin/main)"
+          if [[ "$current_main_sha" != "$MERGE_SHA" ]]; then
+            echo "main moved after synchronization; refusing to publish stale commit" >&2
+            printf 'expected=%s actual=%s\n' "$MERGE_SHA" "$current_main_sha" >&2
+            exit 1
+          fi
+          git checkout --detach "$MERGE_SHA"
+          uv run tools/sync_wanxiang.py check
+          uv run python -m unittest tests.test_wanxiang_sync tests.test_flypy_assets -v
+          uv run --with ruff ruff check tools/sync_wanxiang.py
+          make quick
+          git diff --check
+          git diff --exit-code
+          make dist-zrm dist-flypy
+          git diff --check
+          git diff --exit-code
+          test -f dist-zrm/mohu_zrm.schema.yaml
+          test -f dist-flypy/mohu_flypy.schema.yaml
+          chmod +x dist-zrm/Rime皮肤编辑器/启动.command
+          chmod +x dist-flypy/Rime皮肤编辑器/启动.command
+          (cd dist-zrm && zip -qr ../rime-mohu-zrm-nightly.zip .)
+          (cd dist-flypy && zip -qr ../rime-mohu-flypy-nightly.zip .)
+          for archive in rime-mohu-zrm-nightly.zip rime-mohu-flypy-nightly.zip; do
+            unzip -t "$archive" >/dev/null
+            test -z "$(unzip -Z1 "$archive" | awk '/^\// || /(^|\/)\.\.($|\/)/ { print; exit }')"
+          done
+
+      - name: Publish rolling nightly release
+        if: steps.changes.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
+        run: |
+          set -euo pipefail
+          zrm_archive='rime-mohu-zrm-nightly.zip'
+          flypy_archive='rime-mohu-flypy-nightly.zip'
+          zrm_sha="$(sha256sum "$zrm_archive" | cut -d' ' -f1)"
+          flypy_sha="$(sha256sum "$flypy_archive" | cut -d' ' -f1)"
+          zrm_size="$(stat -c '%s' "$zrm_archive")"
+          flypy_size="$(stat -c '%s' "$flypy_archive")"
+          stage_suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          stage_zrm="rime-mohu-zrm-nightly-staging-${stage_suffix}.zip"
+          stage_flypy="rime-mohu-flypy-nightly-staging-${stage_suffix}.zip"
+          stage_tag="nightly-staging-${stage_suffix}"
+          cp "$zrm_archive" "$stage_zrm"
+          cp "$flypy_archive" "$stage_flypy"
+
+          revision="$(python3 -c 'import json; print(json.load(open("tools/data/wanxiang/manifest.json"))["revision"])')"
+          revision_short="${revision:0:12}"
+          commit_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$MERGE_SHA"
+          upstream_url="https://github.com/amzxyz/rime-wanxiang/commit/$revision"
+          staging_notes="$RUNNER_TEMP/wanxiang-nightly-staging.md"
+          notes_file="$RUNNER_TEMP/wanxiang-nightly-notes.md"
+          printf '%s\n' '<!-- publish-status: staging -->' > "$staging_notes"
+          {
+            printf '%s\n' '<!-- publish-status: complete -->'
+            printf '%s\n' "<!-- merge-sha: $MERGE_SHA -->"
+            printf '%s\n' "<!-- upstream-revision: $revision -->"
+            printf '%s\n' "<!-- zrm-sha256: $zrm_sha -->"
+            printf '%s\n' "<!-- flypy-sha256: $flypy_sha -->"
+            printf '%s\n\n' '## 魔虎万象 nightly'
+            printf '%s\n' "- 主分支提交: [$MERGE_SHA]($commit_url)"
+            printf '%s\n' "- 万象上游 revision: [$revision_short]($upstream_url)"
+            printf '%s\n' "- 自然码 SHA-256: \`$zrm_sha\`"
+            printf '%s\n' "- 小鹤 SHA-256: \`$flypy_sha\`"
+            printf '%s\n\n' '- 许可: CC BY 4.0；改编与署名说明见 `tools/data/wanxiang/SOURCE.md`。'
+            cat tools/data/wanxiang/sync_report.md
+            printf '%s\n\n' '本 Release 仅包含本次同步验证过的标准自然码和小鹤发行包；这是滚动 nightly 版本，不替代稳定版 `latest`。'
+            printf '%s\n' '下载：`rime-mohu-zrm-nightly.zip` 或 `rime-mohu-flypy-nightly.zip`。'
+          } > "$notes_file"
+
+          releases="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" | jq 'add')"
+          release_id="$(jq -r '[.[] | select(.tag_name == "nightly")][0].id // empty' <<< "$releases")"
+          stage_tag=""
+          if [[ -z "$release_id" ]]; then
+            release_id="$(jq -r '[.[] | select(.draft == true and (.tag_name | startswith("nightly-staging-")))][0].id // empty' <<< "$releases")"
+          fi
+          if [[ -n "$release_id" ]]; then
+            release_tag="$(jq -r --argjson id "$release_id" '[.[] | select(.id == $id)][0].tag_name' <<< "$releases")"
+            if [[ "$release_tag" == nightly ]]; then
+              stage_tag='nightly'
+            else
+              stage_tag="$release_tag"
+              if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$stage_tag" >/dev/null 2>&1; then
+                gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+                  -f ref="refs/tags/$stage_tag" \
+                  -f sha="$MERGE_SHA" >/dev/null
+              else
+                gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$stage_tag" \
+                  -f sha="$MERGE_SHA" \
+                  -F force=true >/dev/null
+              fi
+            fi
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+              -f name='Wanxiang nightly' \
+              -F draft=true \
+              -F prerelease=true \
+              --raw-field body="$(cat "$staging_notes")" >/dev/null
+          else
+            stage_tag="nightly-staging-${stage_suffix}"
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$stage_tag" \
+              -f sha="$MERGE_SHA" >/dev/null
+            release_id="$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$stage_tag" \
+              -f target_commitish="$MERGE_SHA" \
+              -f name='Wanxiang nightly' \
+              -F draft=true \
+              -F prerelease=true \
+              --raw-field body="$(cat "$staging_notes")" \
+              --jq .id)"
+          fi
+
+          assets="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" | jq 'add')"
+          while IFS= read -r asset_id; do
+            [[ -z "$asset_id" ]] || gh api --method DELETE \
+              "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"
+          done < <(jq -r '.[] | select(.name | contains("-nightly-staging-")) | .id' <<< "$assets")
+
+          zrm_asset="$(gh api --method POST \
+            "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$release_id/assets?name=$stage_zrm" \
+            -H 'Content-Type: application/zip' --input "$stage_zrm")"
+          flypy_asset="$(gh api --method POST \
+            "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$release_id/assets?name=$stage_flypy" \
+            -H 'Content-Type: application/zip' --input "$stage_flypy")"
+          zrm_stage_id="$(jq -r .id <<< "$zrm_asset")"
+          flypy_stage_id="$(jq -r .id <<< "$flypy_asset")"
+          if [[ "$zrm_stage_id" == null || "$flypy_stage_id" == null \
+            || "$(jq -r .state <<< "$zrm_asset")" != uploaded \
+            || "$(jq -r '.digest // empty' <<< "$zrm_asset")" != "sha256:$zrm_sha" \
+            || "$(jq -r .size <<< "$zrm_asset")" != "$zrm_size" \
+            || "$(jq -r .state <<< "$flypy_asset")" != uploaded \
+            || "$(jq -r '.digest // empty' <<< "$flypy_asset")" != "sha256:$flypy_sha" \
+            || "$(jq -r .size <<< "$flypy_asset")" != "$flypy_size" ]]; then
+            echo 'uploaded staging assets failed digest, size, or state validation' >&2
+            exit 1
+          fi
+
+          assets="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" | jq 'add')"
+          while IFS= read -r asset_id; do
+            [[ -z "$asset_id" ]] || gh api --method DELETE \
+              "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"
+          done < <(jq -r --arg zrm "$zrm_stage_id" --arg flypy "$flypy_stage_id" \
+            '.[] | select((.id | tostring) != $zrm and (.id | tostring) != $flypy) | .id' <<< "$assets")
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$zrm_stage_id" \
+            -f name="$zrm_archive" >/dev/null
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$flypy_stage_id" \
+            -f name="$flypy_archive" >/dev/null
+
+          assets="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" | jq 'add')"
+          if [[ "$(jq 'length' <<< "$assets")" != 2 \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].state // empty' <<< "$assets")" != uploaded \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].size // empty' <<< "$assets")" != "$zrm_size" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$zrm_sha" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].state // empty' <<< "$assets")" != uploaded \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].size // empty' <<< "$assets")" != "$flypy_size" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$flypy_sha" ]]; then
+            echo 'final nightly assets failed validation' >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin main
+          latest_main_sha="$(git rev-parse origin/main)"
+          if [[ "$latest_main_sha" != "$MERGE_SHA" ]]; then
+            echo "main moved during nightly publication; refusing to promote stale commit" >&2
+            printf 'expected=%s actual=%s\n' "$MERGE_SHA" "$latest_main_sha" >&2
+            exit 1
+          fi
+
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/nightly" >/dev/null 2>&1; then
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/git/refs/tags/nightly" \
+              -f sha="$MERGE_SHA" \
+              -F force=true >/dev/null
+          else
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref='refs/tags/nightly' \
+              -f sha="$MERGE_SHA" >/dev/null
+          fi
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+            -f tag_name='nightly' \
+            -f name='Wanxiang nightly' \
+            -F draft=false \
+            -F prerelease=true \
+            --raw-field body="$(cat "$notes_file")" >/dev/null
+
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/nightly")"
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/nightly" --jq .object.sha)"
+          if [[ "$(jq -r .draft <<< "$release")" != false \
+            || "$(jq -r .prerelease <<< "$release")" != true \
+            || "$tag_sha" != "$MERGE_SHA" \
+            || "$(jq -r '.assets | length' <<< "$release")" != 2 \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].state // empty' <<< "$release")" != uploaded \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].size // empty' <<< "$release")" != "$zrm_size" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$zrm_sha" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].state // empty' <<< "$release")" != uploaded \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].size // empty' <<< "$release")" != "$flypy_size" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$flypy_sha" ]]; then
+            echo 'published nightly release failed final validation' >&2
+            exit 1
+          fi
+
+          # Promotion succeeded, so remove temporary draft releases and refs. A failed
+          # run exits before this block and leaves its staging state for retry.
+          if [[ "$stage_tag" != nightly ]]; then
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$stage_tag" || true
+          fi
+          staging_releases="$(gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/releases?per_page=100" | jq 'add | map(select(.draft == true and (.tag_name | startswith("nightly-staging-"))))')"
+          while IFS=$'\t' read -r staging_id staging_tag; do
+            [[ -z "$staging_id" ]] && continue
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$staging_id"
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$staging_tag" || true
+          done < <(jq -r '.[] | [.id, .tag_name] | @tsv' <<< "$staging_releases")
+          staging_refs="$(gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/nightly-staging-" | jq 'add')"
+          while IFS= read -r staging_ref; do
+            [[ -z "$staging_ref" ]] || gh api --method DELETE \
+              "repos/$GITHUB_REPOSITORY/git/refs/${staging_ref#refs/}"
+          done < <(jq -r '.[].ref' <<< "$staging_refs")

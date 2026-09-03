@@ -1,5 +1,7 @@
 ---@dependency zrmdb.txt
 ---@dependency tiger_rank.txt
+---@dependency four_code_yield_pairs_zrm.txt
+---@dependency four_code_yield_pairs_flypy.txt
 
 local Module = {}
 
@@ -84,6 +86,42 @@ function Module.load_tiger_rank()
     file:close()
     Module.tiger_rank = ranks
     return Module.tiger_rank
+end
+
+---Load the per-scheme four-code yield pair table bundled with this schema.
+---Each line lists a two-character word and the characters it may precede.
+---@param variant string "zrm" or "flypy"
+---@return table<string, table<string, boolean>>? word -> yieldable chars
+function Module.load_four_code_yield_pairs(variant)
+    Module.four_code_yield_pairs = Module.four_code_yield_pairs or {}
+    if Module.four_code_yield_pairs[variant] then
+        return Module.four_code_yield_pairs[variant]
+    end
+    local pathsep = (package.config or '/'):sub(1, 1)
+    local file = Module.open_rime_file(
+        'lua' .. pathsep .. 'four_code_yield_pairs_' .. variant .. '.txt',
+        pathsep
+    )
+    if not file then
+        log.error('mohu: failed to open four-code yield pairs for ' .. variant)
+        return nil
+    end
+    local pairs = {}
+    for line in file:lines() do
+        if line:sub(1, 1) ~= '#' then
+            local word, chars = line:match("^(%S+)\t(.+)$")
+            if word and chars then
+                local targets = {}
+                for char in chars:gmatch("%S+") do
+                    targets[char] = true
+                end
+                pairs[word] = targets
+            end
+        end
+    end
+    file:close()
+    Module.four_code_yield_pairs[variant] = pairs
+    return pairs
 end
 
 function Module.iter_translation(xlation)

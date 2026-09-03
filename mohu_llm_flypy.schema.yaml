@@ -362,12 +362,10 @@ mohu:
   # 输入四码时，如果固顶码表中含有对应条目，则注入到首选之后。
   inject_fixed_chars: true    # 是否输出固顶码表单字，例：输入 cisa 时，首屏显示「词」
   inject_fixed_words: true    # 是否输出简码码表词语，例：输入 lmsd 时，次选为「两面三刀」
-  # 输入四码时，固顶码表单字是否前置由静态字频决定：
-  # tiger_rank 排名（越小越常用）大于该门槛的生僻字让位给词，由
-  # inject_fixed_chars 注入到首选之后；排名不超过门槛的高频字维持固顶。
-  # 设为 0 时所有单字都让位（魔然行为）。
-  four_code_char_yield_rank: 2000
-  # 按字豁免上面的让位规则：列在这里的字即使排名超过门槛也在四码前置，
+  # 输入四码时，固顶单字是否让位给词由 lua/four_code_yield_pairs_flypy.txt
+  # 决定：表内首个二字词排到行内所列单字之前，被顶单字仍保次选。
+  # 直接编辑该表并重新部署即可增删让位。
+  # 按字豁免四码让位：列在这里的字始终四码前置，
   # 例如配合次级简码使用的「暮」（tools/data/mohu_flypy_fixed_secondary_codes.tsv）。
   four_code_char_yield_exempt: 暮
   # (仅*动词模式*) 是否优先输出单字或词组

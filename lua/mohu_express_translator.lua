@@ -1,10 +1,15 @@
 -- Mohu Translator (for Express Editor)
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.13.0
+-- Ver: 0.14.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.14.0: 四码普通模式的固顶单字让位改由 lua/four_code_yield_pairs_<方案>.txt
+-- 决定：smart 流中首个表内二字词排到行内所列单字之前，被顶单字仍保次选
+-- （一个读音至多一个词顶字）；其余单字维持固顶。移除静态字频门槛
+-- mohu/four_code_char_yield_rank，成对表缺失时保守降级为所有单字固顶。
 --
 -- 0.13.0: 四码普通（动词）模式按静态字频决定固顶单字是否前置：
 -- tiger_rank 排名大于 mohu/four_code_char_yield_rank（默认 2000）的
@@ -142,12 +147,11 @@ function top.init(env)
 
     env.quick_code_indicator_skip_chars = env.engine.schema.config:get_bool("mohu/quick_code_indicator_skip_chars") or false
 
-    -- 四码固顶单字让词的静态字频门槛（tiger_rank 排名，越小越常用）
-    local yield_rank = env.engine.schema.config:get_int("mohu/four_code_char_yield_rank")
-    if type(yield_rank) ~= "number" or yield_rank < 0 then
-        yield_rank = 2000
-    end
-    env.four_code_char_yield_rank = yield_rank
+    -- 四码固顶单字让位给词：由 lua/four_code_yield_pairs_<方案>.txt 决定
+    -- 哪些二字词可以顶到行内所列单字之前；表缺失时所有单字固顶（保守降级）。
+    local schema_id = env.engine.schema.schema_id or ""
+    env.four_code_yield_variant = schema_id:find("flypy", 1, true) and "flypy" or "zrm"
+    env.four_code_yield_scan_limit = 20
 
     -- 按字豁免四码让位规则（例如手工指定的次级简码）
     env.four_code_char_yield_exempt = {}
@@ -213,20 +217,17 @@ function top.func(input, seg, env)
                     -- 如果只打开固词模式，则 *只* 优先输出 2 字词
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, false, function(len) return len == 2 end)
                 else
-                    -- 普通模式下，静态字频排名不超过 four_code_char_yield_rank
-                    -- 的四码固顶单字前置输出；更生僻的字让位给词，改由注入
-                    -- 逻辑放到首选之后。门槛为 0 时全部让位（与魔然一致）。
-                    local rank_map = mohu.load_tiger_rank()
+                    -- 普通模式下，被 four_code_yield_pairs 表内首个二字词顶掉的
+                    -- 单字让位（改由注入逻辑放到首选之后，仍保次选），其余四码
+                    -- 固顶单字前置输出。
+                    local peek = top.peek_four_code_yield(env, input, seg, env.enable_word_filter and aux_hint)
+                    env.four_code_yield_peek = peek
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, nil, function(cand)
-                        if rank_map == nil then
-                            return true
-                        end
                         local cp = utf8.codepoint(cand.text)
                         if env.four_code_char_yield_exempt[cp] then
                             return true
                         end
-                        local rank = rank_map[cp]
-                        return rank ~= nil and rank <= env.four_code_char_yield_rank
+                        return not peek.chars[cp]
                     end)
                 end
             elseif input_len < 4 then          -- 造句模式下，只使用固定单字（词语无法固定）
@@ -310,7 +311,18 @@ function top.func(input, seg, env)
 
     -- smart 在 fixed 之后输出。
     -- 当需要词辅时，保留 comment，以「提前」（用户输入词辅前）提示辅助码。
-    local smart_iter = top.raw_query_smart(env, input, seg, env.enable_word_filter and aux_hint)
+    -- 四码普通模式已为让位判定预取过 smart 流：重放缓冲后续接原流，避免二次查询。
+    local smart_iter
+    if env.four_code_yield_peek ~= nil then
+        local peek = env.four_code_yield_peek
+        env.four_code_yield_peek = nil
+        if peek.iter ~= nil then
+            smart_iter = top.chain_candidates(peek.buffer, peek.iter)
+        end
+    end
+    if smart_iter == nil then
+        smart_iter = top.raw_query_smart(env, input, seg, env.enable_word_filter and aux_hint)
+    end
     if smart_iter ~= nil then
         local ijrq_enabled = env.ijrq_enable
             and (env.engine.context.input == input)
@@ -445,10 +457,99 @@ function top.order_exact_four_candidates(candidates, has_short_code, defer_count
     return result
 end
 
+---四码让位候选资格：解包 Shadow/Uniquified 等包装后，必须是完整的
+---二字候选，且真身不是动态组句（Sentence 伪词）。
+---@param cand table
+---@return boolean
+function top.is_four_code_yield_word_candidate(cand)
+    local genuine = cand.get_genuine and cand:get_genuine() or cand
+    if utf8.len(genuine.text) ~= 2 then
+        return false
+    end
+    local dynamic = genuine.get_dynamic_type and genuine:get_dynamic_type() or nil
+    return dynamic ~= "Sentence"
+end
+
+---Scan a candidate stream for the first word present in the yield pair
+---table, buffering every pulled candidate so the caller can replay the
+---stream without a second translator query.
+---@param iter function
+---@param pairs_data table word -> yieldable chars
+---@param limit integer maximum candidates to pull
+---@return table buffer, table|nil word
+function top.find_four_code_yield_word(iter, pairs_data, limit)
+    local buffer = {}
+    while true do
+        local cand = iter()
+        if cand == nil then
+            break
+        end
+        table.insert(buffer, cand)
+        if top.is_four_code_yield_word_candidate(cand) then
+            local genuine = cand.get_genuine and cand:get_genuine() or cand
+            if pairs_data[genuine.text] then
+                return buffer, cand
+            end
+        end
+        if limit and #buffer >= limit then
+            break
+        end
+    end
+    return buffer, nil
+end
+
+---Replay buffered candidates first, then resume the remaining stream.
+---@param buffer table
+---@param iter function
+---@return function
+function top.chain_candidates(buffer, iter)
+    local index = 0
+    return function()
+        index = index + 1
+        if index <= #buffer then
+            return buffer[index]
+        end
+        return iter()
+    end
+end
+
+---Query the smart stream once for the four-code yield decision.
+---Returns the resumable iterator, the pulled candidate buffer, and the
+---set (keyed by codepoint) of characters the found word may precede.
+---@param env table
+---@param input string
+---@param seg table
+---@param with_comment boolean
+---@return table
+function top.peek_four_code_yield(env, input, seg, with_comment)
+    local peek = { iter = nil, buffer = {}, chars = {} }
+    local iter = top.raw_query_smart(env, input, seg, with_comment)
+    if iter == nil then
+        return peek
+    end
+    local pairs_data = mohu.load_four_code_yield_pairs(env.four_code_yield_variant)
+    if pairs_data == nil then
+        -- 成对表缺失：保守降级，所有单字固顶，smart 流原样交还。
+        peek.iter = iter
+        return peek
+    end
+    local buffer, word = top.find_four_code_yield_word(iter, pairs_data, env.four_code_yield_scan_limit)
+    peek.buffer = buffer
+    peek.iter = iter
+    if word ~= nil then
+        local genuine = word.get_genuine and word:get_genuine() or word
+        for char in pairs(pairs_data[genuine.text]) do
+            peek.chars[utf8.codepoint(char)] = true
+        end
+    end
+    return peek
+end
+
 -- | 每次 translation 开始前应该初始化 output 状态
 function top.output_begin(env)
     env.output_i = 0
     env.output_injected_secondary = {}
+    env.four_code_yield_peek = nil
 end
 
 -- | 支持候选注入的 yield

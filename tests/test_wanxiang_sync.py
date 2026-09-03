@@ -275,12 +275,23 @@ class DownloadSourceTest(unittest.TestCase):
 
     def test_rejects_manifest_hash_mismatch(self) -> None:
         payload = b"hello wanxiang"
-        config = {"path": "dicts/one.dict.yaml", "sha256": "c" * 64}
         metadata = {"sha": "b" * 40, "size": len(payload)}
         blob = {"encoding": "base64", "content": base64.b64encode(payload).decode()}
         with self.fake_api(metadata, blob):
             with self.assertRaises(ValueError):
-                sync_wanxiang.download_source(config, REVISION)
+                sync_wanxiang.download_source(
+                    self.config, REVISION, expected_sha256="c" * 64
+                )
+
+    def test_accepts_content_without_expected_hash(self) -> None:
+        payload = b"hello wanxiang"
+        config = {"path": "dicts/one.dict.yaml", "sha256": "c" * 64}
+        metadata = {"sha": "b" * 40, "size": len(payload)}
+        blob = {"encoding": "base64", "content": base64.b64encode(payload).decode()}
+        with self.fake_api(metadata, blob):
+            data, digest = sync_wanxiang.download_source(config, REVISION)
+        self.assertEqual(data, payload)
+        self.assertEqual(digest, hashlib.sha256(payload).hexdigest())
 
     def test_rejects_non_base64_blob(self) -> None:
         metadata = {"sha": "b" * 40, "size": 5}
@@ -288,6 +299,46 @@ class DownloadSourceTest(unittest.TestCase):
         with self.fake_api(metadata, blob):
             with self.assertRaises(ValueError):
                 sync_wanxiang.download_source(self.config, REVISION)
+
+
+class DownloadRevisionTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.payload = b"hello wanxiang"
+        self.manifest = {
+            "revision": REVISION,
+            "files": {
+                "one": {
+                    "path": "dicts/one.dict.yaml",
+                    "raw_path": "raw/one.dict.yaml",
+                    "sha256": "c" * 64,
+                }
+            },
+        }
+
+    def fake_api(self) -> mock.MagicMock:
+        metadata = {"sha": "b" * 40, "size": len(self.payload)}
+        blob = {"encoding": "base64", "content": base64.b64encode(self.payload).decode()}
+        responses = [metadata, blob]
+        return mock.patch.object(
+            sync_wanxiang, "fetch_json", side_effect=lambda *a, **k: responses.pop(0)
+        )
+
+    def test_new_revision_skips_stale_manifest_hash(self) -> None:
+        with WanxiangEnvironment() as root:
+            raw = root / "tools/data/wanxiang/raw/one.dict.yaml"
+            with self.fake_api():
+                sync_wanxiang.download_revision(
+                    self.manifest, "d" * 40, check_manifest=False
+                )
+            digest = hashlib.sha256(self.payload).hexdigest()
+            self.assertEqual(self.manifest["files"]["one"]["sha256"], digest)
+            self.assertEqual(raw.read_bytes(), self.payload)
+
+    def test_replay_revision_enforces_manifest_hash(self) -> None:
+        with WanxiangEnvironment():
+            with self.fake_api():
+                with self.assertRaises(ValueError):
+                    sync_wanxiang.download_revision(self.manifest, REVISION)
 
 
 class VerifySnapshotsTest(unittest.TestCase):
@@ -333,6 +384,39 @@ class UpdateTest(unittest.TestCase):
                 return_value=json.dumps({"sha": REVISION}).encode(),
             ):
                 self.assertFalse(sync_wanxiang.update())
+
+    def test_new_revision_downloads_without_stale_hash_check(self) -> None:
+        with WanxiangEnvironment() as root:
+            data = root / "tools/data/wanxiang"
+            data.mkdir(parents=True, exist_ok=True)
+            new_revision = "d" * 40
+            manifest = {
+                "revision": REVISION,
+                "files": {
+                    "one": {
+                        "path": "dicts/one.dict.yaml",
+                        "raw_path": "raw/one.dict.yaml",
+                        "sha256": "c" * 64,
+                    }
+                },
+            }
+            (data / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            with mock.patch.object(
+                sync_wanxiang,
+                "fetch",
+                return_value=json.dumps({"sha": new_revision}).encode(),
+            ):
+                with mock.patch.object(sync_wanxiang, "download_revision") as download:
+                    with mock.patch.object(sync_wanxiang, "build") as build:
+                        self.assertTrue(sync_wanxiang.update())
+            download.assert_called_once()
+            args, kwargs = download.call_args
+            self.assertEqual(args[0]["revision"], new_revision)
+            self.assertEqual(args[1], new_revision)
+            self.assertEqual(kwargs, {"check_manifest": False})
+            build.assert_called_once_with()
+            saved = json.loads((data / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(saved["revision"], new_revision)
 
 
 class BuildDeltaTest(unittest.TestCase):

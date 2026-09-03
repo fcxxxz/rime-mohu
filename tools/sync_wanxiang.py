@@ -368,7 +368,9 @@ def fetch_json(url: str, *, allowed_prefix: str) -> dict:
     return value
 
 
-def download_source(config: dict, revision: str) -> tuple[bytes, str]:
+def download_source(
+    config: dict, revision: str, *, expected_sha256: str | None = None
+) -> tuple[bytes, str]:
     metadata = fetch_json(
         CONTENTS_URL.format(path=config["path"], revision=revision),
         allowed_prefix="/repos/amzxyz/rime-wanxiang/contents/dicts/",
@@ -406,16 +408,20 @@ def download_source(config: dict, revision: str) -> tuple[bytes, str]:
     if len(data) != size:
         raise ValueError(f"upstream blob size mismatch: {config['path']}")
     digest = hashlib.sha256(data).hexdigest()
-    expected = config.get("sha256")
-    if isinstance(expected, str) and expected and digest != expected:
+    # expected_sha256 只在重放 manifest 已固定的 revision（sync/restore）时传入；
+    # update 发现新 revision 时新内容的哈希尚未写入 manifest，不能拿旧哈希校验。
+    if expected_sha256 is not None and digest != expected_sha256:
         raise ValueError(f"manifest hash mismatch: {config['path']}")
     return data, digest
 
 
-def download_revision(manifest: dict, revision: str) -> None:
+def download_revision(manifest: dict, revision: str, *, check_manifest: bool = True) -> None:
     downloads: list[tuple[dict, bytes, str]] = []
     for source, config in source_configs(manifest):
-        data, digest = download_source(config, revision)
+        expected = config.get("sha256") if check_manifest else None
+        if not (isinstance(expected, str) and expected):
+            expected = None
+        data, digest = download_source(config, revision, expected_sha256=expected)
         downloads.append((config, data, digest))
     for config, data, digest in downloads:
         config["sha256"] = digest
@@ -455,7 +461,9 @@ def update() -> bool:
     if revision == manifest.get("revision"):
         return False
     manifest["revision"] = revision
-    download_revision(manifest, revision)
+    # 新 revision 的内容哈希尚未记录进 manifest，跳过旧哈希校验；
+    # 完整性仍由 blob SHA 寻址、size 检查和 base64 严格解码保证，新哈希随后写回。
+    download_revision(manifest, revision, check_manifest=False)
     save_manifest(manifest)
     build()
     return True

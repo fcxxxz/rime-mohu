@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -6,6 +6,17 @@ $installerSource = Join-Path $root "tiger_sentence_native/install_mohu_llm_windo
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ("mohu-llm-windows-" + [guid]::NewGuid())
 $utf8 = [Text.UTF8Encoding]::new($false)
 $powerShell = (Get-Process -Id $PID).Path
+
+# The installer must parse under the edition running this suite (pwsh 7 and
+# Windows PowerShell 5.1 in CI); surface parser errors instead of opaque
+# child failures.
+$parseErrors = $null
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $installerSource, [ref]$null, [ref]$parseErrors) | Out-Null
+if ($parseErrors -and $parseErrors.Count -gt 0) {
+    throw ("install_mohu_llm_windows.ps1 does not parse under " + $PSVersionTable.PSVersion +
+        ": " + (($parseErrors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }) -join "; "))
+}
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -61,15 +72,26 @@ function New-TestPackage {
 function Invoke-TestInstaller {
     param([string]$Package, [string]$Scheme, [string]$RimeDir)
     $installer = Join-Path $Package "install_mohu_llm_windows.ps1"
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $output = & $powerShell -NoProfile -File $installer -Scheme $Scheme -RimeDir $RimeDir 2>&1 | Out-String
-        $exitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousPreference
+    # Pure .NET Process: Start-Process -PassThru leaves ExitCode empty on
+    # Windows PowerShell 5.1 when output is redirected.  Child output is well
+    # under the 4KB pipe buffer, so reading after exit cannot deadlock.
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $powerShell
+    $psi.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Scheme {1} -RimeDir "{2}"' -f $installer, $Scheme, $RimeDir
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.CreateNoWindow = $true
+    $process = [System.Diagnostics.Process]::Start($psi)
+    if (-not $process.WaitForExit(90000)) {
+        $process.Kill()
+        $process.WaitForExit()
+        $partial = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
+        throw ("installer did not finish within 90s (scheme=$Scheme); partial output: <" + $partial + ">")
     }
-    return [pscustomobject]@{ ExitCode = $exitCode; Output = $output }
+    $process.WaitForExit()
+    $output = $process.StandardOutput.ReadToEnd() + [Environment]::NewLine + $process.StandardError.ReadToEnd()
+    return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output }
 }
 
 function Assert-RegisteredOnce {
@@ -84,9 +106,10 @@ try {
     $missingRuntimeRoot = Join-Path $testRoot "missing-runtime"
     $missingRuntimePackage = New-TestPackage $missingRuntimeRoot "zrm"
     Remove-Item (Join-Path $missingRuntimePackage "runtime/lua54.dll")
+    Write-Host "case: missing-runtime"
     $missingResult = Invoke-TestInstaller $missingRuntimePackage "zrm" (Join-Path $missingRuntimeRoot "Rime")
-    Assert-True ($missingResult.ExitCode -ne 0) "installer must fail when runtime/lua54.dll is missing"
-    Assert-True ($missingResult.Output -match "lua54\.dll") "missing-runtime error must name lua54.dll"
+    Assert-True ($missingResult.ExitCode -ne 0) ("installer must fail when runtime/lua54.dll is missing; exit=$($missingResult.ExitCode) output=<$($missingResult.Output)>")
+    Assert-True ($missingResult.Output -match "lua54\.dll") ("missing-runtime error must name lua54.dll; output=<$($missingResult.Output)>")
 
     foreach ($scheme in @("zrm", "flypy")) {
         $upgradeRoot = Join-Path $testRoot "upgrade-$scheme"
@@ -107,6 +130,7 @@ try {
         Write-TestFile (Join-Path $rime "squirrel.yaml") "stale squirrel config`n"
 
         foreach ($attempt in 1..2) {
+            Write-Host "case: upgrade-$scheme attempt=$attempt"
             $result = Invoke-TestInstaller $package $scheme $rime
             Assert-Equal 0 $result.ExitCode "$scheme upgrade attempt $attempt failed: $($result.Output)"
         }
@@ -139,6 +163,7 @@ try {
             $custom = Join-Path $rime "default.custom.yaml"
             Write-TestFile $custom $case.Content
             foreach ($attempt in 1..2) {
+                Write-Host "case: $scheme/$($case.Name) attempt=$attempt"
                 $result = Invoke-TestInstaller $package $scheme $rime
                 Assert-Equal 0 $result.ExitCode "$scheme/$($case.Name) attempt $attempt failed: $($result.Output)"
             }

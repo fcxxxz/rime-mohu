@@ -82,11 +82,53 @@ jobs:
 
       - name: Test Windows installer with PowerShell 7
         shell: pwsh
+        timeout-minutes: 15
         run: ./tests/test_mohu_llm_windows.ps1
 
       - name: Test Windows installer with Windows PowerShell 5.1
         shell: powershell
+        timeout-minutes: 15
         run: ./tests/test_mohu_llm_windows.ps1
+
+      - name: Diagnose 5.1 installer stall point
+        if: failure()
+        shell: powershell
+        timeout-minutes: 10
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $tmp = Join-Path $env:TEMP ("mohu-diag-" + [guid]::NewGuid())
+          $pkg = Join-Path $tmp 'package'
+          $rime = Join-Path $tmp 'Rime'
+          New-Item -ItemType Directory -Force -Path "$pkg\base", "$pkg\lua", "$pkg\runtime", "$pkg\data\zrm" | Out-Null
+          Set-Content "$pkg\package.json" '{ "package_type": "mohu_llm", "scheme": "zrm", "schema_id": "mohu_llm_zrm", "schema": "mohu_llm_zrm.schema.yaml", "base_dir": "base", "data_dir": "data/zrm", "runtime_dir": "runtime" }'
+          Set-Content "$pkg\mohu_llm_zrm.schema.yaml" 's'
+          Set-Content "$pkg\base\default.yaml" 'd'
+          Set-Content "$pkg\base\mohu_zrm.schema.yaml" 'd'
+          Set-Content "$pkg\lua\mohu_llm_runtime.lua" 'return {}'
+          Set-Content "$pkg\lua\mohu_processor.lua" 'p'
+          Set-Content "$pkg\lua\four_code_yield_pairs_zrm.txt" 'p'
+          Set-Content "$pkg\runtime\libtigerengine.dll" 'dll'
+          Set-Content "$pkg\runtime\lua54.dll" 'lua'
+          Set-Content "$pkg\data\zrm\mohu_llm_zrm.lexicon.txt" 'w'
+          Set-Content "$pkg\data\sentence-ngram-mobile.bin" 'm'
+          New-Item -ItemType Directory -Force -Path "$rime\lua" | Out-Null
+          Set-Content "$rime\default.yaml" 'user'
+          Set-Content "$rime\mohu.yaml" 'user'
+          $installer = Get-Content tiger_sentence_native/install_mohu_llm_windows.ps1 -Raw
+          $installer = $installer.Replace('# The native engine binds', 'Write-Host ''MARK-1 before-lua-check''; # The native engine binds')
+          $installer = $installer.Replace('$manifestText = Get-Content $manifest -Raw -Encoding UTF8', 'Write-Host ''MARK-2 after-lua-check''; $manifestText = Get-Content $manifest -Raw -Encoding UTF8')
+          $installer = $installer.Replace('# Register the schema in default.custom.yaml', 'Write-Host ''MARK-3 after-copy''; # Register the schema in default.custom.yaml')
+          $installer = $installer.Replace('Write-Output "mohu_llm_$Scheme installed', 'Write-Host ''MARK-4 end''; Write-Output "mohu_llm_`$Scheme installed')
+          $marked = Join-Path $pkg 'install_marked.ps1'
+          Set-Content $marked $installer -Encoding UTF8
+          $sw = [Diagnostics.Stopwatch]::StartNew()
+          $p = Start-Process -FilePath powershell -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "{0}" -Scheme zrm -RimeDir "{1}"' -f $marked, $rime) -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $tmp 'out.log') -RedirectStandardError (Join-Path $tmp 'err.log')
+          if ($p.WaitForExit(60000)) { $null = $p.WaitForExit(); "installer finished in $($sw.Elapsed.TotalSeconds)s exit=$($p.ExitCode)" } else { $p.Kill(); $p.WaitForExit(); "installer TIMED OUT after $($sw.Elapsed.TotalSeconds)s" }
+          "--- stdout:"; Get-Content (Join-Path $tmp 'out.log') -ErrorAction SilentlyContinue
+          "--- stderr:"; Get-Content (Join-Path $tmp 'err.log') -ErrorAction SilentlyContinue
+          "--- primitives:"
+          $sw.Restart(); Get-Process WeaselServer -ErrorAction SilentlyContinue | Out-Null; "Get-Process: $($sw.Elapsed.TotalSeconds)s"
+          $sw.Restart(); Get-ChildItem "$env:ProgramFiles\Rime", "${env:ProgramFiles(x86)}\Rime" -Filter 'rime.dll' -Recurse -Depth 2 -ErrorAction SilentlyContinue | Out-Null; "Get-ChildItem scan: $($sw.Elapsed.TotalSeconds)s"
 
       - name: Build Lua 5.4.8 host and runtime
         shell: bash

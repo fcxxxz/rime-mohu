@@ -52,9 +52,14 @@ if ($server -and $server.Path) {
     if (Test-Path $candidate) { $weaselRime = $candidate }
 }
 if (-not $weaselRime) {
-    $weaselRime = Get-ChildItem "$env:ProgramFiles\Rime", "${env:ProgramFiles(x86)}\Rime" `
-        -Filter "rime.dll" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
-        Select-Object -First 1 -ExpandProperty FullName
+    # Get-ChildItem -Filter -Recurse on a non-existent path crawls for minutes
+    # under Windows PowerShell 5.1; probe each root only when it exists.
+    foreach ($candidate in @((Join-Path $env:ProgramFiles "Rime"), (Join-Path ${env:ProgramFiles(x86)} "Rime"))) {
+        if (-not (Test-Path $candidate)) { continue }
+        $found = Get-ChildItem $candidate -Filter "rime.dll" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+        if ($found) { $weaselRime = $found; break }
+    }
 }
 if ($weaselRime) {
     $m = [regex]::Match([Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($weaselRime)),

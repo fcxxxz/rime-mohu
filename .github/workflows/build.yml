@@ -119,6 +119,8 @@ jobs:
 
       - name: Package flat distributions
         run: |
+          # GitHub artifact transfer does not preserve executable bits.
+          find dist-zrm dist-flypy -type f -name '*.command' -exec chmod +x {} +
           (cd dist-zrm && zip -qr ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -qr ../rime-mohu-flypy-latest.zip .)
           unzip -t rime-mohu-zrm-latest.zip >/dev/null

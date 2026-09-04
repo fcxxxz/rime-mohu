@@ -18,6 +18,7 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             "mohu/model/",
             "Rime同步助手",
             "解除隔离.command",
+            "find dist-zrm dist-flypy -type f -name '*.command' -exec chmod +x {} +",
         ):
             self.assertIn(expected, workflow)
 

@@ -145,7 +145,7 @@ jobs:
           else
             gh release create latest --target "$GITHUB_SHA" --title 'Latest build' --notes-file "$notes_file" --latest
           fi
-          for asset in rime-mohu-latest.zip rime-mohu-llm-latest.zip rime-mohu-llm-runtime-latest.zip mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip; do
+          for asset in rime-mohu-latest.zip rime-mohu-llm-latest.zip rime-mohu-llm-runtime-latest.zip mohu-llm-zrm-latest.zip mohu-llm-flypy-latest.zip rime-mohu-qwen3-0.6b.zip rime-mohu-qwen35-0.8b.zip; do
             gh release delete-asset latest "$asset" --yes 2>/dev/null || true
           done
           gh release upload latest \

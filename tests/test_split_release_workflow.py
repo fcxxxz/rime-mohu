@@ -24,9 +24,12 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
         self.assertNotIn("Qwen", workflow)
         self.assertNotIn("install_mohu", workflow)
         self.assertNotIn("dist-mohu-llm", workflow)
+        self.assertIn("rime-mohu-qwen3-0.6b.zip", workflow)
+        self.assertIn("rime-mohu-qwen35-0.8b.zip", workflow)
         upload = workflow.split("gh release upload", 1)[1]
         self.assertNotIn("mohu-llm-zrm", upload)
         self.assertNotIn("mohu-llm-flypy", upload)
+        self.assertNotIn("qwen", upload.lower())
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
--- Snapshot of user-created phrases for the native sentence decoder.
+-- Snapshot of learned multi-character phrases for the native sentence decoder.
 -- The full user dictionary is read only at refresh boundaries, never per key.
 
 local M = {}
@@ -29,30 +29,6 @@ local function pure_double_pinyin(code)
     return table.concat(result)
 end
 
-local function is_builtin(memory, code, text)
-    if memory == nil or type(memory.dictiter_lookup) ~= "function" then
-        return false
-    end
-    local function lookup(candidate_code)
-        -- 单次 pcall 包住词典查询与迭代；rime userdata 的任何访问异常
-        -- 都按“查不到”处理。
-        local ok, found = pcall(function()
-            local iterator = memory:dictiter_lookup(candidate_code, false, 0)
-            if iterator == nil or type(iterator.iter) ~= "function" then
-                return false
-            end
-            for entry in iterator:iter() do
-                if entry and entry.text == text then return true end
-            end
-            return false
-        end)
-        return ok and found or false
-    end
-    if lookup(code) then return true end
-    local normalized = pure_double_pinyin(code)
-    return normalized ~= nil and normalized ~= code and lookup(normalized) or false
-end
-
 -- 一次性读取条目的三个字段；任何字段缺失或访问异常时 text 为 nil。
 local function entry_fields(entry)
     if type(entry) ~= "table" and type(entry) ~= "userdata" then return nil end
@@ -81,7 +57,6 @@ local function accept_entry(memory, seen, text, raw_code, commits)
     end
     local code = pure_double_pinyin(raw_code)
     if not code or #code < 4 or #code > MAX_CODE_BYTES then return nil end
-    if is_builtin(memory, raw_code, text) then return nil end
     local key = code .. "\t" .. text
     if seen[key] then return nil end
     seen[key] = true
@@ -219,7 +194,6 @@ end
 M._test = {
     pure_double_pinyin = pure_double_pinyin,
     valid_utf8 = valid_utf8,
-    is_builtin = is_builtin,
 }
 
 return M

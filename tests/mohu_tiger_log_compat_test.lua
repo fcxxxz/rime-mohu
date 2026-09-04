@@ -7,7 +7,10 @@ package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 
 local original_config = package.config
 local original_loadlib = package.loadlib
+local original_open = io.open
+local original_popen = io.popen
 local function_log_calls = {}
+local runtime_preload_files = {}
 
 rime_api = {
   get_user_data_dir = function() return "/tmp/mohu-tiger-log-compat-test" end,
@@ -43,8 +46,35 @@ Candidate = function(kind, start_pos, end_pos, text, comment)
   return { type = kind, start = start_pos, _end = end_pos, text = text, comment = comment }
 end
 
-local function fresh_translator(loadlib_stub)
+io.open = function(path, mode)
+  if path == "/tmp/mohu-tiger-log-compat-test/mohu/runtime/runtime-preload.txt" and
+      mode == "r" then
+    local index = 0
+    return {
+      lines = function()
+        return function()
+          index = index + 1
+          return runtime_preload_files[index]
+        end
+      end,
+      close = function() end,
+    }
+  end
+  return original_open(path, mode)
+end
+
+io.popen = function()
+  return {
+    lines = function()
+      return function() return nil end
+    end,
+    close = function() return true end,
+  }
+end
+
+local function fresh_translator(loadlib_stub, preload_files)
   local calls = {}
+  runtime_preload_files = preload_files or { "lua54.dll", "future-library.dll" }
   package.loadlib = function(path, symbol)
     calls[#calls + 1] = path .. "|" .. tostring(symbol)
     return loadlib_stub(path, symbol)
@@ -76,11 +106,11 @@ do
   assert(function_log_calls[1]:find("loadlib", 1, true),
     "the first logged message must describe the loadlib failure")
   assert(#calls == 3,
-    "on Windows lua54.dll and libwinpthread-1.dll must be preloaded before the engine DLL")
+    "on Windows every manifest-listed runtime dependency must be preloaded before the engine DLL")
   assert(calls[1]:find("mohu/runtime/lua54%.dll|%*", 1) ~= nil,
     "the first loadlib call must preload runtime/lua54.dll with '*'")
-  assert(calls[2]:find("mohu/runtime/libwinpthread%-1%.dll|%*", 1) ~= nil,
-    "the second loadlib call must preload runtime/libwinpthread-1.dll with '*'")
+  assert(calls[2]:find("mohu/runtime/future%-library%.dll|%*", 1) ~= nil,
+    "the second loadlib call must preload arbitrary closure dependency with '*'")
   yielded = {}
   native.translator.func("ufqyhfmimh", segment, env)
   assert(#yielded == 0, "a failed engine must not yield sentence candidates")
@@ -166,6 +196,8 @@ do
 end
 
 package.loadlib = original_loadlib
+io.open = original_open
+io.popen = original_popen
 package.config = original_config
 log = nil
 print("Mohu log compatibility tests passed")

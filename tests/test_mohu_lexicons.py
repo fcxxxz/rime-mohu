@@ -35,12 +35,12 @@ ab\t阿布\t2\t20001
             zrm = self.tool.build_rows(rows, scheme="zrm")
             fly = self.tool.build_rows(rows, scheme="flypy")
 
-        self.assertIn(("wk", "为", "1", "3"), zrm)
-        self.assertIn(("wkxo", "维修", "1", "20"), zrm)
-        self.assertIn(("ww", "为", "1", "3"), fly)
-        self.assertIn(("wwxo", "维修", "1", "20"), fly)
-        self.assertIn(("ba", "爸", "1", "12"), fly)
-        self.assertIn(("ab", "阿布", "2", "20001"), fly)
+        self.assertIn(("wk", "为", "1", "3", ""), zrm)
+        self.assertIn(("wkxo", "维修", "1", "20", ""), zrm)
+        self.assertIn(("ww", "为", "1", "3", ""), fly)
+        self.assertIn(("wwxo", "维修", "1", "20", ""), fly)
+        self.assertIn(("ba", "爸", "1", "12", ""), fly)
+        self.assertIn(("ab", "阿布", "2", "20001", ""), fly)
 
     def test_text_target_set_matches_and_output_is_stably_sorted(self):
         source = """ba\t爸\t1\t12
@@ -54,8 +54,53 @@ wz\t为\t2\t3
             fly = self.tool.build_rows(rows, scheme="flypy")
 
         self.assertEqual({r[1] for r in zrm}, {r[1] for r in fly})
-        self.assertEqual(zrm, sorted(zrm, key=lambda r: (r[0], int(r[2]), r[1], int(r[3]))))
-        self.assertEqual(fly, sorted(fly, key=lambda r: (r[0], int(r[2]), r[1], int(r[3]))))
+        self.assertEqual(zrm, sorted(
+            zrm, key=lambda r: (r[0], int(r[2]), r[1], int(r[3]), r[4])))
+        self.assertEqual(fly, sorted(
+            fly, key=lambda r: (r[0], int(r[2]), r[1], int(r[3]), r[4])))
+
+    def test_reading_frequency_column_from_character_dictionary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            chars = Path(tmp) / "chars.dict.yaml"
+            chars.write_text(
+                "...\n"
+                "万\tmo;fp\t1\n"
+                "万\twj;fp\t1201402\n"
+                "摸\tmo;ul\t342354\n"
+                "为\twz;dz\t88\n",
+                encoding="utf-8",
+            )
+            source = Path(tmp) / "source.txt"
+            source.write_text(
+                "mo\t万\t4\t285\n"
+                "mof\t万\t1\t285\n"
+                "wj\t万\t2\t285\n"
+                "mo\t摸\t1\t886\n"
+                "wk\t为\t1\t3\n"       # 源码表自带的飞键行
+                "mowo\t摸万\t1\t9\n",   # 多字行不挂读音频率
+                encoding="utf-8",
+            )
+            frequencies = self.tool.load_reading_frequencies(chars)
+            rows = self.tool.load_rows(source, frequencies)
+        by_code_text = {(r[0], r[1]): r for r in rows}
+        self.assertEqual(by_code_text[("mo", "万")][4], "1")
+        self.assertEqual(by_code_text[("mof", "万")][4], "1")
+        self.assertEqual(by_code_text[("wj", "万")][4], "1201402")
+        self.assertEqual(by_code_text[("mo", "摸")][4], "342354")
+        self.assertEqual(by_code_text[("wk", "为")][4], "88")  # 飞键行回溯 wz
+        self.assertEqual(by_code_text[("mowo", "摸万")][4], "")
+
+    def test_reading_frequency_dedupes_aux_variants_per_syllable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            chars = Path(tmp) / "chars.dict.yaml"
+            chars.write_text(
+                "...\n"
+                "摸\tmo;ul\t342354\n"
+                "摸\tmo;aa\t342354\n",
+                encoding="utf-8",
+            )
+            frequencies = self.tool.load_reading_frequencies(chars)
+        self.assertEqual(frequencies, {("摸", "mo"): 342354})
 
     def test_rejects_absolute_output_paths(self):
         with self.assertRaises(ValueError):
@@ -63,16 +108,16 @@ wz\t为\t2\t3
 
     def test_uses_character_readings_to_avoid_reconverting_fly_rows(self):
         rows = [
-            ("wz", "为", "1", "3"),
-            ("wk", "为", "1", "3"),  # already a fly-key variant
-            ("wzxq", "维修", "1", "20"),
+            ("wz", "为", "1", "3", ""),
+            ("wk", "为", "1", "3", ""),  # already a fly-key variant
+            ("wzxq", "维修", "1", "20", ""),
         ]
         readings = {"为": {"wz"}, "维": {"wz"}, "修": {"xq"}}
         fly = self.tool.build_rows(rows, scheme="flypy", character_syllables=readings)
-        self.assertIn(("ww", "为", "1", "3"), fly)
-        self.assertIn(("wk", "为", "1", "3"), fly)
-        self.assertIn(("wwxq", "维修", "1", "20"), fly)
-        self.assertNotIn(("wzxq", "维修", "1", "20"), fly)
+        self.assertIn(("ww", "为", "1", "3", ""), fly)
+        self.assertIn(("wk", "为", "1", "3", ""), fly)
+        self.assertIn(("wwxq", "维修", "1", "20", ""), fly)
+        self.assertNotIn(("wzxq", "维修", "1", "20", ""), fly)
 
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
         paths = {
@@ -82,17 +127,20 @@ wz\t为\t2\t3
         }
         loaded = {scheme: self.tool.load_rows(path) for scheme, path in paths.items()}
         self.assertEqual({r[1] for r in loaded["zrm"]}, {r[1] for r in loaded["flypy"]})
-        source = self.tool.load_rows(ROOT / "tiger_sentence_native" / "mohu_tiger.lexicon.txt")
-        readings = self.tool.load_character_syllables(ROOT / "mohu_zrm.chars.dict.yaml")
+        chars_dict = ROOT / "mohu_zrm.chars.dict.yaml"
+        frequencies = self.tool.load_reading_frequencies(chars_dict)
+        source = self.tool.load_rows(
+            ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt", frequencies)
+        readings = self.tool.load_character_syllables(chars_dict)
         self.assertEqual(loaded["zrm"], self.tool.build_rows(source, "zrm", readings))
         self.assertEqual(loaded["flypy"], self.tool.build_rows(source, "flypy", readings))
         for rows in loaded.values():
             row_set = set(rows)
-            for code, text, rank, freq in rows:
+            for code, text, rank, freq, reading in rows:
                 if len(code) < 2 * len(text) or not code[: 2 * len(text)].isalpha():
                     continue
                 for variant in self.tool._fly_closure(code, text):
-                    self.assertIn((variant, text, rank, freq), row_set)
+                    self.assertIn((variant, text, rank, freq, reading), row_set)
 
     def test_filters_non_pinyin_auxiliary_codes(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -7,14 +8,18 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class FlatDistributionTest(unittest.TestCase):
-    def build(self, scheme: str, destination: Path) -> None:
+    def build(
+        self, scheme: str, destination: Path, windows_runtime: Path | None = None
+    ) -> None:
+        command = ["uv", "run", "tools/build_flat_dist.py", scheme, str(destination)]
+        if windows_runtime is not None:
+            command.extend(["--windows-runtime", str(windows_runtime)])
         result = subprocess.run(
-            ["uv", "run", "tools/build_flat_dist.py", scheme, str(destination)],
+            command,
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -57,7 +62,118 @@ class FlatDistributionTest(unittest.TestCase):
                 self.assertIn("mohu-sentence-ngram-vN.bin", model_readme.read_text(encoding="utf-8"))
 
                 for path in destination.rglob("*"):
-                    self.assertNotIn("mohu_llm", str(path.relative_to(destination)))
+                    relative = str(path.relative_to(destination))
+                    if relative == f"mohu_llm_{scheme}.schema.yaml":
+                        retired = path.read_text(encoding="utf-8")
+                        self.assertIn('version: "retired"', retired)
+                        self.assertNotIn("  name:", retired)
+                        continue
+                    self.assertNotIn("mohu_llm", relative)
+
+    def test_flat_packages_copy_every_file_from_windows_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime = root / "windows-runtime"
+            runtime.mkdir()
+            expected = {
+                "libtigerengine.dll": b"entry",
+                "lua54.dll": b"lua",
+                "future-library.dll": b"future",
+                "runtime-manifest.json": json.dumps(
+                    {
+                        "entry": "libtigerengine.dll",
+                        "files": [
+                            {"name": "libtigerengine.dll"},
+                            {"name": "lua54.dll"},
+                            {"name": "future-library.dll"},
+                        ],
+                        "preload": ["lua54.dll", "future-library.dll"],
+                    }
+                ).encode(),
+                "runtime-preload.txt": b"lua54.dll\nfuture-library.dll\n",
+            }
+            for name, content in expected.items():
+                (runtime / name).write_bytes(content)
+
+            for scheme in ("zrm", "flypy"):
+                with self.subTest(scheme=scheme):
+                    destination = root / scheme
+                    self.build(scheme, destination, runtime)
+                    packaged_runtime = destination / "mohu" / "runtime"
+                    self.assertEqual(
+                        expected,
+                        {
+                            path.name: path.read_bytes()
+                            for path in packaged_runtime.iterdir()
+                            if path.name in expected
+                        },
+                    )
+
+    def test_windows_runtime_requires_engine_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime = root / "windows-runtime"
+            runtime.mkdir()
+            (runtime / "unrelated.dll").write_bytes(b"not an entry")
+            result = subprocess.run(
+                ["uv", "run", "tools/build_flat_dist.py", "zrm", str(root / "zrm"),
+                 "--windows-runtime", str(runtime)],
+                cwd=ROOT, capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("libtigerengine.dll", result.stderr)
+
+    def test_windows_runtime_requires_complete_closure_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime = root / "windows-runtime"
+            runtime.mkdir()
+            (runtime / "libtigerengine.dll").write_bytes(b"entry")
+            result = subprocess.run(
+                ["uv", "run", "tools/build_flat_dist.py", "zrm", str(root / "zrm"),
+                 "--windows-runtime", str(runtime)],
+                cwd=ROOT, capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("runtime-manifest.json", result.stderr)
+
+    def test_windows_runtime_rejects_malformed_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime = root / "windows-runtime"
+            runtime.mkdir()
+            (runtime / "libtigerengine.dll").write_bytes(b"entry")
+            (runtime / "runtime-manifest.json").write_text("[]\n", encoding="utf-8")
+            (runtime / "runtime-preload.txt").write_text("", encoding="utf-8")
+            result = subprocess.run(
+                ["uv", "run", "tools/build_flat_dist.py", "zrm", str(root / "zrm"),
+                 "--windows-runtime", str(runtime)],
+                cwd=ROOT, capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("runtime-manifest.json", result.stderr)
+
+    def test_windows_runtime_rejects_casefold_duplicate_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime = root / "windows-runtime"
+            runtime.mkdir()
+            for name in ("libtigerengine.dll", "alpha.dll", "ALPHA.DLL"):
+                (runtime / name).write_bytes(b"runtime")
+            if len(list(runtime.glob("*.[dD][lL][lL]"))) != 3:
+                self.skipTest("case-insensitive filesystem cannot create a DLL name collision")
+            (runtime / "runtime-manifest.json").write_text(
+                json.dumps({"entry": "libtigerengine.dll", "files": [
+                    {"name": "libtigerengine.dll"}, {"name": "alpha.dll"}],
+                    "preload": ["alpha.dll"]}), encoding="utf-8")
+            (runtime / "runtime-preload.txt").write_text("alpha.dll\n", encoding="utf-8")
+            result = subprocess.run(
+                ["uv", "run", "tools/build_flat_dist.py", "zrm", str(root / "zrm"),
+                 "--windows-runtime", str(runtime)],
+                cwd=ROOT, capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("runtime-manifest.json", result.stderr)
 
     def test_model_asset_target_stages_versioned_file_under_model(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

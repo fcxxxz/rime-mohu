@@ -1,9 +1,10 @@
 ZRM_DESTDIR ?= $(abspath ./dist-zrm)
 FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
 TIGER_NGRAM ?= tiger_sentence_native/mohu-sentence-ngram-v5.bin
-# Optional Windows engine (libtigerengine.dll); staged by CI from the
-# windows-builder job. Local macOS-only builds may leave it unset.
-TIGER_ENGINE_DLL ?=
+# Optional, complete Windows DLL closure staged by CI. Local macOS-only builds
+# may leave it unset.
+TIGER_WINDOWS_RUNTIME ?=
+WINDOWS_RUNTIME_ARG = $(if $(strip $(TIGER_WINDOWS_RUNTIME)),--windows-runtime "$(TIGER_WINDOWS_RUNTIME)")
 
 quick: classics tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
@@ -138,6 +139,13 @@ tigerengine-user-model:
 		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_user_model_test
 	/tmp/tigerengine_user_model_test
 
+# 读音先验引擎测试：第 5 列（读音条件简频）压制多音字罕用读音拼字
+# （mohuz→万虎）；模型缺失或旧 4 列码表时自动跳过。
+tigerengine-reading-prior:
+	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_reading_prior_test.cc \
+		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_reading_prior_test
+	/tmp/tigerengine_reading_prior_test
+
 tigerengine-context:
 	clang++ -std=c++17 -O2 -I tiger_sentence_native tests/tigerengine_context_test.cc \
 		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_context_test
@@ -161,10 +169,10 @@ tigerengine-bench:
 		$(TIGER_BENCH_ARGS)
 
 dist-zrm: quick mohu_lexicons tigerengine-native
-	uv run tools/build_flat_dist.py zrm "$(ZRM_DESTDIR)"
+	uv run tools/build_flat_dist.py zrm "$(ZRM_DESTDIR)" $(WINDOWS_RUNTIME_ARG)
 
 dist-flypy: quick mohu_lexicons tigerengine-native
-	uv run tools/build_flat_dist.py flypy "$(FLYPY_DESTDIR)"
+	uv run tools/build_flat_dist.py flypy "$(FLYPY_DESTDIR)" $(WINDOWS_RUNTIME_ARG)
 
 model-dist:
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: set TIGER_NGRAM to mohu-sentence-ngram-v5.bin" >&2; exit 1)
@@ -176,6 +184,7 @@ test: dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-safety
 	$(MAKE) tigerengine-lua-safety
 	$(MAKE) tigerengine-user-model
+	$(MAKE) tigerengine-reading-prior
 	$(MAKE) tigerengine-context
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
@@ -183,6 +192,8 @@ test: dist-zrm dist-flypy mohu_lexicons
 	uv run python -m unittest tests.test_tiger_lexicon_fly -v
 	uv run python -m unittest tests.test_mohu_lexicons -v
 	uv run python -m unittest tests.test_flat_distribution -v
+	uv run python -m unittest tests.test_collect_windows_runtime -v
+	uv run python -m unittest tests.test_split_release_workflow -v
 	uv run python -m unittest tests.test_flypy_assets -v
 	uv run python -m unittest tests.test_mohu_migration -v
 	uv run python -m unittest tests.test_tiger_symbol_workflow -v

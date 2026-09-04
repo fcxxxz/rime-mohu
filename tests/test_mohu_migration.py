@@ -1,13 +1,12 @@
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
-
 
 from tools.migrate_moran_to_mohu import apply_migration, plan_migration
 
 
 class MohuMigrationTest(unittest.TestCase):
-    def test_migrated_full_schema_menu_adds_flypy_group(self) -> None:
+    def test_migrated_schema_menu_adds_only_public_flypy_schema(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "default.custom.yaml"
@@ -27,16 +26,57 @@ class MohuMigrationTest(unittest.TestCase):
             expected_order = [
                 "mohu_zrm",
                 "mohu_flypy",
-                "mohu_flypy_fixed",
-                "mohu_flypy_sentence",
-                "mohu_flypy_aux",
                 "tiger",
             ]
             for schema in expected_order:
                 self.assertIn(f"schema: {schema}", migrated)
             positions = [migrated.index(f"schema: {schema}") for schema in expected_order]
             self.assertEqual(positions, sorted(positions))
-            for removed in ("mohu_zrm_fixed", "mohu_zrm_sentence", "mohu_zrm_aux"):
+            for removed in (
+                "mohu_zrm_fixed",
+                "mohu_zrm_sentence",
+                "mohu_zrm_aux",
+                "mohu_flypy_fixed",
+                "mohu_flypy_sentence",
+                "mohu_flypy_aux",
+            ):
+                self.assertNotIn(removed, migrated)
+
+    def test_migration_drops_previously_published_internal_schema_entries(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "default.custom.yaml"
+            source.write_text(
+                "schema_list:\n"
+                "  - schema: moran\n"
+                "  - schema: mohu_zrm_core\n"
+                "  - schema: mohu_zrm_sentence_core\n"
+                "  - schema: mohu_llm_zrm\n"
+                "  - schema: mohu_flypy\n"
+                "  - schema: mohu_flypy_fixed\n"
+                "  - schema: mohu_flypy_fixed_legacy\n"
+                "  - schema: mohu_flypy_sentence_core\n"
+                "  - schema: mohu_flypy_aux\n"
+                "  - schema: mohu_flypy_core\n"
+                "  - schema: mohu_llm_flypy\n",
+                encoding="utf-8",
+            )
+
+            migrated = plan_migration(root).text_edits[source]
+
+            self.assertIn("schema: mohu_zrm", migrated)
+            self.assertIn("schema: mohu_flypy", migrated)
+            for removed in (
+                "mohu_zrm_core",
+                "mohu_zrm_sentence_core",
+                "mohu_llm_zrm",
+                "mohu_flypy_fixed",
+                "mohu_flypy_fixed_legacy",
+                "mohu_flypy_sentence_core",
+                "mohu_flypy_aux",
+                "mohu_flypy_core",
+                "mohu_llm_flypy",
+            ):
                 self.assertNotIn(removed, migrated)
 
     def test_plan_is_read_only_and_maps_old_schemas_to_zrm(self) -> None:

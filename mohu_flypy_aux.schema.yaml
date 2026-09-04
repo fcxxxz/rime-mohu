@@ -6,7 +6,7 @@ schema:
     - 小鹤双拼方案：鹤氏
     - 方案制作：ksqsf
   description: |
-    输入完整一句小鹤双拼后，可用虎码最长主码前两码筛选候选项。
+    输入完整一句小鹤双拼后，可用虎码首个最长主码前两码筛选候选项。
   dependencies:
     - tiger
     - mohu_charset

@@ -48,6 +48,8 @@ local Top = {}
 local native_sentence_types = {
     mohu_zrm = true,
     mohu_flypy = true,
+    mohu_zrm_personal = true,
+    mohu_flypy_personal = true,
 }
 local native_independent_min_length = 5
 
@@ -217,10 +219,13 @@ function Top.flush(env, ctx, include_delay_slot)
     end
     for _, c in ipairs(ctx.native_list) do
         local text_length = utf8.len(c.text) or 0
+        local native_type = c:get_genuine().type
+        local is_personal = native_type == "mohu_zrm_personal" or
+            native_type == "mohu_flypy_personal"
         -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
         if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
             or text_length >= native_independent_min_length
-            or text_length == 2 then
+            or text_length == 2 or is_personal then
             Top.yield_exact(env, c)
         end
     end

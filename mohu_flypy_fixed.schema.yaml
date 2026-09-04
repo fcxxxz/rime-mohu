@@ -6,7 +6,7 @@ schema:
     - 小鹤双拼方案：鹤氏
     - 方案制作：ksqsf
   description: |
-    小鹤双拼配虎码最长主码前两码，采用 NAS 研究简码的码表式输入方式。
+    小鹤双拼配虎码首个最长主码前两码，采用 NAS 研究简码的码表式输入方式。
   dependencies:
     - mohu_flypy_fixed_legacy
     - mohu_charset

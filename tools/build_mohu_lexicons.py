@@ -23,10 +23,13 @@ import zrmify
 
 ROOT = TOOLS.parent
 FLY = {"wz": "wk", "xq": "xo", "qx": "qo"}
-ROW_KEY = tuple[str, str, str, str]
+FLY_INVERSE = {target: source for source, target in FLY.items()}
+ROW_KEY = tuple[str, str, str, str, str]
 
 
-def load_rows(path: Path) -> list[ROW_KEY]:
+def load_rows(path: Path,
+              reading_frequencies: dict[tuple[str, str], int] | None = None
+              ) -> list[ROW_KEY]:
     rows: list[ROW_KEY] = []
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip() or line.startswith("#"):
@@ -36,13 +39,65 @@ def load_rows(path: Path) -> list[ROW_KEY]:
             raise ValueError(f"invalid lexicon row at {path}:{line_no}")
         rank = fields[2] if len(fields) > 2 and fields[2] else "1"
         freq = fields[3] if len(fields) > 3 and fields[3] else "20001"
+        reading = fields[4] if len(fields) > 4 and fields[4] else ""
         try:
             int(rank)
             int(freq)
+            if reading:
+                int(reading)
         except ValueError as exc:
             raise ValueError(f"invalid rank/freq at {path}:{line_no}") from exc
-        rows.append((fields[0], fields[1], rank, freq))
+        if not reading and reading_frequencies is not None:
+            reading = _reading_frequency(fields[0], fields[1], reading_frequencies)
+        rows.append((fields[0], fields[1], rank, freq, reading))
     return rows
+
+
+def _reading_frequency(code: str, text: str,
+                       frequencies: dict[tuple[str, str], int]) -> str:
+    """单字行按 (字, 规范音节) 查读音简频；飞键变体行回溯到原音节。"""
+    if len(text) != 1 or len(code) < 2:
+        return ""
+    syllable = code[:2]
+    canonical = FLY_INVERSE.get(syllable, syllable)
+    value = frequencies.get((text, canonical))
+    if value is None:
+        value = frequencies.get((text, syllable))
+    return "" if value is None else str(value)
+
+
+def load_reading_frequencies(path: Path) -> dict[tuple[str, str], int]:
+    """读单字词典，返回 (单字, 自然码双拼音节) -> 读音条件简频。
+
+    词典权重列与 chars.txt 的读音简频同源（如「万」mo=1 / wj=1201402），
+    同一 (字, 音节) 多辅码行取最大值去重。
+    """
+    result: dict[tuple[str, str], int] = {}
+    in_body = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip() == "...":
+            in_body = True
+            continue
+        if not in_body or not line.strip() or line.startswith("#"):
+            continue
+        fields = line.split("\t")
+        if len(fields) < 2 or not fields[0] or len(fields[0]) != 1:
+            continue
+        weight = fields[2].strip() if len(fields) > 2 else ""
+        value = 0
+        if weight:
+            try:
+                value = int(weight)
+            except ValueError:
+                value = int(float(weight))
+        for token in fields[1].split():
+            syllable = token.split(";", 1)[0][:2]
+            if not _is_natural_syllable(syllable):
+                continue
+            key = (fields[0], syllable)
+            if value > result.get(key, -1):
+                result[key] = value
+    return result
 
 
 def load_character_syllables(path: Path) -> dict[str, set[str]]:
@@ -141,12 +196,12 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
     if scheme not in {"zrm", "flypy"}:
         raise ValueError(f"unsupported scheme: {scheme}")
     output: set[ROW_KEY] = set()
-    for code, text, rank, freq in rows:
+    for code, text, rank, freq, reading in rows:
         base_code = code if scheme == "zrm" else _convert_code(code, text, character_syllables)
-        output.add((base_code, text, rank, freq))
+        output.add((base_code, text, rank, freq, reading))
         for variant in _fly_closure(base_code, text):
-            output.add((variant, text, rank, freq))
-    return sorted(output, key=lambda row: (row[0], int(row[2]), row[1], int(row[3])))
+            output.add((variant, text, rank, freq, reading))
+    return sorted(output, key=lambda row: (row[0], int(row[2]), row[1], int(row[3]), row[4]))
 
 
 def validate_output_path(path: Path, root: Path = ROOT) -> None:
@@ -158,7 +213,8 @@ def validate_output_path(path: Path, root: Path = ROOT) -> None:
 def write_rows(path: Path, rows: list[ROW_KEY], root: Path = ROOT) -> None:
     validate_output_path(path, root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = "# code\ttext\trank\tfreq_rank\n" + "\n".join("\t".join(row) for row in rows) + "\n"
+    text = "# code\ttext\trank\tfreq_rank\treading_freq\n" + \
+        "\n".join("\t".join(row) for row in rows) + "\n"
     path.write_text(text, encoding="utf-8")
 
 
@@ -172,13 +228,17 @@ def main() -> int:
     parser.add_argument("--flypy-output", type=Path,
                         default=ROOT / "tiger_sentence_native/data/flypy/mohu_flypy.lexicon.txt")
     args = parser.parse_args()
-    rows = load_rows(args.source)
+    reading_frequencies = load_reading_frequencies(args.chars_dict)
+    rows = load_rows(args.source, reading_frequencies)
     syllables = load_character_syllables(args.chars_dict)
     zrm_rows = build_rows(rows, "zrm", syllables)
     fly_rows = build_rows(rows, "flypy", syllables)
     write_rows(args.zrm_output, zrm_rows)
     write_rows(args.flypy_output, fly_rows)
+    single = sum(1 for row in rows if len(row[1]) == 1)
+    matched = sum(1 for row in rows if len(row[1]) == 1 and row[4])
     print(f"source rows: {len(rows)}; zrm rows: {len(zrm_rows)}; flypy rows: {len(fly_rows)}")
+    print(f"reading_freq coverage: {matched}/{single} single-char rows")
     return 0
 
 

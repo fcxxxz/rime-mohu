@@ -861,13 +861,23 @@ def render_markdown(report: Mapping[str, object]) -> str:
                 "| 句料 | 句数 | 训练重叠 | 保留 |",
                 "|---|---:|---:|---:|",
             ]
-            for corpus_name, body in sorted(exclusion.get("corpora", {}).items()):
-                if isinstance(body, Mapping):
-                    sentences = int(body.get("sentences", 0))
-                    overlap = int(body.get("training_overlap", 0))
-                    lines.append(
-                        f"| {corpus_name} | {sentences} | {overlap} | {sentences - overlap} |"
-                    )
+            corpora = exclusion.get("corpora", {})
+            if isinstance(corpora, Mapping) and corpora:
+                for corpus_name, body in sorted(corpora.items()):
+                    if isinstance(body, Mapping):
+                        sentences = int(body.get("sentences", 0))
+                        overlap = int(body.get("training_overlap", 0))
+                        lines.append(
+                            f"| {corpus_name} | {sentences} | {overlap} | {sentences - overlap} |"
+                        )
+            else:
+                pool = exclusion.get("sentence_pool", {})
+                if isinstance(pool, Mapping):
+                    lines += [
+                        f"| 已读取候选句 | {int(pool.get('heldout_loaded', 0)) + int(pool.get('plain_loaded', 0))} | {int(pool.get('training_overlap', 0))} | {int(pool.get('kept', 0))} |",
+                        f"| 去重/重复句 | {int(pool.get('duplicate_or_seen', 0))} | — | 0 |",
+                        f"| 训练命中或长度/字符集不合格 | {int(pool.get('training_or_length_rejected', 0))} | — | 0 |",
+                    ]
     run_manifest = report.get("run_manifest")
     if isinstance(run_manifest, Mapping):
         validation = run_manifest.get("validation", {})

@@ -40,6 +40,8 @@ local F = {}
 local native_sentence_types = {
   mohu_zrm = true,
   mohu_flypy = true,
+  mohu_zrm_personal = true,
+  mohu_flypy_personal = true,
 }
 
 local function passthrough(input)

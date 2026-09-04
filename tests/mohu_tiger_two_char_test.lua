@@ -41,6 +41,7 @@ end
 
 -- Memory/DictEntry/ReverseLookup 桩：记录 update_userdict 写入，扫描路径安静跳过。
 local userdb_writes = {}
+local personal_adjusts = {}
 Memory = function()
   return {
     update_userdict = function(_, entry, commits, prefix)
@@ -60,7 +61,8 @@ ReverseLookup = function()
   return {
     lookup = function(_, text)
       return ({ ["杨"] = "yh;ea", ["娇"] = "jc;bt", ["样"] = "yh;eg",
-                ["姣"] = "jc;bt" })[text] or ""
+                ["姣"] = "jc;bt", ["简"] = "jm;ra", ["快"] = "ky;hn",
+                ["符"] = "fu;rj" })[text] or ""
     end,
   }
 end
@@ -98,6 +100,10 @@ local function fresh()
         create = function() return 7 end,
         free = function() end,
         decode = function() return decode_output, 0.1 end,
+        adjust_personal = function(_, code, text, delta)
+          personal_adjusts[#personal_adjusts + 1] = { code = code, text = text, delta = delta }
+          return 1
+        end,
       }
     end
   end
@@ -162,6 +168,63 @@ assert(userdb_writes[1].text == "杨娇" and userdb_writes[1].code == "yh;ea jc;
   "the userdb key must use trailing-space syllabary codes from reverse lookup")
 assert(userdb_writes[1].commits == 1 and userdb_writes[1].prefix == "",
   "automatic learning uses one commit and no new-entry prefix")
+assert(#personal_adjusts == 1 and personal_adjusts[1].code == "yhjc" and
+  personal_adjusts[1].text == "杨娇" and personal_adjusts[1].delta == 1,
+  "native commit must update the native personal edge immediately")
+
+-- Filters may wrap a native candidate in ShadowCandidate before commit.
+-- The genuine native candidate must still be learned, including three-character words.
+userdb_writes = {}
+committed = {
+  type = "mohu_reordered",
+  text = "简快符",
+  preedit = "jmr ky fu",
+  get_genuine = function(self)
+    return { type = "mohu_zrm", text = self.text, preedit = self.preedit }
+  end,
+}
+ctx.composition = {
+  toSegmentation = function()
+    return {
+      get_segments = function()
+        return {
+          { get_selected_candidate = function() return committed end },
+        }
+      end,
+    }
+  end,
+}
+ctx._commit_text = "简快符"
+for _, connection in ipairs(ctx.commit_notifier.connections) do
+  if not connection.disconnected then connection.callback(ctx) end
+end
+assert(#userdb_writes == 1 and userdb_writes[1].text == "简快符" and
+  userdb_writes[1].code == "jm;ra ky;hn fu;rj ",
+  "wrapped native three-character candidates must be learned")
+
+-- A smart/user phrase is already persisted by Rime; it only needs an
+-- immediate native-edge delta and must not be written to userdb twice.
+userdb_writes = {}
+personal_adjusts = {}
+committed = { type = "user_phrase", text = "用户", preedit = "yh jc" }
+ctx.composition = {
+  toSegmentation = function()
+    return {
+      get_segments = function()
+        return {
+          { get_selected_candidate = function() return committed end },
+        }
+      end,
+    }
+  end,
+}
+ctx._commit_text = "用户"
+for _, connection in ipairs(ctx.commit_notifier.connections) do
+  if not connection.disconnected then connection.callback(ctx) end
+end
+assert(#userdb_writes == 0 and #personal_adjusts == 1 and
+  personal_adjusts[1].code == "yhjc" and personal_adjusts[1].text == "用户",
+  "smart user phrases must update native immediately without a duplicate userdb write")
 
 -- 非 native 候选与超长句（音节数超上限）不写库。
 userdb_writes = {}

@@ -99,7 +99,7 @@ function Module.load_four_code_yield_pairs(variant)
     end
     local pathsep = (package.config or '/'):sub(1, 1)
     local file = Module.open_rime_file(
-        'lua' .. pathsep .. 'four_code_yield_pairs_' .. variant .. '.txt',
+        'mohu' .. pathsep .. 'four_code_yield_pairs_' .. variant .. '.txt',
         pathsep
     )
     if not file then

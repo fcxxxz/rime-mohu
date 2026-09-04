@@ -124,6 +124,18 @@ assert(yielded[1].quality == 50, "native candidates must use configured quality"
 assert(yielded[1].preedit == "ab cd ef",
   "native candidates must preserve the segmented preedit")
 
+-- Learned native edges carry an explicit identity so the downstream merger can
+-- keep them visible even when no smart candidate has refreshed yet.
+decode_output = table.concat({
+  "0 0 0 0 1 0",
+  "个人词\tab cd ef\t0\t0\t1\t3:2,6:4\t1",
+  "",
+}, "\n")
+yielded = {}
+native.translator.func("abcdef", segment, env)
+assert(#yielded == 1 and yielded[1].type == "mohu_zrm_personal",
+  "personal native edges must carry a distinct candidate identity")
+
 yielded = {}
 ctx.input = "abcd"
 native.translator.func("abcd", segment, env)

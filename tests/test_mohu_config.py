@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -33,13 +32,23 @@ class MohuConfigTest(unittest.TestCase):
         self.assertTrue((ROOT / "tiger_sentence_native/mohu_runtime.lua").is_file())
         self.assertTrue((ROOT / "tools/build_flat_dist.py").is_file())
 
-    def test_no_removed_qwen_or_installer_files_are_packaged(self) -> None:
+    def test_no_removed_qwen_or_installer_runtime_files_are_packaged(self) -> None:
         for scheme in ("zrm", "flypy"):
             output = ROOT / f"dist-{scheme}"
             if not output.exists():
                 continue
             names = [str(path.relative_to(output)) for path in output.rglob("*")]
-            self.assertFalse(any(re.search(r"qwen|install_mohu|package\.json|mohu_llm", name, re.I) for name in names))
+            retired_name = f"mohu_llm_{scheme}.schema.yaml"
+            runtime_names = [name for name in names if name != retired_name]
+            self.assertFalse(
+                any(
+                    re.search(r"qwen|install_mohu|package\.json|mohu_llm", name, re.I)
+                    for name in runtime_names
+                )
+            )
+            retired = (output / retired_name).read_text(encoding="utf-8")
+            self.assertIn('version: "retired"', retired)
+            self.assertNotIn("  name:", retired)
 
 
 if __name__ == "__main__":

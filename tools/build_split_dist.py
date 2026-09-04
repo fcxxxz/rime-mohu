@@ -8,6 +8,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMES = {"zrm", "flypy"}
 SCHEMA_LINE = re.compile(r"^(\s*)- schema: (\S+)\s*$")
+SCHEMA_NAME_LINE = re.compile(r"^  name:\s")
+
+RETIRED_SCHEMAS = {
+    "zrm": (
+        "mohu_zrm_aux",
+        "mohu_zrm_core",
+        "mohu_zrm_sentence",
+        "mohu_llm_zrm",
+    ),
+    "flypy": (
+        "mohu_flypy_aux",
+        "mohu_flypy_core",
+        "mohu_flypy_sentence",
+        "mohu_llm_flypy",
+    ),
+}
 
 COMMON_ROOT_PATHS = (
     "README.md",
@@ -61,10 +77,12 @@ def recreate_destination(destination: Path) -> None:
 
 
 def copy_runtime_directories(scheme: str, destination: Path) -> None:
-    lua_destination = destination / "lua"
-    copy_path(ROOT / "lua", lua_destination)
+    copy_path(ROOT / "lua", destination / "lua")
+
     other_scheme = "flypy" if scheme == "zrm" else "zrm"
-    (lua_destination / f"four_code_yield_pairs_{other_scheme}.txt").unlink()
+    mohu_destination = destination / "mohu"
+    copy_path(ROOT / "mohu", mohu_destination)
+    (mohu_destination / f"four_code_yield_pairs_{other_scheme}.txt").unlink()
 
     opencc_destination = destination / "opencc"
     opencc_destination.mkdir()
@@ -89,6 +107,34 @@ def write_filtered_default(scheme: str, destination: Path) -> None:
     destination.write_text("".join(output_lines), encoding="utf-8")
 
 
+def remove_schema_name(path: Path) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    path.write_text(
+        "".join(line for line in lines if not SCHEMA_NAME_LINE.match(line)),
+        encoding="utf-8",
+    )
+
+
+def write_retired_schema(path: Path, schema_id: str) -> None:
+    path.write_text(
+        "# Retired Mohu schema ID; kept only to overwrite older releases.\n"
+        "schema:\n"
+        f"  schema_id: {schema_id}\n"
+        '  version: "retired"\n',
+        encoding="utf-8",
+    )
+
+
+def hide_internal_schemas(scheme: str, destination: Path) -> None:
+    public_schema = f"mohu_{scheme}"
+    for path in sorted(destination.glob("*.schema.yaml")):
+        if path.name != f"{public_schema}.schema.yaml":
+            remove_schema_name(path)
+
+    for schema_id in RETIRED_SCHEMAS[scheme]:
+        write_retired_schema(destination / f"{schema_id}.schema.yaml", schema_id)
+
+
 def build_distribution(scheme: str, destination: Path) -> None:
     if scheme not in SCHEMES:
         raise ValueError(f"unsupported scheme: {scheme}")
@@ -101,6 +147,7 @@ def build_distribution(scheme: str, destination: Path) -> None:
             copy_path(source, destination / source.name)
     copy_runtime_directories(scheme, destination)
     write_filtered_default(scheme, destination / "default.yaml")
+    hide_internal_schemas(scheme, destination)
 
 
 def main() -> None:

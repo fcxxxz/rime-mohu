@@ -40,7 +40,7 @@ mdict = {}
 for char in all_chars:
     pys: list[str] = pinyin_table.get(char, [])
     sps = list(map(zrmify, pys))
-    chais: list[tuple[str, str]] = [(code, chai_table.get((char, code), '.')) for code in aux_table[char]]
+    chais: list[tuple[str, str]] = [(code, chai_table.get((char, code), '.')) for code in aux_table[char].codes()]
     mdict[char] = gen_page(char, sps, chais)
 
 writer = MDictWriter(

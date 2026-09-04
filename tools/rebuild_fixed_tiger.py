@@ -29,9 +29,6 @@ from tiger_aux import (  # noqa: E402
     load_auxiliary_tsv,
     load_tiger_codes,
 )
-from tiger_compatibility import (  # noqa: E402
-    build_compatibility_auxiliary_map,
-)
 from zrmify import unzrmify1, zrmify  # noqa: E402
 
 VERSION = "20260816"
@@ -1092,6 +1089,10 @@ def build_full_character_allocation(
     missing = [char for char in tiger_order if char not in auxiliary]
     if missing:
         raise ValueError(f"missing Tiger auxiliary codes: {' '.join(missing[:20])}")
+    # 正常辅码只用首选主码（12 位），镜像主码不再参与简快码分配。
+    primary_auxiliary = {
+        char: [entry.normal] for char, entry in auxiliary.items()
+    }
 
     tiger_chars = set(tiger_order)
     aliases = [
@@ -1102,7 +1103,7 @@ def build_full_character_allocation(
     source_entries = build_source_entries(
         [*tiger_order, *aliases],
         pinyin_table,
-        auxiliary,
+        primary_auxiliary,
         double_pinyin=double_pinyin,
     )
     shortcut_pinyin_table = pinyin_table
@@ -1118,7 +1119,7 @@ def build_full_character_allocation(
     shortcut_source_entries = build_source_entries(
         [*tiger_order, *aliases],
         shortcut_pinyin_table,
-        auxiliary,
+        primary_auxiliary,
         double_pinyin=double_pinyin,
     )
     legacy_entries = (
@@ -1263,7 +1264,7 @@ def render_simplified_reading_audit(
                 "modern" if (char, pinyin) in modern_readings else "compatibility"
             )
             full_codes = list(
-                dict.fromkeys(zrmify(pinyin) + code for code in auxiliary[char])
+                dict.fromkeys(zrmify(pinyin) + code for code in auxiliary[char].codes())
             )
             matching_shortcuts = []
             if classification == "modern":
@@ -1334,7 +1335,13 @@ def main() -> int:
             f"expected {EXPECTED_COMPATIBILITY_CHARACTER_COUNT} compatibility "
             f"characters, got {len(compatibility_order)}"
         )
-    compatibility_auxiliary_codes = build_compatibility_auxiliary_map(tiger_path)
+    # 兼容打法救援：13/14 位兼容码优先取 14（首个四码的 1+4 位），再取 13。
+    auxiliary_records = load_auxiliary_tsv(auxiliary_path)
+    compatibility_auxiliary_codes = {
+        char: entry.compat_codes()
+        for char, entry in auxiliary_records.items()
+        if entry.compat_codes()
+    }
     zrm_fixed_codes = load_fixed_char_code_overrides(
         FIXED_CHAR_CODE_OVERRIDES_PATH,
         "zrm",

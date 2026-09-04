@@ -6,7 +6,7 @@ schema:
     - 自然码发明人：周志农
     - 方案制作：ksqsf
   description: |
-    使用自然码双拼和虎码最长主码前两码、无简快码的纯粹整句输入方案。
+    使用自然码双拼和虎码首个最长主码前两码、无简快码的纯粹整句输入方案。
   dependencies:
     - mohu_zrm_fixed
     - mohu_charset

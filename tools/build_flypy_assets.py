@@ -117,6 +117,7 @@ def keep_primary_auxiliaries(
     for token in code.split(" "):
         if not token:
             continue
+        # 正常辅码与 13/14 位兼容打法都保留，仅滤掉其他来源的别名。
         if ";" in token and token.split(";", 1)[1] not in allowed:
             continue
         result.append(token)
@@ -150,9 +151,12 @@ def convert_dictionary(source_name: str, target_name: str) -> str:
     in_body = False
     primary_auxiliaries = None
     if source_name == "mohu_zrm.chars.dict.yaml":
-        primary_auxiliaries = load_auxiliary_tsv(
-            ROOT / "tools/data/tiger_aux.txt"
-        )
+        primary_auxiliaries = {
+            char: entry.codes()
+            for char, entry in load_auxiliary_tsv(
+                ROOT / "tools/data/tiger_aux.txt"
+            ).items()
+        }
     for raw in text.splitlines(keepends=True):
         if raw.strip() == "...":
             in_body = True

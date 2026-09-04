@@ -2,8 +2,9 @@
 
 > 2026-09-02 词级上下文重排上线时沉淀。面向后续会话与维护者：架构在哪、
 > 机制为什么这样设计、怎么测、坑在哪、下一步是什么。当前数字与完整排名以
-> [频表顺序五方案基准](../reports/2026-09-02-cross-candidate-ordering-frequency-ranked.md)
-> 为准；[实现报告](../reports/2026-09-02-word-order-cross-candidate.md)、
+> [末辅上下文五方案基准（1,000 词）](../reports/2026-09-03-tail-auxiliary-context-benchmark.md)
+> 为准；[频表顺序五方案基准](../reports/2026-09-02-cross-candidate-ordering-frequency-ranked.md)、
+> [实现报告](../reports/2026-09-02-word-order-cross-candidate.md)、
 > [前报](../reports/2026-09-02-cross-candidate-ordering-benchmark.md)和
 > [旧全量审计](../reports/2026-09-02-cross-candidate-ordering-audit.md)保留为历史工程测量。
 
@@ -13,18 +14,31 @@
   引擎对菜单前 N 个 smart 候选按上下文续写分重排。四档输入（纯双拼/
   首辅/末辅/首末辅）全覆盖：纯双拼走本 filter，辅码档走引擎解码左上下文
   （前报附录 A），互不重叠、无双重计分。
-- **默认配置**（两个 llm schema 的 `tiger/` 节）：`word_order_signal: char`
+- **默认配置**（`mohu_zrm` / `mohu_flypy` 两个主方案的 `tiger/` 节）：`word_order_signal: char`
   （字符续写分，万象同型机制）、`word_order: true`、
   `word_order_candidates: 20`、`word_order_rank_penalty: 1.0`。
-- **当前权威指标（频表顺序，1,000 词 / 3,357 case）**：纯双拼在各方案前缀可用子集上，魔虎自然码 2,771/2,949（93.96%）、小鹤 2,774/2,952（93.97%）上屏后第一候选正确；两者修好率约 60.4%，修坏率 1.76%。夜莺修好率 62.03% 略高，但上屏后第一候选为 91.88%，修坏率 4.43%。
+- **当前权威指标（末辅，1,000 词 / 20,000 case）**：每词 20 个目标不在句首的真实前缀，测试句与 V5 消耗的 32,399,500 条训练混合句做规范化精确去重。第一候选判定忽略单字候选。魔虎自然码/小鹤的一位末辅上屏后命中为 96.81%/96.80%，上下文提升 +0.69/+0.71pp，修好率 66.67%/66.91%；两位末辅上屏后为 97.25%/97.11%，提升 +0.84/+0.83pp。
 - **共同前缀敏感性分析（833 词 / 1,641 case）**：魔虎两方案上屏后第一候选均为 1,547/1,641（94.27%），修好 120/194（61.86%），修坏 20/1,447（1.38%）；夜莺为 91.96%、62.70%、4.33%。它消除了各方案前缀成功集合不同造成的子集偏差。
 - **万象 Pro 的口径**：Pro (`amzxyz/rime-wanxiang` 的 `custom/wanxiang_pro`)
   使用自然码双拼与虎码首末辅助码，`context_reorder.lua` 依赖本地自学习 1/2-Gram
   共现库，原生 `contextual_suggestions` 默认关闭。协议一每个模板只提交一次前缀，
   因而没有预热历史时四档均无变化；这不等同于夜莺使用的预训练 grammar 上下文能力。
-- **魔虎 V5 的发布信号**：默认采用字符续写分；当前权威统一样本上，纯双拼修好率约 60.4%，共同前缀子集为 61.86%。词级评分和 MHCTN01 容器保留为实验兼容能力，不进入默认发布包。
+- **魔虎 V5 的发布信号**：默认采用字符续写分；当前统一末辅样本上，一位末辅修好率为自然码 66.67%、小鹤 66.91%，两位末辅为 63.91%、62.33%。词级评分和 MHCTN01 容器保留为实验兼容能力，不进入默认发布包。
 - **分发**：本次使用的 V5 模型文件未改动；需分发更新后的 libtigerengine dylib/dll、Lua filter/桥接与 schema。只复制旧模型不能启用跨候选上下文行为。
-- **当前基准口径（2026-09-02）**：从频表前 30,000 行筛选 1,000 个严格同音目标词，配最多四个真实前缀，共 3,357 case；五方案共享 target/context universe，分别使用自身原生双拼和辅码。全部 case 保留，候选 Top-5 可见性只作诊断；报告同时给出 case 加权、目标词等权、共同前缀子集、辅码补救与 57 组完整排名。零分母记为不适用且不排名。训练集与测试集尚未完成完整去重审计。
+- **宿主重启要求**：动态库句柄按 Rime 宿主进程生命周期复用。迁移/删除旧版
+  `mohu_llm_*` 后，即使旧文件已移到废纸篓，运行中的 Squirrel 仍可能继续使用已映射
+  的旧 `libtigerengine.dylib`；更新运行时文件后必须完全退出并重新启动 Squirrel，
+  必要时用 `lsof -p $(pgrep -x Squirrel)` 核对实际加载路径。
+- **用户调频层**：native 解码默认读取 `mohu/config/user-ngram.snapshot`，按
+  `tiger/user_model_weight`（默认 0.85）将个人上屏三元统计与 V5 概率融合。因而
+  纯模型的首选与实际首选可能不同；排查模型排序时应先将权重设为 `1.0` 或关闭
+  `tiger/user_model`，再比较 native 输出。
+- **个人词融合**：不按输入长度切换候选所有权。smart userdb 是提交事实来源，
+  native 句图同时接收用户造词和静态已学习词；静态命中只更新原词条先验而
+  不复制边。native 候选提交后通过 `adjust_personal` 立即更新内存词边，完整
+  快照负责同步、删除和重启校准。辅助码只作为当前路径证据，提交归一到同一
+  裸双拼 userdb 词条，每次只计一次。
+- **当前基准口径（2026-09-03）**：从频表前 30,000 行筛选 1,000 个严格同音二字目标词，每词 20 个真实非句首前缀，共 20,000 case；五方案共享 target/context universe，分别使用自身原生双拼和末辅编码。只测试一位末辅、两位末辅；魔虎与魔然额外测试两位末辅 `o`、`/`。全部 case 保留，第一候选忽略单字候选，候选 Top-5 可见性只作诊断；报告同时给出 case 加权、目标词等权、共同前缀子集、辅码补救与完整排名。V5 训练混合语料已完成规范化精确句级去重审计。
 - **历史 32,976 条审计**：`2026-09-02-cross-candidate-ordering-audit.md` 保留旧状态表，但其 Moran 动态 `moran.extended` 依赖未完整编译，不能参与当前排名。
 
 ## 2. 架构地图
@@ -33,10 +47,10 @@
 上屏历史 commit_history:latest_text()（与 librime GetPrecedingText 同源）
   │ contextual_order 开 && 含 CJK（字节 \228-\233）才继续，否则零成本直通
   ▼
-lua/mohu_word_order_filter.lua   ← lua_filter，llm schema filters 第 4 位
+lua/mohu_word_order_filter.lua   ← lua_filter，两个主方案 filters 第 4 位
   │   （mohu_reorder_filter 之后、candidate_override 之前：用户显式覆盖
   │    优先于模型重排；yield 是运行时注入的全局，不能提为 upvalue）
-  │ 收集前 N 个「可重排」候选：跳过 punct/pinned/native(mohu_llm_*)/
+  │ 收集前 N 个「可重排」候选：跳过 punct/pinned/native(mohu_zrm/mohu_flypy)/
   │ ⚡️📌 注释前缀/单字；punct/pinned/native/简码构成稳定前缀
   ▼
 tiger_sentence_native/mohu_tiger_sentence.lua 的 acquire_char_scorer /
@@ -81,6 +95,19 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
   反而更差**：裸分自带的频率/流利度成分与名次权重互补，octagram 用裸分
   是有道理的。penalty 平台区 0.95–1.4（0.95→修好 45.7%/修反 1.5%；
   1.4→40.3%/1.0%），无悬崖。
+- **字符级模型不认读音（2026-09-04 修，读音先验）**：≥5 键两字辅码
+  输入的排序由模型接管，但字符三元模型只看字的文本频率——`mohuz`
+  （mo+hu+末辅z）里辅码唯一锁定「虎」、又不存在 mó/mò+hǔ 真实词时，
+  全局高频字「万」（freq_rank 285）凭 mò 读音挤到首选「万虎」，而
+  mò 读音在 chars.txt 里简频=1（几乎只用于复姓万俟）。旧码表
+  `mo 万 4 285` 的 rank/freq_rank 都是**全局字频**，且引擎评分根本
+  不消费 freq_rank（只用于 >3000 名次的生僻字孤立惩罚）、rank 仅
+  平局裁决（kRankPenalty=0.03 压不住 0.93 的分差）。修复：码表加
+  可选第 5 列「读音条件简频」（构建时由 build_mohu_lexicons.py 从
+  chars 词典权重列并入，与 chars.txt 读音简频同源），引擎装载期归一
+  为 log P(读音|字) 先验并入每步路径分（`tiger/reading_prior_weight`，
+  默认 1.0，0 关闭）。贝叶斯上是给 LM 补上 P(码|字) 似然项，与
+  octagram 的 entry_weight+Query 加法融合同构。
 - **词信号的天花板不在语料量而在分词管线**：kn5 用 1.5GB 七源语料重训仅
   13.2→14.9%。根因：jieba 用户词典（mohu_userdict.txt）里「上/海/一/三」
   等单字被灌 4,000,000 级词频，log(上)+log(海)≫log(上海) →「上海/三国/
@@ -95,10 +122,10 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
 - **协议**：每个 case 单独创建 session；先记录无上文四档候选，再尝试提交真实前缀，
   随后记录有上文四档候选。前缀失败仍保留为 `prefix_failed` 并计入全量可用性，
   仅上下文修好/修坏的条件分母排除不可用配对。判定：rank1 文本==gold。
-- **当前可复现资产**：输入构建、隔离运行和聚合分别由
-  `research/lm_sentence_compare/build_cross_candidate_cases.py`、
-  `run_cross_candidate.py`、`cross_candidate.py` 完成；正式产物与逐 shard 哈希写入
-  `/tmp/mohu-cross-candidate-homophone-v1/run-manifest.json`。每个 case 新建 Rime session，
+- **当前可复现资产**：输入构建、训练集重叠审计、隔离运行和聚合分别由
+  `research/lm_sentence_compare/build_tail_aux_cases.py`、
+  `audit_training_overlap.py`、`run_cross_candidate.py`、`cross_candidate.py` 完成；正式产物与逐 shard 哈希写入
+  `/tmp/mohu-tail-benchmark-v1/run-manifest.json`。runner 支持只复用完整校验 shard 的 `--resume`，中断的部分输出会自动重跑。每个 case 新建 Rime session，
   每个方案、条件和 shard 使用独立 user directory，且禁止模型路径解析到 live
   `~/Library/Rime`。
 - **Moran 构建约束**：必须跑完整 isolated workspace `rime_deployer --build`，不能只
@@ -123,8 +150,8 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
    只适用于 word 信号。
 3. **`yield` 不能提为模块级 upvalue**：它是 librime-lua 运行时注入的全局，
    加载期捕获得 nil。
-4. **llm schema 不得出现 "octagram" 字样**：tests/mohu_llm_schema_split_test
-   的子串断言（连注释都会踩）。
+4. **主方案不走 Octagram**：当前 `mohu_zrm` / `mohu_flypy` 直接使用 native
+   Tiger 字符模型；旧 `mohu_llm_*` schema 已从发行方案移除。
 5. **延迟测量**：跨会话基线漂移 ~1.4ms，必须同会话交替配对、取每
    (id,mode) 多次中位数；后台训练进程会污染 p95（Δmax 20ms+ 毛刺）。
 6. **`make test 2>&1 | tail` 会吞退出码**（管道取 tail 的 0）——查
@@ -133,6 +160,12 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
    无关，已在干净提交复现）。
 8. 新 lua_filter 组件本身有逐候选桥接开销（fresh 直通也有 ~+0.1ms p50/
    0.4ms p95）——延迟优化的方向是并入 mohu_reorder_filter，不是优化评分。
+9. **读音先验的回归口径**（2026-09-04）：改动只影响 native 解码的 fresh
+   排序，4 键裸双拼 500 词（频表前 300 + 随机 200）新旧码表 top-1
+   零变化；末辅档同池对比见当期报告。权威五方案 harness 需要
+   sentence-ngram-mobile.bin 与 /tmp 模板（均已不在），重跑前先按
+   `research/lm_sentence_compare/run_cross_candidate.py` 头部注释重备
+   资产。
 
 ## 6. 遗留与后续
 

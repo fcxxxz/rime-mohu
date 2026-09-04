@@ -150,6 +150,15 @@ int main() {
   assert(lua_pcall(state, 2, 0, 0) == LUA_OK);
   expect_valid_decode(state, handle);
 
+  push_method(state, "adjust_personal");
+  lua_pushinteger(state, handle);
+  lua_pushliteral(state, "abcd");
+  lua_pushliteral(state, "个人");
+  assert(lua_pcall(state, 3, 1, 0) == LUA_OK);
+  assert(lua_isinteger(state, -1) && lua_tointeger(state, -1) == 1);
+  lua_settop(state, 0);
+  expect_valid_decode(state, handle);
+
   push_method(state, "set_personal_lexicon");
   lua_pushinteger(state, static_cast<lua_Integer>(1) << 40);
   lua_pushliteral(state, "ab\t个人\t2\n");

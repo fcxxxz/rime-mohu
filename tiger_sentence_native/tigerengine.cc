@@ -4,8 +4,10 @@
 //
 // 模型：TCSKNM01（整表）/ TCSKNM02（分页），mmap 直读，页缓存交给 OS。
 // 码表（外挂 txt，UTF-8，每行）：
-//   code <TAB> text <TAB> rank <TAB> freq_rank
-//   code：小写字母与 /；text：单字；rank：选重档位（1 起）；freq_rank：字频名次（1 起）。
+//   code <TAB> text <TAB> rank <TAB> freq_rank [<TAB> reading_freq]
+//   code：小写字母与 /；text：单字；rank：选重档位（1 起）；freq_rank：字频名次（1 起）；
+//   reading_freq：可选读音条件简频（同字罕用读音≈0），装载期归一为
+//   log P(读音|字) 先验并入路径分（tiger_engine_set_reading_prior_weight）。
 //
 // C ABI：
 //   tiger_engine_create(model, lexicon, beam, all_ranks_always, err, errcap) -> handle(>=0)|-1
@@ -17,7 +19,7 @@
 // tiger_decode 输出协议（out 缓冲，UTF-8）：
 //   行1: truncated early_truncated uses_incomplete prefers_incomplete n_final n_early
 //        consensus_complete consensus_text_bytes consensus_raw_length visible_consensus
-//   之后 n_final + n_early 行: text \t segmented \t score \t confidence \t max_rank \t pathmap
+//   之后 n_final + n_early 行: text \t segmented \t score \t confidence \t max_rank \t pathmap [\t personal]
 //   pathmap：逗号分隔的 "文本字节数:原始码长"，供提前上屏定位边界。
 
 #include <algorithm>
@@ -1019,6 +1021,11 @@ struct LexEntry {
   std::vector<uint32_t> chars;  // 预拆码点
   bool personal = false;
   double personal_boost = 0.0;
+  // 读音先验 log P(该读音|该字)：由码表可选第 5 列（读音条件简频）在
+  // 装载期按 (字, 双拼) 去重归一得出，如「万」mò ≈ log(1/1.2M) 而
+  // wàn ≈ 0。缺列（旧码表、多字词、个人词）保持 0 = 中性。
+  double reading_prior = 0.0;
+  int reading_freq_raw = -1;
 };
 
 struct Lexicon {
@@ -1069,10 +1076,13 @@ struct Lexicon {
       const std::string& text = cols[1];
       int rank = cols.size() > 2 ? parse_int(cols[2], 1) : 1;
       int fr = cols.size() > 3 ? parse_int(cols[3], 20001) : 20001;
+      // 可选第 5 列：读音条件简频（同一字罕用读音接近 0，主读音大）。
+      int reading_freq = cols.size() > 4 ? parse_int(cols[4], -1) : -1;
       if (code.empty() || text.empty()) continue;
       LexEntry e;
       e.text = text;
       e.rank = rank < 1 ? 1 : rank;
+      e.reading_freq_raw = reading_freq < 0 ? -1 : reading_freq;
       for (auto& ch : utf8_split(text)) {
         uint32_t cp;
         size_t n;
@@ -1096,9 +1106,41 @@ struct Lexicon {
       for (size_t l = 1; l < code.size(); ++l)
         proper_prefixes.insert(code.substr(0, l));
     }
+    finalize_reading_priors();
     base_codes = codes;
     base_freq_rank = freq_rank;
     return !codes.empty();
+  }
+
+  // 先验 = log((f+0.5)/(total+0.5))，f 为该 (字, 双拼音节) 的读音简频，
+  // total 为该字全部读音简频之和（同一音节多码形去重取最大，避免重复
+  // 计数）。+0.5 平滑使 f=0 的读音只受有限惩罚、单一读音的字为 0。
+  void finalize_reading_priors() {
+    std::unordered_map<std::string,
+        std::unordered_map<std::string, long long>> per_text;
+    for (const auto& kv : codes) {
+      const std::string syllable = kv.first.substr(0, 2);
+      for (const LexEntry& e : kv.second) {
+        if (e.chars.size() != 1 || e.reading_freq_raw < 0) continue;
+        long long& slot = per_text[e.text][syllable];
+        if (e.reading_freq_raw > slot) slot = e.reading_freq_raw;
+      }
+    }
+    std::unordered_map<std::string, long long> totals;
+    for (const auto& t : per_text) {
+      long long total = 0;
+      for (const auto& s : t.second) total += s.second;
+      totals[t.first] = total;
+    }
+    for (auto& kv : codes) {
+      for (LexEntry& e : kv.second) {
+        if (e.chars.size() != 1 || e.reading_freq_raw < 0) continue;
+        auto it = totals.find(e.text);
+        if (it == totals.end()) continue;
+        e.reading_prior = std::log(((double)e.reading_freq_raw + 0.5) /
+                                   ((double)it->second + 0.5));
+      }
+    }
   }
 
   static bool valid_personal_row(const std::string& code, const std::string& text) {
@@ -1138,13 +1180,23 @@ struct Lexicon {
   // 增量刷新状态：上次成功应用的负载原文与生效个人词键集（code\ttext -> boost）。
   std::string personal_payload;
   std::unordered_map<std::string, double> personal_boosts;
+  std::unordered_map<std::string, int> personal_counts;
 
   struct PersonalRow {
     std::string code;
     std::string text;
     std::string key;
+    int commits;
     double boost;
   };
+
+  static double personal_boost_for_commits(int commits) {
+    if (commits <= 0) return 0.0;
+    const int bounded = std::min(commits, 1000000);
+    // Calibrated against native path gaps: one selection is visible but small;
+    // repeated selections can eventually beat an unrelated segmentation.
+    return std::min(12.0, std::log1p(static_cast<double>(bounded)) * 5.0);
+  }
 
   // 个人词新增后增量登记编码元数据，等价于 rebuild_metadata 对该码的部分效果。
   void note_personal_code(const std::string& code) {
@@ -1163,6 +1215,7 @@ struct Lexicon {
     for (auto& existing : entries) {
       if (existing.text == row.text) {
         existing.personal_boost = row.boost;
+        existing.personal = true;
         return;
       }
     }
@@ -1209,7 +1262,8 @@ struct Lexicon {
       int commits = Lexicon::parse_int(line.substr(b + 1), 0);
       if (commits <= 0 || !valid_personal_row(row.code, row.text)) continue;
       row.key = row.code + "\t" + row.text;
-      row.boost = std::min(3.0, std::log1p(static_cast<double>(commits)) * 0.35);
+      row.commits = commits;
+      row.boost = personal_boost_for_commits(commits);
       if (index.emplace(row.key, parsed.size()).second)
         parsed.push_back(std::move(row));
     }
@@ -1234,6 +1288,7 @@ struct Lexicon {
       for (const auto& row : parsed) {
         auto existing = personal_boosts.find(row.key);
         if (existing != personal_boosts.end()) {
+          personal_counts[row.key] = row.commits;
           if (existing->second != row.boost) {
             auto bucket = codes.find(row.code);
             if (bucket != codes.end()) {
@@ -1251,15 +1306,18 @@ struct Lexicon {
         }
         apply_personal_row(row);
         personal_boosts[row.key] = row.boost;
+        personal_counts[row.key] = row.commits;
         *changed = true;
       }
     } else {
       codes = base_codes;
       freq_rank = base_freq_rank;
       personal_boosts.clear();
+      personal_counts.clear();
       for (const auto& row : parsed) {
         apply_personal_row(row);
         personal_boosts[row.key] = row.boost;
+        personal_counts[row.key] = row.commits;
       }
       rebuild_metadata();
       *changed = true;
@@ -1279,6 +1337,38 @@ struct Lexicon {
     bool changed = false;
     apply_personal_parsed(index, parsed, &changed);
     personal_payload.assign(rows, payload_size);
+    return 1;
+  }
+
+  // Apply one positive commit immediately without scanning the userdb.  The
+  // next full snapshot still reconciles deletions and sync changes.
+  int adjust_personal(const std::string& code, const std::string& text, int delta) {
+    if (delta <= 0 || !valid_personal_row(code, text)) return -1;
+    const std::string key = code + "\t" + text;
+    const int previous = personal_counts.count(key) ? personal_counts[key] : 0;
+    if (previous > 1000000 - delta) return -1;
+    const int commits = previous + delta;
+    PersonalRow row{code, text, key, commits, personal_boost_for_commits(commits)};
+
+    auto applied = personal_boosts.find(key);
+    if (applied == personal_boosts.end()) {
+      apply_personal_row(row);
+    } else {
+      auto bucket = codes.find(code);
+      if (bucket == codes.end()) return -1;
+      bool found = false;
+      for (auto& entry : bucket->second) {
+        if (entry.text == text) {
+          entry.personal_boost = row.boost;
+          found = true;
+          break;
+        }
+      }
+      if (!found) apply_personal_row(row);
+    }
+    personal_boosts[key] = row.boost;
+    personal_counts[key] = commits;
+    personal_payload.clear();
     return 1;
   }
 
@@ -1362,6 +1452,7 @@ struct State {
   const State* previous = nullptr;
   size_t text_length = 0;   // 字节
   size_t raw_length = 0;
+  bool personal = false;
 };
 
 inline bool state_better(const State* l, const State* r) {
@@ -1428,6 +1519,7 @@ struct OutItem {
   double score = 0, confidence = 0;
   int max_rank = 1;
   int edges = 0;
+  bool personal = false;
 };
 
 struct DecodeResult {
@@ -1627,6 +1719,9 @@ struct Engine {
   double blend_alpha = 0.6;  // 主模型权重
   UserNgram user;            // 用户调频层（提交文本的 trigram 计数）
   double user_weight = 0.85; // 静态模型（含 blend 后）权重；>=1 等价关闭用户层
+  // 读音先验权重：把码表第 5 列推导的 log P(读音|字) 加进路径分，
+  // 补上字符级模型「只认字频、不认读音」的盲区（万 mò 类罕用读音）。
+  double reading_prior_weight = 1.0;
   // 跨候选调频：上屏历史尾部的 CJK 字作为解码左上文（字符级 trigram
   // 条件窗口恰为 2 字）。词级上下文（pw2/pw1）不参与播种，维持 <s>。
   bool has_decode_context = false;
@@ -2041,6 +2136,10 @@ struct Engine {
             }
             if (selected_rank == 0 && cand.rank > 1)
               score -= kRankPenalty * log(1.0 + (double)(cand.rank - 1));
+            // 读音先验：字符级 LM 无读音概念，罕用读音的高频字（万 mò）
+            // 会凭全局字频挤到候选前列；先验按贝叶斯项 P(码|字) 惩罚。
+            if (reading_prior_weight != 0.0 && cand.reading_prior != 0.0)
+              score += reading_prior_weight * cand.reading_prior;
             score += cand.personal_boost;
             std::string piece = raw.substr(pos, consumed_end - pos);
             std::string segmented = item->segmented.empty() ? piece
@@ -2060,6 +2159,7 @@ struct Engine {
             s2->previous = item;
             s2->text_length = s2->text.size();
             s2->raw_length = consumed_end;
+            s2->personal = item->personal || cand.personal;
             states[consumed_end]->add(s2);
           }
         }
@@ -2074,6 +2174,7 @@ struct Engine {
     out->confidence = s->mass_score + ending_adjustment;
     out->max_rank = std::max(1, s->max_rank);
     out->edges = s->edges;
+    out->personal = s->personal;
   }
 
   void build_pathmap(State* s, OutItem* out) {
@@ -2473,7 +2574,7 @@ bool serialize(const DecodeResult& r, char* out, int outcap) {
     if (!std::isfinite(it.score) || !std::isfinite(it.confidence)) return false;
     s += it.text; s += '\t'; s += it.segmented; s += '\t';
     snprintf(buf, sizeof(buf), "%.9g\t%.9g\t%d\t", it.score, it.confidence, it.max_rank);
-    s += buf; s += it.pathmap; s += '\n';
+    s += buf; s += it.pathmap; s += '\t'; s += (it.personal ? '1' : '0'); s += '\n';
     return true;
   };
   for (const auto& it : r.items) if (!write_item(it)) return false;
@@ -2620,6 +2721,34 @@ int tiger_engine_set_personal_lexicon(int handle, const char* rows) {
   }
 }
 
+int tiger_engine_adjust_personal(int handle, const char* code, const char* text,
+                                 int commits_delta) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!code || !text) {
+      set_error("personal edge code and text are required");
+      return -1;
+    }
+    const int rc = g_engines[handle]->lex.adjust_personal(code, text, commits_delta);
+    if (rc < 0) {
+      set_error("invalid personal edge delta");
+      return -1;
+    }
+    g_engines[handle]->invalidate_overlay_cache();
+    return rc;
+  } catch (const std::exception&) {
+    set_error("personal edge update failed");
+    return -1;
+  } catch (...) {
+    set_error("personal edge update failed");
+    return -1;
+  }
+}
+
 int tiger_engine_personal_begin(int handle) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
@@ -2722,6 +2851,28 @@ int tiger_engine_set_user_model_weight(int handle, double static_weight) {
     return 1;
   } catch (...) {
     set_error("user model weight update failed");
+    return -1;
+  }
+}
+
+int tiger_engine_set_reading_prior_weight(int handle, double weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(weight >= 0.0 && weight <= 4.0)) {
+      set_error("reading prior weight must be in [0, 4]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->reading_prior_weight == weight) return 0;
+    e->reading_prior_weight = weight;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("reading prior weight update failed");
     return -1;
   }
 }

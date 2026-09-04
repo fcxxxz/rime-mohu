@@ -109,6 +109,11 @@ local engine_config_error_logged = false
 local word_scorer_ready = nil       -- nil=未知 true=词层可用 false=不可用
 local word_scorer_error_logged = false
 
+-- 读音先验默认权重：码表第 5 列（读音条件简频）归一为 log P(读音|字)
+-- 并入路径分，补偿字符级模型不认读音的盲区（如「万」mò 拼「万虎」）。
+-- 0 关闭；旧码表（无第 5 列）任何权重下都保持中性。
+local reading_prior_weight_default = 1.0
+
 local function report_engine_error(message)
   engine_error = message
   if not engine_error_logged then
@@ -139,6 +144,20 @@ local function resolve_runtime_path(value, paths)
     return root .. value:sub(#"mohu" + 1)
   end
   return value
+end
+
+local function preload_windows_runtime(paths, engine_path)
+  local manifest = io.open(paths.runtime .. "/runtime-preload.txt", "r")
+  if not manifest then return end
+  local engine_name = engine_path:match("[^/\\]+$"):lower()
+  for name in manifest:lines() do
+    local lower_name = name:lower()
+    if name ~= "" and not name:find("[/\\]") and lower_name:match("%.dll$") and
+        lower_name ~= engine_name then
+      pcall(package.loadlib, paths.runtime .. "/" .. name, "*")
+    end
+  end
+  manifest:close()
 end
 
 local function configure(env)
@@ -237,14 +256,11 @@ local function ensure_engine(env)
   if engine_error then return nil end
 
   -- The Windows loader does not search the engine DLL's own directory for its
-  -- dependencies.  Preload every runtime-side dependency by absolute path
-  -- first; modules already mapped into the process satisfy imports by name.
-  -- lua54.dll is always required; libwinpthread-1.dll only exists for mingw
-  -- builds that link the pthread runtime dynamically, and its preload is
-  -- silent no-op when the file is absent (fully static builds).
+  -- dependencies.  The build's dependency-closure collector emits a
+  -- dependency-first manifest, so every package-owned DLL is mapped by
+  -- absolute path before loading the engine module itself.
   if lib:sub(-4):lower() == ".dll" then
-    pcall(package.loadlib, paths.runtime .. "/lua54.dll", "*")
-    pcall(package.loadlib, paths.runtime .. "/libwinpthread-1.dll", "*")
+    preload_windows_runtime(paths, lib)
   end
   local load_ok, loader, err = pcall(package.loadlib, lib, "luaopen_tigerengine")
   if not load_ok then
@@ -313,6 +329,16 @@ local function ensure_engine(env)
         status:find("word_scorer=off", 1, true) == nil then
       word_scorer_ready = true
     end
+  end
+  -- 读音先验权重：tiger/reading_prior_weight（0 关闭，默认 1.0）。旧 ABI
+  -- dylib 无该函数时静默保持引擎内建默认；非法值回退默认。
+  local reading_weight = tonumber(conf("reading_prior_weight"))
+  if reading_weight == nil or not finite_number(reading_weight) or
+      reading_weight < 0 or reading_weight > 4 then
+    reading_weight = reading_prior_weight_default
+  end
+  if type(tigerengine.set_reading_prior_weight) == "function" then
+    pcall(tigerengine.set_reading_prior_weight, h, reading_weight)
   end
   engine_handle = h
   engine_signature = signature
@@ -503,11 +529,10 @@ local function commit_could_touch_userdb(ctx)
 end
 
 -- native 候选不是 script 翻译器产出的短语，librime 的 Memorize 认领不了它；
--- 且 >=5 键输入由 express 走不读 userdb 的 smart_static，整句上屏也不学习。
--- 提交时按候选自带的分段码（preedit，每字一段）确定基码与首辅码，再经
--- ReverseLookup 反查每个字的完整音节码（如 yh;ea），拼成 userdb 的键
--- （音节表字符串，与词库词的键同构），经 smart 命名空间的 Memory 写入，
--- 恢复「打过辅码的词，裸双拼也跟得上调频」。
+-- 提交钩子因此同时处理 native 与 smart 多字候选：native 按候选自带的分段码
+-- （preedit，每字一段）确定基码与首辅码，再经 ReverseLookup 反查每个字的
+-- 完整音节码，写入 smart 命名空间；smart 候选则直接归一其 preedit。两条
+-- 路径都通过 adjust_personal 立即更新 native 词边，恢复跨引擎调频一致性。
 local native_memorize_max_syllables = 10  -- 与 smart/max_word_length 对齐
 
 local function native_reverse_lookup(env)
@@ -547,10 +572,7 @@ end
 
 local function memorize_native_candidates(env, ctx)
   local memory = env._mohu_personal_memory
-  if not memory or type(memory.update_userdict) ~= "function" then return end
-  if type(DictEntry) ~= "function" then return end
   local reverse = native_reverse_lookup(env)
-  if not reverse then return end
   local candidate_type = env._tiger_candidate_type
   if not candidate_type then return end
   local composition_ok, composition = pcall(function() return ctx.composition end)
@@ -568,39 +590,70 @@ local function memorize_native_candidates(env, ctx)
         segment:get_selected_candidate()
     end)
     if cand_ok and cand then
-      local type_ok, cand_type = pcall(function() return cand.type end)
-      local preedit_ok, preedit = pcall(function() return cand.preedit end)
-      local text_ok, text = pcall(function() return cand.text end)
-      if type_ok and cand_type == candidate_type and preedit_ok and text_ok and
-        type(text) == "string" and text ~= "" then
+      -- Filters such as candidate_override may expose a ShadowCandidate at
+      -- commit time.  Inspect its genuine candidate so native learning is not
+      -- skipped merely because the display wrapper changed the outer type.
+      local genuine_ok, genuine = pcall(function()
+        return cand.get_genuine and cand:get_genuine() or cand
+      end)
+      if not genuine_ok or genuine == nil then genuine = cand end
+      local type_ok, cand_type = pcall(function() return genuine.type end)
+      local preedit_ok, preedit = pcall(function() return genuine.preedit end)
+      local text_ok, text = pcall(function() return genuine.text end)
+      if type_ok and preedit_ok and text_ok and type(text) == "string" and text ~= "" then
         local chars = utf_chars(text)
         local tokens = {}
         for token in tostring(preedit):gmatch("%S+") do
           tokens[#tokens + 1] = token
         end
-        if #chars == #tokens and #tokens > 1 and
-          #tokens <= native_memorize_max_syllables then
-          local full_codes = {}
-          for index = 1, #chars do
-            local lookup_ok, codes = pcall(reverse.lookup, reverse, chars[index])
-            local full_code = lookup_ok and type(codes) == "string" and
-              pick_full_char_code(codes, tokens[index]) or nil
-            if not full_code then full_codes = nil break end
-            full_codes[index] = full_code
-          end
-          if full_codes then
-            local entry_ok, entry = pcall(DictEntry)
-            if entry_ok and entry then
-              local set_ok = pcall(function()
-                entry.text = text
-                -- userdb 的键是音节表串且每个音节后跟一个空格
-                -- （TranslateCodeToString 的格式，查找侧按此前缀匹配）。
-                entry.custom_code = table.concat(full_codes, " ") .. " "
-              end)
-              if set_ok then
-                pcall(memory.update_userdict, memory, entry, 1, "")
+        if #chars == #tokens and #tokens > 1 and #tokens <= native_memorize_max_syllables then
+          local normalized_code
+          local update_ok = true
+          local is_native_candidate = cand_type == candidate_type or
+            cand_type == candidate_type .. "_personal"
+          if is_native_candidate then
+            if not memory or type(memory.update_userdict) ~= "function" or
+                type(DictEntry) ~= "function" or not reverse then
+              update_ok = false
+            else
+              local full_codes = {}
+              for index = 1, #chars do
+                local lookup_ok, codes = pcall(reverse.lookup, reverse, chars[index])
+                local full_code = lookup_ok and type(codes) == "string" and
+                  pick_full_char_code(codes, tokens[index]) or nil
+                if not full_code then full_codes = nil break end
+                full_codes[index] = full_code
+              end
+              if full_codes then
+                local entry_ok, entry = pcall(DictEntry)
+                local set_ok = entry_ok and entry and pcall(function()
+                  entry.text = text
+                  -- userdb 的键是音节表串且每个音节后跟一个空格。
+                  entry.custom_code = table.concat(full_codes, " ") .. " "
+                end)
+                if set_ok then
+                  local update_result
+                  update_ok, update_result = pcall(
+                    memory.update_userdict, memory, entry, 1, "")
+                  update_ok = update_ok and update_result ~= false
+                  normalized_code = personal_lexicon.normalize_code(
+                    table.concat(full_codes, " "))
+                else
+                  update_ok = false
+                end
+              else
+                update_ok = false
               end
             end
+          elseif cand_type == "phrase" or cand_type == "user_phrase" then
+            normalized_code = personal_lexicon.normalize_code(preedit)
+          else
+            update_ok = false
+          end
+          if update_ok and normalized_code and tigerengine and
+              type(tigerengine.adjust_personal) == "function" then
+            pcall(tigerengine.adjust_personal, engine_handle,
+              normalized_code, text, 1)
           end
         end
       end
@@ -847,7 +900,7 @@ end
 -- 解析 C 输出协议：
 --   首行 flags: truncated early_truncated uses_incomplete prefers_incomplete n_final n_early
 --        consensus_complete consensus_text_bytes consensus_raw_length visible_consensus
---   候选行: text \t segmented \t score \t confidence \t max_rank \t pathmap
+--   候选行: text \t segmented \t score \t confidence \t max_rank \t pathmap [\t personal]
 local function parse_output(out)
   local result = { items = {}, early = {} }
   local first = true
@@ -898,8 +951,12 @@ local function parse_output(out)
       result.visible_consensus = vc == "1"
       first = false
     else
-      local text, segmented, score, conf, max_rank, pathmap =
-        line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+      local text, segmented, score, conf, max_rank, pathmap, personal =
+        line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)\t([01])$")
+      if not text then
+        text, segmented, score, conf, max_rank, pathmap =
+          line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+      end
       if not text or text == "" then return nil, "invalid native candidate line" end
       local score_number = tonumber(score)
       local confidence_number = tonumber(conf)
@@ -920,6 +977,7 @@ local function parse_output(out)
         score = score_number,
         confidence = confidence_number,
         max_rank = rank_number,
+        personal = personal == "1",
         raw_lengths = {},
       }
       for tl, rl in (pathmap or ""):gmatch("(%d+):(%d+)") do
@@ -1299,6 +1357,7 @@ function M.translator.func(input, seg, env)
       if preedit == "" and segment_input ~= "" then preedit = segment_input end
       if text ~= "" then
         local candidate_type = env and env._tiger_candidate_type or "mohu_zrm"
+        if item.personal then candidate_type = candidate_type .. "_personal" end
         local cand = Candidate(candidate_type, seg.start, seg._end, text, "")
         cand.preedit = preedit
         cand.quality = candidate_quality - yielded * 0.001

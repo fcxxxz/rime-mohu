@@ -76,6 +76,20 @@ int main() {
   const std::string& first = baseline[0];
   const std::string& second = baseline[1];
 
+  // Personal lexical edges are updated synchronously and become preferred
+  // after repeated selections, without requiring a full snapshot refresh.
+  for (int i = 0; i < 5; ++i) {
+    if (tiger_engine_adjust_personal(h1, "jmkyfu", "简快符", 1) != 1) {
+      printf("fail: personal edge delta\n");
+      return 1;
+    }
+  }
+  const std::vector<std::string> learned_word = decode_candidates(h1, "jmkyfu");
+  if (learned_word.empty() || learned_word[0] != "简快符") {
+    printf("fail: repeated personal edge deltas must promote the learned word\n");
+    return 1;
+  }
+
   // 反复喂入次选文本 → 用户层应把它推为首选。
   for (int i = 0; i < 150; ++i) {
     if (tiger_engine_update_user_model(h1, second.c_str()) != 1) {

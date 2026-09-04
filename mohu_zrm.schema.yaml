@@ -8,11 +8,10 @@ schema:
   description: |
     基于自然码双拼和 TCSKNM 的魔虎整句输入方案。
   dependencies:
-    - mohu_zrm_core
     - mohu_zrm_fixed
     # 部署只会编译一级依赖的码表，因此 legacy 码表也需直接列出
     - mohu_zrm_fixed_legacy
-    # mohu_zrm_sentence 不再进入方案选单，仅作为 compile-only 垫片保留：
+    # mohu_zrm_sentence_core 在发布包中为无名称的 compile-only 垫片：
     # 本方案引擎均为 lua 翻译器，mohu_zrm.extended 码表与 mohu_zrm 棱镜
     # 依赖该方案的标准翻译器在部署时编译。
     - mohu_zrm_sentence_core
@@ -189,6 +188,9 @@ tiger:
   lexicon: mohu/data/zrm/mohu_zrm.lexicon.txt
   beam: 200
   all_ranks: true
+  # 读音先验权重：码表第 5 列（读音条件简频）→ log P(读音|字) 并入路径
+  # 分，压制多音字罕用读音（如「万」mò）拼出的首选；0 关闭。
+  reading_prior_weight: 1.0
   long_input_length: 5
   initial_quality: 50
   personal_lexicon_namespace: smart

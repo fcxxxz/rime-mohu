@@ -6,7 +6,7 @@
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
 --
--- 0.14.0: 四码普通模式的固顶单字让位改由 lua/four_code_yield_pairs_<方案>.txt
+-- 0.14.0: 四码普通模式的固顶单字让位改由 mohu/four_code_yield_pairs_<方案>.txt
 -- 决定：smart 流中首个表内二字词排到行内所列单字之前，被顶单字仍保次选
 -- （一个读音至多一个词顶字）；其余单字维持固顶。移除静态字频门槛
 -- mohu/four_code_char_yield_rank，成对表缺失时保守降级为所有单字固顶。
@@ -147,7 +147,7 @@ function top.init(env)
 
     env.quick_code_indicator_skip_chars = env.engine.schema.config:get_bool("mohu/quick_code_indicator_skip_chars") or false
 
-    -- 四码固顶单字让位给词：由 lua/four_code_yield_pairs_<方案>.txt 决定
+    -- 四码固顶单字让位给词：由 mohu/four_code_yield_pairs_<方案>.txt 决定
     -- 哪些二字词可以顶到行内所列单字之前；表缺失时所有单字固顶（保守降级）。
     local schema_id = env.engine.schema.schema_id or ""
     env.four_code_yield_variant = schema_id:find("flypy", 1, true) and "flypy" or "zrm"

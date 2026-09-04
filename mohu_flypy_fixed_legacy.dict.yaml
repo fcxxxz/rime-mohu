@@ -605,7 +605,6 @@ import_tables:
 呗	bdd		0
 柏	bde		56086
 百	bdf		962451
-掰	bdh		10932
 伯	bdj		1734
 败	bdo		364055
 摆	bdu		349256
@@ -674,14 +673,13 @@ import_tables:
 般	bji		940949
 伴	bjj		189544
 湴	bjk		518
-班	bjn		459772
+斑	bjn		53974
 昄	bjo		366
 班	bjp		459772
 办	bjs		956075
 阪	bjt		3695
 搬	bju		106566
-斑	bjv		53974
-瓣	bjy		22056
+𨭉	bjv		0
 钣	bjz		127
 病	bka		505956
 炳	bkc		9133
@@ -703,9 +701,7 @@ import_tables:
 遍	bmm		247865
 辩	bmn		83564
 贬	bmo		16755
-辨	bmp		51442
 笾	bmr		102
-辩	bms		83564
 鞭	bmt		64899
 抃	bmu		409
 鳊	bmw		98
@@ -1134,7 +1130,6 @@ import_tables:
 盾	dyx		113909
 钝	dyz		15645
 痘	dza		5797
-兜	dzb		44209
 蚪	dzc		1267
 窦	dze		17985
 斗	dzj		562155
@@ -1234,7 +1229,6 @@ import_tables:
 肪	fhv		8036
 彷	fhw		407
 钫	fhz		44
-樊	fjb		28633
 烦	fjc		350929
 繁	fje		111669
 墦	fjg		410
@@ -1966,7 +1960,6 @@ import_tables:
 踌	izp		11238
 瞅	izq		40255
 筹	izr		54932
-雠	izs		737
 雠	izu		737
 愁	izx		93376
 酬	izy		31980
@@ -3143,7 +3136,6 @@ import_tables:
 罴	piy		531
 铍	piz		219
 爿	pja		1035
-攀	pjb		45399
 蟠	pjc		5464
 攀	pje		45399
 判	pjh		204750
@@ -4285,7 +4277,6 @@ import_tables:
 碡	vzm		167
 骤	vzn		44774
 州	vzo		362849
-粥	vzp		23792
 籀	vzr		468
 诌	vzs		3056
 肘	vzv		19724
@@ -5128,7 +5119,7 @@ import_tables:
 咇	bidh		375
 哔	bidv		1931
 弊	bifh		20759
-弼	bifu		8249
+髀	bifu		548
 愎	bihe		1389
 邲	biht		349
 佖	bijh		368
@@ -5160,23 +5151,19 @@ import_tables:
 秕	bixv		479
 瘢	bjai		558
 癍	bjan		511
-癍	bjav		511
 柈	bjeh		20
 攽	bjhp		364
 绊	bjih		16942
-斑	bjnv		53974
 瓣	bjny		22056
 靽	bjth		299
 扮	bjuh		102939
 扳	bjux		22636
-𨭉	bjvf		0
 蛃	bkcf		272
 屏	bkch		1000
 栟	bkeh		375
 槟	bkew		4489
 邴	bkfm		541
 煸	bmcm		677
-辫	bmin		17059
 弁	bmkl		1461
 萹	bmlm		26
 扁	bmmi		37657
@@ -6382,7 +6369,6 @@ import_tables:
 悝	kvhd		488
 戣	kvhf		481
 夔	kvho		2715
-夔	kvhs		2715
 馗	kvkh		4134
 蒉	kvlc		159
 匮	kvnc		4129
@@ -6625,7 +6611,7 @@ import_tables:
 忞	mbvh		413
 卯	mcbm		5587
 楙	mcei		166
-懋	mcit		1870
+蟊	mcit		667
 茆	mclb		629
 旄	mcle		581
 茅	mcli		37567
@@ -6814,7 +6800,6 @@ import_tables:
 槃	pjir		1340
 泮	pjkh		637
 畔	pjqh		23833
-襻	pjtb		452
 襻	pjte		452
 番	pjtp		199
 扳	pjux		0
@@ -6861,7 +6846,7 @@ import_tables:
 𬇙	pwko		0
 帔	pwrr		2772
 衃	pwta		329
-辔	pwyi		1509
+醅	pwyi		524
 掊	pzui		471
 嗪	qbda		717
 吣	qbdh		121
@@ -8363,7 +8348,6 @@ import_tables:
 驭	yunr		11486
 瑀	yunt		7470
 郁	yunv		156526
-鬻	yupb		575
 彧	yupd		2681
 臾	yupj		4333
 舁	yupl		447
@@ -131249,7 +131233,6 @@ U盘	uyj
 魏	wcxg		120376
 逶	wcxu		1163
 煟	wccv		0
-沩	wcki		0
 魏	wcxa		0
 维族	wczu
 畏罪	wczv
@@ -132713,8 +132696,8 @@ CD机	cdj
 而不去	ebq
 而不是	ebs
 饿不死	ebs
-耳报神	ebu
 而不是	ebu
+耳报神	ebu
 二百五	ebw
 二不休	ebx
 而不用	eby

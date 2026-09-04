@@ -137,8 +137,9 @@ def load_auxiliary() -> dict[str, list[str]]:
         if not raw or raw.startswith("#"):
             continue
         parts = raw.split("\t")
-        if len(parts) != 2 or len(parts[0]) != 1:
+        if len(parts) < 2 or len(parts[0]) != 1:
             raise ValueError(f"invalid auxiliary row at {AUXILIARY}:{number}")
+        # 首列为正常辅码；13/14 位兼容码仅供查阅，构词仍用正常辅码。
         result[parts[0]] = parts[1].split()
     return result
 

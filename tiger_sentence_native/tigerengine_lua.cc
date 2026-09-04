@@ -7,7 +7,7 @@
 //   text 首行: truncated early_truncated uses_incomplete prefers_incomplete n_final n_early
 //              consensus_complete consensus_text_bytes consensus_raw_length visible_consensus
 //   其后每候选: text \t segmented \t score \t confidence \t max_rank \t pathmap
-//   t.status(h), t.last_error(), t.free(h)
+//   t.status(h), t.last_error(), t.free(h), t.adjust_personal(h, code, text, delta)
 #include "lua-5.4.6/src/lua.hpp"
 #include "tigerengine.h"
 
@@ -108,6 +108,30 @@ int l_set_personal_lexicon(lua_State* L) {
   }
   if (rc != 0) return luaL_error(L, "%s", error[0] ? error : "personal lexicon update failed");
   return 0;
+}
+
+int l_adjust_personal(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* code = luaL_checkstring(L, 2);
+  const char* text = luaL_checkstring(L, 3);
+  lua_Integer delta_value = luaL_optinteger(L, 4, 1);
+  luaL_argcheck(L, delta_value >= std::numeric_limits<int>::min() &&
+                       delta_value <= std::numeric_limits<int>::max(),
+                4, "personal edge delta is out of range");
+  char error[512] = {0};
+  int rc;
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_adjust_personal((int)handle_value, code, text,
+                                       (int)delta_value);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "personal edge update failed");
+  lua_pushinteger(L, rc);
+  return 1;
 }
 
 int l_personal_begin(lua_State* L) {
@@ -338,6 +362,24 @@ int l_set_user_model_weight(lua_State* L) {
   return 1;
 }
 
+int l_set_reading_prior_weight(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double weight = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_reading_prior_weight((int)handle_value, weight);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "reading prior weight update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
 int l_user_model_export(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -420,6 +462,7 @@ int luaopen_tigerengine(lua_State* L) {
       {"free", l_free},
       {"decode", l_decode},
       {"set_personal_lexicon", l_set_personal_lexicon},
+      {"adjust_personal", l_adjust_personal},
       {"personal_begin", l_personal_begin},
       {"personal_append", l_personal_append},
       {"personal_commit", l_personal_commit},
@@ -430,6 +473,7 @@ int luaopen_tigerengine(lua_State* L) {
       {"context_word_scores", l_context_word_scores},
       {"context_char_scores", l_context_char_scores},
       {"set_user_model_weight", l_set_user_model_weight},
+      {"set_reading_prior_weight", l_set_reading_prior_weight},
       {"user_model_export", l_user_model_export},
       {"user_model_import", l_user_model_import},
       {"status", l_status},

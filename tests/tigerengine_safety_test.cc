@@ -621,14 +621,18 @@ void expect_final_candidates_include_pathmaps() {
   assert(line_end != nullptr);
   int tabs = 0;
   const char* fifth_tab = nullptr;
+  const char* sixth_tab = nullptr;
   for (const char* cursor = line_start; cursor < line_end; ++cursor) {
     if (*cursor == '\t') {
       ++tabs;
       if (tabs == 5) fifth_tab = cursor;
+      if (tabs == 6) sixth_tab = cursor;
     }
   }
-  assert(tabs == 5 && fifth_tab != nullptr);
+  assert(tabs == 6 && fifth_tab != nullptr && sixth_tab != nullptr);
   assert(fifth_tab + 1 < line_end && fifth_tab[1] != '\t');
+  assert(sixth_tab + 1 < line_end &&
+         (sixth_tab[1] == '0' || sixth_tab[1] == '1'));
   tiger_engine_free(handle);
 }
 
@@ -692,6 +696,23 @@ void expect_personal_overlay_large_payload_is_accepted() {
   }
   assert(large_payload.size() > (1u << 20));
   assert(tiger_engine_set_personal_lexicon(handle, large_payload.c_str()) == 0);
+  tiger_engine_free(handle);
+}
+
+void expect_personal_edge_deltas_are_immediate() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+  char output[8192] = {};
+
+  assert(tiger_engine_adjust_personal(handle, "jmkyfu", "简快符", 1) == 1);
+  assert(tiger_engine_adjust_personal(handle, "jmkyfu", "简快符", 1) == 1);
+  assert(tiger_decode_full(handle, "jmkyfu", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "简快符") != nullptr);
+
   tiger_engine_free(handle);
 }
 
@@ -872,6 +893,10 @@ void expect_null_api_rejected() {
       _exit(1);
     if (tiger_engine_set_personal_lexicon(handle, nullptr) >= 0)
       _exit(1);
+    if (tiger_engine_adjust_personal(handle, nullptr, "个人", 1) >= 0)
+      _exit(1);
+    if (tiger_engine_adjust_personal(handle, "abcd", nullptr, 1) >= 0)
+      _exit(1);
     tiger_engine_free(handle);
     _exit(0);
   }
@@ -902,6 +927,7 @@ int main() {
   expect_final_candidates_include_pathmaps();
   expect_personal_overlay_replacement_and_internal_edges();
   expect_personal_overlay_large_payload_is_accepted();
+  expect_personal_edge_deltas_are_immediate();
   expect_personal_incremental_refresh_paths();
   expect_personal_transaction_paths();
   expect_stale_engine_handles_are_rejected();

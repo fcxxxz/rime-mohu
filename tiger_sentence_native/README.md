@@ -37,8 +37,15 @@
 
 ## 码表格式
 
-每行 `code <TAB> text <TAB> rank <TAB> freq_rank`。
+每行 `code <TAB> text <TAB> rank <TAB> freq_rank [<TAB> reading_freq]`。
 码形含裸双拼（YY）、加辅（YYX）与真实码形（YYX/、YYXX/、YYXXo）。
+`reading_freq` 是可选的读音条件简频（同一字罕用读音≈0、主读音大，
+如「万」mò=1 / wàn=1201402）：引擎装载期按 (字, 音节) 去重归一为
+log P(读音|字) 先验并入路径分，压制字符级模型「只认字频、不认读音」
+拼出的候选（如 mohuz 首选曾是「万虎」）。由
+`tools/build_mohu_lexicons.py` 构建时从 `mohu_zrm.chars.dict.yaml`
+权重列（与 chars.txt 读音简频同源）自动并入，源码表
+`mohu_tiger.lexicon.txt` 保持 4 列不变；缺列时任何权重下均中性。
 再生成：见基准目录 `unfixed_table.json` 的生成脚本（双拼取
 `mohu_zrm.chars.dict.yaml`，虎辅取 `tools/data/tiger_aux.txt`，
 权重取 `tools/data/chars.txt` 简频列）。
@@ -54,9 +61,13 @@
 - `engine_lib` / `model` / `lexicon`：路径覆盖，默认用户目录 `mohu/` 下同名文件
 - `beam`：束宽（默认 200）
 - `all_ranks`：>4 键时全部档位竞争（默认 true）
+- `reading_prior_weight`：读音先验权重（默认 1.0，0 关闭，范围 0–4）。
+  码表第 5 列读音简频 → log P(读音|字) 并入每步路径分，补偿字符级
+  模型不认读音的盲区（万 mò 拼「万虎」排 mohuz 首选）。旧 ABI dylib
+  无 `set_reading_prior_weight` 或旧 4 列码表时自动中性/默认
 - `initial_quality`：原生候选质量（默认 50）。固顶候选为 100，默认 smart 候选为 5
-- `long_input_length`：达到该 canonical raw 输入长度后（Rime 双拼音节之间的空格会先移除），express translator 使用不读 userdb 的 `smart_static`（默认 5）
-- `personal_lexicon_namespace`：个人词 `Memory` 使用的 userdb 命名空间（LLM 方案为 `smart`）
+- `long_input_length`：达到该 canonical raw 输入长度后（Rime 双拼音节之间的空格会先移除），express translator 使用不读 userdb 的 `smart_static`（默认 5）。smart userdb 的多字学习记录通过 native 个人词边快照和提交增量参与长句解码，不依赖按长度切换候选所有权
+- `personal_lexicon_namespace`：个人词 `Memory` 使用的 `smart` userdb 命名空间
 - `personal_lexicon_max_rows`：同步到 native 引擎的个人多字词上限（默认不限制；需要时可显式设回如 4096）
 - `user_model`：用户调频层开关（默认 true）。含中文的上屏文本会喂入
   native 引擎的内存三元计数表，解码时每个 trigram 查询按
@@ -126,11 +137,13 @@
 ## 合并行为
 
 - 自定义、置顶与固顶简快码保持默认魔虎优先级。
-- 原生整句候选排在普通 smart 候选之前；当 smart/用户词库已有候选时，原生只在
-  词库候选文本集合内参与排序，不会用静态码表额外拼出绕过用户词的分词。没有
-  词库候选时才保留原生候选作为降级路径。例外：≥5 字长句与两字候选独立输出。
-  两字终态只可能来自两音节带辅码的输入（用户已显式消歧，如「杨娇」yhe+jcb），
-  排序由模型接管；裸双拼两码词（≤4 键）仍完全交给 smart 保持学习调频权威。
+- native 与 smart 候选在路径层合并：同一跨度、规范码和文本只保留一个逻辑候选，
+  个人词边携带提交先验并可在没有 smart 刷新时独立显示；没有个人边时仍按
+  原有词库文本集合约束 native 降级候选。候选排序不按 5/6/7/8 键切换所有权。
+  辅助码只作为当前路径证据，选中后归一写回同一裸双拼 userdb 词条，每次提交只计一次。
+  模型路径的排序带读音先验（`reading_prior_weight`）：辅码锁定末字后，
+  首字按 log P(读音|字) 惩罚罕用读音，避免「万」mò 这类全局高频字的
+  罕用读音拼字（mohuz→万虎）压过自然读音组合。
 - 一码简词只允许独立输入，不参与多键整句切分；句中每段至少消费双拼两键。
 - 数字键交给默认 `selector` 选候选；分号与快捷键仍由 `mohu_processor` 处理。
 - 动态库、模型、码表或 scorer 加载失败时记录一次错误，并自动保留默认魔虎候选。
@@ -144,10 +157,12 @@
 - 提前上屏功能已移除；scorer 超时、模型不匹配或服务不可用时只回退候选顺序，
   不会改写组合或吞掉输入。
 - 原生引擎句柄按 Rime 进程生命周期复用；修改模型或路径后需要重新加载 Rime。
-- 长句路径只在初始化、提交边界刷新个人词快照；个人多字词可作为 native 句图内部边，静态多字词仍保持完整输入命中语义。短输入继续由带 userdb 的 smart translator 提供个人词和常规调频。
-- 这意味着长句不会完整复制 Rime userdb 的所有学习排序；快照中的提交次数会转成有限 native boost。跨候选调频的完整行为仍由短输入 Rime 路径保留。
-- 神经开关默认关闭；`/model` 菜单动态列出已安装模型。默认选择
-  `qwen35-0.8b`，选择无效或模型缺失时 fail-closed，不自动切换到其他模型。
+- 长句路径在初始化和提交边界刷新个人词快照；快照同时包含用户造词和
+  已有静态词的学习记录。native 候选提交后通过 `adjust_personal` 立即增量更新
+  对应词边，完整快照仍负责同步、删除和重启校准。个人先验单调受限，再与
+  句内上下文分融合。
+- 旧版 `mohu_llm_*` / Qwen 神经重排方案已移除；当前发行包只有
+  `mohu_zrm` 与 `mohu_flypy`，均使用 `mohu/model/` 下的 V5 native 模型。
 
 ## 验证记录（2026-08-26）
 
@@ -156,5 +171,31 @@
 - 延迟：纯双拼 20.2 → 1.8ms/键（直连）/ 2.24ms/键（全链路），真实码形更快
 - 完整流水线探针：`vhrg1` 上屏「中华人民共和国」，`tz2` 上屏「投资」，
   `/date1` 上屏当前日期。
-- Homebrew Mira 当前使用 Lua 5.5，只能验证 ABI 失败后的默认候选降级；原生动态库
-  使用 Squirrel 自带的 Lua 5.4.6 / librime 探针验证
+- Homebrew Mira 当前使用 Lua 5.5，而发行版 `libtigerengine.dylib` 按 Squirrel
+  的 Lua 5.4.6 ABI 构建；Mira 中会出现 `version mismatch: app. needs 504.0,
+  Lua core provides 505.0`，随后 native translator fail-open，表现为模型已存在
+  但首选仍是 smart 词典候选。请在 Squirrel 中验证，或为目标宿主 Lua 版本重新编译
+  `libtigerengine`；替换动态库后需重新部署并重启宿主。
+
+## 故障排查：模型存在但首选未变
+
+以 `ufqyhfmimh` 为例，V5 native 引擎的直接输出首选应为「神情很迷茫」，
+「申请很迷茫」是 smart 词典候选。若 Rime 菜单仍以后者为首：
+
+1. 确认当前方案是 `mohu_zrm`（自然码）或 `mohu_flypy`（小鹤），模型文件位于
+   `~/Library/Rime/mohu/model/`，并且已重新部署。
+2. 查看 Rime 日志中的 `mohu_tiger_sentence`。出现 `luaopen failed`、
+   `version mismatch`、`loadlib failed` 时，native 通道未加载，Rime 会按设计回退
+   到 smart 候选。
+3. 如果 native 已加载但候选仍体现个人历史，检查
+   `mohu/config/user-ngram.snapshot`。默认 `tiger/user_model: true`、
+   `tiger/user_model_weight: 0.85` 会把上屏记录与 V5 模型融合；将权重设为 `1.0`
+   （或暂时设 `user_model: false`）即可验证纯 V5 排序。
+4. 更新或删除旧版 `mohu_llm_*` 文件后，必须完全重启 Squirrel。动态库句柄按进程
+   生命周期保留；即使旧文件已经移到废纸篓，运行中的 Squirrel 仍可能继续映射
+   `.Trash/mohu_llm/runtime/libtigerengine.dylib`。可用 `lsof -p $(pgrep -x Squirrel)`
+   检查实际加载路径，确认只剩当前 `~/Library/Rime/mohu/runtime/libtigerengine.dylib`。
+5. Squirrel 使用 Lua 5.4.6；不要把按 Lua 5.5 编译的 Mira/Homebrew 动态库与当前
+   主方案混用。Mira 中若出现 `version mismatch: app. needs 504.0, Lua core
+   provides 505.0`，属于宿主 ABI 不匹配；请在 Squirrel 中验证，或为目标宿主 Lua
+   版本重新编译 `libtigerengine`。

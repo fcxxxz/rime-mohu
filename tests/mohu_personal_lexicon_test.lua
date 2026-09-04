@@ -36,11 +36,13 @@ function memory:dictiter_lookup(code)
   end }
 end
 local rows = require("mohu_personal_lexicon").collect(memory)
-assert(#rows == 2, #rows)
-assert(rows[1].text == "晴跟打")
-assert(rows[2].text == "比亚迪")
+assert(#rows == 3, #rows)
+assert(rows[1].text == "内置" and rows[1].commits == 99)
+assert(rows[2].text == "晴跟打")
+assert(rows[3].text == "比亚迪")
 local payload, count = require("mohu_personal_lexicon").serialize(rows)
-assert(count == 2)
+assert(count == 3)
+assert(payload:find("neiz\t内置\t99\n", 1, true))
 local large_rows = {}
 for index = 1, 6000 do
   large_rows[index] = { code = "abcd", text = string.rep("甲", 64), commits = index }
@@ -65,7 +67,7 @@ while not scan_done do
   scan_done = module.scan_step(scan_state, 1.0)
 end
 local sliced_payload, sliced_count = module.scan_finish(scan_state)
-assert(sliced_count == 2, sliced_count)
+assert(sliced_count == 3, sliced_count)
 local function sorted_lines(text)
   local lines = {}
   for line in text:gmatch("[^\n]+") do lines[#lines + 1] = line end

@@ -10,6 +10,10 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
                         char* error, int error_capacity);
 /* Replace the personal phrase snapshot. Rows are code<TAB>text<TAB>commits. */
 int tiger_engine_set_personal_lexicon(int handle, const char* rows);
+/* Apply one positive commit delta immediately. Code is normalized bare
+ * double-pinyin; an existing static edge is updated instead of duplicated. */
+int tiger_engine_adjust_personal(int handle, const char* code, const char* text,
+                                 int commits_delta);
 /* Chunked snapshot transaction: begin, append newline-terminated row
  * batches, then commit. Decode keeps the previous snapshot until commit. */
 int tiger_engine_personal_begin(int handle);
@@ -21,6 +25,11 @@ int tiger_engine_personal_abort(int handle);
 int tiger_engine_update_user_model(int handle, const char* text);
 /* static_weight is the static model's share in (0, 1]; 1 disables the layer. */
 int tiger_engine_set_user_model_weight(int handle, double static_weight);
+/* Reading prior weight in [0, 4]: scales the per-entry log P(reading|char)
+ * prior derived from the lexicon's optional 5th column (reading-conditional
+ * frequency). 0 disables, default 1.0. Returns 1 applied, 0 no change,
+ * -1 error. Old lexicons without the column stay neutral at any weight. */
+int tiger_engine_set_reading_prior_weight(int handle, double weight);
 /* Snapshot blob of the user layer; caller owns and must free() the buffer.
  * *size_out receives the byte length (the blob is binary and may contain
  * NUL bytes). Empty model yields ""; NULL on error. */

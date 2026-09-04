@@ -23,9 +23,23 @@ ZRM_SCHEMA_GROUP = (
 
 FLYPY_SCHEMA_GROUP = (
     "mohu_flypy",
+)
+
+REMOVED_SCHEMA_IDS = (
+    "mohu_zrm_fixed",
+    "mohu_zrm_fixed_legacy",
+    "mohu_zrm_sentence",
+    "mohu_zrm_sentence_core",
+    "mohu_zrm_aux",
+    "mohu_zrm_core",
+    "mohu_llm_zrm",
     "mohu_flypy_fixed",
+    "mohu_flypy_fixed_legacy",
     "mohu_flypy_sentence",
+    "mohu_flypy_sentence_core",
     "mohu_flypy_aux",
+    "mohu_flypy_core",
+    "mohu_llm_flypy",
 )
 
 FILE_MAP = {
@@ -71,10 +85,11 @@ def _replace_token(text: str, old: str, new: str) -> str:
 
 
 def _drop_removed_schema_lines(text: str) -> str:
-    # 字词、整句、辅筛方案已从自然码组移除，迁移时直接丢弃这些菜单项。
+    # 字词、整句、辅筛及内部编译方案不再作为可选方案发布。
+    removed = "|".join(re.escape(schema_id) for schema_id in REMOVED_SCHEMA_IDS)
     line = re.compile(
         r"^[ \t]*-[ \t]*(?:\{[ \t]*)?schema:[ \t]*"
-        r"(?:moran|mohu_zrm)_(?:fixed|sentence|aux)"
+        rf"(?:{removed})"
         r"(?:[ \t\r]*\})?[ \t\r]*\n",
         re.MULTILINE,
     )

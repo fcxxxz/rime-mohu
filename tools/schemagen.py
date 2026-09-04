@@ -42,8 +42,10 @@ def read_zrmdb_table(path):
     result = defaultdict(list)
     with open(path, 'r') as f:
         for line in f:
-            [char, auxes] = line.strip().split('\t')
-            result[char] = auxes.split(' ')
+            parts = line.strip().split('\t')
+            # 兼容旧两列与「正常/14/13」多列格式，空列忽略。
+            auxes = ' '.join(part for part in parts[1:] if part)
+            result[parts[0]] = auxes.split(' ')
     return result
 
 

@@ -32,6 +32,27 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
         self.assertNotIn("mohu-llm-flypy", upload)
         self.assertNotIn("qwen", upload.lower())
 
+    def test_workflow_builds_and_packages_windows_runtime_closure(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        for expected in (
+            "windows-runtime:",
+            "runs-on: windows-latest",
+            "msys2/setup-msys2@v2",
+            "mingw-w64-x86_64-toolchain",
+            "shell: msys2 {0}",
+            "lua-5.4.8",
+            "4f18ddae154e793e46eeab727c59ef1c0c0c2b744e7b94219710d76f530629ae",
+            "tools/collect_windows_runtime.py",
+            "runtime-preload.txt",
+            "mohu-windows-runtime-${{ github.run_number }}-${{ github.run_attempt }}",
+            "needs: windows-runtime",
+            "path: windows-runtime",
+            "TIGER_WINDOWS_RUNTIME=windows-runtime",
+            "runtime-manifest.json",
+        ):
+            self.assertIn(expected, workflow)
+        self.assertNotIn("TIGER_ENGINE_DLL", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

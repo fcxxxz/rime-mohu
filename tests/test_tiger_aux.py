@@ -11,10 +11,13 @@ from tempfile import TemporaryDirectory
 
 from tools.modern_readings import load_modern_readings, simplified_reading_weight
 from tools.tiger_aux import (
+    AuxiliaryEntry,
     build_auxiliary_map,
     load_auxiliary_tsv,
     load_tiger_codes,
     select_longest_codes,
+    select_primary_code,
+    to_auxiliary_entry,
     to_prefix2,
     write_auxiliary_tsv,
 )
@@ -94,12 +97,34 @@ class TigerAuxUnitTest(unittest.TestCase):
 
             mapping = build_auxiliary_map(path, ["的", "高", "码", "甲", "𖿲", "𖿳"])
 
-            self.assertEqual(mapping["的"], ["un"])
-            self.assertEqual(mapping["高"], ["gg"])
-            self.assertEqual(mapping["码"], ["mn"])
-            self.assertEqual(mapping["甲"], ["ab", "ad"])
-            self.assertEqual(mapping["𖿲"], ["pe"])
-            self.assertEqual(mapping["𖿳"], ["pp"])
+            self.assertEqual(mapping["的"], AuxiliaryEntry("un", "ud", "ui"))
+            self.assertEqual(mapping["高"], AuxiliaryEntry("gg"))
+            self.assertEqual(mapping["码"], AuxiliaryEntry("mn", "", "mm"))
+            self.assertEqual(mapping["甲"], AuxiliaryEntry("ab", "", "ac"))
+            self.assertEqual(mapping["𖿲"], AuxiliaryEntry("pe"))
+            self.assertEqual(mapping["𖿳"], AuxiliaryEntry("pp", "", "pe"))
+
+    def test_first_four_code_defines_normal_and_compat_positions(self):
+        # 取第一个四码：12 位为正常辅码，14 位兼容打法优先于 13 位；
+        # 镜像码（如 fubb）不再参与辅码计算。
+        primary = select_primary_code(["bfu", "bfub", "fubb"])
+        self.assertEqual(primary, "bfub")
+        entry = to_auxiliary_entry(primary)
+        self.assertEqual(entry, AuxiliaryEntry("bf", "bb", "bu"))
+        self.assertEqual(entry.codes(), ["bf", "bb", "bu"])
+        self.assertEqual(entry.compat_codes(), ["bb", "bu"])
+
+        # 无四码的字退回首个最长码，正常辅码不变。
+        self.assertEqual(select_primary_code(["gg", "mnm"]), "mnm")
+        self.assertEqual(
+            to_auxiliary_entry("mnm"),
+            AuxiliaryEntry("mn", "", "mm"),
+        )
+        # 与正常辅码相同的兼容位去重。
+        self.assertEqual(
+            to_auxiliary_entry("pnnw"),
+            AuxiliaryEntry("pn", "pw"),
+        )
 
     def test_missing_required_character_is_an_error(self):
         with TemporaryDirectory() as directory:
@@ -111,12 +136,24 @@ class TigerAuxUnitTest(unittest.TestCase):
 
     def test_auxiliary_tsv_round_trip(self):
         output = io.StringIO()
-        write_auxiliary_tsv({"甲": ["ab", "ad"], "乙": ["xy"]}, output)
+        write_auxiliary_tsv(
+            {
+                "甲": AuxiliaryEntry("ab", "ad", "ac"),
+                "乙": AuxiliaryEntry("xy"),
+            },
+            output,
+        )
         with TemporaryDirectory() as directory:
             path = Path(directory) / "aux.txt"
             path.write_text(output.getvalue(), encoding="utf-8")
 
-            self.assertEqual(load_auxiliary_tsv(path), {"甲": ["ab", "ad"], "乙": ["xy"]})
+            self.assertEqual(
+                load_auxiliary_tsv(path),
+                {
+                    "甲": AuxiliaryEntry("ab", "ad", "ac"),
+                    "乙": AuxiliaryEntry("xy"),
+                },
+            )
 
 
 class TigerCompatibilityUnitTest(unittest.TestCase):
@@ -173,14 +210,14 @@ class TigerAuxRepositoryTest(unittest.TestCase):
         mapping = build_auxiliary_map(self.root / "tiger.dict.yaml", self.characters)
 
         self.assertTrue(set(self.characters).issubset(mapping))
-        self.assertEqual(mapping["的"], ["un"])
-        self.assertEqual(mapping["高"], ["gg"])
-        self.assertEqual(mapping["码"], ["mn"])
-        self.assertEqual(mapping["儿"], ["pe"])
-        self.assertEqual(mapping["兒"], ["pp"])
-        self.assertEqual(mapping["𖿲"], ["pe"])
-        self.assertEqual(mapping["𖿳"], ["pp"])
-        self.assertEqual(mapping["⺄"], ["ae"])
+        self.assertEqual(mapping["的"], AuxiliaryEntry("un", "ud", "ui"))
+        self.assertEqual(mapping["高"], AuxiliaryEntry("gg"))
+        self.assertEqual(mapping["码"], AuxiliaryEntry("mn", "", "mm"))
+        self.assertEqual(mapping["儿"], AuxiliaryEntry("pe"))
+        self.assertEqual(mapping["兒"], AuxiliaryEntry("pp", "", "pe"))
+        self.assertEqual(mapping["𖿲"], AuxiliaryEntry("pe"))
+        self.assertEqual(mapping["𖿳"], AuxiliaryEntry("pp", "", "pe"))
+        self.assertEqual(mapping["⺄"], AuxiliaryEntry("ae"))
 
     def test_generated_tsv_matches_repository_map(self):
         generated_path = self.root / "tools/data/tiger_aux.txt"
@@ -193,10 +230,10 @@ class TigerAuxRepositoryTest(unittest.TestCase):
     def test_generation_utils_load_the_canonical_auxiliary_table(self):
         from tools import utils
 
-        self.assertEqual(utils.aux_table["的"], ["un"])
-        self.assertEqual(utils.aux_table["码"], ["mn"])
-        self.assertEqual(utils.aux_table["𖿲"], ["pe"])
-        self.assertEqual(utils.aux_table["𖿳"], ["pp"])
+        self.assertEqual(utils.aux_table["的"].normal, "un")
+        self.assertEqual(utils.aux_table["码"].normal, "mn")
+        self.assertEqual(utils.aux_table["𖿲"].normal, "pe")
+        self.assertEqual(utils.aux_table["𖿳"].normal, "pp")
 
     def test_character_dictionary_version_includes_compatibility_targets(self):
         version_inputs = (
@@ -625,15 +662,22 @@ class FixedDictionaryTest(unittest.TestCase):
             ]
             for char, readings in pinyin_table.items()
         }
+        auxiliary_records = load_auxiliary_tsv(
+            self.root / "tools/data/tiger_aux.txt"
+        )
         primary_entries = rebuild_fixed_tiger.build_source_entries(
             visible_order,
             modern_pinyin_table,
-            load_auxiliary_tsv(self.root / "tools/data/tiger_aux.txt"),
+            {char: [entry.normal] for char, entry in auxiliary_records.items()},
         )
         compatibility_entries = rebuild_fixed_tiger.build_source_entries(
             visible_order,
             modern_pinyin_table,
-            build_compatibility_auxiliary_map(self.root / "tiger.dict.yaml"),
+            {
+                char: entry.compat_codes()
+                for char, entry in auxiliary_records.items()
+                if entry.compat_codes()
+            },
         )
         _, _, baseline_rows, _, _ = (
             rebuild_fixed_tiger.build_full_character_allocation(
@@ -670,23 +714,22 @@ class FixedDictionaryTest(unittest.TestCase):
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in before.items()
             },
-            {1500: (0, 0), 3500: (29, 41), 6000: (121, 173), 8105: (244, 330)},
+            {1500: (0, 0), 3500: (29, 41), 6000: (120, 172), 8105: (244, 328)},
         )
         self.assertEqual(
             {
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in after.items()
             },
-            {1500: (0, 0), 3500: (1, 1), 6000: (7, 7), 8105: (9, 10)},
+            {1500: (0, 0), 3500: (1, 1), 6000: (5, 5), 8105: (8, 9)},
         )
-        self.assertEqual(after[8105].codeable_count, 3281)
+        self.assertEqual(after[8105].codeable_count, 3285)
         self.assertEqual(
             [
                 (group.code, "".join(group.characters), "".join(group.unresolved))
                 for group in after[8105].groups
             ],
             [
-                ("bifh", "弊敝祕", "祕"),
                 ("lixf", "厉励", "励"),
                 ("muqg", "牡睦", "睦"),
                 ("qiev", "栖杞桤", "桤"),
@@ -743,11 +786,35 @@ class FixedDictionaryTest(unittest.TestCase):
             (fields[0], fields[1]): fields[2]
             for fields in legacy_rows
         }
-        self.assertEqual(legacy_weights[("莺", "yyln")], "0")
-        self.assertEqual(legacy_weights[("莹", "yyli")], "0")
+        self.assertEqual(legacy_weights[("莺", "yyln")], "25291")
+        self.assertEqual(legacy_weights[("莹", "yyli")], "106488")
         self.assertEqual(legacy_weights[("励", "lixs")], "0")
 
-    def test_flypy_character_build_excludes_natural_compatibility_auxiliaries(self):
+    def test_mirror_codes_collapse_to_single_quick_code(self):
+        legacy_rows = self.dictionary_rows(
+            self.root / "mohu_zrm_tiger_fixed_legacy.dict.yaml"
+        )
+        legacy_pairs = {(fields[0], fields[1]) for fields in legacy_rows}
+        # 多码字只保留第一个四码（12 位）的正常简快码；
+        # 镜像码（弼 fubb → fu）不再生成第二条简快码，bibf/bifu 不再双首选。
+        self.assertIn(("弼", "bibf"), legacy_pairs)
+        self.assertNotIn(("弼", "bifu"), legacy_pairs)
+        self.assertIn(("班", "bjp"), legacy_pairs)
+        self.assertNotIn(("班", "bjnp"), legacy_pairs)
+
+        chars_rows = self.dictionary_rows(self.root / "mohu_zrm.chars.dict.yaml")
+        chars_weights = {
+            (fields[0], fields[1]): fields[2] for fields in chars_rows
+        }
+        self.assertIn(("弼", "bi;bf"), chars_weights)
+        self.assertNotIn(("弼", "bi;fu"), chars_weights)
+        # 兼容打法 14 位优先、13 位其次，低权重不抢正常码首选。
+        self.assertEqual(chars_weights[("弼", "bi;bb")], "0")
+        self.assertEqual(chars_weights[("弼", "bi;bu")], "0")
+        # 婢 的正常辅码是 bu：弼 的 13 位兼容打法排在其后。
+        self.assertEqual(chars_weights[("婢", "bi;bu")], "24051")
+
+    def test_flypy_character_build_keeps_compatibility_plays(self):
         from tools import build_flypy_assets
 
         converted = build_flypy_assets.convert_dictionary(
@@ -759,11 +826,16 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertIn("莺\tyk;lw\t25291", rows)
         self.assertIn("萤\tyk;lw\t13116", rows)
         self.assertIn("莹\tyk;lw\t106488", rows)
-        self.assertNotIn("莺\tyk;lx\t25291", rows)
-        self.assertNotIn("莺\tyk;ln\t25291", rows)
-        self.assertNotIn("萤\tyk;lc\t13116", rows)
-        self.assertNotIn("莹\tyk;ln\t106488", rows)
-        self.assertNotIn("莹\tyk;li\t106488", rows)
+        # 兼容打法（13/14 位）随正常辅码一起保留；
+        # 救援目标字保留全权重，其余字为低权重 0。
+        self.assertIn("莺\tyk;ln\t25291", rows)
+        self.assertIn("莺\tyk;lx\t25291", rows)
+        self.assertIn("萤\tyk;lc\t13116", rows)
+        self.assertIn("莹\tyk;ln\t106488", rows)
+        self.assertIn("莹\tyk;li\t106488", rows)
+        self.assertIn("弼\tbi;bf\t8249", rows)
+        self.assertIn("弼\tbi;bb\t0", rows)
+        self.assertIn("弼\tbi;bu\t0", rows)
 
     def test_simplified_character_dictionary_contains_both_compatibility_positions(self):
         result = subprocess.run(
@@ -1455,8 +1527,8 @@ class FixedDictionaryTest(unittest.TestCase):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
         expected_lengths = {
-            "zrm": {1: 42, 2: 434, 3: 4556, 4: 4090},
-            "flypy": {1: 42, 2: 434, 3: 4556, 4: 3419},
+            "zrm": {1: 42, 2: 434, 3: 4547, 4: 4051},
+            "flypy": {1: 42, 2: 434, 3: 4547, 4: 3412},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1765,10 +1837,10 @@ class TigerDecompositionTest(unittest.TestCase):
                 self.assertIn(full_code, decomposition[char])
 
         auxiliary = load_auxiliary_tsv(self.root / "tools/data/tiger_aux.txt")
-        self.assertEqual(auxiliary["的"], ["un"])
-        self.assertEqual(auxiliary["一"], ["fi"])
-        self.assertEqual(auxiliary["儿"], ["pe"])
-        self.assertEqual(auxiliary["兒"], ["pp"])
+        self.assertEqual(auxiliary["的"], AuxiliaryEntry("un", "ud", "ui"))
+        self.assertEqual(auxiliary["一"], AuxiliaryEntry("fi"))
+        self.assertEqual(auxiliary["儿"], AuxiliaryEntry("pe"))
+        self.assertEqual(auxiliary["兒"], AuxiliaryEntry("pp", "", "pe"))
 
     def test_tiger_equivalent_aliases_have_decomposition_hints(self):
         decomposition = self.load_mapping(self.root / "opencc/mohu_chaifen.txt")
@@ -1791,9 +1863,6 @@ class DictionaryAuxiliaryInvariantTest(unittest.TestCase):
     def setUpClass(cls):
         cls.root = Path(__file__).resolve().parents[1]
         cls.auxiliary = load_auxiliary_tsv(cls.root / "tools/data/tiger_aux.txt")
-        cls.compatibility = build_compatibility_auxiliary_map(
-            cls.root / "tiger.dict.yaml"
-        )
 
     def test_every_explicit_auxiliary_segment_uses_tiger_prefix2(self):
         dictionaries = (
@@ -1825,9 +1894,7 @@ class DictionaryAuxiliaryInvariantTest(unittest.TestCase):
                     if len(parts) != 2 or not parts[0] or not parts[1]:
                         errors.append(f"{filename}:{line_number}: malformed {segment!r}")
                         continue
-                    allowed = list(self.auxiliary.get(char, ()))
-                    if filename == "mohu_zrm.chars.dict.yaml":
-                        allowed.extend(self.compatibility.get(char, ()))
+                    allowed = self.auxiliary[char].codes()
                     if parts[1] not in allowed:
                         errors.append(
                             f"{filename}:{line_number}: {char} uses {parts[1]}, "

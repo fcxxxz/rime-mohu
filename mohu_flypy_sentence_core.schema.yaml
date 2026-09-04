@@ -6,7 +6,7 @@ schema:
     - 小鹤双拼方案：鹤氏
     - 方案制作：ksqsf
   description: |
-    使用小鹤双拼和虎码最长主码前两码、无简快码的纯粹整句输入方案。
+    使用小鹤双拼和虎码首个最长主码前两码、无简快码的纯粹整句输入方案。
   dependencies:
     - mohu_flypy_fixed
     - mohu_charset

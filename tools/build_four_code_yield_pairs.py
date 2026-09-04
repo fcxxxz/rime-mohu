@@ -2,13 +2,20 @@
 """Generate the shipped four-code yield pair tables from dev rank data.
 
 Consumes the dev word-rank table (tools/build_two_char_word_rank.py output)
-plus real collision probes: per scheme, the four-code-only fixed character
-list (``<scheme>_only4_detail.tsv``) and the corresponding smart candidate
-streams (``<scheme>_dump.txt``) produced by the engine probe runs. A word
-displaces a character when it is the first rank-table word in the stream and
-its rank is below 4x the character's Tiger rank.
+plus real collision probes: per scheme, EVERY four-code fixed character entry
+(``<scheme>_four_code_detail.tsv``, both fixed and fixed_legacy allocations)
+and the corresponding smart candidate streams (``<scheme>_dump.txt``)
+produced by the engine probe runs. A word displaces a character when it is
+the first rank-table word in the stream and its rank is below 4x the
+character's Tiger rank.
 
-One table is emitted per scheme family (zrm / flypy), shipped via lua/: every
+Scope is first-principles: any character holding a four-code fixed entry
+competes under the same rule. Owning a shortcut (same reading or not) or
+being polyphonic never narrows the scope — shortcuts only change how the
+character is reached, not who owns the full-code position; the 4x rule
+itself keeps top-frequency characters (说/家/只…) unbeatable.
+
+One table is emitted per scheme family (zrm / flypy), shipped via mohu/: every
 line is a real collision observed in that scheme, so users edit their own
 file without guessing whether a line applies to them. Each line lists a word
 and every character it may precede. Deleting a character restores that
@@ -25,8 +32,8 @@ ROOT = Path(__file__).resolve().parent.parent
 RATIO = 4
 
 SCHEMES = {
-    "zrm": ("自然码（含 mohu_zrm / mohu_zrm）", "lua/four_code_yield_pairs_zrm.txt"),
-    "flypy": ("小鹤（含 mohu_flypy / mohu_flypy）", "lua/four_code_yield_pairs_flypy.txt"),
+    "zrm": ("自然码（含 mohu_zrm / mohu_llm_zrm）", "mohu/four_code_yield_pairs_zrm.txt"),
+    "flypy": ("小鹤（含 mohu_flypy / mohu_llm_flypy）", "mohu/four_code_yield_pairs_flypy.txt"),
 }
 
 
@@ -66,11 +73,17 @@ def load_details(path: Path) -> list[dict[str, str]]:
 
 
 def load_dump(path: Path) -> dict[str, list[str]]:
-    dump: dict[str, list[str]] = {}
+    """Parse rime_candidate_dump rows: C<TAB>code<TAB>index<TAB>text-hex[<TAB>comment-hex]."""
+    streams: dict[str, list[tuple[int, str]]] = defaultdict(list)
     for raw in path.read_text(encoding="utf-8").splitlines():
-        parts = raw.rstrip("\r\n").split("\t")
-        dump[parts[0]] = [value for value in parts[1:] if value]
-    return dump
+        parts = raw.split("\t")
+        if len(parts) >= 4 and parts[0] == "C" and parts[3]:
+            text = bytes.fromhex(parts[3]).decode("utf-8", errors="replace")
+            streams[parts[1]].append((int(parts[2]), text))
+    return {
+        code: [text for _, text in sorted(items)]
+        for code, items in streams.items()
+    }
 
 
 def collect_pairs(ranks: dict[str, int], details: Path, dump: Path) -> set[tuple[str, str]]:
@@ -94,7 +107,7 @@ def main() -> None:
         type=Path,
         default=ROOT / "tools/data/two_char_word_rank.txt",
     )
-    parser.add_argument("--work", type=Path, default=Path("/tmp/mohu-yield"))
+    parser.add_argument("--work", type=Path, default=Path("/tmp/mohu-yield2"))
     args = parser.parse_args()
 
     ranks = load_ranks(args.ranks)
@@ -103,7 +116,7 @@ def main() -> None:
     for scheme, (_, output_name) in SCHEMES.items():
         pairs = collect_pairs(
             ranks,
-            args.work / f"{scheme}_only4_detail.tsv",
+            args.work / f"{scheme}_four_code_detail.tsv",
             args.work / f"{scheme}_dump.txt",
         )
         grouped: dict[str, list[str]] = defaultdict(list)

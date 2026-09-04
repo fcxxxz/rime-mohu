@@ -1236,7 +1236,6 @@ import_tables:
 钟	vsz		439739
 蒙	mgl		290989
 班	bjp		459772
-班	bjn		459772
 康	khx		217905
 损	syu		160063
 借	jij		0
@@ -1597,7 +1596,6 @@ import_tables:
 尺	iec		9
 俗	suj		134099
 辩	bmn		83564
-辩	bms		83564
 咬	ycd		214227
 码	mam		160836
 艘	szi		83282
@@ -2003,7 +2001,6 @@ import_tables:
 耕	gga		21786
 爵	jty		99014
 绳	ugi		70768
-辨	bmp		51442
 溃	kvk		56002
 孝	xnq		95871
 怖	buh		103474
@@ -2117,7 +2114,7 @@ import_tables:
 脾	piv		74235
 诞	djs		44248
 妃	fwb		94415
-斑	bjv		53974
+斑	bjn		53974
 嫂	scb		69851
 颠	dmn		57525
 尉	yuc		30
@@ -2297,7 +2294,6 @@ import_tables:
 玫	mwn		79367
 桓	hre		28953
 攀	pje		45399
-攀	pjb		45399
 撰	vru		13976
 旬	xyn		17475
 蒸	vgl		33714
@@ -2360,7 +2356,6 @@ import_tables:
 诀	jts		56532
 绢	jri		16444
 婉	wjb		80016
-兜	dzb		44209
 涅	npk		16639
 禀	bkz		34572
 驴	lvn		30458
@@ -2631,7 +2626,6 @@ import_tables:
 啼	tid		21533
 虾	xxc		22165
 虾	hac		0
-樊	fjb		28633
 棕	zse		14156
 嫣	yjb		53722
 鞘	uct		1
@@ -2717,7 +2711,6 @@ import_tables:
 肘	vzv		19724
 帜	vir		14102
 粥	vzb		23792
-粥	vzp		23792
 枫	fge		177695
 瞻	vjq		12261
 吭	hhd		213
@@ -2730,7 +2723,6 @@ import_tables:
 倪	nij		32398
 胧	lsv		40688
 峭	qnv		13505
-瓣	bjy		22056
 扒	pau		25334
 锥	vvz		13235
 梗	gge		7980
@@ -3325,7 +3317,6 @@ import_tables:
 淞	ssk		2959
 煦	xuo		7265
 婊	bnb		9991
-掰	bdh		10932
 拄	vuu		6044
 羲	xig		7847
 喙	hvd		2114
@@ -4041,7 +4032,6 @@ import_tables:
 熘	lqc		618
 锕	aaz		144
 雠	izu		737
-雠	izs		737
 赅	gdo		969
 匏	pcm		558
 崤	xnv		508
@@ -4961,6 +4951,7 @@ import_tables:
 𦰡	nol		0
 𧿹	mup		0
 𨐈	gly		0
+𨭉	bjv		0
 𨱇	qqz		0
 𨱏	daz		0
 𨱔	zyz		0
@@ -129189,8 +129180,8 @@ CD机	cdj
 而不去	ebq
 而不是	ebs
 饿不死	ebs
-耳报神	ebu
 而不是	ebu
+耳报神	ebu
 二百五	ebw
 二不休	ebx
 而不用	eby

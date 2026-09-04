@@ -94,36 +94,41 @@ Run: `make tigerengine-safety && lua tests/mohu_tiger_two_char_test.lua`
 
 Expected: both commands exit zero.
 
-### Task 3: Unify candidate-path scoring and remove list ownership branches
+### Task 3: Preserve personal path identity in candidate merging
 
 **Files:**
-- Modify: `tests/mohu_reorder_filter_lexicon_test.lua`
+- Modify: `tests/mohu_tiger_sentence_native_test.lua`
+- Modify: `tests/tigerengine_safety_test.cc`
+- Modify: `tiger_sentence_native/tigerengine.cc`
+- Modify: `tiger_sentence_native/mohu_tiger_sentence.lua`
 - Modify: `lua/mohu_reorder_filter.lua`
 - Modify: `lua/mohu_word_order_filter.lua`
 
 - [ ] **Step 1: Write the failing path-identity tests**
 
-Require same text/code/span candidates from native and smart to remain one logical
-candidate, while different spans (a partial word versus a complete word) remain
-distinct paths. Require current auxiliary matches to keep their path evidence.
+Mark native paths containing at least one personal lexical edge in the ABI output and
+require Lua to preserve a distinct personal candidate identity. Different spans (a
+partial word versus a complete word) remain distinct paths; no key-length branch is
+introduced.
 
 ```lua
-local native = candidate("mohu_zrm", "简快符", "jmr ky fu")
-local smart = candidate("user_phrase", "简快符", "jm ky fu")
-assert(filter.logical_key(native) == filter.logical_key(smart))
+decode_output = "0 0 0 0 1 0\n个人词\tab cd ef\t0\t0\t1\t3:2,6:4\t1\n"
+native.translator.func("abcdef", segment, env)
+assert(yielded[1].type == "mohu_zrm_personal")
 ```
 
 - [ ] **Step 2: Verify the ownership test fails**
 
 Run: `lua tests/mohu_reorder_filter_lexicon_test.lua`
 
-Expected: FAIL because the filter has no shared logical-path key.
+Expected: FAIL because the native ABI and Lua parser have no personal-path flag.
 
-- [ ] **Step 3: Add logical-path identity and merge**
+- [ ] **Step 3: Add personal path metadata and merge behavior**
 
-Normalize genuine candidate span, text, and code-bearing preedit. Merge duplicate
-smart/native representations into one logical path before ordering; retain the
-strongest lexical/user metadata and current auxiliary evidence.
+Propagate `State.personal` through native edges, serialize an optional personal flag,
+parse old and new ABI rows, and emit `mohu_<scheme>_personal`. Let the reorder filter
+keep personal native edges visible even when no smart candidate has refreshed yet;
+the later uniquifier removes duplicate text without dropping the personal edge.
 
 - [ ] **Step 4: Apply one score policy**
 
@@ -135,8 +140,8 @@ branch on six/seven/eight-key length.
 
 Run: `lua tests/mohu_reorder_filter_lexicon_test.lua`
 
-Expected: duplicate paths collapse, partial paths remain distinct, and existing
-native-only/long-sentence/auxiliary cases remain unchanged.
+Expected: personal native edges stay visible, partial paths remain distinct, and
+existing native-only/long-sentence/auxiliary cases remain unchanged.
 
 ### Task 4: Preserve native commit learning through wrappers
 
@@ -171,7 +176,10 @@ Expected: all three suites pass.
 
 - [ ] **Step 1: Document ownership and learning semantics**
 
-Document that complete learned two-/three-character bare word paths preserve smart/userdb order, auxiliary selection increments the normalized base userdb entry once, and native sentence snapshots include learned static entries without duplicating static edges.
+Document that smart/userdb supplies durable lexical facts, native sentence paths
+consume learned static and user-created edges, auxiliary selection increments the
+normalized base userdb entry once, and native personal edges update immediately
+without duplicating static edges.
 
 - [ ] **Step 2: Run focused verification**
 

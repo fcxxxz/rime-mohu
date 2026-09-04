@@ -59,9 +59,9 @@ userdb rows:
 
 - static entries with learned commit counts;
 - user-created entries not present in the static dictionary;
-- normalized bare double-pinyin codes and positive commit counts;
-- whether the row matches a static edge, so matching edges are updated rather than
-  duplicated.
+- normalized bare double-pinyin codes and positive commit counts. Native determines
+  whether the row matches a static edge from its loaded lexicon, so matching edges
+  are updated rather than duplicated.
 
 If a user row matches a static edge, the edge is retained and its learned prior is
 updated; no duplicate edge is created. If it is not static, a personal lexical edge
@@ -71,10 +71,11 @@ one logical path before ordering.
 
 ## Scoring
 
-Every native edge has three independent contributions:
+Every native edge has four independent contributions:
 
 ```text
-edge_score = native_context_score
+edge_score = static_lexical_prior
+           + native_context_score
            + learned_prior(commit_count)
            + current_auxiliary_bonus
 ```
@@ -100,7 +101,7 @@ Rime Memory (all active multi-character rows)
         |
         | idle/commit-boundary snapshot, <=5 ms slices
         v
-Lua normalized rows: bare code, text, commits, origin (static/user-created)
+Lua normalized rows: bare code, text, commits
         |
         +--> smart: lexical/user-history facts and normal learning
         |
@@ -152,7 +153,7 @@ composition.
 
 The implementation must add or update focused tests for:
 
-1. static learned rows are exported to the native snapshot with their origin;
+1. static learned rows are exported to the native snapshot with positive counts;
 2. user-created rows remain available as native sentence edges;
 3. commit counts produce monotonic personal ranking;
 4. auxiliary matches receive current-input priority without extra persisted count;

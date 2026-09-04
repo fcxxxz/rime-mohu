@@ -298,7 +298,7 @@ do
   filter.init(env)
   local input = {
     candidate("pinned", "固顶词"),
-    candidate("mohu_llm_zrm", "原生候选"),
+    candidate("mohu_zrm", "原生候选"),
     candidate("sentence", "字"),
     candidate("table", "简码词", "⚡️标记"),
     candidate("table", "中心"),

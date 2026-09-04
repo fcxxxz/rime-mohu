@@ -16,7 +16,7 @@ local context = {
   properties = {
   },
   options = {
-    mohu_llm_model_rerank = false,
+    mohu_model_rerank = false,
   },
 }
 local selected_segment = {

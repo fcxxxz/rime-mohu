@@ -5,7 +5,7 @@ package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 
 local root = "/tmp/mohu-tiger-user-model-test"
 os.execute("rm -rf " .. root)
-os.execute("mkdir -p " .. root .. "/mohu_llm/config")
+os.execute("mkdir -p " .. root .. "/mohu/config")
 
 rime_api = { get_user_data_dir = function() return root end }
 log = { error = function() end }
@@ -113,8 +113,8 @@ end
 
 -- 1. 全量 ABI：装载导入旧快照、按权重设置、上屏喂入、间隔快照、fini 兜底。
 do
-  -- paths.root 指向 <用户目录>/mohu_llm，默认快照落在 mohu_llm/config/ 下。
-  local snapshot_path = root .. "/mohu_llm/config/user-ngram.snapshot"
+  -- paths.root 指向 <用户目录>/mohu，默认快照落在 mohu/config/ 下。
+  local snapshot_path = root .. "/mohu/config/user-ngram.snapshot"
   local seed = io.open(snapshot_path, "wb")
   assert(seed, "test root must be writable")
   seed:write("PREVIOUS-BLOB")

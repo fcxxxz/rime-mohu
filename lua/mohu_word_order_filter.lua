@@ -27,7 +27,7 @@
 -- tiger/word_order_candidates（默认 20）、tiger/word_order_rank_penalty
 -- （默认 1.0，离线网格：0.95 时修好 45.7%/修反 1.5%，1.4 时 40.3%/1.0%）。
 --
--- 挂接：mohu_llm_*.schema.yaml filters 列表，mohu_reorder_filter 之后、
+-- 挂接：mohu_*.schema.yaml filters 列表，mohu_reorder_filter 之后、
 -- candidate_override 之前（用户显式覆盖优先于模型重排）。
 
 local ok_tiger, tiger = pcall(require, "mohu_sentence")
@@ -38,8 +38,8 @@ local F = {}
 -- upvalue（会捕获 nil）；保持函数内直接引用（与 mohu_reorder_filter 一致）。
 
 local native_sentence_types = {
-  mohu_llm_zrm = true,
-  mohu_llm_flypy = true,
+  mohu_zrm = true,
+  mohu_flypy = true,
 }
 
 local function passthrough(input)

@@ -5,11 +5,11 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOL = ROOT / "tools" / "build_mohu_llm_lexicons.py"
+TOOL = ROOT / "tools" / "build_mohu_lexicons.py"
 
 
 def load_tool():
-    spec = importlib.util.spec_from_file_location("build_mohu_llm_lexicons", TOOL)
+    spec = importlib.util.spec_from_file_location("build_mohu_lexicons", TOOL)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -77,7 +77,7 @@ wz\t为\t2\t3
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
         paths = {
             scheme: ROOT / "tiger_sentence_native" / "data" / scheme
-            / f"mohu_llm_{scheme}.lexicon.txt"
+            / f"mohu_{scheme}.lexicon.txt"
             for scheme in ("zrm", "flypy")
         }
         loaded = {scheme: self.tool.load_rows(path) for scheme, path in paths.items()}
@@ -118,9 +118,9 @@ wz\t为\t2\t3
 
     def test_makefile_exposes_lexicon_generation_and_runs_its_test(self):
         makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
-        self.assertIn("mohu_llm_lexicons:", makefile)
-        self.assertIn("tools/build_mohu_llm_lexicons.py", makefile)
-        self.assertIn("tests.test_mohu_llm_lexicons", makefile)
+        self.assertIn("mohu_lexicons:", makefile)
+        self.assertIn("tools/build_mohu_lexicons.py", makefile)
+        self.assertIn("tests.test_mohu_lexicons", makefile)
 
 
 if __name__ == "__main__":

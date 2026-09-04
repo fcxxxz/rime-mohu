@@ -1,10 +1,10 @@
-# 魔虎大模型整句引擎（mohu_llm）
+# 魔虎整句引擎
 
 魔虎自然码完整输入流水线 + 虎码辅助码的原生整句输入。语言模型与解码在
-纯 C 动态库中执行，原生 Lua 层只负责候选输出与可选神经重排，不主动改写或提交组合；
+纯 C 动态库中执行，原生 Lua 层只负责候选输出，不主动改写或提交组合；
 符号、反查、简快码、候选管理、加词和过滤器沿用默认魔虎组件。原生解码
 架构与 TigerClaw 虎整句（Rime Lua 版）等价，模型直接复用其 TCSKNM 三元模型。
-这是独立的魔虎大模型 addon，不属于标准 Mohu 方案包，也不启用 Octagram。
+这是魔虎方案的原生整句组件，不启用 Octagram。
 
 ## 文件
 
@@ -14,67 +14,26 @@
 - `mohu_sentence.lua` — 对外的 Mohu 整句 translator 入口
 - `mohu_tiger_sentence.lua` — 兼容实现文件；旧部署仍可通过该文件加载
 - `../lua/mohu_personal_lexicon.lua` — 个人多字词快照模块
-- `mohu_llm_zrm.schema.yaml` / `mohu_llm_flypy.schema.yaml` — 自然码与小鹤完整方案
+- `mohu_zrm.schema.yaml` / `mohu_flypy.schema.yaml` — 自然码与小鹤完整方案
 
-## 安装与模型选择
+## 安装与模型
 
-这是独立的魔虎自定义候选模型 addon。完整方案包按输入法分别提供：
+完整方案包按输入法分别提供：
 
-- `mohu-llm-zrm-latest.zip`：魔虎大模型·自然码，只安装自然码方案；
-- `mohu-llm-flypy-latest.zip`：魔虎大模型·小鹤，只安装小鹤方案。
+- `rime-mohu-zrm-latest.zip`：自然码；
+- `rime-mohu-flypy-latest.zip`：小鹤。
 
-如果只使用自然码，下载并解压 `mohu-llm-zrm-latest.zip`，双击其中的
-`install_mohu_llm_zrm.command`，然后在 Squirrel 菜单执行“重新部署”。安装器只注册
-`mohu_llm_zrm`，保留已有用户词库和用户配置，重复运行安全。
+解压对应 zip 到 Rime 用户目录，然后执行一次“重新部署”。
 
-Windows（小狼毫）：解压同一 zip，右键 `install_mohu_llm_windows.ps1` 选择
-“使用 PowerShell 运行”，然后在小狼毫中“重新部署”。Windows 版内置
-`runtime/libtigerengine.dll` 与 `lua54.dll`，仅提供原生 v5 候选，不含 Qwen 重排；
-引擎加载失败时方案自动回退普通魔虎候选。
+`mohu-sentence-ngram-v5.bin` 是原生整句候选模型。放到
+`~/Library/Rime/mohu/model/`，文件名遵循 `mohu-sentence-ngram-vN.bin`；运行时会按数字版本自动选择最高版本。模型缺失或加载失败时回退普通候选。
 
-`data/sentence-ngram-mobile.bin` 是原生整句候选模型（魔虎自定义 v5，TCSKNM02 字符级）。官方包由 CI 从 Release 资产 `mohu-sentence-ngram-v5.bin` 校验 SHA-256 后打包；本地构建可用 `TIGER_NGRAM` 覆盖。它与可选的 Qwen 神经重排模型是两层不同组件：Qwen 不随 zip 分发，也不替换包内的原生模型。Qwen3 0.6B 4-bit 下载后放到
-`~/Library/Rime/mohu_llm/models/Qwen3-0.6B-4bit`，再在输入法中输入 `/model` 选择
-`Qwen3-0.6B-4bit`，或运行：
-
-    ~/Library/Rime/mohu_llm/runtime/switch_qwen_model.command qwen3-0.6b
-
-切换脚本会按 manifest 校验模型指纹。切换后重新部署 Squirrel 以加载 profile；如果
-模型不存在、指纹不匹配或神经服务不可用，输入法会继续使用原生魔虎候选。原生模型
-始终由包内的 `data/sentence-ngram-mobile.bin` 提供，`/model` 只选择神经重排器。
-
-
-需要 Lua 5.4 头文件（Squirrel 的 librime-lua 为 5.4.6，ABI 一致）：
+本地开发需要 Lua 5.4 头文件（Squirrel 的 librime-lua 为 5.4.6）：
 
     curl -sL -o lua546.tar.gz https://www.lua.org/ftp/lua-5.4.6.tar.gz
     tar xzf lua546.tar.gz
     zsh build.sh
 
-部署（用户目录）：
-
-    # 使用独立 addon；标准方案包仍由 make dist 生成。
-    make mohu-llm-zrm-dist MOHU_LLM_ZRM_DESTDIR=/tmp/mohu-llm-zrm \
-      TIGER_NGRAM=/path/to/sentence-ngram-mobile.bin
-
-发布包的普通用户不需要执行上面的构建命令：从 GitHub Release 下载
-`mohu-llm-zrm-latest.zip` 或 `mohu-llm-flypy-latest.zip` 后，双击对应的
-`install_mohu_llm_*.command` 即可安装。
-安装器会把文件复制到 `~/Library/Rime/mohu_llm/`，只注册所选方案并重新加载
-Squirrel；它会合并 `default.custom.yaml`，不会覆盖已有配置，重复运行也是安全的。
-
-Qwen 模型重排还需要 Python 3 和 `mlx-lm==0.31.3`。安装器会自动检查 `mlx_lm`；
-如果本机没有，会明确提示执行 `uv pip install mlx-lm==0.31.3`，输入法仍保留
-n-gram 候选，不会假报模型服务已启动。
-
-自然码包需要 `data/zrm/mohu_llm_zrm.lexicon.txt`，小鹤包需要
-`data/flypy/mohu_llm_flypy.lexicon.txt`；两个包都包含共享的
-`data/sentence-ngram-mobile.bin`。
-Qwen 权重也不随方案分发，必须按 `models/*.manifest` 中的 registry path
-单独下载到 `mohu_llm/models/`，并校验大小与 SHA-256。
-
-Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安装到
-`~/Library/Rime/lua/rocks`（模块会自动加入该目录的 `package.path/cpath`）。
-`run_qwen35_scorer.command` 由 launchd 常驻运行，Unix socket 位于
-`mohu_llm/runtime/`；没有 scorer、模型指纹不符或响应超时都会自动回到三元原序。
 
 ## 码表格式
 
@@ -92,7 +51,7 @@ Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安�
 
 ## 配置（schema 的 tiger/ 节）
 
-- `engine_lib` / `model` / `lexicon`：路径覆盖，默认用户目录 `mohu_llm/` 下同名文件
+- `engine_lib` / `model` / `lexicon`：路径覆盖，默认用户目录 `mohu/` 下同名文件
 - `beam`：束宽（默认 200）
 - `all_ranks`：>4 键时全部档位竞争（默认 true）
 - `initial_quality`：原生候选质量（默认 50）。固顶候选为 100，默认 smart 候选为 5
@@ -105,7 +64,7 @@ Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安�
   调频学习全部发生在这一层
 - `user_model_weight`：静态模型权重 w（默认 0.85；设 1.0 等价关闭用户层）
 - `user_model_snapshot`：计数表二进制快照路径（默认
-  `mohu_llm/config/user-ngram.snapshot`；安装器不触碰 `config/`，重装存活）
+  `mohu/config/user-ngram.snapshot`。
 - `user_model_snapshot_interval`：每 N 次中文上屏写一次快照（默认 64；
   方案卸载时若有未落盘计数也会兜底快照一次）
 - `personal_refresh_interval`：个人词快照的时间防抖秒数（默认 30；设为 0 关闭防抖）
@@ -196,6 +155,6 @@ Squirrel 的 librime-lua 使用 Lua 5.4.6；LuaSocket 也必须用 5.4 ABI 安�
   `neural` 参数并使用 Squirrel 自带的 Lua 5.4/librime 栈。
 - 延迟：纯双拼 20.2 → 1.8ms/键（直连）/ 2.24ms/键（全链路），真实码形更快
 - 完整流水线探针：`vhrg1` 上屏「中华人民共和国」，`tz2` 上屏「投资」，
-  `/date1` 上屏当前日期；Qwen 目标回归命令见 `eval/latest-report.md`
+  `/date1` 上屏当前日期。
 - Homebrew Mira 当前使用 Lua 5.5，只能验证 ABI 失败后的默认候选降级；原生动态库
   使用 Squirrel 自带的 Lua 5.4.6 / librime 探针验证

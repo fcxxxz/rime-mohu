@@ -46,8 +46,8 @@
 
 local Top = {}
 local native_sentence_types = {
-    mohu_llm_zrm = true,
-    mohu_llm_flypy = true,
+    mohu_zrm = true,
+    mohu_flypy = true,
 }
 local native_independent_min_length = 5
 

@@ -58,9 +58,9 @@ std::map<std::string, double> decode_scores(int handle, const char* raw) {
 
 int main() {
   const std::string model = env_or("TIGER_NGRAM",
-      home_path("/Library/Rime/mohu_llm/data/sentence-ngram-mobile.bin"));
+      home_path("/Library/Rime/mohu/model/mohu-sentence-ngram-v5.bin"));
   const std::string lexicon = env_or("TIGER_LEXICON",
-      "tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt");
+      "tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt");
   for (const std::string* path : {&model, &lexicon}) {
     FILE* probe = fopen(path->c_str(), "rb");
     if (!probe) {

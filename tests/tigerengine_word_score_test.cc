@@ -82,11 +82,11 @@ bool decode_first_text(int handle, const char* raw, std::string* out) {
 
 int main() {
   const std::string model = env_or("TIGER_NGRAM",
-      home_path("/Library/Rime/mohu_llm/data/sentence-ngram-mobile.bin"));
+      home_path("/Library/Rime/mohu/model/mohu-sentence-ngram-v5.bin"));
   const std::string word_model = env_or("TIGER_WORD_NGRAM",
       "research/lm_sentence_compare/trainwork/mohu_lm_train_copy/mohu-word-kn4.bin");
   const std::string lexicon = env_or("TIGER_LEXICON",
-      "tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt");
+      "tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt");
   const std::string merged = env_or("TIGER_MERGED",
       "/tmp/mohu-sentence-ngram-v6-merged.bin");
   for (const std::string* path : {&model, &word_model, &lexicon}) {

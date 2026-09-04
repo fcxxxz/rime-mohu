@@ -158,7 +158,7 @@ local threshold_env = {
                 end,
                 get_string = function(_, key)
                     assert(key == "tiger/candidate_type")
-                    return "mohu_llm_zrm"
+                    return "mohu_zrm"
                 end,
             },
         },

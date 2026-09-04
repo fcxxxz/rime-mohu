@@ -29,7 +29,7 @@ local COMMON_OPTIONS = {
 }
 
 local SCHEMA_OPTIONS = {
-  mohu_llm_zrm = {
+  mohu_zrm = {
     "ascii_punct",
     "full_shape",
     "extended_charset",
@@ -40,9 +40,8 @@ local SCHEMA_OPTIONS = {
     "quick_code_hint",
     "aux_hint",
     "multi_short_code",
-    "mohu_llm_model_rerank",
   },
-  mohu_llm_flypy = {
+  mohu_flypy = {
     "ascii_punct",
     "full_shape",
     "extended_charset",
@@ -53,7 +52,6 @@ local SCHEMA_OPTIONS = {
     "quick_code_hint",
     "aux_hint",
     "multi_short_code",
-    "mohu_llm_model_rerank",
   },
 }
 

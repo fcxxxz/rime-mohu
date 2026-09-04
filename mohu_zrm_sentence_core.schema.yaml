@@ -1,14 +1,14 @@
 schema:
-  schema_id: mohu_flypy_sentence
-  name: 整句·魔虎·小鹤
+  schema_id: mohu_zrm_sentence_core
+  name: 整句·魔虎·自然码
   version: "20260814"
   author:
-    - 小鹤双拼方案：鹤氏
+    - 自然码发明人：周志农
     - 方案制作：ksqsf
   description: |
-    使用小鹤双拼和虎码最长主码前两码、无简快码的纯粹整句输入方案。
+    使用自然码双拼和虎码最长主码前两码、无简快码的纯粹整句输入方案。
   dependencies:
-    - mohu_flypy_fixed
+    - mohu_zrm_fixed
     - mohu_charset
     - tiger
 
@@ -98,14 +98,15 @@ speller:
   algebra:
     __patch:
       - mohu:/algebra/user_force_top?
+      - mohu:/algebra/user_sentence_top?
       - mohu:/algebra/generate_code
       - mohu:/algebra/user_sentence_bottom?
       - mohu:/algebra/user_force_bottom?
 
 translator:
-  dictionary: mohu_flypy.extended
-  user_dict: mohu_flypy_sentence_tiger_prefix2
-  prism: mohu_flypy
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_sentence_tiger_prefix2
+  prism: mohu_zrm
   initial_quality: 5
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
@@ -114,9 +115,9 @@ translator:
   contextual_suggestions: true
 
 translator_static:
-  dictionary: mohu_flypy.extended
-  user_dict: mohu_flypy_sentence_tiger_prefix2
-  prism: mohu_flypy
+  dictionary: mohu_zrm.extended
+  user_dict: mohu_zrm_sentence_tiger_prefix2
+  prism: mohu_zrm
   initial_quality: 5
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
@@ -126,7 +127,7 @@ translator_static:
 
 custom_phrase: # 自定义短语
   dictionary: ""
-  user_dict: mohu_flypy_custom_phrases
+  user_dict: mohu_zrm_custom_phrases
   db_class: stabledb
   enable_completion: false
   enable_sentence: false
@@ -195,7 +196,7 @@ key_binder:
       - mohu:/key_bindings/mohu_keypad
       # 大写字母追加辅助码到上一音节
       # 该功能可使用 Shift-tab 替代
-      # - mohu:/key_bindings/mohu_capital_for_last_syllable
+      - mohu:/key_bindings/mohu_capital_for_last_syllable
 
 recognizer:
   import_preset: default
@@ -213,7 +214,7 @@ recognizer:
     panacea: "^[a-z]*/{1,2}[a-z']*$"
 
 mohu:
-  quick_code_hint_dictionary: mohu_flypy_fixed
+  quick_code_hint_dictionary: mohu_zrm_fixed
   inject_fixed_words: true
 
   candidate_manager:

@@ -6,7 +6,7 @@ MOHU_SCHEMAS = (
     "mohu_zrm",
     "mohu_flypy",
     "mohu_flypy_fixed",
-    "mohu_flypy_sentence",
+    "mohu_flypy_sentence_core",
     "mohu_flypy_aux",
 )
 EXPECTED_QUICK = {

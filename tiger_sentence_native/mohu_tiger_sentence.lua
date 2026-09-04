@@ -6,24 +6,20 @@
 -- schema 引用：
 --   lua_translator@*mohu_tiger_sentence*translator
 -- 配置（schema 内 tiger/ 节，均可省略）：
---   tiger/engine_lib: 引擎 dylib 路径（默认 <用户目录>/mohu_llm/runtime/libtigerengine.dylib）
---   tiger/model:      模型路径（默认 <用户目录>/mohu_llm/data/sentence-ngram-mobile.bin）
+--   tiger/engine_lib: 引擎 dylib 路径（默认 <用户目录>/mohu/runtime/libtigerengine.dylib）
+--   tiger/model:      模型目录或显式文件路径（默认 <用户目录>/mohu/model/）
 --   tiger/scheme:      双拼方案标识（zrm 或 flypy）
 --   tiger/candidate_type: native 候选类型（默认按 scheme 推导）
 --   tiger/lexicon:    码表路径（默认由 runtime resolver 提供）
 --   tiger/beam:       束宽（默认 200）
 --   tiger/all_ranks:  >4 键时是否允许全部档位竞争（默认 true）
 --   tiger/initial_quality: 原生候选质量（默认 50）
---   tiger/rerank_socket: 可选本地 JSONL Unix socket
---   tiger/rerank_http_endpoint: 仅供测试注入，生产路径禁用
---   tiger/rerank_timeout_ms: five-row scorer deadline（默认 45）
---   tiger/rerank_full_timeout_ms: adaptive >5-row deadline（默认 140）
 --   tiger/personal_lexicon_max_rows: 个人词快照可选行数上限（默认不限制）
 --   tiger/personal_refresh_interval: 提交边界快照刷新防抖秒数（默认 30，0=每次提交刷新）
 --   tiger/perf_log: 输出逐句 native/Lua 分层耗时日志（默认 false）
 
 local M = {}
-local runtime = require("mohu_llm_runtime")
+local runtime = require("mohu_runtime")
 local personal_lexicon = require("mohu_personal_lexicon")
 
 -- librime-lua builds differ in how they expose logging: most ship a `log`
@@ -36,24 +32,6 @@ local function log_error(message)
     end
   elseif type(log) == "function" then
     pcall(log, message)
-  end
-end
-
--- Neural reranking is optional.  Keep the native sentence decoder usable on
--- installations that do not deploy the companion Lua module/profile.
-local reranker
-do
-  local ok, loaded = pcall(require, "mohu_tiger_reranker")
-  if ok and type(loaded) == "table" then
-    reranker = loaded
-  else
-    reranker = {
-      init = function() end,
-      fini = function() end,
-      clear_cache = function() end,
-      neural_enabled = function() return false end,
-      rerank = function() return nil end,
-    }
   end
 end
 
@@ -157,8 +135,8 @@ local function resolve_runtime_path(value, paths)
   if value:sub(1, 1) == "/" then return value end
   local root = paths and paths.root
   if not root then return value end
-  if value == "mohu_llm" or value:sub(1, #"mohu_llm/") == "mohu_llm/" then
-    return root .. value:sub(#"mohu_llm" + 1)
+  if value == "mohu" or value:sub(1, #"mohu/") == "mohu/" then
+    return root .. value:sub(#"mohu" + 1)
   end
   return value
 end
@@ -168,8 +146,8 @@ local function configure(env)
   local scheme = config_string(cfg, "tiger/scheme") or "zrm"
   if scheme ~= "zrm" and scheme ~= "flypy" then scheme = "zrm" end
   local candidate_type = config_string(cfg, "tiger/candidate_type")
-  if candidate_type ~= "mohu_llm_zrm" and candidate_type ~= "mohu_llm_flypy" then
-    candidate_type = "mohu_llm_" .. scheme
+  if candidate_type ~= "mohu_zrm" and candidate_type ~= "mohu_flypy" then
+    candidate_type = "mohu_" .. scheme
   end
   if env then
     env._tiger_scheme = scheme
@@ -222,7 +200,16 @@ local function ensure_engine(env)
   end
   local paths = runtime.paths()
   local lib = resolve_runtime_path(conf("engine_lib"), paths) or paths.engine
-  local model = resolve_runtime_path(conf("model"), paths) or paths.ngram
+  local configured_model = resolve_runtime_path(conf("model"), paths)
+  local model
+  if configured_model == paths.model or configured_model == paths.ngram then
+    model = runtime.resolve_model({ model_dir = paths.model })
+  elseif configured_model then
+    model = configured_model
+  else
+    model = runtime.resolve_model({ model_dir = paths.model })
+  end
+  model = model or paths.ngram
   local lexicon = resolve_runtime_path(conf("lexicon"), paths) or
     (runtime.lexicon and runtime.lexicon(env and env._tiger_scheme)) or paths.lexicons.zrm
   local beam = conf("beam")
@@ -625,7 +612,7 @@ end
 -- 上屏文本喂入 native 引擎的内存三元计数表；解码时每个 trigram 查询按
 -- P = w·P_V5 + (1-w)·P_用户 概率域融合（w = tiger/user_model_weight，
 -- 默认 0.85，V5 主导）。静态模型文件永不改写；计数经二进制快照跨会话
--- 持久化（默认 mohu_llm/config/user-ngram.snapshot，安装器不触碰该
+-- 持久化（默认 mohu/config/user-ngram.snapshot，安装器不触碰该
 -- 目录，重装存活）。旧 ABI dylib（无 update_user_model）自动停用本层。
 local user_model_weight_default = 0.85
 local user_model_snapshot_interval_default = 64
@@ -646,7 +633,6 @@ local function config_flag(cfg, key, default)
 end
 
 local function ensure_snapshot_directory(directory)
-  -- 与 mohu_tiger_model_menu.write_selection 相同的容错创建；
   -- 失败时后续 io.open 自然失败，快照被安全跳过。
   if package.config:sub(1, 1) == "\\" then
     pcall(os.execute, 'md "' .. directory .. '" 2>nul')
@@ -687,7 +673,7 @@ local function init_user_model(env)
   local cfg = env.engine.schema and env.engine.schema.config
   env._tiger_user_model_path = resolve_runtime_path(
     config_string(cfg, "tiger/user_model_snapshot") or
-    "mohu_llm/config/user-ngram.snapshot", runtime.paths())
+    "mohu/config/user-ngram.snapshot", runtime.paths())
   env._tiger_user_model_on = config_flag(cfg, "tiger/user_model", true)
   env._tiger_user_model_dirty = false
   env._tiger_user_model_commits = 0
@@ -1121,11 +1107,9 @@ function M.translator.init(env)
     init_personal_lexicon(env)
     init_user_model(env)
   end
-  pcall(reranker.init, env)
 end
 
 function M.translator.fini(env)
-  pcall(reranker.fini, env)
   fini_personal_lexicon(env)
   fini_user_model(env)
   release_engine(env)
@@ -1295,12 +1279,6 @@ function M.translator.func(input, seg, env)
   end
   decoded.items = sentence_items
 
-  -- Reranking remains optional and fail-open.  Candidate metadata is retained
-  -- until after this call so the policy can validate native scores.
-  local ok, ranked = pcall(reranker.rerank, decoded.items, raw, context, env,
-    prefix_text)
-  if ok and type(ranked) == "table" then decoded.items = ranked end
-
   local yielded = 0
   local prefix_bytes = #prefix_text
   for i = 1, #decoded.items do
@@ -1320,7 +1298,7 @@ function M.translator.func(input, seg, env)
         prefix_raw_boundary)
       if preedit == "" and segment_input ~= "" then preedit = segment_input end
       if text ~= "" then
-        local candidate_type = env and env._tiger_candidate_type or "mohu_llm_zrm"
+        local candidate_type = env and env._tiger_candidate_type or "mohu_zrm"
         local cand = Candidate(candidate_type, seg.start, seg._end, text, "")
         cand.preedit = preedit
         cand.quality = candidate_quality - yielded * 0.001

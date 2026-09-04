@@ -6,7 +6,7 @@ package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 
 local root = "/tmp/mohu-tiger-two-char-test"
 os.execute("rm -rf " .. root)
-os.execute("mkdir -p " .. root .. "/mohu_llm/config")
+os.execute("mkdir -p " .. root .. "/mohu/config")
 
 rime_api = { get_user_data_dir = function() return root end }
 log = { error = function() end }
@@ -138,7 +138,7 @@ assert(#candidates == 0, "bare four-key input must stay with the smart translato
 
 -- native 候选上屏：按 preedit 每字一段重建裸双拼写入用户词库。
 local committed = {
-  type = "mohu_llm_zrm",
+  type = "mohu_zrm",
   text = "杨娇",
   preedit = "yh jcbt",
 }
@@ -170,7 +170,7 @@ for _, connection in ipairs(ctx.commit_notifier.connections) do
   if not connection.disconnected then connection.callback(ctx) end
 end
 committed = {
-  type = "mohu_llm_zrm",
+  type = "mohu_zrm",
   text = "一二三四五六七八九十一",
   preedit = "aa bb cc dd ee ff gg hh ii jj kk",
 }

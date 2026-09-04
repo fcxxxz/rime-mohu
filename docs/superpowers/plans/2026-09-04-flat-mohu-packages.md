@@ -4,7 +4,7 @@
 
 **Goal:** Replace the current ordinary/LLM split Release output with two flat, scheme-specific Mohu packages and an independently downloadable versioned V5 model asset.
 
-**Architecture:** The public schema IDs become `mohu_zrm` and `mohu_flypy`; the old ordinary schemas are renamed to compile-only internal IDs so the public schemas do not collide. Runtime files move under `mohu/`, lexicons under `mohu/data/<scheme>/`, and versioned sentence models under `mohu/model/`. Lua selects the highest numeric version from `mohu-sentence-ngram-vN.bin`, including decimal versions such as `v5.10`.
+**Architecture:** The public schema IDs become `mohu_zrm` and `mohu_flypy`; the old ordinary schemas are renamed to compile-only internal IDs so the public schemas do not collide. Runtime files move under `mohu/`, lexicons under `mohu/data/<scheme>/`, and versioned sentence models under `mohu/model/`. Lua selects the highest numeric version from `mohu-sentence-ngram-vN.bin`, including decimal versions such as `v5.10`. Qwen reranking and the model menu are removed.
 
 **Tech Stack:** Rime YAML, Lua 5.4, Python unittest, Makefile, GitHub Actions, zip/unzip validation.
 

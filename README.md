@@ -31,36 +31,21 @@
 
 辅助码后缀使用 `编码/` 查询，使用 `编码//` 后按空格进入自由加词。
 
-## 魔虎大模型方案
+## 魔虎方案
 
-魔虎大模型方案是独立 addon。自然码用户下载 `mohu-llm-zrm-latest.zip`，小鹤用户下载 `mohu-llm-flypy-latest.zip`。包内 `data/sentence-ngram-mobile.bin` 为魔虎自定义候选模型 v5（SHA-256 `c2c148ea`），负责整句候选生成与排序；训练语料含 LCCC（CC-BY-NC-SA）与 TNews/THUCNews（研究用途），仅限个人使用，请勿再分发。
+自然码用户下载 `rime-mohu-zrm-latest.zip`，小鹤用户下载 `rime-mohu-flypy-latest.zip`。解压包内文件到 Rime 用户目录后执行一次“重新部署”。两个包分别只启用对应方案，包内不含语言模型。
 
-### 安装自然码包
+V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema 配置共同启用，不需要替换模型文件。使用同一模型的既有安装如需此能力，必须同步更新这些运行时文件。2026-09-03 的隔离五方案基准以 1,000 个二字目标词、每词 20 个训练集精确去重的真实前缀测量：魔虎在一位末辅上的上下文修好率为自然码 66.67%、小鹤 66.91%，完整口径与排名见 [报告](docs/reports/2026-09-03-tail-auxiliary-context-benchmark.md)。
 
-1. 从 GitHub Release 下载 `mohu-llm-zrm-latest.zip`。
-2. 解压后双击 `install_mohu_llm_zrm.command`。
-3. 安装器会把自然码方案和共享运行时复制到 `~/Library/Rime/`，只注册 `mohu_llm_zrm`，不会注册小鹤方案。
-4. 在 Squirrel 菜单中执行“重新部署”，然后切换到“魔虎大模型·自然码”。
+### 放置 V5 模型
 
-安装器会保留已有的 Rime 用户词库和用户配置；重复执行是幂等的。
-
-### 切换神经重排模型
-
-Qwen 是可选的神经重排，权重不随方案包分发。安装 Qwen3 0.6B 4-bit 后，将模型目录放到：
+从 GitHub Release 下载 `mohu-sentence-ngram-v5.bin`，放到：
 
 ```text
-~/Library/Rime/mohu_llm/models/Qwen3-0.6B-4bit
+~/Library/Rime/mohu/model/mohu-sentence-ngram-v5.bin
 ```
 
-然后在输入法中输入 `/model`，选择 `Qwen3-0.6B-4bit`；或在已安装的 runtime 目录执行：
-
-```bash
-~/Library/Rime/mohu_llm/runtime/switch_qwen_model.command qwen3-0.6b
-```
-
-切换后重新部署 Squirrel。未安装 Qwen 时，整句输入直接使用包内的 v5 模型。
-
-如果需要使用 Qwen3.5 0.8B，则下载对应 manifest 指定的目录并选择 `qwen35-0.8b`；本项目不会自动在 Qwen3.0 和 Qwen3.5 之间切换。
+以后如果有 `v5.10`、`v6` 等版本，放在同一目录即可；运行时按文件名中的数字版本自动选择最高版本。没有模型文件时会回退到普通候选。
 
 # 方案维护
 
@@ -69,8 +54,8 @@ master 分支可使用如下命令进行日常维护：
 ```bash
 make quick                           # 快速更新单字信息
 make dict                            # 更新词库中的辅助码
-make dist                            # 产生纯净方案到 ./dist 目录下
-make dist DESTDIR=~/Library/Rime     # 将方案拷贝到 DESTDIR
+make dist-zrm                        # 生成扁平自然码方案包目录
+make dist-flypy                      # 生成扁平小鹤方案包目录
 make test                            # 执行单元测试
 ./make_simp_dist.sh                  # 产生简体版方案到 ./dist 目录下
 ```

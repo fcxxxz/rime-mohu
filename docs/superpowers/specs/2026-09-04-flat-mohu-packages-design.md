@@ -9,7 +9,7 @@
 
 两个包分别包含自然码和小鹤的完整魔虎方案，不再发布普通方案包或带 `llm` 的对外名称。压缩包根目录直接对应 Rime 用户目录，用户解压/复制后只需执行一次 Rime“重新部署”。
 
-V5 n-gram 模型不进入方案包，作为独立的 `mohu-sentence-ngram-v5.bin` Release 资产发布。用户将模型文件放入 Rime 用户目录的 `mohu/model/`；运行时按文件名中的数字版本选择最高的 `mohu-sentence-ngram-vN.bin`。因此未来发布 v6/v10 时无需重打方案包。
+V5 n-gram 模型不进入方案包，作为独立的 `mohu-sentence-ngram-v5.bin` Release 资产发布。用户将模型文件放入 Rime 用户目录的 `mohu/model/`；运行时按文件名中的数字版本选择最高的 `mohu-sentence-ngram-vN.bin`。因此未来发布 v6/v10 时无需重打方案包。Qwen 神经重排和模型选择菜单全部移除。
 
 ## 命名与目录
 
@@ -49,7 +49,7 @@ mohu-sentence-ngram-v5.zip
 └── mohu/model/mohu-sentence-ngram-v5.bin
 ```
 
-模型文件使用 `mohu-sentence-ngram-vN.bin` 命名和 CI 校验的 SHA-256。模型包可独立更新，不触发方案包重打包；选择逻辑使用数字比较而非字符串或修改时间排序。
+模型文件使用 `mohu-sentence-ngram-vN.bin` 命名和 CI 校验的 SHA-256。模型资产可独立更新，不触发方案包重打包；选择逻辑使用数字比较而非字符串或修改时间排序。
 
 ## 构建与发布
 

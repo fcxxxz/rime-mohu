@@ -77,9 +77,9 @@ do
     "the first logged message must describe the loadlib failure")
   assert(#calls == 3,
     "on Windows lua54.dll and libwinpthread-1.dll must be preloaded before the engine DLL")
-  assert(calls[1]:find("mohu_llm/runtime/lua54%.dll|%*", 1) ~= nil,
+  assert(calls[1]:find("mohu/runtime/lua54%.dll|%*", 1) ~= nil,
     "the first loadlib call must preload runtime/lua54.dll with '*'")
-  assert(calls[2]:find("mohu_llm/runtime/libwinpthread%-1%.dll|%*", 1) ~= nil,
+  assert(calls[2]:find("mohu/runtime/libwinpthread%-1%.dll|%*", 1) ~= nil,
     "the second loadlib call must preload runtime/libwinpthread-1.dll with '*'")
   yielded = {}
   native.translator.func("ufqyhfmimh", segment, env)

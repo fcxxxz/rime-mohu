@@ -56,35 +56,28 @@ local option_sync = require("option_sync")
 local option_state = require("option_state")
 
 -- 1. 首次初始化：无 reset 的会话按默认值补齐
-local env_a, ctx_a = make_env("mohu_llm_zrm")
+local env_a, ctx_a = make_env("mohu_zrm")
 option_sync.init(env_a)
 assert(ctx_a:get_option("contextual_order") == true, "contextual_order 默认开")
-assert(ctx_a:get_option("mohu_llm_model_rerank") == false, "model_rerank 默认关")
 assert(ctx_a:get_option("quick_code_hint") == false, "quick_code_hint 默认关")
 
--- 2. 菜单里切换开关 → 写入共享状态文件
-ctx_a:set_option("mohu_llm_model_rerank", true)
-assert(option_state.get("mohu_llm_model_rerank") == true, "切换后写入状态文件")
-
--- 3. 新会话恢复：另一个应用的会话初始化时读到文件值
-local env_b, ctx_b = make_env("mohu_llm_flypy")
+-- 2. 新会话恢复：另一个应用的会话初始化时读到文件值
+local env_b, ctx_b = make_env("mohu_flypy")
 option_sync.init(env_b)
-assert(ctx_b:get_option("mohu_llm_model_rerank") == true, "跨方案恢复 model_rerank")
 
--- 4. 已打开会话的实时跟随：A 切换后，B 打字时同步
+-- 3. 已打开会话的实时跟随：A 切换后，B 打字时同步
 ctx_a:set_option("quick_code_hint", true)
 fake_ms = fake_ms + 1000 -- 越过 250ms 节流
 option_sync.func(key_press, env_b)
 assert(ctx_b:get_option("quick_code_hint") == true, "B 会话按键后跟随 A 的修改")
 
--- 5. 其他方案只同步通用名单，不带方案私有开关
+-- 4. 其他方案只同步通用名单
 local env_d, ctx_d = make_env("mohu_zrm")
 option_sync.init(env_d)
 fake_ms = fake_ms + 1000
 ctx_a:set_option("multi_short_code", true)
 option_sync.func(key_press, env_d)
 assert(ctx_d:get_option("multi_short_code") == true, "通用开关跨方案同步")
-assert(ctx_d:get_option("mohu_llm_model_rerank") == false, "方案私有开关不进入通用方案")
 
 os.remove(state_dir .. "/lua/option_state_data.lua")
 print("option_sync: ok")

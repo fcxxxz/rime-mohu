@@ -26,7 +26,7 @@ for _, path in ipairs({
     "mohu_flypy.schema.yaml",
     "mohu_flypy_aux.schema.yaml",
     "mohu_flypy_fixed.schema.yaml",
-    "mohu_flypy_sentence.schema.yaml",
+    "mohu_flypy_sentence_core.schema.yaml",
 }) do
     assert_contains(path, "  pin:\n    __include: mohu:/pin")
     assert_before(
@@ -49,7 +49,7 @@ end
 -- 自然码组的字词/整句方案仅作 compile-only 垫片保留，配置仍需正确
 for _, prefix in ipairs({ "mohu_zrm", "mohu_flypy" }) do
     local fixed = prefix .. "_fixed.schema.yaml"
-    local sentence = prefix .. "_sentence.schema.yaml"
+    local sentence = prefix .. "_sentence_core.schema.yaml"
     assert_contains(fixed, [[  alphabet: 'abcdefghijklmnopqrstuvwxyz/=;']])
     assert_contains(fixed, "  auto_select_pattern: ^;(\\w|;)+")
     assert_contains(fixed, [[    panacea: "^[a-z]*/{1,2}[a-z']*$"]])

@@ -36,12 +36,12 @@ WORD_TABLE_MARKER = "#----------词库----------#\n"
 PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
 
 SCHEMAS = {
-    "mohu_zrm.schema.yaml": ("mohu_zrm", "魔虎·自然码"),
+    "mohu_zrm_core.schema.yaml": ("mohu_zrm_core", "魔虎·自然码"),
     # 字词方案已从选单移除，但仍作为 compile-only 方案保留，
     # 供 mohu_zrm 的 dependencies 编译固顶码表，并生成小鹤字词方案。
     "mohu_zrm_fixed.schema.yaml": ("mohu_zrm_fixed", "字词·魔虎·自然码"),
     # 整句方案同理：compile-only 垫片，负责编译 mohu_zrm.extended 码表。
-    "mohu_zrm_sentence.schema.yaml": ("mohu_zrm_sentence", "整句·魔虎·自然码"),
+    "mohu_zrm_sentence_core.schema.yaml": ("mohu_zrm_sentence_core", "整句·魔虎·自然码"),
 }
 
 REMOVED_SECTIONS = {

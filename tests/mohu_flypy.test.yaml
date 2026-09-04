@@ -1,5 +1,5 @@
 schema: mohu_flypy
-source_dir: ../dist
+source_dir: ../dist-flypy
 script: |
   function eq(left, right)
     print('Left  = ' .. tostring(left))

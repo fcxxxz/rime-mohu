@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 RATIO = 4
 
 SCHEMES = {
-    "zrm": ("自然码（含 mohu_zrm / mohu_llm_zrm）", "lua/four_code_yield_pairs_zrm.txt"),
-    "flypy": ("小鹤（含 mohu_flypy / mohu_llm_flypy）", "lua/four_code_yield_pairs_flypy.txt"),
+    "zrm": ("自然码（含 mohu_zrm / mohu_zrm）", "lua/four_code_yield_pairs_zrm.txt"),
+    "flypy": ("小鹤（含 mohu_flypy / mohu_flypy）", "lua/four_code_yield_pairs_flypy.txt"),
 }
 
 

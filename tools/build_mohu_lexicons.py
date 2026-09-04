@@ -168,9 +168,9 @@ def main() -> int:
                         default=ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt")
     parser.add_argument("--chars-dict", type=Path, default=ROOT / "mohu_zrm.chars.dict.yaml")
     parser.add_argument("--zrm-output", type=Path,
-                        default=ROOT / "tiger_sentence_native/data/zrm/mohu_llm_zrm.lexicon.txt")
+                        default=ROOT / "tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt")
     parser.add_argument("--flypy-output", type=Path,
-                        default=ROOT / "tiger_sentence_native/data/flypy/mohu_llm_flypy.lexicon.txt")
+                        default=ROOT / "tiger_sentence_native/data/flypy/mohu_flypy.lexicon.txt")
     args = parser.parse_args()
     rows = load_rows(args.source)
     syllables = load_character_syllables(args.chars_dict)

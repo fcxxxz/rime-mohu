@@ -118,7 +118,7 @@ assert(#yielded == 2, "native translator must yield complete sentence candidates
 assert(commit_calls == 0, "native translator must never commit text")
 assert(ctx.input == input_before_translation,
   "native translator must not rewrite Context.input")
-assert(yielded[1].type == "mohu_llm_zrm",
+assert(yielded[1].type == "mohu_zrm",
   "native candidates must retain their independent identity")
 assert(yielded[1].quality == 50, "native candidates must use configured quality")
 assert(yielded[1].preedit == "ab cd ef",

@@ -1,20 +1,21 @@
 schema:
   schema_id: mohu_flypy
   name: 魔虎·小鹤
-  version: "20260814"
+  version: "20260829"
   author:
     - 小鹤双拼方案：鹤氏
     - 方案制作：ksqsf
   description: |
-    基于小鹤双拼和虎码最长主码前两码的智能整句输入方案，保留固顶简快码。
+    基于小鹤双拼和 TCSKNM 的魔虎整句输入方案。
   dependencies:
+    - mohu_flypy_core
     - mohu_flypy_fixed
     # 部署只会编译一级依赖的码表，因此 legacy 码表也需直接列出
     - mohu_flypy_fixed_legacy
     # mohu_flypy_sentence 不再进入方案选单，仅作为 compile-only 垫片保留：
     # 本方案引擎均为 lua 翻译器，mohu_flypy.extended 码表与 mohu_flypy 棱镜
     # 依赖该方案的标准翻译器在部署时编译。
-    - mohu_flypy_sentence
+    - mohu_flypy_sentence_core
     - mohu_charset
     - tiger
 
@@ -82,6 +83,7 @@ engine:
     - reverse_lookup_translator@reverse_tiger
     - reverse_lookup_translator@reverse_tiger_backtick
     - table_translator@custom_phrase       # 自定义短语
+    - lua_translator@*mohu_sentence*translator
     - lua_translator@*mohu_express_translator@with_reorder # 翻译器
     - lua_translator@*mohu_shijian        # 日期orq 节气ojq 星期oxq 时间osj
     - lua_translator@*mohu_number         # 数字转大写, 大写S引导, 如 S123
@@ -91,6 +93,7 @@ engine:
     - lua_filter@*mohu_charset_filter
     - lua_filter@*mohu_pin*pin_filter
     - lua_filter@*mohu_reorder_filter
+    - lua_filter@*mohu_word_order_filter
     - lua_filter@*mohu_candidate_override*override_order_filter
     - lua_filter@*mohu_candidate_override*override_filter
     - lua_filter@*mohu_ijrq_filter
@@ -135,7 +138,7 @@ smart:         # 整句输入模式设置，在 top_translator 中被调用
 
 smart_static:
   dictionary: mohu_flypy.extended
-  user_dict: mohu_flypy_tiger_prefix2
+  user_dict: ""
   prism: mohu_flypy
   initial_quality: 5
   max_homophones: 7
@@ -146,6 +149,7 @@ smart_static:
   core_word_length: 4
   max_word_length: 10
   max_sentences: 2
+  enable_user_dict: false
 
 fixed:         # 固顶输入模式设置，在 top_translator 中被调用
   dictionary: mohu_flypy_fixed
@@ -175,6 +179,33 @@ custom_phrase: # 自定义短语
   enable_completion: false
   enable_sentence: false
   initial_quality: 1000
+
+tiger:
+  scheme: flypy
+  candidate_type: mohu_flypy
+  engine_lib: ""
+  model: mohu/model
+  lexicon: mohu/data/flypy/mohu_flypy.lexicon.txt
+  beam: 200
+  all_ranks: true
+  long_input_length: 5
+  initial_quality: 50
+  personal_lexicon_namespace: smart
+  personal_lexicon_max_rows: 4096
+  # 用户调频层：上屏文本喂入内存三元计数表，与静态模型按权重融合
+  user_model: true
+  user_model_weight: 0.85          # 静态模型权重（1.0 = 关闭用户层）
+  user_model_snapshot: mohu/config/user-ngram.snapshot
+  user_model_snapshot_interval: 64 # 每 N 次中文上屏写一次快照
+  # 跨候选调频：contextual_order 开关打开时，上屏历史尾部喂引擎作解码
+  # 左上文。窗口为汉字数；V5 字符级三元模型结构窗口=2，大于 2 无增益。
+  decode_context_chars: 2
+  # 存在上文时是否让 native 接管 4 键纯双拼词码（默认 false：保留 smart
+  # 已学词频权威；实测字符级模型裸排 4 键低于词库词频约 7pp）。
+  decode_context_takeover: false
+  word_order: true
+  word_order_candidates: 20
+  word_order_rank_penalty: 1.0
 
 chaifen:
   option_name: chaifen
@@ -242,7 +273,7 @@ key_binder:
       - mohu:/key_bindings/mohu_toggle_inflexible
       # 大写字母追加辅助码到上一音节
       # 该功能可使用 Shift-tab 替代
-      # - mohu:/key_bindings/mohu_capital_for_last_syllable
+      - mohu:/key_bindings/mohu_capital_for_last_syllable
 
 recognizer:
   import_preset: default
@@ -336,10 +367,12 @@ mohu:
   # 输入四码时，如果固顶码表中含有对应条目，则注入到首选之后。
   inject_fixed_chars: true    # 是否输出固顶码表单字，例：输入 cisa 时，首屏显示「词」
   inject_fixed_words: true    # 是否输出简码码表词语，例：输入 lmsd 时，次选为「两面三刀」
-  # 输入四码时，固顶单字是否让位给词由 lua/four_code_yield_pairs_zrm.txt
-  # 决定：表内首个二字词排到行内所列单字之前，被顶单字仍保次选。
-  # 直接编辑该表并重新部署即可增删让位。
-  # 按字豁免四码让位：列在这里的字始终四码前置，
+  # 输入四码时，固顶码表单字是否前置由静态字频决定：
+  # tiger_rank 排名（越小越常用）大于该门槛的生僻字让位给词，由
+  # inject_fixed_chars 注入到首选之后；排名不超过门槛的高频字维持固顶。
+  # 设为 0 时所有单字都让位（魔然行为）。
+  four_code_char_yield_rank: 2000
+  # 按字豁免上面的让位规则：列在这里的字即使排名超过门槛也在四码前置，
   # 例如配合次级简码使用的「暮」（tools/data/mohu_flypy_fixed_secondary_codes.tsv）。
   four_code_char_yield_exempt: 暮
   # (仅*动词模式*) 是否优先输出单字或词组
@@ -371,7 +404,3 @@ mohu:
   # Q: 输入 pkQ 直接上屏「跑来跑去」。
   # （如需要自定义/增加/删除略码，请编辑 mohu_processor.lua 中的 shorthands 定义。）
   shorthands: false
-
-# 默认不启用语言模型（八股文模型已移除；如需可自行配置 grammar 节）
-__include: mohu:/octagram/disable
- 

@@ -41,20 +41,20 @@ local function run(candidates)
 end
 
 local output = run({
-  candidate("mohu_llm_zrm", "万户上课"),
+  candidate("mohu_zrm", "万户上课"),
   candidate("sentence", "魔虎尚可"),
 })
 assert(#output == 1 and output[1].text == "魔虎尚可",
   "native-only hallucinated segmentation must be removed when the dictionary has a candidate")
 
 local native_only = run({
-  candidate("mohu_llm_zrm", "模型候选"),
+  candidate("mohu_zrm", "模型候选"),
 })
 assert(#native_only == 1 and native_only[1].text == "模型候选",
   "native candidates remain available when no dictionary candidate exists")
 
 local long_sentence = run({
-  candidate("mohu_llm_zrm", "你不要再精神内耗了"),
+  candidate("mohu_zrm", "你不要再精神内耗了"),
   candidate("sentence", "你不要在精神内耗了"),
 })
 assert(long_sentence[1] and long_sentence[1].text == "你不要再精神内耗了",
@@ -62,7 +62,7 @@ assert(long_sentence[1] and long_sentence[1].text == "你不要再精神内耗�
 
 -- 两字终态只可能来自两音节带辅码的输入，独立输出，不要求词库同文本。
 local two_char = run({
-  candidate("mohu_llm_zrm", "杨娇", "yh jcbt"),
+  candidate("mohu_zrm", "杨娇", "yh jcbt"),
   candidate("sentence", "样娇", "yh jc"),
 })
 assert(two_char[1] and two_char[1].text == "杨娇",

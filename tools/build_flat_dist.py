@@ -30,6 +30,10 @@ def build_flat(scheme: str, destination: Path) -> None:
     data_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(lexicon, data_dir / lexicon.name)
 
+    clear_quarantine = destination / "解除隔离.command"
+    shutil.copy2(ROOT / "解除隔离.command", clear_quarantine)
+    clear_quarantine.chmod(0o755)
+
     model_dir = destination / "mohu" / "model"
     model_dir.mkdir(parents=True, exist_ok=True)
     (model_dir / "README.md").write_text(

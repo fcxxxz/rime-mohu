@@ -17,6 +17,7 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             "mohu-sentence-ngram-v5.bin",
             "mohu/model/",
             "Rime同步助手",
+            "解除隔离.command",
         ):
             self.assertIn(expected, workflow)
 

@@ -41,6 +41,10 @@ class FlatDistributionTest(unittest.TestCase):
                     (destination / "mohu" / "data" / scheme / f"mohu_{scheme}.lexicon.txt").is_file()
                 )
                 self.assertTrue((destination / "Rime同步助手" / "安装.command").is_file())
+                clear_quarantine = destination / "解除隔离.command"
+                self.assertTrue(clear_quarantine.is_file())
+                self.assertTrue(clear_quarantine.stat().st_mode & 0o111)
+                self.assertIn("com.apple.quarantine", clear_quarantine.read_text(encoding="utf-8"))
                 model_readme = destination / "mohu" / "model" / "README.md"
                 self.assertTrue(model_readme.is_file())
                 self.assertIn("mohu-sentence-ngram-vN.bin", model_readme.read_text(encoding="utf-8"))

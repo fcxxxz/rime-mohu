@@ -47,6 +47,8 @@ jobs:
           test -f dist-flypy/mohu/data/flypy/mohu_flypy.lexicon.txt
           test -f dist-zrm/Rime同步助手/安装.command
           test -f dist-flypy/Rime同步助手/安装.command
+          test -x dist-zrm/解除隔离.command
+          test -x dist-flypy/解除隔离.command
           test -f dist-zrm/mohu/model/README.md
           test -f dist-flypy/mohu/model/README.md
           test ! -e dist-zrm/base

@@ -26,7 +26,7 @@
 解压对应 zip 到 Rime 用户目录，然后执行一次“重新部署”。
 
 `mohu-sentence-ngram-v5.bin` 是原生整句候选模型。放到
-`~/Library/Rime/mohu/model/`，文件名遵循 `mohu-sentence-ngram-vN.bin`；运行时会按数字版本自动选择最高版本。模型缺失或加载失败时回退普通候选。
+`~/Library/Rime/mohu/model/`；运行时固定读取该文件名。模型缺失或加载失败时记录一次错误并回退普通候选，模型目录不在输入热路径扫描。
 
 本地开发需要 Lua 5.4 头文件（Squirrel 的 librime-lua 为 5.4.6）：
 

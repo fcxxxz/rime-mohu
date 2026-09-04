@@ -7,7 +7,7 @@
 --   lua_translator@*mohu_tiger_sentence*translator
 -- 配置（schema 内 tiger/ 节，均可省略）：
 --   tiger/engine_lib: 引擎 dylib 路径（默认 <用户目录>/mohu/runtime/libtigerengine.dylib）
---   tiger/model:      模型目录或显式文件路径（默认 <用户目录>/mohu/model/）
+--   tiger/model:      模型文件或模型目录（默认固定为 <用户目录>/mohu/model/mohu-sentence-ngram-v5.bin）
 --   tiger/scheme:      双拼方案标识（zrm 或 flypy）
 --   tiger/candidate_type: native 候选类型（默认按 scheme 推导）
 --   tiger/lexicon:    码表路径（默认由 runtime resolver 提供）

@@ -59,7 +59,7 @@ class FlatDistributionTest(unittest.TestCase):
                 self.assertIn("com.apple.quarantine", clear_quarantine.read_text(encoding="utf-8"))
                 model_readme = destination / "mohu" / "model" / "README.md"
                 self.assertTrue(model_readme.is_file())
-                self.assertIn("mohu-sentence-ngram-vN.bin", model_readme.read_text(encoding="utf-8"))
+                self.assertIn("mohu-sentence-ngram-v5.bin", model_readme.read_text(encoding="utf-8"))
 
                 for path in destination.rglob("*"):
                     relative = str(path.relative_to(destination))
@@ -175,7 +175,7 @@ class FlatDistributionTest(unittest.TestCase):
             self.assertNotEqual(0, result.returncode)
             self.assertIn("runtime-manifest.json", result.stderr)
 
-    def test_model_asset_target_stages_versioned_file_under_model(self) -> None:
+    def test_model_asset_target_stages_fixed_file_under_model(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "mohu-sentence-ngram-v5.bin"
             source.write_bytes(b"model")

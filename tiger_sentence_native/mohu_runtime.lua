@@ -18,76 +18,15 @@ local function join(root, suffix)
   return root .. "/" .. suffix
 end
 
-local VERSIONED_MODEL = "^mohu%-sentence%-ngram%-v([0-9.]+)%.bin$"
-
-local function valid_version(name)
-  local version = name:match(VERSIONED_MODEL)
-  if not version or version:match("^%.") or version:match("%.$") or
-      version:find("..", 1, true) then
-    return nil
-  end
-  local count = 0
-  for component in version:gmatch("[^.]+") do
-    if not component:match("^%d+$") then return nil end
-    count = count + 1
-  end
-  return count > 0 and version or nil
-end
-
-local function version_parts(version)
-  local parts = {}
-  for component in version:gmatch("%d+") do
-    parts[#parts + 1] = tonumber(component)
-  end
-  return parts
-end
-
-local function version_greater(left, right)
-  local a, b = version_parts(left), version_parts(right)
-  local length = math.max(#a, #b)
-  for index = 1, length do
-    local av, bv = a[index] or 0, b[index] or 0
-    if av ~= bv then return av > bv end
-  end
-  return left > right
-end
-
-local function shell_quote(value)
-  if package.config:sub(1, 1) == "\\" then
-    return '"' .. tostring(value):gsub('"', '""') .. '"'
-  end
-  return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
-end
-
-local function model_entries(model_dir)
-  local command
-  if package.config:sub(1, 1) == "\\" then
-    command = "dir /b /a-d " .. shell_quote(model_dir) .. " 2>nul"
-  else
-    command = "find " .. shell_quote(model_dir) .. " -maxdepth 1 -type f -print 2>/dev/null"
-  end
-  local pipe = io.popen(command, "r")
-  if not pipe then return function() end end
-  local iterator = pipe:lines()
-  return function()
-    local value = iterator()
-    if value == nil then pipe:close() end
-    return value
-  end
-end
+local FIXED_MODEL_NAME = "mohu-sentence-ngram-v5.bin"
 
 function M.resolve_model(options)
   local opts = options or {}
   local model_dir = opts.model_dir or M.paths(opts).model
-  local best_name, best_version
-  for entry in model_entries(model_dir) do
-    local name = entry:gsub("^.*[/\\]", "")
-    local version = valid_version(name)
-    if version and (not best_version or version_greater(version, best_version)) then
-      best_name, best_version = name, version
-    end
-  end
-  return best_name and join(model_dir, best_name) or nil
+  -- Keep model selection out of the input hot path. In particular, do not
+  -- use io.popen here: on Windows it launches a visible cmd.exe and blocks
+  -- the Rime engine thread while the shell enumerates the directory.
+  return join(model_dir, FIXED_MODEL_NAME)
 end
 
 -- Cross-platform packages contain both engines.  Select by host platform;
@@ -116,7 +55,7 @@ function M.paths(options)
     data = data,
     model = model,
     engine = engine_library(runtime),
-    ngram = join(model, "mohu-sentence-ngram-v5.bin"),
+    ngram = join(model, FIXED_MODEL_NAME),
     lexicon = join(data, "zrm/mohu_zrm.lexicon.txt"),
     lexicons = {
       zrm = join(data, "zrm/mohu_zrm.lexicon.txt"),

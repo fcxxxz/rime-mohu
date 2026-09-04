@@ -118,8 +118,8 @@ def build_flat(
     model_dir.mkdir(parents=True, exist_ok=True)
     (model_dir / "README.md").write_text(
         "# Mohu sentence model\n\n"
-        "Place `mohu-sentence-ngram-vN.bin` files in this directory.\n"
-        "The runtime selects the highest numeric version, for example `v5.10` or `v6`.\n"
+        "Place `mohu-sentence-ngram-v5.bin` in this directory.\n"
+        "The runtime uses this fixed model filename; package preparation checks the asset separately.\n"
         "Download the model from the GitHub Release asset with the same filename.\n",
         encoding="utf-8",
     )

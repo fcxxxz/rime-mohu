@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Restore gradual userdb learning and auxiliary-selected word priority across the smart and Tiger native candidate paths.
+**Goal:** Unify static, learned, auxiliary, and Tiger context evidence at the candidate-path level without key-length ownership branches.
 
-**Architecture:** Rime `smart` remains authoritative when a learned two- or three-character word consumes the complete active input. Tiger remains authoritative for sentence decoding and receives every active multi-character userdb row, including learned static entries. Candidate ownership changes at the existing reorder filter; userdb scanning remains confined to the existing idle snapshot refresh.
+**Architecture:** Rime userdb is the durable source of learned counts; Tiger owns the sentence path lattice and consumes static plus learned lexical edges. Native receives O(1) commit deltas immediately and full snapshots during idle reconciliation. The existing reorder filter only deduplicates logical paths and preserves hard Pin/manual overrides; no translator list is globally first by input length.
 
 **Tech Stack:** Rime YAML, Lua 5.4, C++17 native decoder, Python unittest, Lua assertion tests.
 
@@ -47,92 +47,96 @@ Run: `lua tests/mohu_personal_lexicon_test.lua`
 
 Expected: `personal lexicon tests passed`.
 
-### Task 2: Restore userdb access for long smart queries
+### Task 2: Add immediate native personal-edge deltas
 
 **Files:**
-- Modify: `tests/test_mohu_tiger_sentence_native.py`
-- Modify: `mohu_zrm.schema.yaml`
-- Modify: `mohu_flypy.schema.yaml`
+- Modify: `tests/tigerengine_safety_test.cc`
+- Modify: `tests/tigerengine_lua_safety_test.cc`
+- Modify: `tiger_sentence_native/tigerengine.h`
+- Modify: `tiger_sentence_native/tigerengine.cc`
+- Modify: `tiger_sentence_native/tigerengine_lua.cc`
+- Modify: `tiger_sentence_native/mohu_tiger_sentence.lua`
 
-- [ ] **Step 1: Write the failing schema test**
+- [ ] **Step 1: Write the failing delta test**
 
-For both public schemas, assert that `smart_static` uses the same user dictionary as `smart` and does not disable userdb:
+Add an API test that inserts a learned edge, increases its count twice, and requires
+the edge to be visible without calling `set_personal_lexicon`:
 
-```python
-self.assertEqual(schema["smart"]["user_dict"], schema["smart_static"]["user_dict"])
-self.assertNotEqual("", schema["smart_static"]["user_dict"])
-self.assertNotEqual(False, schema["smart_static"].get("enable_user_dict", True))
+```cpp
+assert(tiger_engine_adjust_personal(handle, "jmkyfu", "简快符", 1) == 1);
+assert(tiger_engine_adjust_personal(handle, "jmkyfu", "简快符", 1) == 1);
+assert(tiger_decode_full(handle, "jmkyfu", 0, output, sizeof(output)) >= 1);
+assert(std::strstr(output, "简快符") != nullptr);
 ```
 
 - [ ] **Step 2: Verify the test fails**
 
-Run: `uv run python -m unittest tests.test_mohu_tiger_sentence_native -v`
+Run: `make tigerengine-safety`
 
-Expected: FAIL because both `smart_static` sections currently set an empty user dictionary and `enable_user_dict: false`.
+Expected: FAIL because the delta API is not defined.
 
-- [ ] **Step 3: Restore the shared userdb namespace**
+- [ ] **Step 3: Implement O(1) edge adjustment**
 
-Set `smart_static/user_dict` to `mohu_zrm_tiger_prefix2` and `mohu_flypy_tiger_prefix2`, respectively, and remove `enable_user_dict: false`.
+Track per-edge commit counts in `Lexicon`, update an existing static edge or add a
+personal edge, recompute its monotonic calibrated prior, invalidate the native decode
+cache, and expose the operation through the Lua ABI. Missing/old ABI remains optional
+and fail-open on the Lua side.
 
-- [ ] **Step 4: Verify schema tests pass**
+- [ ] **Step 4: Bridge native commits immediately**
 
-Run: `uv run python -m unittest tests.test_mohu_tiger_sentence_native -v`
+After the existing native candidate userdb write succeeds, call the delta API with
+the normalized bare code and text. Keep the existing full snapshot refresh for
+startup, sync, deletion, and reconciliation.
 
-Expected: all schema tests pass.
+- [ ] **Step 5: Verify delta tests pass**
 
-### Task 3: Let learned complete words keep smart ordering
+Run: `make tigerengine-safety && lua tests/mohu_tiger_two_char_test.lua`
+
+Expected: both commands exit zero.
+
+### Task 3: Unify candidate-path scoring and remove list ownership branches
 
 **Files:**
 - Modify: `tests/mohu_reorder_filter_lexicon_test.lua`
 - Modify: `lua/mohu_reorder_filter.lua`
+- Modify: `lua/mohu_word_order_filter.lua`
 
-- [ ] **Step 1: Write failing ownership tests**
+- [ ] **Step 1: Write the failing path-identity tests**
 
-Extend the test candidate with optional `entry`, `start`, and `_end` fields. Add a complete learned three-character word case:
+Require same text/code/span candidates from native and smart to remain one logical
+candidate, while different spans (a partial word versus a complete word) remain
+distinct paths. Require current auxiliary matches to keep their path evidence.
 
 ```lua
-local learned = candidate("user_phrase", "简快符", "jm ky fu")
-learned.entry = { commit_count = 8 }
-local output = run({
-  candidate("mohu_zrm", "渐伏", "jmky fu"),
-  candidate("mohu_zrm", "见快符", "jm ky fu"),
-  learned,
-  candidate("sentence", "监会符", "jm ky fu"),
-}, "jmkyfu")
-assert(output[1].text == "简快符")
+local native = candidate("mohu_zrm", "简快符", "jmr ky fu")
+local smart = candidate("user_phrase", "简快符", "jm ky fu")
+assert(filter.logical_key(native) == filter.logical_key(smart))
 ```
-
-Also retain the existing two-character auxiliary regression so `yh jcbt` remains native-first when no bare complete learned word exists.
 
 - [ ] **Step 2: Verify the ownership test fails**
 
 Run: `lua tests/mohu_reorder_filter_lexicon_test.lua`
 
-Expected: FAIL with native `渐伏` before learned `简快符`.
+Expected: FAIL because the filter has no shared logical-path key.
 
-- [ ] **Step 3: Detect complete learned smart words**
+- [ ] **Step 3: Add logical-path identity and merge**
 
-Add a helper that unwraps the genuine candidate and returns true only when:
+Normalize genuine candidate span, text, and code-bearing preedit. Merge duplicate
+smart/native representations into one logical path before ordering; retain the
+strongest lexical/user metadata and current auxiliary evidence.
 
-```lua
-type is phrase or user_phrase
-text length is 2 or 3
-preedit has exactly one two-letter token per character
-canonical preedit equals the complete active input
-candidate is user_phrase or entry.commit_count > 0
-```
+- [ ] **Step 4: Apply one score policy**
 
-This deliberately excludes native auxiliary paths such as `jmky fu` and `yh jcbt`.
-
-- [ ] **Step 4: Move native output behind smart for that composition**
-
-Record `ctx.smart_word_authoritative` while collecting non-native candidates. In `Top.flush`, preserve fixed/Pin output first. When the flag is true, yield smart candidates in their existing order before eligible native candidates; otherwise retain the existing native-first order. `uniquifier` keeps the first text when smart/native duplicate.
+Use static lexical prior + monotonic commit prior + current auxiliary evidence +
+Tiger context score for every path. Keep Pin/manual order outside the score. Do not
+branch on six/seven/eight-key length.
 
 - [ ] **Step 5: Verify reorder tests pass**
 
 Run: `lua tests/mohu_reorder_filter_lexicon_test.lua`
 
-Expected: learned complete-word case is smart-first; existing native-only, long-sentence, and two-character auxiliary cases remain unchanged.
+Expected: duplicate paths collapse, partial paths remain distinct, and existing
+native-only/long-sentence/auxiliary cases remain unchanged.
 
 ### Task 4: Preserve native commit learning through wrappers
 

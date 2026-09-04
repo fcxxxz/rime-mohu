@@ -2,20 +2,21 @@
 
 ## Problem Essence
 
-The Mohu main schemas use two candidate systems with different responsibilities:
+Mohu currently has two independent candidate systems:
 
-- Rime `smart` owns code-specific dictionary frequency and userdb learning.
-- Tiger native owns sentence segmentation and character-level context scoring.
+- Rime `smart` knows code-specific dictionary frequency and userdb learning.
+- Tiger native knows sentence segmentation and character-level context scoring.
 
-The current length-based handoff sends complete three-character word codes such as
-`jmkyfu` through the native sentence path. Native then sees a user-created word as a
-small capped boost, while learned static words are omitted from its personal snapshot.
-The result is that a word selected with auxiliary code can remain below unrelated
-native segmentations.
+They are currently merged as ordered candidate lists. Their scores have different
+units, candidate paths consume different spans, and one engine can hide a learned
+word from the other. A raw key-length handoff (for example, six keys to `smart` and
+seven keys to Tiger) is not a semantic boundary because the same input can be a word,
+a partial word, or an auxiliary reinterpretation.
 
-The design must preserve the measured short-code behavior: character-level native
-takeover of four-key pure double-pinyin reduced top-1 accuracy by 7.3 percentage
-points, so native must not replace smart for exact word lookup.
+The design must combine code constraints, lexical priors, user history, auxiliary
+evidence, and context at the candidate-path level. The measured 4-key native
+takeover regression (82.0% to 74.7%) remains a hard validation gate for the unified
+scoring model, not a reason to add another length branch.
 
 ## Success Criteria
 
@@ -33,47 +34,40 @@ points, so native must not replace smart for exact word lookup.
 
 ## Priority Semantics
 
-Priority is contextual rather than one global numeric ordering:
+Priority is evaluated per candidate path rather than per translator list:
 
 ```text
 manual Pin / manual order
     > current auxiliary-code match
-    > learned personal word, ordered by submission count
-    > static dictionary candidate
-    > native character segmentation fallback
+    > user-history prior (monotonic with commits)
+    > static lexical prior
+    > Tiger contextual score / character fallback
 ```
 
 The auxiliary-code relation is ephemeral. It affects the current composition only;
 it does not add an extra permanent submission count. Selecting `jmrkyfu` for
 `简快符` increments the normalized `jmkyfu + 简快符` userdb entry once.
 
-## Candidate Ownership
+## Candidate-Path Ownership
 
-### Complete word lookup
+Both engines may contribute evidence for every composition. Tiger owns the path
+lattice for sentence-capable inputs, while smart remains the durable source of
+lexical and user-history facts. There is no length-based ownership switch.
 
-When the active segment has at least one smart/auxiliary candidate that consumes the
-entire segment as a supported two- or three-character word, the segment is classified
-as a complete word lookup. This classification is based on a complete candidate
-path, not on raw key length alone; a six-key segment with two full auxiliary-bearing
-syllables must not be mistaken for a three-character bare word. In this mode, `smart`
-remains the candidate authority. The native translator does not independently
-outrank these candidates. Its context scorer may reorder the smart candidates only
-when contextual ordering is enabled, and only within the existing candidate set.
-
-### Sentence lookup
-
-For an actual sentence composition, Tiger remains responsible for segmentation and
-context scoring. The native lexicon receives an in-memory snapshot of all active
-multi-character userdb rows:
+The native lexicon receives an in-memory snapshot of all active multi-character
+userdb rows:
 
 - static entries with learned commit counts;
 - user-created entries not present in the static dictionary;
-- normalized bare double-pinyin codes and positive commit counts.
+- normalized bare double-pinyin codes and positive commit counts;
+- whether the row matches a static edge, so matching edges are updated rather than
+  duplicated.
 
 If a user row matches a static edge, the edge is retained and its learned prior is
 updated; no duplicate edge is created. If it is not static, a personal lexical edge
-is added. User-created edges may occur inside a native sentence. Existing static
-multi-character edge eligibility is unchanged.
+is added. Both kinds of edge may occur inside a native sentence. Candidate identity
+is `(input span, normalized code path, text)` so smart/native duplicates collapse to
+one logical path before ordering.
 
 ## Scoring
 
@@ -87,8 +81,8 @@ edge_score = native_context_score
 
 `learned_prior` is monotonic in the positive commit count, starts small, and is
 bounded or decayed so one mistaken selection cannot dominate every sentence. Its
-coefficient and cap are calibrated against replayed smart rankings rather than
-chosen from native character-score magnitudes.
+coefficient is calibrated against replayed smart rankings and native path gaps,
+never chosen by comparing unrelated raw score units.
 
 `current_auxiliary_bonus` is present only when the edge's character/code path
 matches an explicitly typed auxiliary key. Lua derives this evidence from the
@@ -108,9 +102,9 @@ Rime Memory (all active multi-character rows)
         v
 Lua normalized rows: bare code, text, commits, origin (static/user-created)
         |
-        +--> smart: exact complete-word candidates and normal learning
+        +--> smart: lexical/user-history facts and normal learning
         |
-        +--> native: personal lexical edges + learned prior
+        +--> native: one path lattice with personal lexical edges
 
 current composition auxiliary evidence ------------------+
                                                           v
@@ -123,6 +117,8 @@ LevelDB userdb, or synchronously rebuild a snapshot for each key.
 ## Refresh and Compatibility
 
 - Keep the existing idle refresh state machine and transaction ABI.
+- Add an O(1) native personal-edge delta API used at commit time; the full snapshot
+  remains the reconciliation path for sync, deletion, and restart.
 - Remove the personal-snapshot filter that discards static-but-learned entries;
   retain the existing multi-character and positive-count validation. Mark whether
   each row is already present in the static dictionary so native can update an
@@ -160,8 +156,8 @@ The implementation must add or update focused tests for:
 2. user-created rows remain available as native sentence edges;
 3. commit counts produce monotonic personal ranking;
 4. auxiliary matches receive current-input priority without extra persisted count;
-5. complete three-character word lookup keeps smart/userdb authority, while an
-   ambiguous six-key two-character auxiliary path remains native-capable;
+5. word and sentence paths use the same scoring model; no six-/seven-/eight-key
+   ownership rule is allowed;
 6. four-key native takeover remains disabled by default and its baseline accuracy is
    unchanged;
 7. old ABI and failed snapshot updates fail open.

@@ -2,7 +2,7 @@
 set -u
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  print "此脚本仅用于 macOS；Windows 无需执行。"
+  print "此脚本仅用于 macOS；Windows 用户无需执行。"
   exit 0
 fi
 

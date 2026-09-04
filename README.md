@@ -35,7 +35,13 @@
 
 自然码用户下载 `rime-mohu-zrm-latest.zip`，小鹤用户下载 `rime-mohu-flypy-latest.zip`。解压包内文件到 Rime 用户目录后执行一次“重新部署”。两个包分别只启用对应方案，包内不含语言模型。
 
+完整安装步骤、模型放置、macOS 专用的 `解除隔离.command`、Rime 同步助手和常见问题统一见 [安装说明](安装说明.md)。
+
 V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema 配置共同启用，不需要替换模型文件。使用同一模型的既有安装如需此能力，必须同步更新这些运行时文件。2026-09-03 的隔离五方案基准以 1,000 个二字目标词、每词 20 个训练集精确去重的真实前缀测量：魔虎在一位末辅上的上下文修好率为自然码 66.67%、小鹤 66.91%，完整口径与排名见 [报告](docs/reports/2026-09-03-tail-auxiliary-context-benchmark.md)。
+
+更新运行时文件或从旧版 `mohu_llm_*` 迁移后，除“重新部署”外还必须完全退出并重启 Squirrel；动态库按宿主进程生命周期加载，旧进程可能继续使用已移入废纸篓的旧 `libtigerengine.dylib`。若模型文件存在但首选仍是 smart 候选，请先查看日志中的 `mohu_tiger_sentence` 错误，并用 `lsof -p $(pgrep -x Squirrel)` 核对实际加载路径。
+
+如果 native 已加载但结果仍受个人历史影响，请检查 `mohu/config/user-ngram.snapshot`。默认 `tiger/user_model: true`、`user_model_weight: 0.85` 会把上屏记录与 V5 模型融合；清空或暂时关闭该用户层，才能观察纯 V5 模型排序。
 
 ### 放置 V5 模型
 

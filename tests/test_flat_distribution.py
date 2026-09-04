@@ -41,6 +41,13 @@ class FlatDistributionTest(unittest.TestCase):
                     (destination / "mohu" / "data" / scheme / f"mohu_{scheme}.lexicon.txt").is_file()
                 )
                 self.assertTrue((destination / "Rime同步助手" / "安装.command").is_file())
+                install_doc = destination / "安装说明.md"
+                self.assertTrue(install_doc.is_file())
+                install_text = install_doc.read_text(encoding="utf-8")
+                self.assertIn("xattr -dr com.apple.quarantine ~/Library/Rime/mohu", install_text)
+                self.assertIn("mohu/model/mohu-sentence-ngram-v5.bin", install_text)
+                self.assertIn("仅适用于 macOS", install_text)
+                self.assertIn("Windows 用户跳过本节", install_text)
                 clear_quarantine = destination / "解除隔离.command"
                 self.assertTrue(clear_quarantine.is_file())
                 self.assertTrue(clear_quarantine.stat().st_mode & 0o111)

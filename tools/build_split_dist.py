@@ -11,6 +11,7 @@ SCHEMA_LINE = re.compile(r"^(\s*)- schema: (\S+)\s*$")
 
 COMMON_ROOT_PATHS = (
     "README.md",
+    "安装说明.md",
     "LICENSE",
     "etc",
     "mohu.yaml",

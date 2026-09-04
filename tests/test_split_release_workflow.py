@@ -53,6 +53,21 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             self.assertIn(expected, workflow)
         self.assertNotIn("TIGER_ENGINE_DLL", workflow)
 
+    def test_windows_smoke_test_downloads_model_without_github_cli(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        windows_job = workflow.split("  windows-runtime:", 1)[1].split(
+            "\n  build:", 1
+        )[0]
+
+        self.assertIn("curl --fail --location", windows_job)
+        self.assertIn("--retry 3 --retry-all-errors", windows_job)
+        self.assertIn(
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/"
+            "mohu-sentence-ngram-v5.bin",
+            windows_job,
+        )
+        self.assertNotIn("gh release download", windows_job)
+
 
 if __name__ == "__main__":
     unittest.main()

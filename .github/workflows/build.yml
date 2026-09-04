@@ -51,16 +51,16 @@ jobs:
 
       - name: Build and smoke-test the Windows engine
         shell: msys2 {0}
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ -static \
             -I tiger_sentence_native -I lua-5.4.8/src \
             tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
             lua-5.4.8/src/lua54.dll -o libtigerengine.dll
           objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
-          gh release download latest --repo "$GITHUB_REPOSITORY" \
-            --pattern mohu-sentence-ngram-v5.bin --dir .
+          curl --fail --location \
+            --retry 3 --retry-all-errors \
+            --output mohu-sentence-ngram-v5.bin \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/mohu-sentence-ngram-v5.bin"
           g++ -O2 -std=c++17 -I tiger_sentence_native \
             tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc -o nativetest.exe
           printf '1\tufqyhfmimh\n' > keys.txt

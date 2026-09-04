@@ -68,6 +68,22 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
         )
         self.assertNotIn("gh release download", windows_job)
 
+    def test_windows_runtime_collection_uses_msys2_tools_from_path(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        windows_job = workflow.split("  windows-runtime:", 1)[1].split(
+            "\n  build:", 1
+        )[0]
+        collection_step = windows_job.split(
+            "      - name: Collect Windows runtime closure", 1
+        )[1].split("\n      - name:", 1)[0]
+
+        self.assertIn("mingw-w64-x86_64-python", windows_job)
+        self.assertIn("shell: msys2 {0}", collection_step)
+        self.assertIn("python tools/collect_windows_runtime.py", collection_step)
+        self.assertIn("--objdump objdump", collection_step)
+        self.assertNotIn("shell: pwsh", windows_job)
+        self.assertNotIn(r"C:\msys64", windows_job)
+
 
 if __name__ == "__main__":
     unittest.main()

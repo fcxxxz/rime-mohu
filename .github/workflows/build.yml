@@ -26,12 +26,14 @@ jobs:
       - name: Sync Python environment
         run: uv sync --locked
 
-      - name: Install MinGW toolchain
+      - name: Install MinGW toolchain and Python
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
-          install: mingw-w64-x86_64-toolchain
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-python
 
       - name: Build Lua 5.4.8 host and runtime
         shell: msys2 {0}
@@ -81,8 +83,14 @@ jobs:
             "$PWD/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt"
 
       - name: Collect Windows runtime closure
-        shell: pwsh
-        run: uv run tools/collect_windows_runtime.py --entry libtigerengine.dll --search-dir . --search-dir lua-5.4.8/src --objdump 'C:\msys64\mingw64\bin\objdump.exe' --output windows-runtime
+        shell: msys2 {0}
+        run: >-
+          python tools/collect_windows_runtime.py
+          --entry libtigerengine.dll
+          --search-dir .
+          --search-dir lua-5.4.8/src
+          --objdump objdump
+          --output windows-runtime
 
       - name: Upload Windows runtime closure
         uses: actions/upload-artifact@v4

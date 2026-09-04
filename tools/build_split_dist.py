@@ -29,6 +29,7 @@ COMMON_ROOT_PATHS = (
     "tiger.dict.yaml",
     "tiger.schema.yaml",
     "Rime皮肤编辑器",
+    "Rime同步助手",
 )
 
 

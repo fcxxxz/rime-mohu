@@ -30,6 +30,16 @@ def build_flat(scheme: str, destination: Path) -> None:
     data_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(lexicon, data_dir / lexicon.name)
 
+    model_dir = destination / "mohu" / "model"
+    model_dir.mkdir(parents=True, exist_ok=True)
+    (model_dir / "README.md").write_text(
+        "# Mohu sentence model\n\n"
+        "Place `mohu-sentence-ngram-vN.bin` files in this directory.\n"
+        "The runtime selects the highest numeric version, for example `v5.10` or `v6`.\n"
+        "Download the model from the GitHub Release asset with the same filename.\n",
+        encoding="utf-8",
+    )
+
     runtime_source = ROOT / "tiger_sentence_native" / "libtigerengine.dylib"
     if runtime_source.is_file():
         runtime_dir = destination / "mohu" / "runtime"

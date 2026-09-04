@@ -40,6 +40,10 @@ class FlatDistributionTest(unittest.TestCase):
                 self.assertTrue(
                     (destination / "mohu" / "data" / scheme / f"mohu_{scheme}.lexicon.txt").is_file()
                 )
+                self.assertTrue((destination / "Rime同步助手" / "安装.command").is_file())
+                model_readme = destination / "mohu" / "model" / "README.md"
+                self.assertTrue(model_readme.is_file())
+                self.assertIn("mohu-sentence-ngram-vN.bin", model_readme.read_text(encoding="utf-8"))
 
                 for path in destination.rglob("*"):
                     self.assertNotIn("mohu_llm", str(path.relative_to(destination)))

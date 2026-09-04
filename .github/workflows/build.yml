@@ -45,6 +45,10 @@ jobs:
           test -f dist-flypy/mohu/runtime/libtigerengine.dylib
           test -f dist-zrm/mohu/data/zrm/mohu_zrm.lexicon.txt
           test -f dist-flypy/mohu/data/flypy/mohu_flypy.lexicon.txt
+          test -f dist-zrm/Rime同步助手/安装.command
+          test -f dist-flypy/Rime同步助手/安装.command
+          test -f dist-zrm/mohu/model/README.md
+          test -f dist-flypy/mohu/model/README.md
           test ! -e dist-zrm/base
           test ! -e dist-flypy/base
           test ! -e dist-zrm/mohu/model/mohu-sentence-ngram-v5.bin

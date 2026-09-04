@@ -16,6 +16,7 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             "rime-mohu-flypy-latest.zip",
             "mohu-sentence-ngram-v5.bin",
             "mohu/model/",
+            "Rime同步助手",
         ):
             self.assertIn(expected, workflow)
 

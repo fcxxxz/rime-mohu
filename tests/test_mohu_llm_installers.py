@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +11,23 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 NATIVE = ROOT / "tiger_sentence_native"
+
+
+def quarantine(path: Path) -> None:
+    subprocess.run(
+        ["xattr", "-w", "com.apple.quarantine", "0081;00000000;Chrome;00000000-0000-0000-0000-000000000000", str(path)],
+        check=True,
+        capture_output=True,
+    )
+
+
+def quarantined(path: Path) -> bool:
+    result = subprocess.run(
+        ["xattr", "-p", "com.apple.quarantine", str(path)],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
 
 
 def copy_package_lua(package: Path) -> None:
@@ -232,6 +250,45 @@ class MohuLlmInstallerTest(unittest.TestCase):
                     "packaged squirrel config\n",
                     installed_squirrel.read_text(encoding="utf-8"),
                 )
+
+    def test_installer_strips_download_quarantine_from_installed_files(self) -> None:
+        # Browser-downloaded zips carry com.apple.quarantine; a quarantined
+        # ad-hoc-signed dylib is blocked by Gatekeeper inside Squirrel and the
+        # native sentence engine silently falls back to dictionary candidates.
+        if sys.platform != "darwin" or shutil.which("xattr") is None:
+            self.skipTest("requires macOS xattr")
+        for scheme, _display_name in self.CASES:
+            with self.subTest(scheme=scheme), tempfile.TemporaryDirectory() as package_tmp, tempfile.TemporaryDirectory() as rime_tmp:
+                package = Path(package_tmp)
+                create_installer_package(package, scheme)
+                for relative in (
+                    "runtime/libtigerengine.dylib",
+                    f"install_mohu_llm_{scheme}.command",
+                    f"lua/mohu_llm_runtime.lua",
+                ):
+                    quarantine(package / relative)
+                env = {
+                    **os.environ,
+                    "MOHU_RIME_DIR": rime_tmp,
+                    "MOHU_SQUIRREL_BIN": "/does/not/exist",
+                    "MOHU_SKIP_SCORER_INSTALL": "1",
+                }
+                result = subprocess.run(
+                    [str(package / f"install_mohu_llm_{scheme}.command")],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                rime = Path(rime_tmp)
+                for relative in (
+                    "mohu_llm/runtime/libtigerengine.dylib",
+                    f"mohu_llm_{scheme}.schema.yaml",
+                    "lua/mohu_llm_runtime.lua",
+                    "default.yaml",
+                ):
+                    self.assertFalse(quarantined(rime / relative), relative)
 
     def test_installer_fails_closed_when_required_lua_or_lexicon_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as package_tmp, tempfile.TemporaryDirectory() as rime_tmp:

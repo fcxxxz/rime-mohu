@@ -94,6 +94,11 @@ copy_atomic() {
   temporary="$(mktemp "${destination}.tmp.XXXXXX")"
   install -m "$mode" "$source" "$temporary"
   mv -f "$temporary" "$destination"
+  # Browser-downloaded packages are quarantined; a quarantined ad-hoc-signed
+  # dylib is blocked by Gatekeeper inside Squirrel and the native engine
+  # silently falls back to dictionary candidates, so strip the flag on
+  # everything this installer writes.
+  xattr -d com.apple.quarantine "$destination" 2>/dev/null || true
 }
 
 is_user_maintained() {

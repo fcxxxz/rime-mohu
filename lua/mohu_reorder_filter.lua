@@ -6,6 +6,10 @@
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
 --
+-- 0.3.3: kDone 后不再把剩余候选整流缓冲进 trailing_list：清空各暂存
+--        列表后进入直通态边拉边出，避免缓冲式抽干整条候选流（补全展开
+--        时单键近万候选）造成逐键数百毫秒卡顿。
+--
 -- 0.3.2: 两字 native 候选独立输出：两字终态只可能来自两音节带辅码的
 --        输入（用户已显式消歧），不再要求词库也存在同文本。
 --
@@ -86,6 +90,7 @@ local kDone        = 2
 function Top.func(t_input, env)
     local ctx = {
         phase = kCollecting,  -- 当前状态
+        streaming = false,    -- kDone 后已清空暂存列表，剩余候选边拉边出
         fixed_list = {},      -- 等待匹配的固定候选
         fixed_next = 1,       -- 下一个待匹配的固定候选匹配的
         native_list = {},     -- 原生整句候选不参与 fixed/smart 身份替换
@@ -104,10 +109,19 @@ function Top.func(t_input, env)
         if cand:get_genuine().type == "punct" then
             yield(cand)
         elseif native_sentence_types[cand:get_genuine().type] then
-            table.insert(ctx.native_list, cand)
+            if ctx.streaming then
+                -- 直通态的 native：与 flush 相同的输出条件就地放行。
+                Top.yield_native(env, ctx, cand)
+            else
+                table.insert(ctx.native_list, cand)
+            end
         elseif ctx.phase == kDone then
             ctx.lexicon_texts[cand.text] = true
-            table.insert(ctx.trailing_list, cand)
+            if ctx.streaming then
+                Top.yield_exact(env, cand)
+            else
+                table.insert(ctx.trailing_list, cand)
+            end
         elseif ctx.phase == kCollecting then
             ctx.lexicon_texts[cand.text] = true
             Top.handle_collecting(env, ctx, cand)
@@ -168,7 +182,8 @@ end
 function Top.handle_matching(env, ctx, cand)
     if ctx.threshold == 0 then
         ctx.phase = kDone
-        table.insert(ctx.trailing_list, cand)
+        Top.enter_streaming(env, ctx)
+        Top.yield_exact(env, cand)
         return
     else
         ctx.threshold = ctx.threshold - 1
@@ -194,6 +209,7 @@ function Top.handle_matching(env, ctx, cand)
     end
     if ctx.fixed_next > #ctx.fixed_list then
         ctx.phase = kDone
+        Top.enter_streaming(env, ctx)
     end
 end
 
@@ -212,39 +228,56 @@ function Top.find_matching_scand(ctx, fcand)
     return nil, nil
 end
 
---- 输出所有剩下的候选。
-function Top.flush(env, ctx, include_delay_slot)
+--- 单个 native 候选的输出判定（原 flush 内联逻辑，直通态复用同一条件）。
+function Top.yield_native(env, ctx, c)
+    local text_length = utf8.len(c.text) or 0
+    local native_type = c:get_genuine().type
+    local is_personal = native_type == "mohu_zrm_personal" or
+        native_type == "mohu_flypy_personal"
+    -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
+    if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
+        or text_length >= native_independent_min_length
+        or text_length == 2 or is_personal then
+        Top.yield_exact(env, c)
+    end
+end
+
+--- 匹配阶段结束即清空各暂存列表并进入直通态：此后到达的候选边拉边出，
+--- 不再整流缓冲。filter 以协程运行，菜单取够一页即停止拉取，直通段
+--- 成本 O(页大小)；而缓冲抽干在补全展开的候选流下是逐键数百毫秒的
+--- 卡顿源。注意：直通态 native 的过滤依据是届时已流经的 lexicon_texts
+--- 前缀，与旧实现（流末统一过滤）在极端边角下可能有差异。
+function Top.enter_streaming(env, ctx)
+    if ctx.streaming then return end
+    ctx.streaming = true
     for i = ctx.fixed_next, #ctx.fixed_list do
         Top.yield_exact(env, ctx.fixed_list[i])
     end
     for _, c in ipairs(ctx.native_list) do
-        local text_length = utf8.len(c.text) or 0
-        local native_type = c:get_genuine().type
-        local is_personal = native_type == "mohu_zrm_personal" or
-            native_type == "mohu_flypy_personal"
-        -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
-        if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
-            or text_length >= native_independent_min_length
-            or text_length == 2 or is_personal then
-            Top.yield_exact(env, c)
-        end
+        Top.yield_native(env, ctx, c)
     end
-    if include_delay_slot then
-        -- 只在完全匹配完毕后才清空延迟槽
-        for _, c in ipairs(ctx.delay_slot) do
-            Top.yield_exact(env, c)
-        end
-        ctx.delay_slot = {}
+    -- 只在完全匹配完毕后才清空延迟槽
+    for _, c in ipairs(ctx.delay_slot) do
+        Top.yield_exact(env, c)
     end
     for _, c in ipairs(ctx.smart_list) do
         Top.yield_exact(env, c)
     end
+    ctx.fixed_list = {}
+    ctx.fixed_next = 1
+    ctx.native_list = {}
+    ctx.delay_slot = {}
+    ctx.smart_list = {}
+end
+
+--- 输出所有剩下的候选。
+function Top.flush(env, ctx, include_delay_slot)
+    -- include_delay_slot 仅为兼容保留：直通化后延迟槽总在进入直通态时
+    -- 清空（唯一调用方传 true，行为不变）。
+    Top.enter_streaming(env, ctx)
     for _, c in ipairs(ctx.trailing_list) do
         Top.yield_exact(env, c)
     end
-    ctx.fixed_list = {}
-    ctx.native_list = {}
-    ctx.smart_list = {}
     ctx.trailing_list = {}
     ctx.lexicon_texts = {}
 end

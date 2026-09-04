@@ -25,7 +25,11 @@
 -- 可用性：旧 dylib、引擎未就绪、评分出错 → 逐字节直通；评分出错后本
 -- env 内不再重试。配置：tiger/word_order（默认开）、
 -- tiger/word_order_candidates（默认 20）、tiger/word_order_rank_penalty
--- （默认 1.0，离线网格：0.95 时修好 45.7%/修反 1.5%，1.4 时 40.3%/1.0%）。
+-- （默认 1.0，离线网格：0.95 时修好 45.7%/修反 1.5%，1.4 时 40.3%/1.0%）、
+-- tiger/word_order_scan_budget（收集阶段总拉取上限，默认
+-- word_order_candidates×3：block 只数可重排候选，流前部全是单字时
+-- block 永不凑齐、循环会抽干整条流，实测补全流下单键近万候选、
+-- 数百毫秒；预算耗尽即以已收集的 block 继续重排，其余流式直通）。
 --
 -- 挂接：mohu_*.schema.yaml filters 列表，mohu_reorder_filter 之后、
 -- candidate_override 之前（用户显式覆盖优先于模型重排）。
@@ -98,6 +102,8 @@ function F.init(env)
   env._wo_enabled = config_flag(cfg, "tiger/word_order", true)
   env._wo_limit = math.floor(config_number(cfg, "tiger/word_order_candidates", 20, 2, 50))
   env._wo_penalty = config_number(cfg, "tiger/word_order_rank_penalty", 1.0, 0.0, 100.0)
+  env._wo_scan_budget = math.floor(config_number(cfg, "tiger/word_order_scan_budget",
+    env._wo_limit * 3, env._wo_limit, 1000))
   -- 评分信号：char = 字符续写分（octagram 同型，默认；用主字符模型，
   -- 无词层/无 OOV 概念，实测修好率约为词信号 3 倍）；word = 词级分
   -- （需容器词层或显式 word_scorer_model，OOV −20 无信号不参与）。
@@ -165,7 +171,14 @@ function F.func(input, env)
   local prefix, block = {}, {}
   local seen_first = false
   -- 只收集到限额为止，其余流式直通（不占内存）。
+  -- 扫描预算封顶"为一口气凑 block 而连续拉取"的总量：单字等不可重排
+  -- 候选不数入 block，流前部若全是这类候选，block 永不凑齐，循环会把
+  -- 整条流抽干（补全流下即逐键数百毫秒卡顿的形态）。预算耗尽后以已
+  -- 收集的 block 照常重排（不足 2 个走直通），其余交给 drain() 流式输出。
+  local scans = 0
   while #block < env._wo_limit do
+    if scans >= env._wo_scan_budget then break end
+    scans = scans + 1
     local cand = advance(state)
     if cand == nil then break end
     if not seen_first and reorderable(env, cand) then seen_first = true end

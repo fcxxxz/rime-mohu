@@ -82,6 +82,25 @@ jobs:
             "$PWD/mohu-sentence-ngram-v5.bin" \
             "$PWD/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt"
 
+      - name: Probe primary model mapping on Windows
+        shell: msys2 {0}
+        env:
+          TIGER_ENGINE_DLL: ${{ github.workspace }}/libtigerengine.dll
+          TIGER_NGRAM: ${{ github.workspace }}/mohu-sentence-ngram-v5.bin
+          TIGER_LEXICON: ${{ github.workspace }}/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
+        run: |
+          make tigerengine-mobile tigerengine-mapping
+          python tests/tigerengine_windows_mapping_test.py \
+            > .tmp/native-tests/tigerengine-windows-mapping.json
+
+      - name: Upload Windows mapping probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: tigerengine-windows-mapping-${{ github.run_number }}-${{ github.run_attempt }}
+          path: .tmp/native-tests/tigerengine-windows-mapping.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Collect Windows runtime closure
         shell: msys2 {0}
         run: >-

@@ -38,6 +38,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #ifdef _WIN32
@@ -59,6 +60,11 @@ namespace {
 
 thread_local std::string g_last_error;
 std::mutex g_engine_mutex;
+
+#ifdef TIGERENGINE_MAPPING_TEST
+int g_mapping_unmap_count = 0;
+int g_mapping_close_count = 0;
+#endif
 
 void set_error(const char* fmt, ...) {
   char buf[512];
@@ -141,23 +147,45 @@ struct MappedFile {
     return *this;
   }
   // 在既有映射上开非持有视图（单文件容器内嵌多模型时复用同一次 mmap）。
-  void set_view(const uint8_t* base, size_t len) {
+  void set_borrowed_view(const uint8_t* base, size_t len) {
+    release();
     data = const_cast<uint8_t*>(base);
     size = len;
     owned = false;
   }
   void release() {
+    if (owned) {
 #ifdef _WIN32
-    if (data) UnmapViewOfFile(data);
-    if (mapping) CloseHandle(mapping);
-    mapping = nullptr;
-#else
-    if (owned && data) munmap(data, size);
+      if (data) {
+        UnmapViewOfFile(data);
+#ifdef TIGERENGINE_MAPPING_TEST
+        ++g_mapping_unmap_count;
 #endif
+      }
+      if (mapping) {
+        CloseHandle(mapping);
+#ifdef TIGERENGINE_MAPPING_TEST
+        ++g_mapping_close_count;
+#endif
+      }
+#else
+      if (data) {
+        munmap(data, size);
+#ifdef TIGERENGINE_MAPPING_TEST
+        ++g_mapping_unmap_count;
+#endif
+      }
+#endif
+    }
     data = nullptr;
     size = 0;
+    owned = true;
+#ifdef _WIN32
+    mapping = nullptr;
+#endif
   }
   bool open(const char* path) {
+    release();
 #ifdef _WIN32
     HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -169,6 +197,14 @@ struct MappedFile {
     if (!GetFileSizeEx(file, &file_size) || file_size.QuadPart <= 0) {
       set_error("cannot stat %s", path);
       CloseHandle(file);
+      release();
+      return false;
+    }
+    if (static_cast<unsigned long long>(file_size.QuadPart) >
+        static_cast<unsigned long long>(SIZE_MAX)) {
+      set_error("model is too large: %s", path);
+      CloseHandle(file);
+      release();
       return false;
     }
     size = (size_t)file_size.QuadPart;
@@ -176,6 +212,7 @@ struct MappedFile {
     CloseHandle(file);
     if (mapping == nullptr) {
       set_error("cannot mmap %s", path);
+      release();
       return false;
     }
     void* view = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0);
@@ -183,6 +220,7 @@ struct MappedFile {
       CloseHandle(mapping);
       mapping = nullptr;
       set_error("cannot mmap %s", path);
+      release();
       return false;
     }
     data = (uint8_t*)view;
@@ -192,23 +230,17 @@ struct MappedFile {
     if (fd < 0) { set_error("cannot open %s", path); return false; }
     struct stat st;
     if (fstat(fd, &st) != 0 || st.st_size <= 0) {
-      set_error("cannot stat %s", path); ::close(fd); return false;
+      set_error("cannot stat %s", path); ::close(fd); release(); return false;
     }
     size = (size_t)st.st_size;
     void* p = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
     ::close(fd);
-    if (p == MAP_FAILED) { set_error("cannot mmap %s", path); return false; }
+    if (p == MAP_FAILED) { set_error("cannot mmap %s", path); release(); return false; }
     data = (uint8_t*)p;
     return true;
 #endif
   }
-#ifdef _WIN32
   ~MappedFile() { release(); }
-#else
-  ~MappedFile() {
-    if (owned && data) munmap(data, size);
-  }
-#endif
 };
 
 const uint64_t kShift = 2097152;  // 2^21，容一个 Unicode 码点
@@ -282,20 +314,39 @@ struct KnModel {
   }
 
   bool load(const char* p) {
-    if (!file.open(p)) return false;
-    path = p;
-    return load_common(p);
+    MappedFile mapped;
+    if (!mapped.open(p)) {
+      *this = KnModel{};
+      return false;
+    }
+    return load_mapped(std::move(mapped), p);
+  }
+
+  // Publish a parsed model only after all metadata has loaded successfully.
+  // The temporary owns the mapping while parsing, so every failure path releases
+  // it without leaving stale pointers or cache entries in the target object.
+  bool load_mapped(MappedFile&& mapped, const char* label) {
+    KnModel fresh;
+    fresh.file = std::move(mapped);
+    fresh.path = label;
+    if (!fresh.load_common(label)) {
+      *this = KnModel{};
+      return false;
+    }
+    *this = std::move(fresh);
+    return true;
   }
 
   // 容器内视图加载：[base, base+len) 视作独立模型文件（内部偏移自洽）。
   bool load_view(const uint8_t* base, uint64_t len, const char* label) {
     if (len > (uint64_t)SIZE_MAX) {
       set_error("model view too large: %s", label);
+      *this = KnModel{};
       return false;
     }
-    file.set_view(base, (size_t)len);
-    path = label;
-    return load_common(label);
+    MappedFile view;
+    view.set_borrowed_view(base, (size_t)len);
+    return load_mapped(std::move(view), label);
   }
 
   bool load_common(const char* p) {
@@ -647,6 +698,7 @@ struct KnModel {
 // 「申请很迷茫 vs 神情很迷茫」这类频率无法裁决的同音竞争。
 struct WordModel {
   MappedFile file;
+  std::string path;
   std::vector<std::string> vocab;            // id -> 词（0=<s> 1=</s>）
   std::unordered_map<std::string, uint32_t> ids;
   std::vector<float> uni;                    // id -> P(w)
@@ -794,18 +846,39 @@ struct WordModel {
   }
 
   bool load(const char* p) {
-    if (!file.open(p)) return false;
-    return load_common(p);
+    MappedFile mapped;
+    if (!mapped.open(p)) {
+      *this = WordModel{};
+      return false;
+    }
+    return load_mapped(std::move(mapped), p);
+  }
+
+  // Publish a parsed model only after all metadata has loaded successfully.
+  // The temporary owns the mapping while parsing, so every failure path releases
+  // it without leaving stale pointers or cache entries in the target object.
+  bool load_mapped(MappedFile&& mapped, const char* label) {
+    WordModel fresh;
+    fresh.file = std::move(mapped);
+    fresh.path = label;
+    if (!fresh.load_common(label)) {
+      *this = WordModel{};
+      return false;
+    }
+    *this = std::move(fresh);
+    return true;
   }
 
   // 容器内视图加载：与非持有 MappedFile 视图配合，从单文件容器取词级层。
   bool load_view(const uint8_t* base, uint64_t len, const char* label) {
     if (len > (uint64_t)SIZE_MAX) {
       set_error("model view too large: %s", label);
+      *this = WordModel{};
       return false;
     }
-    file.set_view(base, (size_t)len);
-    return load_common(label);
+    MappedFile view;
+    view.set_borrowed_view(base, (size_t)len);
+    return load_mapped(std::move(view), label);
   }
 
   bool load_common(const char* p) {
@@ -2592,7 +2665,89 @@ void copy_last_error(char* out, int capacity) noexcept {
   if (out && capacity > 0) snprintf(out, capacity, "%s", g_last_error.c_str());
 }
 
+#ifdef TIGERENGINE_MAPPING_TEST
+int mapping_ownership_probe_impl() {
+  g_mapping_unmap_count = 0;
+  g_mapping_close_count = 0;
+
+  char path[L_tmpnam] = {};
+  if (!std::tmpnam(path)) return 10;
+  {
+    FILE* stream = std::fopen(path, "wb");
+    if (!stream) return 11;
+    const uint8_t bytes[] = {
+        0x4d, 0x48, 0x43, 0x54, 0x4e, 0x30, 0x31, 0x00,
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+    };
+    const bool written = std::fwrite(bytes, 1, sizeof(bytes), stream) == sizeof(bytes);
+    std::fclose(stream);
+    if (!written) {
+      std::remove(path);
+      return 12;
+    }
+  }
+
+  int result = 0;
+  {
+    MappedFile owner;
+    if (!owner.open(path)) {
+      result = 13;
+    } else {
+      const uint8_t expected = owner.data[3];
+      {
+        MappedFile first_view;
+        first_view.set_borrowed_view(owner.data + 2, owner.size - 2);
+        if (first_view.owned || first_view.data[1] != expected) {
+          result = 14;
+        }
+        first_view.release();
+        if (!first_view.owned || first_view.data || first_view.size) result = 15;
+      }
+      if (!result && owner.data[3] != expected) result = 16;
+
+      if (!result) {
+        MappedFile second_view;
+        second_view.set_borrowed_view(owner.data + 4, owner.size - 4);
+        MappedFile moved_view(std::move(second_view));
+        if (second_view.data || second_view.size || !second_view.owned ||
+            moved_view.owned || moved_view.data[0] != owner.data[4]) {
+          result = 17;
+        }
+        // Reusing a borrowed object must release only its view and restore the
+        // default owner state before it is used again.
+        moved_view.set_borrowed_view(owner.data + 1, owner.size - 1);
+        moved_view.release();
+        if (!moved_view.owned || moved_view.data || moved_view.size) result = 18;
+      }
+
+      MappedFile moved_owner(std::move(owner));
+      if (owner.data || owner.size || !owner.owned) {
+        result = 19;
+      } else if (!moved_owner.data || moved_owner.data[3] != expected) {
+        result = 20;
+      }
+      moved_owner.release();
+      if (moved_owner.data || moved_owner.size || !moved_owner.owned) result = 21;
+    }
+    owner.release();
+  }
+  std::remove(path);
+  if (result) return result;
+  if (g_mapping_unmap_count != 1) return 22;
+#ifdef _WIN32
+  if (g_mapping_close_count != 1) return 23;
+#endif
+  return 0;
+}
+#endif
+
 }  // namespace
+
+#ifdef TIGERENGINE_MAPPING_TEST
+extern "C" int tigerengine_mapping_ownership_probe() {
+  return mapping_ownership_probe_impl();
+}
+#endif
 
 extern "C" {
 
@@ -2609,64 +2764,81 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
     auto e = std::make_unique<Engine>();
     if (beam_width > 0) e->beam = beam_width;
     if (all_ranks_always >= 0) e->all_ranks_always = all_ranks_always != 0;
-    // 单文件容器（MHCTN01）：一次 mmap 同携字符与词级模型。词层仅供
-    // 候选评分（packed_word_scorer），解码仍走字符级，与非容器行为一致；
-    // 词层缺失/损坏时降级为纯字符引擎（评分接口报错，解码不受影响）。
-    std::string container_error;
-    bool container_done = false;
-    if (e->container.open(model_path)) {
-      if (e->container.size >= 64 &&
-          memcmp(e->container.data, "MHCTN01", 7) == 0) {
-        const uint8_t* cd = e->container.data;
-        size_t q = 8;
-        auto u32c = [&]() { uint32_t v = rd_u32(cd + q); q += 4; return v; };
-        auto u64c = [&]() { uint64_t v = rd_u64(cd + q); q += 8; return v; };
-        const uint32_t version = u32c();
-        const uint32_t header_size = u32c();
-        const uint64_t file_size = u64c();
-        const uint32_t flags = u32c();
-        (void)u32c();  // reserved
-        const uint64_t char_off = u64c(), char_len = u64c();
-        const uint64_t word_off = u64c(), word_len = u64c();
-        const bool has_char = (flags & 1u) != 0, has_word = (flags & 2u) != 0;
-        auto section_ok = [&](uint64_t off, uint64_t len) {
-          return off >= (uint64_t)header_size && off <= e->container.size &&
-                 len <= e->container.size - off;
-        };
-        if (version != 1 || header_size != 64 || file_size != e->container.size ||
-            q > header_size) {
-          container_error = "invalid MHCTN01 container header";
-        } else if (!has_char || !section_ok(char_off, char_len)) {
-          container_error = "container requires a valid char section";
-        } else if (!e->model.load_view(e->container.data + char_off, char_len,
-                                       model_path)) {
-          container_error = tiger_last_error();
-        } else {
-          container_done = true;
-          if (has_word && section_ok(word_off, word_len) &&
-              e->wm.load_view(e->container.data + word_off, word_len, model_path)) {
-            e->packed_word_scorer = true;
-          }
-        }
-      } else {
-        // 打开成功但不是容器：释放宿主映射，走传统两级加载。
-        e->container.release();
-      }
+    // Map the primary file once, then dispatch by its magic.  A model loader
+    // takes ownership by move, while container sub-models remain borrowed views
+    // of this host mapping.  In particular, do not probe the same path through
+    // several loaders: each failed probe would otherwise fault/map the whole V5
+    // file before the successful loader gets a chance to use it.
+    if (!e->container.open(model_path)) {
+      copy_last_error(err, errcap);
+      return -1;
     }
-    if (!container_done && !e->wm.load(model_path)) {
-      // 非 MHKNM01 → 尝试字符级 TCSKNM。两级加载器共用 last_error；
-      // 分别记录，避免把词级模型的报错误报成最终失败原因。
-      const std::string word_error = tiger_last_error();
-      if (!e->model.load(model_path)) {
-        set_error("char model: %s (word model was tried first: %s%s%s)",
-                  tiger_last_error(), word_error.c_str(),
-                  container_error.empty() ? "" : "; container: ",
-                  container_error.c_str());
+    if (e->container.size < 8) {
+      set_error("model is too small to identify: %s", model_path);
+      copy_last_error(err, errcap);
+      return -1;
+    }
+    const uint8_t* primary = e->container.data;
+    if (memcmp(primary, "MHCTN01", 7) == 0) {
+      // 单文件容器（MHCTN01）：一次 mmap 同携字符与词级模型。词层仅供
+      // 候选评分（packed_word_scorer），解码仍走字符级，与非容器行为一致；
+      // 词层缺失/损坏时降级为纯字符引擎（评分接口报错，解码不受影响）。
+      if (e->container.size < 64) {
+        set_error("invalid MHCTN01 container header");
         copy_last_error(err, errcap);
         return -1;
       }
-    } else if (!container_done) {
+      const uint8_t* cd = e->container.data;
+      size_t q = 8;
+      auto u32c = [&]() { uint32_t v = rd_u32(cd + q); q += 4; return v; };
+      auto u64c = [&]() { uint64_t v = rd_u64(cd + q); q += 8; return v; };
+      const uint32_t version = u32c();
+      const uint32_t header_size = u32c();
+      const uint64_t file_size = u64c();
+      const uint32_t flags = u32c();
+      (void)u32c();  // reserved
+      const uint64_t char_off = u64c(), char_len = u64c();
+      const uint64_t word_off = u64c(), word_len = u64c();
+      const bool has_char = (flags & 1u) != 0, has_word = (flags & 2u) != 0;
+      auto section_ok = [&](uint64_t off, uint64_t len) {
+        return off >= (uint64_t)header_size && off <= e->container.size &&
+               len <= e->container.size - off;
+      };
+      if (version != 1 || header_size != 64 || file_size != e->container.size ||
+          q > header_size) {
+        set_error("invalid MHCTN01 container header");
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (!has_char || !section_ok(char_off, char_len)) {
+        set_error("container requires a valid char section");
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (!e->model.load_view(e->container.data + char_off, char_len, model_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (has_word && section_ok(word_off, word_len) &&
+          e->wm.load_view(e->container.data + word_off, word_len, model_path)) {
+        e->packed_word_scorer = true;
+      }
+    } else if (memcmp(primary, "TCSKNM01", 8) == 0 ||
+               memcmp(primary, "TCSKNM02", 8) == 0) {
+      if (!e->model.load_mapped(std::move(e->container), model_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
+    } else if (memcmp(primary, "MHKNM01", 7) == 0) {
+      if (!e->wm.load_mapped(std::move(e->container), model_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
       e->word_mode = true;
+    } else {
+      set_error("unknown model format: %s", model_path);
+      copy_last_error(err, errcap);
+      return -1;
     }
     if (!e->lex.load(lexicon_path)) {
       copy_last_error(err, errcap);
@@ -3151,8 +3323,12 @@ int tiger_status(int handle, char* out, int outcap) {
     const char* ws_state = e->explicit_scorer ? "explicit"
                            : e->word_mode ? "primary"
                            : e->packed_word_scorer ? "packed" : "off";
+    const std::string& primary_path = e->word_mode ? e->wm.path : e->model.path;
+    const char* primary_format = e->word_mode ? "MHKNM01"
+                              : e->model.mobile ? "TCSKNM02" : "TCSKNM01";
+    const size_t primary_size = e->word_mode ? e->wm.file.size : e->model.file.size;
     char buf[1024];
-    const int written = snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d\tuser_tri=%zu\tuser_weight=%.3f\tword_scorer=%s\tword_vocab=%zu", e->model.path.c_str(), e->model.mobile ? "TCSKNM02" : "TCSKNM01", (unsigned long long)e->model.file.size, e->lex.codes.size(), e->beam, e->user.tri.size(), e->user_weight, ws_state, ws ? ws->vocab.size() : (size_t)0);
+    const int written = snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d\tuser_tri=%zu\tuser_weight=%.3f\tword_scorer=%s\tword_vocab=%zu", primary_path.c_str(), primary_format, (unsigned long long)primary_size, e->lex.codes.size(), e->beam, e->user.tri.size(), e->user_weight, ws_state, ws ? ws->vocab.size() : (size_t)0);
     (void)written;
     if (out && outcap > 0) snprintf(out, outcap, "%s", buf);
     return 0;

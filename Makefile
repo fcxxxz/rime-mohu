@@ -151,6 +151,28 @@ tigerengine-context:
 		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_context_test
 	/tmp/tigerengine_context_test
 
+# Cross-platform ownership seam: borrowed container views must never release
+# the primary mapping. The test-only ABI is compiled into this binary only.
+tigerengine-mapping:
+	@mkdir -p .tmp/native-tests
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 -DTIGERENGINE_MAPPING_TEST \
+		-I tiger_sentence_native tests/tigerengine_mapping_ownership_test.cc \
+		tiger_sentence_native/tigerengine.cc -o .tmp/native-tests/tigerengine_mapping_ownership_test
+	.tmp/native-tests/tigerengine_mapping_ownership_test
+
+tigerengine-mobile:
+	@mkdir -p .tmp/native-tests
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 -I tiger_sentence_native \
+		tests/tigerengine_mobile_test.cc tiger_sentence_native/tigerengine.cc \
+		-o .tmp/native-tests/tigerengine_mobile_test
+	python tests/tigerengine_mobile_cases.py .tmp/native-tests/tigerengine_mobile_test
+
+tigerengine-windows-memory:
+	@test "$(OS)" = "Windows_NT" || (echo "tigerengine-windows-memory requires Windows" >&2; exit 2)
+	@test -n "$(TIGER_ENGINE_DLL)" -a -n "$(TIGER_NGRAM)" -a -n "$(TIGER_LEXICON)" || \
+		(echo "set TIGER_ENGINE_DLL, TIGER_NGRAM, and TIGER_LEXICON" >&2; exit 2)
+	python tests/tigerengine_windows_mapping_test.py
+
 # 词级上下文候选评分引擎测试：load_word_scorer/context_word_scores 的
 # 可用性语义、方向性、OOV、确定性与 MHCTN01 容器词层等价；模型缺失
 # （未安装或未设 TIGER_NGRAM/TIGER_WORD_NGRAM）时自动跳过。
@@ -244,4 +266,4 @@ test: dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy test lint-python

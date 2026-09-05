@@ -56,7 +56,11 @@ def copy_path(source: Path, destination: Path) -> None:
             source,
             destination,
             dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("__pycache__"),
+            ignore=shutil.ignore_patterns(
+                "__pycache__",
+                "user-ngram.snapshot",
+                "user-ngram.snapshot.tmp-*",
+            ),
         )
     else:
         destination.parent.mkdir(parents=True, exist_ok=True)

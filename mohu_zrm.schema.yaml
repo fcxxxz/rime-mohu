@@ -205,7 +205,7 @@ tiger:
   user_model: true
   user_model_weight: 0.85          # 静态模型权重（1.0 = 关闭用户层）
   user_model_snapshot: mohu/config/user-ngram.snapshot
-  user_model_snapshot_interval: 64 # 每 N 次中文上屏写一次快照
+  user_model_snapshot_interval: 64 # 每 N 次含非 ASCII 字符的上屏写一次快照
   # 跨候选调频：contextual_order 开关打开时，上屏历史尾部喂引擎作解码
   # 左上文。窗口为汉字数；V5 字符级三元模型结构窗口=2，大于 2 无增益。
   decode_context_chars: 2

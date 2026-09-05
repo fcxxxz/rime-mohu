@@ -77,3 +77,5 @@ build/
 trash/
 nul
 */nul
+/mohu/config/user-ngram.snapshot
+/mohu/config/user-ngram.snapshot.tmp-*

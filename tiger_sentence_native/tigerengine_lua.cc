@@ -423,6 +423,33 @@ int l_user_model_import(lua_State* L) {
   return 1;
 }
 
+int l_read_snapshot_file(lua_State* L) {
+  const char* path = luaL_checkstring(L, 1);
+  size_t blob_size = 0;
+  char* blob = tiger_read_snapshot_file(path, &blob_size);
+  if (!blob) {
+    lua_pushnil(L);
+    lua_pushstring(L, tiger_last_error());
+    return 2;
+  }
+  lua_pushlstring(L, blob, blob_size);
+  std::free(blob);
+  return 1;
+}
+
+int l_atomic_write_snapshot_file(lua_State* L) {
+  const char* path = luaL_checkstring(L, 1);
+  size_t blob_size = 0;
+  const char* blob = luaL_checklstring(L, 2, &blob_size);
+  if (tiger_atomic_write_snapshot_file(path, blob, blob_size) != 0) {
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, tiger_last_error());
+    return 2;
+  }
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
 int l_status(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -476,6 +503,8 @@ int luaopen_tigerengine(lua_State* L) {
       {"set_reading_prior_weight", l_set_reading_prior_weight},
       {"user_model_export", l_user_model_export},
       {"user_model_import", l_user_model_import},
+      {"read_snapshot_file", l_read_snapshot_file},
+      {"atomic_write_snapshot_file", l_atomic_write_snapshot_file},
       {"status", l_status},
       {"last_error", l_last_error},
       {nullptr, nullptr},

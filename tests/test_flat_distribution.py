@@ -8,10 +8,38 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.build_split_dist import copy_path
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class FlatDistributionTest(unittest.TestCase):
+    def test_user_snapshot_state_is_gitignored(self) -> None:
+        for path in (
+            "mohu/config/user-ngram.snapshot",
+            "mohu/config/user-ngram.snapshot.tmp-123",
+        ):
+            with self.subTest(path=path):
+                result = subprocess.run(["git", "check-ignore", "-q", path], cwd=ROOT)
+                self.assertEqual(0, result.returncode)
+
+    def test_runtime_tree_excludes_user_snapshot_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "source"
+            config = source / "config"
+            config.mkdir(parents=True)
+            (config / "README.md").write_text("marker\n", encoding="utf-8")
+            (config / "user-ngram.snapshot").write_bytes(b"private history")
+            (config / "user-ngram.snapshot.tmp-123").write_bytes(b"temporary history")
+
+            destination = root / "destination"
+            copy_path(source, destination)
+
+            self.assertTrue((destination / "config" / "README.md").is_file())
+            self.assertFalse((destination / "config" / "user-ngram.snapshot").exists())
+            self.assertFalse((destination / "config" / "user-ngram.snapshot.tmp-123").exists())
+
     def build(
         self, scheme: str, destination: Path, windows_runtime: Path | None = None
     ) -> None:
@@ -60,6 +88,9 @@ class FlatDistributionTest(unittest.TestCase):
                 model_readme = destination / "mohu" / "model" / "README.md"
                 self.assertTrue(model_readme.is_file())
                 self.assertIn("mohu-sentence-ngram-v5.bin", model_readme.read_text(encoding="utf-8"))
+                config_readme = destination / "mohu" / "config" / "README.md"
+                self.assertTrue(config_readme.is_file())
+                self.assertFalse((destination / "mohu" / "config" / "user-ngram.snapshot").exists())
 
                 for path in destination.rglob("*"):
                     relative = str(path.relative_to(destination))

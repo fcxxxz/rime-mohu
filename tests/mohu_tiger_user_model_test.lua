@@ -3,9 +3,21 @@ package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 -- 用户调频层测试：上屏喂入 native 计数表、权重与快照导入、间隔快照
 -- 原子写出、方案卸载兜底快照、旧 ABI dylib 静默降级、配置关闭。
 
-local root = "/tmp/mohu-tiger-user-model-test"
-os.execute("rm -rf " .. root)
-os.execute("mkdir -p " .. root .. "/mohu/config")
+local windows = package.config:sub(1, 1) == "\\"
+local root = os.tmpname()
+os.remove(root)
+if windows then
+  assert(os.execute('mkdir "' .. root .. '/mohu/config"') == true)
+else
+  assert(os.execute("mkdir -p '" .. root:gsub("'", "'\\''") .. "/mohu/config'") == true)
+end
+
+local original_execute = os.execute
+local runtime_commands = {}
+os.execute = function(command)
+  runtime_commands[#runtime_commands + 1] = command
+  return true
+end
 
 rime_api = { get_user_data_dir = function() return root end }
 log = { error = function() end }
@@ -56,8 +68,11 @@ local function make_env(config)
   return { engine = engine }, ctx
 end
 
-local function fresh(with_user_model)
-  local calls = { update = {}, weights = {}, exports = 0, imports = {} }
+local function fresh(with_user_model, with_snapshot_io)
+  if with_snapshot_io == nil then with_snapshot_io = with_user_model end
+  local calls = {
+    update = {}, weights = {}, exports = 0, imports = {}, reads = {}, writes = {},
+  }
   package.preload["mohu_tiger_reranker"] = function()
     return { init = function() end, fini = function() end, rerank = function() return nil end }
   end
@@ -88,6 +103,24 @@ local function fresh(with_user_model)
           assert(handle == 7)
           calls.imports[#calls.imports + 1] = blob
           return 1
+        end
+        if with_snapshot_io then
+          module.read_snapshot_file = function(path)
+            calls.reads[#calls.reads + 1] = path
+            local file = io.open(path, "rb")
+            if not file then return nil end
+            local content = file:read("*a")
+            file:close()
+            return content
+          end
+          module.atomic_write_snapshot_file = function(path, blob)
+            calls.writes[#calls.writes + 1] = { path = path, blob = blob }
+            local file = io.open(path, "wb")
+            if not file then return false end
+            local written = file:write(blob)
+            file:close()
+            return written ~= nil
+          end
         end
       end
       return module
@@ -127,6 +160,8 @@ do
 
   assert(#calls.weights == 1 and calls.weights[1] == 0.85,
     "init must push the default static weight 0.85")
+  assert(#calls.reads == 1 and calls.reads[1] == snapshot_path,
+    "init must read the snapshot through native file I/O")
   assert(#calls.imports == 1 and calls.imports[1] == "PREVIOUS-BLOB",
     "init must import the persisted snapshot")
 
@@ -140,6 +175,10 @@ do
 
   fire_commit(ctx, "第二次上屏")
   assert(calls.exports == 1, "the interval (2) must trigger a snapshot export")
+  assert(#runtime_commands == 0,
+    "snapshot persistence must not invoke a shell command")
+  assert(#calls.writes == 1,
+    "snapshot persistence must use the native atomic writer")
   assert(read_file(snapshot_path) == "SNAPSHOT-BLOB-1",
     "the snapshot file must be replaced atomically")
 
@@ -147,6 +186,10 @@ do
   assert(calls.exports == 1, "non-boundary commits must not export")
   native.translator.fini(env)
   assert(calls.exports == 2, "fini must snapshot unsaved user counts")
+  assert(#runtime_commands == 0,
+    "the fini snapshot must not invoke a shell command")
+  assert(#calls.writes == 2,
+    "the fini snapshot must use the native atomic writer")
   assert(read_file(snapshot_path) == "SNAPSHOT-BLOB-2",
     "fini snapshot must land on disk")
   local disconnected = 0
@@ -156,7 +199,28 @@ do
   assert(disconnected >= 1, "fini must disconnect the user model notifier")
 end
 
--- 2. 旧 ABI dylib：无用户模型函数时静默降级，翻译不受影响。
+-- 2. 上一版 Windows ABI 有用户模型函数但无 native 文件 I/O：只保留内存学习，
+-- 不得退回窄字符 io.open/os.rename，也不得启动 shell。
+do
+  local original_config = package.config
+  package.config = "\\" .. original_config:sub(2)
+  local config = { ["tiger/user_model_snapshot_interval"] = "1" }
+  local env, ctx = make_env(config)
+  local native, calls = fresh(true, false)
+  native.translator.init(env)
+  assert(#calls.reads == 0 and #calls.imports == 0,
+    "the previous Windows ABI must not use Lua file I/O")
+  fire_commit(ctx, "上一版运行时")
+  assert(#calls.update == 1, "the previous ABI must keep in-memory learning active")
+  assert(calls.exports == 0,
+    "the previous Windows ABI must not export into a narrow-character file path")
+  native.translator.fini(env)
+  assert(#runtime_commands == 0,
+    "the previous Windows ABI must not fall back to a shell")
+  package.config = original_config
+end
+
+-- 3. 旧 ABI dylib：无用户模型函数时静默降级，翻译不受影响。
 do
   local env, ctx = make_env({})
   local native, calls = fresh(false)
@@ -172,7 +236,7 @@ do
   native.translator.fini(env)
 end
 
--- 3. 配置关闭：tiger/user_model: false 时不连接通知器、不设权重。
+-- 4. 配置关闭：tiger/user_model: false 时不连接通知器、不设权重。
 do
   local config = { ["tiger/user_model"] = "false" }
   local env, ctx = make_env(config)
@@ -187,7 +251,7 @@ do
   native.translator.fini(env)
 end
 
--- 4. 权重与间隔的非法值回退默认；快照路径可覆盖。
+-- 5. 权重与间隔的非法值回退默认；快照路径可覆盖。
 do
   local config = {
     ["tiger/user_model_weight"] = "7",
@@ -204,6 +268,38 @@ do
   assert(env._tiger_user_model_path == root .. "/custom.snapshot",
     "the snapshot path override must be honored")
   native.translator.fini(env)
+end
+
+-- 6. 快照父目录缺失时 fail-open，且不得退回 shell 建目录。
+do
+  local snapshot_path = root .. "/missing/config/user-ngram.snapshot"
+  local config = {
+    ["tiger/user_model_snapshot_interval"] = "1",
+    ["tiger/user_model_snapshot"] = snapshot_path,
+  }
+  local env, ctx = make_env(config)
+  local native, calls = fresh(true)
+  native.translator.init(env)
+  fire_commit(ctx, "目录缺失")
+  assert(calls.exports == 1, "the interval must still export the in-memory snapshot")
+  assert(#calls.writes == 1,
+    "a missing parent directory must fail inside the native writer")
+  assert(read_file(snapshot_path) == nil,
+    "a missing parent directory must skip persistence")
+  native.translator.fini(env)
+  assert(calls.exports == 2,
+    "failed persistence must keep the model dirty for the fini retry")
+  assert(#calls.writes == 2,
+    "the fini retry must use the same native writer")
+  assert(#runtime_commands == 0,
+    "a missing parent directory must not trigger a shell fallback")
+end
+
+os.execute = original_execute
+if windows then
+  os.execute('rmdir /s /q "' .. root .. '"')
+else
+  os.execute("rm -rf '" .. root:gsub("'", "'\\''") .. "'")
 end
 
 print("Mohu user model tests passed")

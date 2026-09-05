@@ -141,6 +141,13 @@ tigerengine-user-model:
 		tiger_sentence_native/tigerengine.cc -o /tmp/tigerengine_user_model_test
 	/tmp/tigerengine_user_model_test
 
+tigerengine-snapshot-io:
+	@mkdir -p .tmp/native-tests
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 -I tiger_sentence_native \
+		tests/tigerengine_snapshot_io_test.cc tiger_sentence_native/tigerengine.cc \
+		-o .tmp/native-tests/tigerengine_snapshot_io_test
+	.tmp/native-tests/tigerengine_snapshot_io_test
+
 # 读音先验引擎测试：第 5 列（读音条件简频）压制多音字罕用读音拼字
 # （mohuz→万虎）；模型缺失或旧 4 列码表时自动跳过。
 tigerengine-reading-prior:
@@ -208,6 +215,7 @@ model-dist:
 test: dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-safety
 	$(MAKE) tigerengine-lua-safety
+	$(MAKE) tigerengine-snapshot-io
 	$(MAKE) tigerengine-user-model
 	$(MAKE) tigerengine-reading-prior
 	$(MAKE) tigerengine-context
@@ -272,4 +280,4 @@ test: dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy test lint-python

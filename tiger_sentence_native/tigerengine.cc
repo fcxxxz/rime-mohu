@@ -23,6 +23,8 @@
 //   pathmap：逗号分隔的 "文本字节数:原始码长"，供提前上屏定位边界。
 
 #include <algorithm>
+#include <atomic>
+#include <cerrno>
 #include <charconv>
 #include <chrono>
 #include <cmath>
@@ -46,6 +48,7 @@
 // windows.h 定义 min/max 宏会破坏 std::min/std::max，必须先声明 NOMINMAX。
 #define NOMINMAX
 #include <windows.h>
+#include <io.h>
 #else
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -61,6 +64,7 @@ namespace {
 
 thread_local std::string g_last_error;
 std::mutex g_engine_mutex;
+std::atomic<unsigned long long> g_snapshot_temp_sequence{0};
 
 #ifdef TIGERENGINE_MAPPING_TEST
 int g_mapping_unmap_count = 0;
@@ -74,6 +78,85 @@ void set_error(const char* fmt, ...) {
   vsnprintf(buf, sizeof(buf), fmt, ap);
   va_end(ap);
   g_last_error = buf;
+}
+
+#ifdef _WIN32
+bool utf8_path_to_wide(const char* path, std::wstring* output) {
+  const size_t length = path ? std::strlen(path) : 0;
+  if (length == 0 || length > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    return false;
+  }
+  const int wide_length = MultiByteToWideChar(
+      CP_UTF8, MB_ERR_INVALID_CHARS, path, static_cast<int>(length), nullptr, 0);
+  if (wide_length <= 0) return false;
+  output->resize(static_cast<size_t>(wide_length));
+  return MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path,
+                             static_cast<int>(length), output->data(), wide_length) ==
+         wide_length;
+}
+#endif
+
+std::FILE* open_snapshot_file(const char* path, bool write) {
+#ifdef _WIN32
+  std::wstring wide_path;
+  if (!utf8_path_to_wide(path, &wide_path)) {
+    set_error("snapshot path must be valid UTF-8");
+    return nullptr;
+  }
+  std::FILE* file = _wfopen(wide_path.c_str(), write ? L"wb" : L"rb");
+#else
+  std::FILE* file = std::fopen(path, write ? "wb" : "rb");
+#endif
+  if (!file) set_error("cannot open snapshot: %s", std::strerror(errno));
+  return file;
+}
+
+void remove_snapshot_file(const char* path) noexcept {
+#ifdef _WIN32
+  try {
+    std::wstring wide_path;
+    if (utf8_path_to_wide(path, &wide_path)) _wremove(wide_path.c_str());
+  } catch (...) {
+  }
+#else
+  std::remove(path);
+#endif
+}
+
+bool atomic_replace_snapshot_file(const char* temporary_path,
+                                  const char* destination_path) {
+#ifdef _WIN32
+  std::wstring temporary_wide;
+  std::wstring destination_wide;
+  if (!utf8_path_to_wide(temporary_path, &temporary_wide) ||
+      !utf8_path_to_wide(destination_path, &destination_wide)) {
+    set_error("snapshot paths must be valid UTF-8");
+    return false;
+  }
+  if (!MoveFileExW(temporary_wide.c_str(), destination_wide.c_str(),
+                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+    set_error("cannot replace snapshot (Windows error %lu)",
+              static_cast<unsigned long>(GetLastError()));
+    return false;
+  }
+#else
+  if (std::rename(temporary_path, destination_path) != 0) {
+    set_error("cannot replace snapshot: %s", std::strerror(errno));
+    return false;
+  }
+#endif
+  return true;
+}
+
+std::string snapshot_temporary_path(const char* destination_path) {
+#ifdef _WIN32
+  const unsigned long process_id = GetCurrentProcessId();
+#else
+  const unsigned long process_id = static_cast<unsigned long>(getpid());
+#endif
+  const unsigned long long sequence = g_snapshot_temp_sequence.fetch_add(1) + 1;
+  return std::string(destination_path) + ".tmp-" + std::to_string(process_id) +
+         "-" + std::to_string(sequence);
 }
 
 // A malformed mobile-model page is different from an ordinary missing
@@ -1736,8 +1819,8 @@ struct DecodeResult {
 // ---------------------------------------------------------------- 用户调频层
 // 小型用户三元模型：统计用户实际提交文本的字符 trigram 计数，在
 // Engine::logp 的融合槽位与静态主模型做概率域插值。静态模型（V5）文件
-// 永不改写；该表全内存、容量有上限，跨会话由 Lua 侧快照持久化
-// （引擎自身零文件 IO，见 tiger_engine_user_model_export/import）。
+// 永不改写；该表全内存、容量有上限，跨会话由 Lua 协调 native 快照
+// 读写接口持久化（见 tiger_engine_user_model_export/import）。
 struct UserNgram {
   // 与 logp_cache 同构的键位打包（码点 < 2^21）。
   static uint64_t tri_key(uint32_t a, uint32_t b, uint32_t c) {
@@ -3378,6 +3461,80 @@ int tiger_engine_user_model_import(int handle, const char* blob, size_t blob_siz
     return 1;
   } catch (...) {
     set_error("user model import failed");
+    return -1;
+  }
+}
+
+char* tiger_read_snapshot_file(const char* path, size_t* size_out) {
+  if (size_out) *size_out = 0;
+  if (!path || !path[0] || !size_out) {
+    set_error("snapshot read requires a path and size output");
+    return nullptr;
+  }
+  try {
+    std::unique_ptr<std::FILE, int (*)(std::FILE*)> file(
+        open_snapshot_file(path, false), &std::fclose);
+    if (!file) return nullptr;
+    if (std::fseek(file.get(), 0, SEEK_END) != 0) {
+      set_error("cannot seek snapshot");
+      return nullptr;
+    }
+    const long length = std::ftell(file.get());
+    if (length < 0 || std::fseek(file.get(), 0, SEEK_SET) != 0) {
+      set_error("cannot measure snapshot");
+      return nullptr;
+    }
+    const size_t size = static_cast<size_t>(length);
+    char* blob = static_cast<char*>(std::malloc(size > 0 ? size : 1));
+    if (!blob) {
+      set_error("cannot allocate snapshot buffer");
+      return nullptr;
+    }
+    if (size > 0 && std::fread(blob, 1, size, file.get()) != size) {
+      std::free(blob);
+      set_error("cannot read snapshot");
+      return nullptr;
+    }
+    *size_out = size;
+    return blob;
+  } catch (...) {
+    set_error("snapshot read failed");
+    return nullptr;
+  }
+}
+
+int tiger_atomic_write_snapshot_file(const char* path, const char* blob, size_t size) {
+  if (!path || !path[0] || (!blob && size > 0)) {
+    set_error("snapshot write requires a path and blob");
+    return -1;
+  }
+  std::string temporary_path;
+  try {
+    temporary_path = snapshot_temporary_path(path);
+    std::unique_ptr<std::FILE, int (*)(std::FILE*)> file(
+        open_snapshot_file(temporary_path.c_str(), true), &std::fclose);
+    if (!file) return -1;
+    bool written = size == 0 || std::fwrite(blob, 1, size, file.get()) == size;
+    written = written && std::fflush(file.get()) == 0;
+#ifdef _WIN32
+    written = written && _commit(_fileno(file.get())) == 0;
+#else
+    written = written && fsync(fileno(file.get())) == 0;
+#endif
+    const int close_result = std::fclose(file.release());
+    if (!written || close_result != 0) {
+      remove_snapshot_file(temporary_path.c_str());
+      set_error("cannot write snapshot");
+      return -1;
+    }
+    if (!atomic_replace_snapshot_file(temporary_path.c_str(), path)) {
+      remove_snapshot_file(temporary_path.c_str());
+      return -1;
+    }
+    return 0;
+  } catch (...) {
+    if (!temporary_path.empty()) remove_snapshot_file(temporary_path.c_str());
+    set_error("snapshot write failed");
     return -1;
   }
 }

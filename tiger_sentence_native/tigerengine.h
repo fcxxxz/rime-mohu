@@ -65,6 +65,11 @@ int tiger_engine_context_word_scores(int handle, const char* context_text,
 int tiger_engine_context_char_scores(int handle, const char* context_text,
                                      const char* candidates, int candidate_count,
                                      double* out_scores);
+/* Read/write snapshot files through UTF-8 paths. The writer uses a flushed
+ * same-directory temporary file and atomically replaces an existing target.
+ * The caller owns and must free() the read buffer. */
+char* tiger_read_snapshot_file(const char* path, size_t* size_out);
+int tiger_atomic_write_snapshot_file(const char* path, const char* blob, size_t size);
 void tiger_engine_free(int handle);
 /* include_early is a deprecated ABI compatibility flag; the canonical Lua
  * translator always passes 0 and never exposes early-commit results. */

@@ -87,14 +87,15 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
 - `long_input_length`：达到该 canonical raw 输入长度后（Rime 双拼音节之间的空格会先移除），express translator 使用不读 userdb 的 `smart_static`（默认 5）。smart userdb 的多字学习记录通过 native 个人词边快照和提交增量参与长句解码，不依赖按长度切换候选所有权
 - `personal_lexicon_namespace`：个人词 `Memory` 使用的 `smart` userdb 命名空间
 - `personal_lexicon_max_rows`：同步到 native 引擎的个人多字词上限（默认不限制；需要时可显式设回如 4096）
-- `user_model`：用户调频层开关（默认 true）。含中文的上屏文本会喂入
+- `user_model`：用户调频层开关（默认 true）。含非 ASCII 字符的上屏文本会喂入
   native 引擎的内存三元计数表，解码时每个 trigram 查询按
   `P = w·P_静态 + (1-w)·P_用户` 概率域融合——静态模型文件永不改写，
   调频学习全部发生在这一层
 - `user_model_weight`：静态模型权重 w（默认 0.85；设 1.0 等价关闭用户层）
 - `user_model_snapshot`：计数表二进制快照路径（默认
-  `mohu/config/user-ngram.snapshot`。
-- `user_model_snapshot_interval`：每 N 次中文上屏写一次快照（默认 64；
+  `mohu/config/user-ngram.snapshot`）。当前 runtime 通过原生 UTF-8 路径接口读写；
+  官方方案包预建默认父目录，覆盖路径时父目录须已存在。
+- `user_model_snapshot_interval`：每 N 次含非 ASCII 字符的上屏写一次快照（默认 64；
   方案卸载时若有未落盘计数也会兜底快照一次）
 - `personal_refresh_interval`：个人词快照的时间防抖秒数（默认 30；设为 0 关闭防抖）
 - `decode_context_chars`：跨候选左上文窗口（默认 2）。`contextual_order`

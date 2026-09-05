@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstdarg>
 #include <cstdint>
@@ -3409,12 +3410,10 @@ int tiger_decode(int handle, const char* raw, int include_early,
       return -1;
     }
     e = g_engines[handle].get();
-    struct timespec t0;
-    clock_gettime(CLOCK_MONOTONIC, &t0);
+    const auto t0 = std::chrono::steady_clock::now();
     DecodeResult& r = e->decode(raw, include_early != 0);
-    struct timespec t1;
-    clock_gettime(CLOCK_MONOTONIC, &t1);
-    if (ms) *ms = (t1.tv_sec - t0.tv_sec) * 1000.0 + (t1.tv_nsec - t0.tv_nsec) / 1e6;
+    const auto t1 = std::chrono::steady_clock::now();
+    if (ms) *ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     if (!serialize(r, out, outcap)) {
       set_error("output buffer too small");
       return -1;

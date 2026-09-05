@@ -310,6 +310,14 @@ override_module.acquire_store = function()
 end
 nav_env.manager_override_name = "mohu_candidate_manager_test"
 nav_env.manager_override_store = action_store
+local action_memory = Memory
+Memory = function()
+    return {
+        user_lookup = function() return false end,
+        disconnect = function() end,
+    }
+end
+nav_env.manager_memory_namespace = "translator"
 local shifted_backspace = {
     keycode = 0xff08,
     ctrl = function() return false end,
@@ -322,6 +330,7 @@ assert(#management_actions == 1)
 assert(management_actions[1][1] == "aa")
 assert(management_actions[1][2] == "寜")
 assert(management_actions[1][3] == false)
+if action_memory == nil then Memory = nil else Memory = action_memory end
 override_module.acquire_store = original_acquire_store
 
 local modifier_release = {
@@ -362,3 +371,253 @@ assert(context.push_input_count == 2, context.push_input_count)
 assert(manager.manager_processor.func(modifier_release, processor_env) == 2)
 
 print("candidate manager logic: ok")
+
+-- Memory is a management-only dependency.  Its lifecycle must be lazy and
+-- failure must not be mistaken for an empty user dictionary.
+do
+    local override_module = require("mohu_candidate_override")
+    local pin_module = require("mohu_pin")
+    local original_memory = Memory
+    local original_candidate = Candidate
+    local original_yield = yield
+    local original_acquire_store = override_module.acquire_store
+    local original_pin_acquire = pin_module.pin_store.acquire
+    local original_pin_release = pin_module.pin_store.release
+
+    local constructions = 0
+    local disconnects = 0
+    local writes = 0
+    local memory_mode = "live"
+    local yielded = {}
+    local store = nil
+
+    local function make_memory()
+        local memory = {
+            user_entries = {
+                { text = "UserWord", custom_code = "uu", commit_count = 2 },
+            },
+        }
+        function memory:user_lookup()
+            return true
+        end
+        function memory:iter_user()
+            local index = 0
+            return function()
+                index = index + 1
+                return self.user_entries[index]
+            end
+        end
+        function memory:dictiter_lookup()
+            return {
+                iter = function()
+                    return function() return nil end
+                end,
+            }
+        end
+        function memory:update_userdict()
+            writes = writes + 1
+            return true
+        end
+        function memory:disconnect()
+            disconnects = disconnects + 1
+        end
+        return memory
+    end
+
+    Memory = function()
+        constructions = constructions + 1
+        if memory_mode == "fail" then
+            error("user dictionary unavailable")
+        end
+        return make_memory()
+    end
+
+    Candidate = function(cand_type, start, finish, text, comment)
+        return {
+            type = cand_type,
+            start = start,
+            _end = finish,
+            text = text,
+            comment = comment,
+        }
+    end
+    yield = function(cand)
+        table.insert(yielded, cand)
+    end
+
+    store = {
+        list_all = function()
+            return {
+                { code = "aa", text = "Builtin", hidden = true, rank = -1, tick = 1 },
+            }
+        end,
+        release = function() end,
+        refresh = function() return true end,
+        set_hidden = function()
+            writes = writes + 1
+            return true
+        end,
+        set_user_deleted = function() return true end,
+    }
+    override_module.acquire_store = function()
+        return store
+    end
+    pin_module.pin_store.acquire = function()
+        return true
+    end
+    pin_module.pin_store.release = function() end
+
+    local function make_env(input)
+        local config = {}
+        function config:get_bool(path)
+            if path == "mohu/candidate_manager/enable" then
+                return true
+            end
+            return nil
+        end
+        function config:get_string(path)
+            if path == "mohu/candidate_manager/prefix" then
+                return "=="
+            elseif path == "mohu/candidate_manager/memory_namespace" then
+                return "manager-test"
+            elseif path == "mohu/candidate_override/db_name" then
+                return "manager-test-db"
+            end
+            return nil
+        end
+        local segment = {
+            start = 0,
+            _end = #(input or "=="),
+            selected_index = 0,
+            prompt = nil,
+            menu = {},
+        }
+        local context = {
+            input = input or "==",
+            composition = {},
+            refresh_count = 0,
+        }
+        function context.composition:empty()
+            return false
+        end
+        function context.composition:back()
+            return segment
+        end
+        function context:refresh_non_confirmed_composition()
+            self.refresh_count = self.refresh_count + 1
+        end
+        local engine = {
+            context = context,
+            schema = { config = config },
+        }
+        return {
+            engine = engine,
+            context = context,
+            segment = segment,
+        }
+    end
+
+    local function make_key(keycode)
+        return {
+            keycode = keycode,
+            ctrl = function() return false end,
+            shift = function() return true end,
+            alt = function() return false end,
+            release = function() return false end,
+        }
+    end
+
+    local processor_env = make_env("==")
+    local translator_env = make_env("==")
+    manager.manager_processor.init(processor_env)
+    manager.manager_translator.init(translator_env)
+    assert(constructions == 0, "manager init must not construct Memory")
+    assert(processor_env.manager_memory_namespace == "manager-test")
+    assert(processor_env.manager_memory_attempted == false)
+    assert(translator_env.manager_memory_namespace == "manager-test")
+    assert(translator_env.manager_memory_attempted == false)
+
+    manager.manager_translator.func("==", translator_env.segment, translator_env)
+    manager.manager_translator.func("==p", translator_env.segment, translator_env)
+    assert(constructions == 0, "navigation and pin routes must not construct Memory")
+
+    manager.manager_translator.func("==h", translator_env.segment, translator_env)
+    assert(constructions == 1, "the first hidden-word query constructs one Memory")
+    assert(translator_env.manager_memory ~= nil)
+    manager.manager_translator.func("==h", translator_env.segment, translator_env)
+    manager.manager_translator.func("==u", translator_env.segment, translator_env)
+    assert(constructions == 1, "repeated h/u queries reuse the live Memory")
+
+    local previous_memory = translator_env.manager_memory
+    subject.refresh_memory(translator_env)
+    assert(constructions == 2, "explicit refresh must retry construction")
+    assert(previous_memory ~= translator_env.manager_memory)
+    assert(disconnects == 1, "refresh must disconnect the previous Memory")
+
+    memory_mode = "fail"
+    local failed_query_env = make_env("==")
+    manager.manager_translator.init(failed_query_env)
+    assert(constructions == 2, "failed env init must remain lazy")
+    yielded = {}
+    failed_query_env.segment.prompt = nil
+    manager.manager_translator.func("==h", failed_query_env.segment, failed_query_env)
+    assert(constructions == 3, "the first failed query attempts Memory once")
+    assert(failed_query_env.manager_memory == nil)
+    assert(failed_query_env.segment.prompt == "〔无法连接用户词典〕")
+    assert(#yielded == 0, "failed h query must not classify or emit records")
+    manager.manager_translator.func("==u", failed_query_env.segment, failed_query_env)
+    assert(constructions == 3, "failed Memory must not be retried per query")
+    assert(failed_query_env.segment.prompt == "〔无法连接用户词典〕")
+
+    local failed_delete_env = make_env("==u")
+    failed_delete_env.segment.get_selected_candidate = function()
+        return {
+            type = "mohu_manager_record_u",
+            text = "UserWord",
+            comment = "uu · 用户自造词 · Shift+Delete 删除",
+        }
+    end
+    manager.manager_processor.init(failed_delete_env)
+    local writes_before_failure = writes
+    manager.manager_processor.func(make_key(0xff08), failed_delete_env)
+    assert(constructions == 4, "the first failed delete attempts Memory once")
+    assert(failed_delete_env.segment.prompt == "〔无法连接用户词典〕")
+    assert(writes == writes_before_failure, "failed delete must not write or misclassify")
+
+    memory_mode = "live"
+    local delete_env = make_env("==u")
+    delete_env.segment.get_selected_candidate = function()
+        return {
+            type = "mohu_manager_record_u",
+            text = "UserWord",
+            comment = "uu · 用户自造词 · Shift+Delete 删除",
+        }
+    end
+    manager.manager_processor.init(delete_env)
+    manager.manager_processor.func(make_key(0xff08), delete_env)
+    assert(constructions == 5, "u delete constructs Memory once")
+    assert(writes == writes_before_failure + 1, "successful u delete writes the user dictionary")
+    manager.manager_processor.func(make_key(0xff08), delete_env)
+    assert(constructions == 5, "repeated u delete reuses the per-env Memory")
+
+    manager.manager_translator.fini(translator_env)
+    assert(translator_env.manager_memory == nil)
+    assert(translator_env.manager_memory_attempted == false)
+    assert(translator_env.manager_memory_namespace == nil)
+    manager.manager_processor.fini(processor_env)
+    assert(processor_env.manager_memory == nil)
+    assert(processor_env.manager_memory_attempted == false)
+    assert(processor_env.manager_memory_namespace == nil)
+    manager.manager_translator.fini(failed_query_env)
+    manager.manager_processor.fini(failed_delete_env)
+    manager.manager_processor.fini(delete_env)
+
+    override_module.acquire_store = original_acquire_store
+    pin_module.pin_store.acquire = original_pin_acquire
+    pin_module.pin_store.release = original_pin_release
+    if original_memory == nil then Memory = nil else Memory = original_memory end
+    if original_candidate == nil then Candidate = nil else Candidate = original_candidate end
+    if original_yield == nil then yield = nil else yield = original_yield end
+end
+
+print("candidate manager memory lifecycle: ok")

@@ -6,6 +6,7 @@ local pin = require("mohu_pin")
 local M = {}
 local kAccepted = 1
 local kNoop = 2
+local kMemoryUnavailable = "〔无法连接用户词典〕"
 
 local categories = {
     { key = "h", label = "隐藏的内置词" },
@@ -321,19 +322,28 @@ local function get_bool(config, path, default)
     return value
 end
 
+local function ensure_memory(env)
+    if env.manager_memory_attempted then
+        return env.manager_memory
+    end
+    env.manager_memory_attempted = true
+    if Memory == nil or env.manager_memory_namespace == nil then
+        return nil
+    end
+    local ok, memory = pcall(Memory, env.engine, env.engine.schema, env.manager_memory_namespace)
+    if ok and memory ~= nil then
+        env.manager_memory = memory
+    end
+    return env.manager_memory
+end
+
 local function refresh_memory(env)
     if env.manager_memory ~= nil then
         pcall(function() env.manager_memory:disconnect() end)
         env.manager_memory = nil
     end
-    if Memory == nil then
-        return nil
-    end
-    local ok, memory = pcall(Memory, env.engine, env.engine.schema, env.manager_memory_namespace)
-    if ok then
-        env.manager_memory = memory
-    end
-    return env.manager_memory
+    env.manager_memory_attempted = false
+    return ensure_memory(env)
 end
 
 local function refresh_override_store(env)
@@ -348,8 +358,14 @@ local function refresh_override_store(env)
     return env.manager_override_store
 end
 
-local function configure(env, with_memory)
+local function configure(env)
     local config = env.engine.schema.config
+    if env.manager_memory ~= nil then
+        pcall(function() env.manager_memory:disconnect() end)
+    end
+    env.manager_memory = nil
+    env.manager_memory_attempted = false
+    env.manager_memory_namespace = config:get_string("mohu/candidate_manager/memory_namespace") or "translator"
     env.manager_enabled = get_bool(config, "mohu/candidate_manager/enable", true)
     env.manager_prefix = config:get_string("mohu/candidate_manager/prefix") or "=="
     env.manager_option = "candidate_override_management"
@@ -362,10 +378,6 @@ local function configure(env, with_memory)
     local pin_ok, pin_acquired = pcall(pin.pin_store.acquire)
     if pin_ok and pin_acquired then
         env.manager_pin_store = pin.pin_store
-    end
-    if with_memory and Memory ~= nil then
-        env.manager_memory_namespace = config:get_string("mohu/candidate_manager/memory_namespace") or "translator"
-        refresh_memory(env)
     end
 end
 
@@ -382,6 +394,8 @@ local function release(env)
         pcall(function() env.manager_memory:disconnect() end)
         env.manager_memory = nil
     end
+    env.manager_memory_attempted = false
+    env.manager_memory_namespace = nil
 end
 
 local function current_segment(context)
@@ -431,7 +445,7 @@ end
 local processor = {}
 
 function processor.init(env)
-    configure(env, true)
+    configure(env)
 end
 
 function processor.fini(env)
@@ -499,8 +513,11 @@ function processor.func(key_event, env)
             return kAccepted
         end
         if route.category == "h" or route.category == "u" then
+            if ensure_memory(env) == nil then
+                set_prompt(context, kMemoryUnavailable)
+                return kAccepted
+            end
             refresh_override_store(env)
-            refresh_memory(env)
         end
         local ok = perform_action(route.category, code, selected.text, {
             override_store = env.manager_override_store,
@@ -522,7 +539,7 @@ end
 local translator = {}
 
 function translator.init(env)
-    configure(env, true)
+    configure(env)
 end
 
 function translator.fini(env)
@@ -559,6 +576,10 @@ function translator.func(input, seg, env)
         return
     end
     if route.category == "h" or route.category == "u" then
+        if ensure_memory(env) == nil then
+            set_prompt(env.engine.context, kMemoryUnavailable)
+            return
+        end
         refresh_override_store(env)
     end
     local overrides, pins = read_sources(env)
@@ -584,9 +605,6 @@ function translator.func(input, seg, env)
 
     local records
     if route.category == "h" or route.category == "o" then
-        if route.category == "h" then
-            refresh_memory(env)
-        end
         records = override_records(overrides, route.category, route.query)
         if route.category == "h" then
             for _, record in ipairs(records) do
@@ -600,7 +618,6 @@ function translator.func(input, seg, env)
             end
         end
     elseif route.category == "u" then
-        refresh_memory(env)
         records = user_created_records(
             env.manager_memory,
             route.query,
@@ -628,12 +645,14 @@ M._test = {
     category_preedit = category_preedit,
     category_counts = category_counts,
     code_from_comment = code_from_comment,
+    ensure_memory = ensure_memory,
     find_user_created_record = find_user_created_record,
     override_records = override_records,
     parse_route = parse_route,
     perform_action = perform_action,
     pin_records = pin_records,
     record_comment = record_comment,
+    refresh_memory = refresh_memory,
     user_created_records = user_created_records,
 }
 

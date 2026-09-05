@@ -75,6 +75,20 @@ void set_error(const char* fmt, ...) {
   g_last_error = buf;
 }
 
+// A malformed mobile-model page is different from an ordinary missing
+// context.  Keep a dedicated exception type so every native entry point can
+// preserve the fail-open signal instead of silently assigning a fallback
+// probability.
+class InvalidPageError : public std::runtime_error {
+ public:
+  InvalidPageError() : std::runtime_error("invalid n-gram page") {}
+};
+
+bool strict_mobile_validation_enabled() {
+  const char* value = std::getenv("MOHU_TIGER_STRICT_VALIDATE");
+  return value != nullptr && std::strcmp(value, "1") == 0;
+}
+
 inline uint32_t rd_u32(const uint8_t* p) { uint32_t v; memcpy(&v, p, 4); return v; }
 inline int32_t rd_i32(const uint8_t* p) { int32_t v; memcpy(&v, p, 4); return v; }
 inline uint64_t rd_u64(const uint8_t* p) { uint64_t v; memcpy(&v, p, 8); return v; }
@@ -254,6 +268,7 @@ struct CtxCacheEntry {
   double lambda_ = 1.0;
   int64_t successor_count = 0;
   size_t successor_position = 0;
+  bool invalid = false;
 };
 
 template <typename K>
@@ -300,6 +315,7 @@ struct KnModel {
   uint64_t bi_section_start = 0, tri_section_start = 0;
   int64_t bi_ctx_total = 0, tri_ctx_total = 0;
   FifoCache<uint64_t> cache_b{16384}, cache_t{16384};
+  std::unordered_set<int64_t> invalid_b_pages, invalid_t_pages;
 
   bool range_ok(uint64_t offset, uint64_t length) const {
     return offset <= file.size && length <= static_cast<uint64_t>(file.size) - offset;
@@ -397,80 +413,107 @@ struct KnModel {
   bool load_mobile() {
     const uint8_t* d = file.data;
     mobile = true;
-    if (file.size < 104) { set_error("truncated mobile n-gram"); return false; }
+    if (file.size < 104) {
+      set_error("truncated mobile n-gram");
+      return false;
+    }
     size_t p = 8;
     auto u32 = [&]() { uint32_t v = rd_u32(d + p); p += 4; return v; };
     auto u64 = [&]() { uint64_t v = rd_u64(d + p); p += 8; return v; };
-    uint32_t version = u32();
-    uint32_t header_size = u32();
-    uint64_t file_size = u64();
-    index_stride = u32();
-    (void)u32();               // reserved
-    uni_count = u32();
-    (void)u32();               // reserved
-    uint64_t uni_off = u32();  // 注意：uni_off 是 I4
-    (void)u32();               // reserved/alignment after the I4 offset
-    uint64_t bi_ctx = u32();
-    bi_index_count = u32();
-    uint64_t bi_blocks_off = u64();
-    uint64_t bi_index_off = u64();
-    uint64_t tri_ctx = u32();
-    (void)u32();               // reserved/alignment before the index count
-    tri_index_count = u32();
-    (void)u32();               // reserved
-    uint64_t tri_blocks_off = u64();
-    uint64_t tri_index_off = u64();
-    if (version != 1 || header_size != 104) { set_error("unsupported mobile n-gram version"); return false; }
-    if (bi_ctx > static_cast<uint64_t>(INT64_MAX) || tri_ctx > static_cast<uint64_t>(INT64_MAX) ||
-        index_stride < 16 || (uint64_t)file.size != file_size ||
-        !range_ok(uni_off, static_cast<uint64_t>(uni_count) * 8) ||
-        !range_ok(bi_index_off, static_cast<uint64_t>(bi_index_count) * 16) ||
-        !range_ok(tri_index_off, static_cast<uint64_t>(tri_index_count) * 16) ||
-        !(uni_off >= header_size && bi_blocks_off >= uni_off) ||
-        !(bi_blocks_off <= bi_index_off) || !(bi_index_off <= tri_blocks_off) ||
-        !(tri_blocks_off <= tri_index_off) || tri_index_off > file.size ||
-        bi_blocks_off > file.size || tri_blocks_off > file.size ||
-        bi_index_off > file.size) {
-      set_error("invalid mobile n-gram layout");
+    const uint32_t version = u32();
+    const uint32_t header_size = u32();
+    const uint64_t declared_file_size = u64();
+    const uint32_t raw_stride = u32();
+    (void)u32();
+    const uint32_t raw_uni_count = u32();
+    (void)u32();
+    const uint64_t uni_off = u32();
+    (void)u32();
+    const uint64_t bi_ctx = u32();
+    const uint32_t raw_bi_index_count = u32();
+    const uint64_t bi_blocks_off = u64();
+    const uint64_t bi_index_off = u64();
+    const uint64_t tri_ctx = u32();
+    (void)u32();
+    const uint32_t raw_tri_index_count = u32();
+    (void)u32();
+    const uint64_t tri_blocks_off = u64();
+    const uint64_t tri_index_off = u64();
+
+    if (version != 1 || header_size != 104 || declared_file_size != file.size ||
+        raw_stride < 16 || raw_uni_count == 0) {
+      set_error("invalid mobile n-gram header");
       return false;
     }
-    if (uni_count == 0 || static_cast<uint64_t>(uni_count) > UINT64_MAX / 8 ||
-        static_cast<uint64_t>(bi_index_count) > UINT64_MAX / 16 ||
-        static_cast<uint64_t>(tri_index_count) > UINT64_MAX / 16) {
-      set_error("mobile n-gram count overflow");
+    const uint64_t stride = raw_stride;
+    const uint64_t uni_count_u = raw_uni_count;
+    const uint64_t bi_index_count_u = raw_bi_index_count;
+    const uint64_t tri_index_count_u = raw_tri_index_count;
+    const uint64_t expected_bi = bi_ctx == 0 ? 0 : (bi_ctx - 1) / stride + 1;
+    const uint64_t expected_tri = tri_ctx == 0 ? 0 : (tri_ctx - 1) / stride + 1;
+    if (expected_bi != bi_index_count_u || expected_tri != tri_index_count_u ||
+        bi_ctx > static_cast<uint64_t>(INT64_MAX) ||
+        tri_ctx > static_cast<uint64_t>(INT64_MAX) ||
+        bi_index_count_u > static_cast<uint64_t>(INT64_MAX) ||
+        tri_index_count_u > static_cast<uint64_t>(INT64_MAX)) {
+      set_error("invalid mobile n-gram index count");
       return false;
     }
-    const uint64_t uni_bytes = static_cast<uint64_t>(uni_count) * 8;
-    const uint64_t bi_index_bytes = static_cast<uint64_t>(bi_index_count) * 16;
-    const uint64_t tri_index_bytes = static_cast<uint64_t>(tri_index_count) * 16;
-    if (uni_off > bi_blocks_off || uni_bytes > bi_blocks_off - uni_off ||
-        bi_index_off > tri_blocks_off || bi_index_bytes > tri_blocks_off - bi_index_off ||
-        tri_index_off > file.size || tri_index_bytes > file.size - tri_index_off) {
-      set_error("mobile n-gram index exceeds section");
+    auto checked_bytes = [](uint64_t count, uint64_t element, uint64_t* out) {
+      if (element == 0 || count > UINT64_MAX / element) return false;
+      *out = count * element;
+      return true;
+    };
+    uint64_t uni_bytes = 0, bi_index_bytes = 0, tri_index_bytes = 0;
+    if (!checked_bytes(uni_count_u, 8, &uni_bytes) ||
+        !checked_bytes(bi_index_count_u, 16, &bi_index_bytes) ||
+        !checked_bytes(tri_index_count_u, 16, &tri_index_bytes) ||
+        uni_off < header_size || bi_blocks_off < uni_off ||
+        bi_index_off < bi_blocks_off || tri_blocks_off < bi_index_off ||
+        tri_index_off < tri_blocks_off || tri_index_off > file.size ||
+        !range_ok(uni_off, uni_bytes) ||
+        uni_bytes > bi_blocks_off - uni_off ||
+        !range_ok(bi_index_off, bi_index_bytes) ||
+        bi_index_bytes > tri_blocks_off - bi_index_off ||
+        !range_ok(tri_index_off, tri_index_bytes) ||
+        tri_index_bytes > file.size - tri_index_off) {
+      set_error("invalid mobile n-gram section layout");
       return false;
     }
-    auto validate_index = [&](uint64_t index_off, uint32_t count,
+
+    auto validate_index = [&](uint64_t index_off, uint64_t index_count,
                               uint64_t section_start, uint64_t section_end) {
-      for (uint32_t i = 0; i < count; ++i) {
-        const uint64_t entry = index_off + static_cast<uint64_t>(i) * 16;
+      uint64_t previous_key = 0;
+      bool have_previous = false;
+      for (uint64_t i = 0; i < index_count; ++i) {
+        const uint64_t entry_delta = i * 16;  // count was checked above
+        const uint64_t entry = index_off + entry_delta;
+        const uint64_t key = rd_u64(d + entry);
         const uint64_t page = rd_u64(d + entry + 8);
-        if (page < section_start || page >= section_end || !range_ok(page, 16)) return false;
+        if (page < section_start || page > section_end ||
+            16 > section_end - page ||
+            (have_previous && key < previous_key)) {
+          return false;
+        }
+        previous_key = key;
+        have_previous = true;
       }
       return true;
     };
-    if (!validate_index(bi_index_off, bi_index_count, bi_blocks_off, tri_blocks_off) ||
-        !validate_index(tri_index_off, tri_index_count, tri_blocks_off, file.size)) {
-      set_error("mobile n-gram page offset is outside section");
+    if (!validate_index(bi_index_off, bi_index_count_u, bi_blocks_off, bi_index_off) ||
+        !validate_index(tri_index_off, tri_index_count_u, tri_blocks_off, tri_index_off)) {
+      set_error("invalid mobile n-gram page index");
       return false;
     }
-    auto validate_pages = [&](uint64_t index_off, uint32_t index_count,
+
+    auto validate_pages = [&](uint64_t index_off, uint64_t index_count,
                               uint64_t context_count, uint64_t section_end) {
-      for (uint32_t page = 0; page < index_count; ++page) {
-        const uint64_t entry = index_off + static_cast<uint64_t>(page) * 16;
+      for (uint64_t page = 0; page < index_count; ++page) {
+        const uint64_t entry = index_off + page * 16;
         const uint64_t page_offset = rd_u64(d + entry + 8);
-        const uint64_t consumed = static_cast<uint64_t>(page) * index_stride;
-        if (consumed >= context_count) continue;
-        const uint64_t records = std::min<uint64_t>(index_stride, context_count - consumed);
+        const uint64_t consumed = page * stride;
+        if (consumed >= context_count) return false;
+        const uint64_t records = std::min<uint64_t>(stride, context_count - consumed);
         uint64_t position = page_offset;
         for (uint64_t record = 0; record < records; ++record) {
           if (position > section_end || 16 > section_end - position) return false;
@@ -484,20 +527,28 @@ struct KnModel {
       }
       return true;
     };
-    if (!validate_pages(bi_index_off, bi_index_count, bi_ctx, tri_blocks_off) ||
-        !validate_pages(tri_index_off, tri_index_count, tri_ctx, file.size)) {
+    if (strict_mobile_validation_enabled() &&
+        (!validate_pages(bi_index_off, bi_index_count_u, bi_ctx, bi_index_off) ||
+         !validate_pages(tri_index_off, tri_index_count_u, tri_ctx, tri_index_off))) {
       set_error("mobile n-gram successor table is outside section");
       return false;
     }
+
+    uni_count = static_cast<int64_t>(uni_count_u);
+    index_stride = static_cast<int64_t>(stride);
+    bi_index_count = static_cast<int64_t>(bi_index_count_u);
+    tri_index_count = static_cast<int64_t>(tri_index_count_u);
     uni_base = d + uni_off;
-    bi_ctx_total = (int64_t)bi_ctx;
-    tri_ctx_total = (int64_t)tri_ctx;
+    bi_ctx_total = static_cast<int64_t>(bi_ctx);
+    tri_ctx_total = static_cast<int64_t>(tri_ctx);
     bi_index = d + bi_index_off;
     tri_index = d + tri_index_off;
-    bi_section_end = tri_blocks_off;   // 二元块区间结束
-    tri_section_end = tri_index_off;   // 三元块区间结束
+    bi_section_end = bi_index_off;
+    tri_section_end = tri_index_off;
     bi_section_start = bi_blocks_off;
     tri_section_start = tri_blocks_off;
+    invalid_b_pages.clear();
+    invalid_t_pages.clear();
     unknown_unigram = rd_f32(uni_base + 4);
     return true;
   }
@@ -515,7 +566,12 @@ struct KnModel {
     return unknown_unigram;
   }
 
-  struct CtxResult { double lambda_; double prob; bool observed; };
+  struct CtxResult {
+    double lambda_ = 1.0;
+    double prob = 0.0;
+    bool observed = false;
+    bool invalid = false;
+  };
 
   // legacy 表查询
   CtxResult legacy_lookup(bool trigram, uint64_t key_u64, uint32_t key_u32) const {
@@ -555,7 +611,7 @@ struct KnModel {
       if (v == (ctx_entry == 8 ? (uint64_t)key_u32 : key_u64))
         lambda_ = rd_f32(at + (ctx_entry == 8 ? 4 : 8));
     }
-    return {lambda_, prob, observed};
+    return {lambda_, prob, observed, false};
   }
 
   const uint8_t* page_base(const uint8_t* index_data, int64_t index_count,
@@ -567,9 +623,10 @@ struct KnModel {
       return nullptr;
     const uint64_t index_offset = static_cast<uint64_t>(index_data - file.data);
     const uint64_t at = static_cast<uint64_t>(page) * 16;
-    if (!range_ok(index_offset + at, 16)) return nullptr;
+    if (at > UINT64_MAX - index_offset || !range_ok(index_offset + at, 16)) return nullptr;
     const uint64_t offset = rd_u64(index_data + at + 8);
-    if (offset < section_start || offset >= section_end || !range_ok(offset, 16)) return nullptr;
+    if (offset < section_start || offset > section_end ||
+        16 > section_end - offset) return nullptr;
     return file.data + offset;
   }
 
@@ -577,13 +634,13 @@ struct KnModel {
                             double lambda_, uint32_t target, uint64_t section_end) const {
     if (!data || data < file.data || data > file.data + file.size || count < 0 ||
         section_end > file.size || static_cast<uint64_t>(count) > UINT64_MAX / 8) {
-      return {lambda_, 0.0, false};
+      return {lambda_, 0.0, false, true};
     }
     const uint64_t data_offset = static_cast<uint64_t>(data - file.data);
     if (data_offset > section_end || static_cast<uint64_t>(position) > section_end - data_offset ||
         static_cast<uint64_t>(count) * 8 >
             section_end - data_offset - static_cast<uint64_t>(position))
-      return {lambda_, 0.0, false};
+      return {lambda_, 0.0, false, true};
     int64_t lo = 0, hi = count;
     while (lo < hi) {
       int64_t mid = lo + (hi - lo) / 2;
@@ -591,9 +648,14 @@ struct KnModel {
     }
     if (lo < count) {
       const uint8_t* at = data + position + lo * 8;
-      if (rd_u32(at) == target) return {lambda_, rd_f32(at + 4), true};
+      if (rd_u32(at) == target) {
+        const double probability = rd_f32(at + 4);
+        if (!std::isfinite(probability) || probability < 0.0)
+          return {lambda_, 0.0, false, true};
+        return {lambda_, probability, true, false};
+      }
     }
-    return {lambda_, 0.0, false};
+    return {lambda_, 0.0, false, false};
   }
 
   int64_t find_page(const uint8_t* index_data, int64_t index_count, uint64_t key) const {
@@ -607,56 +669,107 @@ struct KnModel {
 
   CtxResult mobile_lookup(bool trigram, uint64_t key, uint32_t target) {
     FifoCache<uint64_t>& cache = trigram ? cache_t : cache_b;
+    std::unordered_set<int64_t>& invalid_pages = trigram ? invalid_t_pages : invalid_b_pages;
     const uint8_t* index_data = trigram ? tri_index : bi_index;
     int64_t index_count = trigram ? tri_index_count : bi_index_count;
     uint64_t section_start = trigram ? tri_section_start : bi_section_start;
     uint64_t section_end = trigram ? tri_section_end : bi_section_end;
     int64_t context_total = trigram ? tri_ctx_total : bi_ctx_total;
 
+    auto invalid = []() { return CtxResult{1.0, 0.0, false, true}; };
+    auto missing = []() { return CtxResult{1.0, 0.0, false, false}; };
     if (CtxCacheEntry* c = cache.lookup(key)) {
-      if (c->missing) return {1.0, 0.0, false};
+      if (c->invalid) return invalid();
+      if (c->missing) return missing();
       const uint8_t* data = page_base(index_data, index_count, c->page, section_start, section_end);
-      return scan_successors(data, c->successor_position, c->successor_count, c->lambda_, target,
-                             section_end);
+      if (!data) {
+        invalid_pages.insert(c->page);
+        c->invalid = true;
+        return invalid();
+      }
+      CtxResult result = scan_successors(data, c->successor_position,
+                                         c->successor_count, c->lambda_, target,
+                                         section_end);
+      if (result.invalid) {
+        invalid_pages.insert(c->page);
+        c->invalid = true;
+      }
+      return result;
     }
     int64_t page = find_page(index_data, index_count, key);
     if (page < 0) {
       cache.remember(key, {true, -1, 1.0, 0, 0});
-      return {1.0, 0.0, false};
+      return missing();
     }
+    if (invalid_pages.find(page) != invalid_pages.end()) return invalid();
     const uint8_t* data = page_base(index_data, index_count, page, section_start, section_end);
-    if (!data) return {1.0, 0.0, false};
-    if (page < 0 || context_total < 0) return {1.0, 0.0, false};
+    if (!data) {
+      invalid_pages.insert(page);
+      cache.remember(key, {false, page, 1.0, 0, 0, true});
+      return invalid();
+    }
+    if (context_total < 0 || index_stride < 1 ||
+        static_cast<uint64_t>(page) > UINT64_MAX /
+            static_cast<uint64_t>(index_stride)) {
+      invalid_pages.insert(page);
+      cache.remember(key, {false, page, 1.0, 0, 0, true});
+      return invalid();
+    }
     const uint64_t page_start = static_cast<uint64_t>(page) *
                                 static_cast<uint64_t>(index_stride);
     if (page_start >= static_cast<uint64_t>(context_total))
-      return {1.0, 0.0, false};
+      return missing();
     const uint64_t remaining_u = std::min<uint64_t>(
         static_cast<uint64_t>(index_stride),
         static_cast<uint64_t>(context_total) - page_start);
-    if (remaining_u > static_cast<uint64_t>(INT64_MAX)) return {1.0, 0.0, false};
+    if (remaining_u > static_cast<uint64_t>(INT64_MAX)) {
+      invalid_pages.insert(page);
+      cache.remember(key, {false, page, 1.0, 0, 0, true});
+      return invalid();
+    }
     const int64_t remaining = static_cast<int64_t>(remaining_u);
     size_t position = 0;
+    uint64_t previous_context_key = 0;
+    bool have_previous_context = false;
     for (int64_t i = 0; i < remaining; ++i) {
       const uint64_t data_offset = static_cast<uint64_t>(data - file.data);
-      if (data_offset > section_end || static_cast<uint64_t>(position) > section_end - data_offset ||
-          16 > section_end - data_offset - static_cast<uint64_t>(position)) return {1.0, 0.0, false};
+      const uint64_t position_u = static_cast<uint64_t>(position);
+      if (data_offset > section_end || position_u > section_end - data_offset ||
+          16 > section_end - data_offset - position_u) {
+        invalid_pages.insert(page);
+        cache.remember(key, {false, page, 1.0, 0, 0, true});
+        return invalid();
+      }
       uint64_t context_key = rd_u64(data + position);
       double lambda_ = rd_f32(data + position + 8);
       int32_t succ = rd_i32(data + position + 12);
-      if (succ < 0 || static_cast<uint64_t>(succ) > UINT64_MAX / 8 ||
-          static_cast<uint64_t>(succ) * 8 > section_end - data_offset - static_cast<uint64_t>(position) - 16)
-        return {1.0, 0.0, false};
+      if ((have_previous_context && context_key < previous_context_key) ||
+          !std::isfinite(lambda_) || lambda_ < 0.0 || succ < 0 ||
+          static_cast<uint64_t>(succ) > UINT64_MAX / 8 ||
+          static_cast<uint64_t>(succ) * 8 >
+              section_end - data_offset - position_u - 16) {
+        invalid_pages.insert(page);
+        cache.remember(key, {false, page, 1.0, 0, 0, true});
+        return invalid();
+      }
+      previous_context_key = context_key;
+      have_previous_context = true;
       position += 16;
       if (context_key == key) {
         cache.remember(key, {false, page, lambda_, succ, position});
-        return scan_successors(data, position, succ, lambda_, target, section_end);
+        CtxResult result = scan_successors(data, position, succ, lambda_, target,
+                                           section_end);
+        if (result.invalid) {
+          invalid_pages.insert(page);
+          if (CtxCacheEntry* cached = cache.lookup(key)) cached->invalid = true;
+        }
+        return result;
       }
       if (context_key > key) break;
       position += (size_t)succ * 8;
     }
     cache.remember(key, {true, -1, 1.0, 0, 0});
-    return {1.0, 0.0, false};
+    return missing();
   }
 
   CtxResult lookup_context(bool trigram, uint64_t key_u64, uint32_t key_u32, uint32_t target) {
@@ -667,6 +780,7 @@ struct KnModel {
   double logp(uint32_t a, uint32_t b, uint32_t c) {
     double unigram = lookup_unigram(c);
     KnModel::CtxResult bi = lookup_context(false, (uint64_t)b, b, c);
+    if (bi.invalid) throw InvalidPageError();
     if (!std::isfinite(unigram) || unigram < 0.0 ||
         !std::isfinite(bi.prob) || bi.prob < 0.0 ||
         !std::isfinite(bi.lambda_) || bi.lambda_ < 0.0) {
@@ -674,6 +788,7 @@ struct KnModel {
     }
     double bigram = bi.prob + bi.lambda_ * unigram;
     KnModel::CtxResult tri = lookup_context(true, pack2(a, b), (uint32_t)pack2(a, b), c);
+    if (tri.invalid) throw InvalidPageError();
     if (!std::isfinite(bigram) || bigram < 0.0 ||
         !std::isfinite(tri.prob) || tri.prob < 0.0 ||
         !std::isfinite(tri.lambda_) || tri.lambda_ < 0.0) {
@@ -686,7 +801,9 @@ struct KnModel {
   }
 
   bool has_observed_bigram(uint32_t a, uint32_t b) {
-    return lookup_context(false, (uint64_t)a, a, b).observed;
+    CtxResult result = lookup_context(false, (uint64_t)a, a, b);
+    if (result.invalid) throw InvalidPageError();
+    return result.observed;
   }
 };
 
@@ -2051,19 +2168,27 @@ struct Engine {
     auto it = logp_cache.find(key);
     if (it != logp_cache.end()) return it->second;
     double v = model.logp(a, b, c);
+    if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
     if (blend_mode) {
       double w = blend.logp(a, b, c);
-      if (std::isfinite(v) && std::isfinite(w)) {
-        double p1 = std::exp(std::max(-700.0, v));
-        double p2 = std::exp(std::max(-700.0, w));
-        v = std::log(blend_alpha * p1 + (1.0 - blend_alpha) * p2);
-      }
+      if (!std::isfinite(w)) throw std::runtime_error("invalid n-gram probability");
+      const double p1 = std::exp(std::max(-700.0, v));
+      const double p2 = std::exp(std::max(-700.0, w));
+      const double mixed = blend_alpha * p1 + (1.0 - blend_alpha) * p2;
+      if (!(mixed > 0.0) || !std::isfinite(mixed))
+        throw std::runtime_error("invalid n-gram probability");
+      v = std::log(mixed);
     }
     if (user_weight < 1.0 && !user.empty()) {
       double pu = user.logp(a, b, c);
-      double p1 = std::exp(std::max(-700.0, v));
-      double p2 = std::exp(std::max(-700.0, pu));
-      v = std::log(user_weight * p1 + (1.0 - user_weight) * p2);
+      if (!std::isfinite(v) || !std::isfinite(pu))
+        throw std::runtime_error("invalid n-gram probability");
+      const double p1 = std::exp(std::max(-700.0, v));
+      const double p2 = std::exp(std::max(-700.0, pu));
+      const double mixed = user_weight * p1 + (1.0 - user_weight) * p2;
+      if (!(mixed > 0.0) || !std::isfinite(mixed))
+        throw std::runtime_error("invalid n-gram probability");
+      v = std::log(mixed);
     }
     if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
     if (logp_cache.size() > 65536) logp_cache.clear();
@@ -2528,6 +2653,21 @@ struct Engine {
     cache_valid = false;
     has_terminal_phrase_states = false;
     logp_cache.clear();
+  }
+
+  // A lazy page failure can occur halfway through beam expansion.  Never keep
+  // that partial frontier or a score cache alive for the next composition.
+  void abort_decode() {
+    pool.clear();
+    states.clear();
+    cached_result = DecodeResult();
+    cached_raw.clear();
+    cache_valid = false;
+    cached_with_early = false;
+    has_terminal_phrase_states = false;
+    logp_cache.clear();
+    scorer_logp_cache.clear();
+    word_ctx_valid = false;
   }
 
   void invalidate_decode_cache(const std::string& raw, bool include_early) {
@@ -3201,6 +3341,12 @@ int tiger_engine_context_char_scores(int handle, const char* context_text,
       }
     }
     return g_engines[handle]->context_char_scores(context_text, cands, out_scores);
+  } catch (const InvalidPageError& error) {
+    set_error("%s", error.what());
+    return -1;
+  } catch (const std::exception& error) {
+    set_error("%s", error.what());
+    return -1;
   } catch (...) {
     set_error("char scores failed");
     return -1;
@@ -3247,6 +3393,7 @@ void tiger_engine_free(int handle) {
 
 int tiger_decode(int handle, const char* raw, int include_early,
                  char* out, int outcap, double* ms) {
+  Engine* e = nullptr;
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
     if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
@@ -3261,7 +3408,7 @@ int tiger_decode(int handle, const char* raw, int include_early,
       set_error("raw input exceeds maximum length");
       return -1;
     }
-    Engine* e = g_engines[handle].get();
+    e = g_engines[handle].get();
     struct timespec t0;
     clock_gettime(CLOCK_MONOTONIC, &t0);
     DecodeResult& r = e->decode(raw, include_early != 0);
@@ -3273,10 +3420,16 @@ int tiger_decode(int handle, const char* raw, int include_early,
       return -1;
     }
     return (int)r.items.size();
-  } catch (const std::exception&) {
-    set_error("engine decode failed");
+  } catch (const InvalidPageError& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
+    return -1;
+  } catch (const std::exception& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
     return -1;
   } catch (...) {
+    if (e) e->abort_decode();
     set_error("engine decode failed");
     return -1;
   }
@@ -3284,6 +3437,7 @@ int tiger_decode(int handle, const char* raw, int include_early,
 
 int tiger_decode_full(int handle, const char* raw, int include_early,
                       char* out, int outcap) {
+  Engine* e = nullptr;
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
     if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
@@ -3298,17 +3452,23 @@ int tiger_decode_full(int handle, const char* raw, int include_early,
       set_error("raw input exceeds maximum length");
       return -1;
     }
-    Engine* e = g_engines[handle].get();
+    e = g_engines[handle].get();
     DecodeResult r = e->decode_full(raw, include_early != 0);
     if (!serialize(r, out, outcap)) {
       set_error("output buffer too small");
       return -1;
     }
     return (int)r.items.size();
-  } catch (const std::exception&) {
-    set_error("engine decode failed");
+  } catch (const InvalidPageError& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
+    return -1;
+  } catch (const std::exception& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
     return -1;
   } catch (...) {
+    if (e) e->abort_decode();
     set_error("engine decode failed");
     return -1;
   }

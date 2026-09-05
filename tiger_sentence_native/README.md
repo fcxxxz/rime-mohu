@@ -28,6 +28,24 @@
 `mohu-sentence-ngram-v5.bin` 是原生整句候选模型。放到
 `~/Library/Rime/mohu/model/`；运行时固定读取该文件名。模型缺失或加载失败时记录一次错误并回退普通候选，模型目录不在输入热路径扫描。
 
+### TCSKNM02 页校验与损坏模型回退
+
+TCSKNM02 默认只在启动时校验文件头、分区算术、索引计数/键序和页起始范围；
+不会顺序读取所有上下文页。实际解码首次触及某页时才校验该页的记录和后继表。
+如果页或后继表损坏，当前 native 解码返回 `invalid n-gram page` 错误，Lua 层
+放弃本轮 native 候选并保留 smart/普通候选，不把损坏数据当作“未命中”或继续
+使用不完整的 beam。
+
+发布校验或诊断时可对单次引擎创建启用完整页扫描：
+
+```text
+MOHU_TIGER_STRICT_VALIDATE=1
+```
+
+只有环境变量值严格等于字符串 `1` 才启用；未设置、空值、`0` 或其他值都保持
+按需校验。严格模式在创建阶段发现坏页即拒绝模型；该变量每次创建重新读取，
+不会在进程内缓存。TCSKNM01 与 MHKNM01 的既有启动校验语义不变。
+
 本地开发需要 Lua 5.4 头文件（Squirrel 的 librime-lua 为 5.4.6）：
 
     curl -sL -o lua546.tar.gz https://www.lua.org/ftp/lua-5.4.6.tar.gz

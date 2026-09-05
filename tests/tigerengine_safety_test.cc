@@ -2,6 +2,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <limits>
@@ -39,6 +40,33 @@ void expect_create_rejects_without_signal(const std::vector<uint8_t>& model, con
   assert(waitpid(child, &status, 0) == child);
   assert(WIFEXITED(status));
   assert(WEXITSTATUS(status) == 0);
+}
+
+void expect_mobile_bad_successor_modes(const std::vector<uint8_t>& model,
+                                       const char* name) {
+  const std::string model_path = write_file(std::string("-") + name + ".bin", model);
+  const std::string lexicon_path = write_file(
+      std::string("-") + name + ".txt", {'a', '\t', 0xe7, 0x94, 0xb2, '\n'});
+  const char* previous = std::getenv("MOHU_TIGER_STRICT_VALIDATE");
+  const std::string previous_value = previous ? previous : "";
+  const bool had_previous = previous != nullptr;
+  unsetenv("MOHU_TIGER_STRICT_VALIDATE");
+  char error[512] = {};
+  const int lazy = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                       error, sizeof(error));
+  assert(lazy >= 0);
+  char output[4096] = {};
+  assert(tiger_decode_full(lazy, "a", 0, output, sizeof(output)) < 0);
+  assert(std::strstr(tiger_last_error(), "invalid n-gram page") != nullptr);
+  tiger_engine_free(lazy);
+  setenv("MOHU_TIGER_STRICT_VALIDATE", "1", 1);
+  std::memset(error, 0, sizeof(error));
+  const int strict = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(strict < 0);
+  assert(error[0] != '\0');
+  if (had_previous) setenv("MOHU_TIGER_STRICT_VALIDATE", previous_value.c_str(), 1);
+  else unsetenv("MOHU_TIGER_STRICT_VALIDATE");
 }
 
 void put_u32(std::vector<uint8_t>* data, size_t offset, uint32_t value) {
@@ -983,7 +1011,7 @@ int main() {
   put_u32(&bad_successor, 132, UINT32_MAX);
   put_u64(&bad_successor, 152, 0);  // index key
   put_u64(&bad_successor, 160, 120);  // page offset
-  expect_create_rejects_without_signal(bad_successor, "mobile-bad-successor");
+  expect_mobile_bad_successor_modes(bad_successor, "mobile-bad-successor");
 
   std::puts("tigerengine safety tests passed");
   return 0;

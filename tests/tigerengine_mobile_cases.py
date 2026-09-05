@@ -16,7 +16,7 @@ def main() -> int:
     if not fixture.is_file():
         print(f"fixture not found: {fixture}", file=sys.stderr)
         return 2
-    for case in ("dispatch", "unknown"):
+    for case in ("dispatch", "unknown", "lazy", "metadata"):
         completed = subprocess.run(
             [str(fixture), case], text=True, capture_output=True, check=False
         )

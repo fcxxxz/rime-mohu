@@ -112,8 +112,10 @@ def dos_path(device_path: str) -> str:
     return device_path
 
 
-def count_resident_pages(kernel, handle, ranges: list[tuple[int, int]], page_size: int) -> int:
-    query = kernel.QueryWorkingSetEx
+def count_resident_pages(psapi, handle, ranges: list[tuple[int, int]], page_size: int) -> int:
+    query = getattr(psapi, "QueryWorkingSetEx", None)
+    if query is None:
+        query = psapi.K32QueryWorkingSetEx
     query.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD]
     query.restype = wintypes.BOOL
     total = 0
@@ -199,7 +201,7 @@ def process_regions(pid: int, model_path: Path) -> dict[str, Any]:
                 and item["bytes"] >= expected_size)
         ]
         resident_pages = count_resident_pages(
-            kernel, handle,
+            psapi, handle,
             [segment for item in matched_items for segment in item["_ranges"]],
             page_size,
         )

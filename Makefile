@@ -1,6 +1,8 @@
 ZRM_DESTDIR ?= $(abspath ./dist-zrm)
 FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
 TIGER_NGRAM ?= tiger_sentence_native/mohu-sentence-ngram-v5.bin
+MOHU_LUA_BIN ?= lua
+TIGER_MEMORY_OUTPUT ?= .tmp/native-tests/tigerengine-windows-mapping.json
 # Optional, complete Windows DLL closure staged by CI. Local macOS-only builds
 # may leave it unset.
 TIGER_WINDOWS_RUNTIME ?=
@@ -171,7 +173,8 @@ tigerengine-windows-memory:
 	@test "$(OS)" = "Windows_NT" || (echo "tigerengine-windows-memory requires Windows" >&2; exit 2)
 	@test -n "$(TIGER_ENGINE_DLL)" -a -n "$(TIGER_NGRAM)" -a -n "$(TIGER_LEXICON)" || \
 		(echo "set TIGER_ENGINE_DLL, TIGER_NGRAM, and TIGER_LEXICON" >&2; exit 2)
-	python tests/tigerengine_windows_mapping_test.py
+	@mkdir -p "$(dir $(TIGER_MEMORY_OUTPUT))"
+	python tests/tigerengine_windows_mapping_test.py > "$(TIGER_MEMORY_OUTPUT)"
 
 # 词级上下文候选评分引擎测试：load_word_scorer/context_word_scores 的
 # 可用性语义、方向性、OOV、确定性与 MHCTN01 容器词层等价；模型缺失
@@ -208,6 +211,9 @@ test: dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-user-model
 	$(MAKE) tigerengine-reading-prior
 	$(MAKE) tigerengine-context
+	$(MAKE) tigerengine-mobile
+	$(MAKE) tigerengine-mapping
+	$(MAKE) tigerengine-word-score
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
 	uv run python -m unittest tests.test_tiger_aux -v
@@ -222,33 +228,33 @@ test: dist-zrm dist-flypy mohu_lexicons
 	uv run python -m unittest tests.test_merge_emoji -v
 	PYTHONDONTWRITEBYTECODE=1 uv run python -m unittest tests.test_skin_editor_local_server -v
 	bash tests/rime_sync_conf_test.sh
-	lua tests/mohu_candidate_override_test.lua
-	lua tests/mohu_candidate_weight_reset_test.lua
-	lua tests/mohu_pin_store_test.lua
-	lua tests/option_sync_test.lua
-	lua tests/mohu_candidate_manager_test.lua
-	lua tests/mohu_candidate_manager_config_test.lua
-	lua tests/mohu_tiger_sentence_native_test.lua
-	lua tests/mohu_tiger_log_compat_test.lua
-	lua tests/mohu_tiger_user_model_test.lua
-	lua tests/mohu_tiger_context_test.lua
-	lua tests/mohu_tiger_two_char_test.lua
-	lua tests/mohu_personal_lexicon_test.lua
-	lua tests/mohu_path_test.lua
-	lua tests/mohu_model_version_test.lua
-	lua tests/mohu_tiger_no_early_commit_test.lua
-	lua tests/mohu_tiger_selected_segment_test.lua
-	lua tests/mohu_reorder_filter_lexicon_test.lua
-	lua tests/mohu_word_order_filter_test.lua
-	lua tests/mohu_freestyle_config_test.lua
-	lua tests/mohu_contextual_translator_test.lua
-	lua tests/mohu_charset_filter_test.lua
-	lua tests/mohu_hint_filter_runtime_test.lua
-	lua tests/mohu_express_tiger_test.lua
-	lua tests/mohu_pin_test.lua
-	lua tests/mohu_symbol_commands_test.lua
-	lua tests/mohu_skin_command_test.lua
-	lua tests/rime_skin_editor_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_candidate_override_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_candidate_weight_reset_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_pin_store_test.lua
+	$(MOHU_LUA_BIN) tests/option_sync_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_config_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_sentence_native_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_log_compat_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_user_model_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_context_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_two_char_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_personal_lexicon_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_path_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_model_version_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_no_early_commit_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_selected_segment_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_reorder_filter_lexicon_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_word_order_filter_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_freestyle_config_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_contextual_translator_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_charset_filter_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_hint_filter_runtime_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_pin_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_symbol_commands_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_skin_command_test.lua
+	$(MOHU_LUA_BIN) tests/rime_skin_editor_test.lua
 	node tests/skin_editor_core_test.js
 	node tests/schema_settings_test.js
 	node tests/skin_editor_integration_test.js

@@ -90,8 +90,8 @@ jobs:
           TIGER_LEXICON: ${{ github.workspace }}/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
         run: |
           make tigerengine-mobile tigerengine-mapping
-          python tests/tigerengine_windows_mapping_test.py \
-            > .tmp/native-tests/tigerengine-windows-mapping.json
+          make tigerengine-windows-memory \
+            TIGER_MEMORY_OUTPUT=.tmp/native-tests/tigerengine-windows-mapping.json
 
       - name: Upload Windows mapping probe
         uses: actions/upload-artifact@v4

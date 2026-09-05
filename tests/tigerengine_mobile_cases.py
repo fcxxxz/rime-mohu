@@ -13,6 +13,10 @@ def main() -> int:
         print(f"usage: {Path(sys.argv[0]).name} FIXTURE", file=sys.stderr)
         return 2
     fixture = Path(sys.argv[1])
+    if not fixture.is_file() and fixture.suffix.lower() != ".exe":
+        executable = fixture.with_name(fixture.name + ".exe")
+        if executable.is_file():
+            fixture = executable
     if not fixture.is_file():
         print(f"fixture not found: {fixture}", file=sys.stderr)
         return 2

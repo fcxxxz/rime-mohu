@@ -39,6 +39,22 @@ class WorkingSetExInformation(ctypes.Structure):
     ]
 
 
+class SystemInfo(ctypes.Structure):
+    _fields_ = [
+        ("wProcessorArchitecture", wintypes.WORD),
+        ("wReserved", wintypes.WORD),
+        ("dwPageSize", wintypes.DWORD),
+        ("lpMinimumApplicationAddress", ctypes.c_void_p),
+        ("lpMaximumApplicationAddress", ctypes.c_void_p),
+        ("dwActiveProcessorMask", ctypes.c_size_t),
+        ("dwNumberOfProcessors", wintypes.DWORD),
+        ("dwProcessorType", wintypes.DWORD),
+        ("dwAllocationGranularity", wintypes.DWORD),
+        ("wProcessorLevel", wintypes.WORD),
+        ("wProcessorRevision", wintypes.WORD),
+    ]
+
+
 def load_engine(dll_path: Path):
     add_directory = getattr(os, "add_dll_directory", None)
     directory = add_directory(str(dll_path.parent)) if add_directory else None
@@ -96,6 +112,29 @@ def dos_path(device_path: str) -> str:
     return device_path
 
 
+def count_resident_pages(kernel, handle, ranges: list[tuple[int, int]], page_size: int) -> int:
+    query = kernel.QueryWorkingSetEx
+    query.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD]
+    query.restype = wintypes.BOOL
+    total = 0
+    batch_size = 4096
+    for base, size in ranges:
+        page_count = (size + page_size - 1) // page_size
+        for offset in range(0, page_count, batch_size):
+            count = min(batch_size, page_count - offset)
+            entries = (WorkingSetExInformation * count)()
+            for index in range(count):
+                entries[index].VirtualAddress = ctypes.c_void_p(
+                    base + (offset + index) * page_size
+                )
+            if not query(handle, ctypes.byref(entries), ctypes.sizeof(entries)):
+                continue
+            total += sum(
+                1 for entry in entries if int(entry.VirtualAttributes) & 1
+            )
+    return total
+
+
 def process_regions(pid: int, model_path: Path) -> dict[str, Any]:
     kernel = ctypes.windll.kernel32
     psapi = ctypes.windll.psapi
@@ -115,6 +154,9 @@ def process_regions(pid: int, model_path: Path) -> dict[str, Any]:
             ctypes.c_size_t,
         ]
         query.restype = ctypes.c_size_t
+        system_info = SystemInfo()
+        kernel.GetSystemInfo(ctypes.byref(system_info))
+        page_size = int(system_info.dwPageSize) or 4096
         mapped_name = psapi.GetMappedFileNameW
         mapped_name.argtypes = [
             wintypes.HANDLE,
@@ -140,23 +182,37 @@ def process_regions(pid: int, model_path: Path) -> dict[str, Any]:
                 if length:
                     path = dos_path(name.value)
                     key = int(info.AllocationBase or base)
-                    item = grouped.setdefault(key, {"path": path, "bytes": 0, "regions": 0})
+                    item = grouped.setdefault(
+                        key, {"path": path, "bytes": 0, "regions": 0, "_ranges": []}
+                    )
                     item["bytes"] += size
                     item["regions"] += 1
+                    item["_ranges"].append((base, size))
             address = base + size
         expected = str(model_path).lower()
         expected_size = model_path.stat().st_size
-        matches = [
+        matched_items = [
             item
             for item in grouped.values()
             if str(item["path"]).lower() == expected
             or (Path(str(item["path"])).name.lower() == model_path.name.lower()
                 and item["bytes"] >= expected_size)
         ]
+        resident_pages = count_resident_pages(
+            kernel, handle,
+            [segment for item in matched_items for segment in item["_ranges"]],
+            page_size,
+        )
+        matches = [
+            {key: value for key, value in item.items() if key != "_ranges"}
+            for item in matched_items
+        ]
         return {
-            "groups": len(matches),
-            "regions": sum(int(item["regions"]) for item in matches),
-            "bytes": sum(int(item["bytes"]) for item in matches),
+            "groups": len(matched_items),
+            "regions": sum(int(item["regions"]) for item in matched_items),
+            "bytes": sum(int(item["bytes"]) for item in matched_items),
+            "resident_pages": resident_pages,
+            "page_size": page_size,
             "matches": matches,
         }
     finally:

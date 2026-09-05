@@ -16,6 +16,8 @@
 
 **Files:**
 - Modify: `tests/test_mohu_config.py`
+- Create: `tests/mohu_filter_pipeline_test.lua`
+- Modify: `Makefile`
 - Modify: `mohu_zrm.schema.yaml`
 - Modify: `mohu_flypy.schema.yaml`
 - Modify: `mohu_zrm_core.schema.yaml`
@@ -44,11 +46,12 @@ for path, namespaces in COMPLETION_NAMESPACES.items():
         assert schema[namespace]["enable_word_completion"] is True
 ```
 
-Add negative invariants for each public/core schema: `fixed`, `fixed_legacy`, and
-`custom_phrase` retain `enable_completion is False`; `reverse_tiger` and
-`reverse_tiger_backtick` retain `enable_completion is True`. Assert the two extended
-dictionary files still contain their respective `*.wanxiang` import. Update the stale
-comments from commit `136937a` so they describe retained completion plus bounded filters.
+Add negative invariants only for the four public/core schemas (where these nodes exist):
+`fixed`, `fixed_legacy`, and `custom_phrase` retain `enable_completion is False`, while
+`reverse_tiger` and `reverse_tiger_backtick` retain `enable_completion is True`. For the
+two sentence-core files assert only the translator matrix. Assert the two extended
+dictionary files still contain their respective `*.wanxiang` import. Update stale comments
+from commit `136937a` so they describe retained completion plus bounded filters.
 
 - [ ] **Step 2: Run the test and verify RED**
 
@@ -78,7 +81,8 @@ Run the command from Step 2. Expected: PASS.
 ```bash
 git add tests/test_mohu_config.py mohu_zrm.schema.yaml mohu_flypy.schema.yaml \
   mohu_zrm_core.schema.yaml mohu_flypy_core.schema.yaml \
-  mohu_zrm_sentence_core.schema.yaml mohu_flypy_sentence_core.schema.yaml
+  mohu_zrm_sentence_core.schema.yaml mohu_flypy_sentence_core.schema.yaml \
+  tests/mohu_filter_pipeline_test.lua Makefile
 git commit -m "fix: preserve smart completion"
 ```
 
@@ -87,6 +91,7 @@ git commit -m "fix: preserve smart completion"
 **Files:**
 - Modify: `tests/mohu_reorder_filter_lexicon_test.lua`
 - Modify: `lua/mohu_reorder_filter.lua`
+- Modify: `Makefile`
 
 - [ ] **Step 0: Select the Lua 5.4 test runner**
 
@@ -99,8 +104,11 @@ if (-not $luaBin) { throw "set MOHU_LUA_BIN to a Lua 5.4 executable" }
 & $luaBin -v
 ```
 
-The same tests may run as `MOHU_LUA_BIN=lua` on POSIX. A missing runner is a blocked
-verification prerequisite, not a passing test.
+Setup commands are explicit: on MSYS2 run `make -C tiger_sentence_native/lua-5.4.6
+mingw` and set `MOHU_LUA_BIN` to the resulting `src/lua.exe`; on POSIX run the repository
+Lua make target and set it to `src/lua`. A missing runner is a blocked verification
+prerequisite, not a passing test. Modify Makefile Lua-test recipes to use
+`$(MOHU_LUA_BIN)` (defaulting to `lua`) so CI and local commands use the same binary.
 
 - [ ] **Step 1: Add coroutine-backed failing tests**
 
@@ -118,6 +126,10 @@ input iterator increments an `advance_count`. Add one test per behavior:
 -- clock before sentinel, clock fallback, iterator throw, and invalid return
 -- fixed fallback is not scored or reordered by the downstream word-order filter
 ```
+
+The pipeline test must compose both filters with a list-backed translation and assert every
+candidate's `get_genuine()` type, text, preedit, comment, quality, and object identity; a
+fixed candidate normalized from `` `F`` must not reach the scorer.
 
 Use a small configured budget in tests so boundaries are deterministic.
 
@@ -200,11 +212,12 @@ Add separate cases proving:
 
 ```lua
 -- budget hit before a complete block: scorer not acquired/called; source order unchanged
--- block filled on the budget-th candidate: scorer still runs
+-- the budget-th candidate completes a fixture block with >=2 reorderable slots: scorer runs
 -- EOF with 2..N candidates: scorer runs
 -- sentinel and same iterator are preserved across coroutine resumes
 -- unavailable engine handle never triggers ensure_engine from the filter
--- timer failure falls back to count cap; iterator error logs once and stops
+-- an initial or mid-scan clock error disables only time budgeting and continues to the count cap
+-- an already-expired valid deadline fails open; iterator error logs once and stops
 -- fixed `F` normalized by reorder is not treated as a reorderable word downstream
 ```
 
@@ -249,9 +262,11 @@ git commit -m "fix(lua): fail open on word-order scan budget"
 
 **Files:**
 - Create: `tests/tigerengine_mobile_test.cc`
+- Create: `tests/tigerengine_mobile_cases.py`
 - Create: `tests/tigerengine_mapping_ownership_test.cc`
 - Create: `tests/tigerengine_windows_mapping_test.py`
 - Modify: `Makefile`
+- Modify: `.gitignore`
 - Modify: `.github/workflows/build.yml`
 - Modify: `tiger_sentence_native/tigerengine.cc`
 
@@ -270,6 +285,12 @@ oracle. Add malformed used-page, malformed unused-page, index/page boundary, rep
   that downgrades to character-only, and a malformed MHKNM01 successor/page case that still
   rejects at create.
 
+Create `tests/tigerengine_mobile_cases.py` as the cross-platform subprocess parent. It
+invokes the fixture executable separately for `valid`, `unused-bad`, `used-bad`, and
+`strict-bad` cases, asserting exit code/output; this replaces POSIX-only `fork` for the
+new malformed-page tests. `tests/tigerengine_mobile_test.cc` accepts the case argument
+and returns success only when the expected create/decode status is observed.
+
 Create `tests/tigerengine_windows_mapping_test.py` as a subprocess test. It requires
 `TIGER_ENGINE_DLL`, `TIGER_NGRAM`, and `TIGER_LEXICON`; if any is absent it exits with
 status 2 and a clear “probe not run” message, never a false pass. The child loads the DLL
@@ -285,14 +306,29 @@ the primary region count is zero.
 Create `tests/tigerengine_mapping_ownership_test.cc` and compile `tigerengine.cc` with
 `-DTIGERENGINE_MAPPING_TEST`. Under that macro only, expose a narrow test function that
 creates one owner plus two borrowed interior views, destroys the views, verifies the owner
-bytes remain readable, then releases the owner and reports exactly one unmap. The
-production library must not export this seam.
+bytes remain readable, then releases the owner and reports exactly one unmap and, on
+Windows, exactly one mapping-handle close. Assert borrowed release resets `owned=true`,
+then reuse/move the object; this is a deterministic RED case on POSIX as well as Windows.
+Unify both platform destructors through `release()` so the counters cover the same path.
+The production library must not export this seam.
 
-Add a `tigerengine-mobile` Make target for the portable fixture, a
+Add `.tmp/native-tests/` to `.gitignore`. Add a `tigerengine-mobile` Make target for the
+portable fixture, a
 `tigerengine-mapping` target for a cross-platform borrowed/owner lifecycle probe, and a
 `tigerengine-windows-memory` target that runs the Python probe only on Windows when its
 three variables are set. Do not add Windows-only code to the existing POSIX
 `tigerengine_safety_test.cc`.
+
+The three new recipes must be `.PHONY`, write binaries under ignored
+`.tmp/native-tests/`, honor `$(CXX) $(CPPFLAGS) $(CXXFLAGS)`, and have explicit cleanup
+and exit behavior. `tigerengine-safety` remains POSIX-only; Windows validation uses the
+portable mobile/mapping targets plus the Python probe.
+
+Add a `windows-runtime` workflow step after the existing smoke test: copy `lua54.dll`
+beside `libtigerengine.dll`, run `make tigerengine-mobile tigerengine-mapping` under
+`msys2 {0}`, export the three probe paths to the downloaded root model/DLL/repository
+lexicon, run `python tests/tigerengine_windows_mapping_test.py`, and upload its JSON
+manifest. Missing required assets must fail the job, not skip it.
 
 - [ ] **Step 2: Run native safety tests and verify RED**
 
@@ -308,21 +344,26 @@ make tigerengine-safety
 make tigerengine-word-score
 ```
 
-Run the fixture target too:
+Run the fixture targets too:
 
 ```bash
 make tigerengine-mobile
 make tigerengine-mapping
+make tigerengine-word-score
+python tests/tigerengine_mobile_cases.py .tmp/native-tests/tigerengine_mobile_test
 ```
 
-Expected: the new mapping/format assertions fail before implementation; optional real
-word-score tests may still skip only when their documented external assets are absent.
+Expected: the new mapping/format assertions fail before implementation; fixture targets
+never skip. Optional real word-score tests may skip only when their documented external
+assets are absent.
 
 - [ ] **Step 3: Fix `MappedFile` ownership**
 
 Make `release()` unmap only `owned` data on both platforms, close only owned mapping handles, clear all fields, and restore `owned=true`. Make `open()` and `set_view()` release previous state first.
 
-Add `load_mapped(MappedFile&&, label)` helpers. On failure, the target loader releases the owner before returning.
+Add `load_mapped(MappedFile&&, label)` helpers. On failure, the target loader releases the
+owner and resets all parsed metadata/caches before returning. Add a test that repeats a
+failed create in one live process and observes zero primary mappings after each attempt.
 
 - [ ] **Step 4: Dispatch once by magic**
 
@@ -339,14 +380,14 @@ inspection, without fallback re-probing. The one-map assertion excludes intentio
 
 - [ ] **Step 5: Run focused native tests and verify GREEN**
 
-Run the commands from Step 2 plus `make tigerengine-mobile` and
-`make tigerengine-mapping`. Expected: all formats preserve behavior; the portable
+Run the commands from Step 2 plus `make tigerengine-mobile`, `make tigerengine-mapping`,
+and `make tigerengine-word-score`. Expected: all formats preserve behavior; the portable
 ownership test proves a borrowed view leaves the owner mapping usable and the owner is
 released exactly once. On Windows also run:
 
 ```powershell
-$env:TIGER_ENGINE_DLL = "D:\relax\Rime\mohu\runtime\libtigerengine.dll"
-$env:TIGER_NGRAM = "D:\relax\Rime\mohu\model\mohu-sentence-ngram-v5.bin"
+$env:TIGER_ENGINE_DLL = (Resolve-Path "mohu\runtime\libtigerengine.dll")
+$env:TIGER_NGRAM = (Resolve-Path "mohu\model\mohu-sentence-ngram-v5.bin")
 $env:TIGER_LEXICON = (Resolve-Path "tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt")
 & (Get-Command python).Source tests/tigerengine_windows_mapping_test.py
 ```
@@ -359,7 +400,9 @@ zero primary mappings before exiting. The ctypes child must preload `lua54.dll` 
 
 ```bash
 git add tests/tigerengine_mobile_test.cc tests/tigerengine_mapping_ownership_test.cc \
-  tests/tigerengine_windows_mapping_test.py Makefile tiger_sentence_native/tigerengine.cc
+  tests/tigerengine_mobile_cases.py tests/tigerengine_windows_mapping_test.py \
+  Makefile .gitignore .github/workflows/build.yml \
+  tiger_sentence_native/tigerengine.cc
 git commit -m "fix(native): keep one primary model mapping"
 ```
 
@@ -367,7 +410,9 @@ git commit -m "fix(native): keep one primary model mapping"
 
 **Files:**
 - Modify: `tests/tigerengine_mobile_test.cc`
+- Modify: `tests/tigerengine_mobile_cases.py`
 - Modify: `tests/tigerengine_safety_test.cc`
+- Modify: `tests/mohu_word_order_filter_test.lua`
 - Modify: `Makefile`
 - Modify: `tiger_sentence_native/tigerengine.cc`
 - Modify: `tiger_sentence_native/README.md`
@@ -393,8 +438,16 @@ Include `index_stride < 16`, the exact zero-section matrix (`context_count == in
 duplicate-index-key fixture preserving the existing “last page” binary-search behavior,
 maximum representable index counts against a tiny file, checked page-offset additions,
 out-of-block page offsets, and bi/tri boundary cases. Do not claim an impossible UINT64
-multiplication overflow through the public
-u32-count wire format; test the checked arithmetic helper directly if needed.
+multiplication overflow through the public u32-count wire format. Introduce and directly
+test an internal `checked_span(offset, count, item_size, limit, &end)` helper under the
+mapping-test seam with maximum u32 counts.
+
+Use a cross-platform RAII environment guard (`setenv/unsetenv` on POSIX,
+`_putenv_s` restore on Windows); read the strict flag per create call, never cache it
+process-wide, and restore the previous value after each case. Assert every malformed-fixture
+create failure has a nonempty format/layout error; generic missing-path, lexicon, allocation,
+and other create failures only need a nonempty error. Assert that a later valid create clears
+stale error text.
 
 - [ ] **Step 2: Run with sanitizers and verify RED**
 
@@ -413,10 +466,14 @@ Expected: current create rejects deep corruption unconditionally and still walks
 
 - [ ] **Step 3: Tighten metadata/index validation**
 
-Validate exact header/version/file size, checked section arithmetic, exact
+Validate exact `header_size == 104`, version/file size, checked section arithmetic,
+`index_stride >= 16`, the zero-section exception above, exact
 `ceil(context_count/stride)` page counts, nondecreasing keys, and page offsets against
-`bi_index_off`/`tri_index_off`. Audit `find_page`'s index pointer arithmetic as well as
-`page_base`, record stepping, and successor scanning. Do not touch block records in
+`bi_index_off`/`tri_index_off`. Require ordered, nonoverlapping
+`header <= unigram <= bi_blocks <= bi_index <= tri_blocks <= tri_index <= file_size`
+intervals and `page_offset >= section_start && page_offset + 16 <= section_end`; do not
+invent a page-alignment requirement. Audit `find_page`'s index pointer arithmetic as well
+as `page_base`, record stepping, and successor scanning. Do not touch block records in
 default create.
 
 - [ ] **Step 4: Add explicit invalid lookup results**
@@ -430,13 +487,22 @@ turning it into a finite floor probability. Raise a dedicated decode error befor
 caches, and set a log-once error string. The C API must return a negative result rather
 than sorting NaN states, serializing NaN, or reporting “output buffer too small”; Lua then
 falls back to smart candidates. Tests must cover a populated user layer and a rare-rank
-candidate that exercises `isolation_penalty`; run a blend case when `MH_BLEND` is set.
+candidate that exercises `isolation_penalty`; always set and restore a tiny `MH_BLEND`
+fixture for the blend-fusion case. Update `tiger_decode` and `tiger_decode_full` catch/status
+paths to preserve the dedicated invalid-page error, and add C-API assertions for both
+functions plus a Lua mock asserting native nil/error falls back to smart candidates.
 
 - [ ] **Step 5: Retain opt-in full validation**
 
 Call the existing full `validate_pages` only when `MOHU_TIGER_STRICT_VALIDATE` equals `1`. Leave MHKNM01 behavior unchanged.
 
-- [ ] **Step 6: Run native safety and functional suites after the fix**
+- [ ] **Step 6: Document native fallback semantics**
+
+Update `tiger_sentence_native/README.md` with the exact strict flag values, metadata-only
+default load, touched-page invalidation, dedicated decode error, and Lua smart fallback.
+State that MHKNM01/optional container word layers retain existing eager validation.
+
+- [ ] **Step 7: Run native safety and functional suites after the fix**
 
 ```bash
 make tigerengine-safety
@@ -445,14 +511,16 @@ make tigerengine-user-model
 make tigerengine-reading-prior
 make tigerengine-mobile
 make tigerengine-mapping
+make tigerengine-word-score
 ```
 
 Expected: PASS; valid model output stays unchanged.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add tests/tigerengine_mobile_test.cc tests/tigerengine_safety_test.cc Makefile \
+git add tests/tigerengine_mobile_test.cc tests/tigerengine_mobile_cases.py \
+  tests/tigerengine_safety_test.cc tests/mohu_word_order_filter_test.lua Makefile \
   tiger_sentence_native/tigerengine.cc tiger_sentence_native/README.md
 git commit -m "perf(native): validate model pages on demand"
 ```
@@ -467,21 +535,31 @@ git commit -m "perf(native): validate model pages on demand"
 
 - [ ] **Step 1: Write failing lifecycle tests**
 
-Mock `Memory` and assert processor/translator init performs zero constructions; navigation/pin routes stay at zero; `h`/`u` query or deletion constructs once per env; failure is not retried on every call; explicit refresh can retry; fini disconnects and clears state.
+Mock `Memory`, LevelDb, pin store, config, commit/update notifiers, and context. Assert
+the explicit state machine `unattempted -> live|failed`; processor/translator init performs
+zero constructions and still stores namespace; navigation/pin routes stay at zero;
+`h` query, `u` query, and h/u delete construct once per env; a failed h/u query returns
+the exact prompt `〔无法连接用户词典〕`, does not label records as builtin, and performs
+no writes; explicit `refresh_memory` clears attempted and retries; `fini` disconnects and
+clears object, attempted flag, and namespace.
 
 - [ ] **Step 2: Run and verify RED**
 
-```bash
-lua tests/mohu_candidate_manager_test.lua
+```powershell
+& $env:MOHU_LUA_BIN tests/mohu_candidate_manager_test.lua
 ```
 
+- Expected RED: constructor count is nonzero at init, or a failed query is retried/misclassified.
 - [ ] **Step 3: Implement `ensure_memory`**
 
-Always store the configured namespace during init, add a per-env attempted flag, and create only on the documented `h`/`u` paths. Keep each component's wrapper separate. On failure, show a user-dictionary connection prompt for actions requiring Memory.
+Always store the configured namespace during init, add a per-env attempted flag, and replace
+the current unconditional `refresh_memory` calls on every h/u query with one-shot
+`ensure_memory()` calls. Keep each component's wrapper separate. On failure, show exactly
+`〔无法连接用户词典〕` for actions requiring Memory and stop before classification or writes.
 
 - [ ] **Step 4: Run and verify GREEN**
 
-Run the command from Step 2. Expected: PASS.
+Run the command from Step 2. Expected: PASS, including refresh retry and fini cleanup.
 
 - [ ] **Step 5: Commit**
 
@@ -498,21 +576,32 @@ git commit -m "perf(lua): defer candidate-manager memory"
 
 - [ ] **Step 1: Write failing action/lifecycle tests**
 
-Assert init, ordinary hide/restore, and move operations do not construct Memory. Ctrl+0 and permanent-delete classification construct once; unavailable Memory aborts the action with a prompt instead of degrading permanent deletion into soft hide; refresh/fini reset state correctly.
+Split actions by candidate/state: builtin hidden-record restore in management mode must not
+construct Memory; `user_phrase` permanent delete must construct it; normal learning Ctrl+0
+must construct it, while management Ctrl+0 only clears override data and must not. A failed
+constructor returns `〔无法连接用户词典〕` before any soft-delete/write, and refresh/fini
+reset object, attempted flag, and namespace. Use distinct mocks for hidden builtin and
+user-created candidates so the existing `user_created_entry`-before-restore ordering is
+covered.
 
 - [ ] **Step 2: Run and verify RED**
 
-```bash
-lua tests/mohu_candidate_override_test.lua
+```powershell
+& $env:MOHU_LUA_BIN tests/mohu_candidate_override_test.lua
 ```
 
+- Expected RED: init constructs Memory or failed user-word actions fall through to a hide.
 - [ ] **Step 3: Implement lazy `ensure_override_memory`**
 
-Store namespace/attempted state during configure, invoke it only before learned-weight/user-created checks, preserve explicit refresh after mutation, and release only an actually-created wrapper.
+Store namespace/attempted state during configure, branch on management/candidate type before
+calling `user_created_entry`, invoke `ensure_override_memory()` only before learned-weight or
+user-created checks, preserve explicit refresh after mutation, and release only an actually-
+created wrapper.
 
 - [ ] **Step 4: Run and verify GREEN**
 
-Run the command from Step 2. Expected: PASS.
+Run the command from Step 2. Expected: PASS for builtin restore, user delete, both Ctrl+0
+paths, failure prompts, refresh retry, and fini cleanup.
 
 - [ ] **Step 5: Commit**
 
@@ -526,36 +615,71 @@ git commit -m "perf(lua): defer candidate-override memory"
 ### Task 8: Run generated-data and full regression checks
 
 **Files:**
+- Create: `tools/benchmark_tiger_windows.py`
+- Create: `tools/benchmark_rime_latency.py`
+- Create: `docs/reports/2026-09-05-completion-preserving-latency.md`
+- Modify: `tests/test_mohu_config.py` (if deployment-output assertions are not already covered)
+- Modify: `.github/workflows/build.yml`
+- Modify: `tiger_sentence_native/README.md`
+- Modify: `docs/knowledge/cross-candidate-ordering.md`
 - Modify only if required by generated output: files reported by `make all`
 
-- [ ] **Step 1: Regenerate from source**
+- [ ] **Step 1: Regenerate and validate flat distributions**
 
 ```bash
 make all
-git status --short
-git diff --stat
+make dist-zrm dist-flypy
+uv run python -m unittest tests.test_mohu_config -v
+uv run python -m unittest tests.test_split_distribution -v
 ```
 
-Expected: schema generation preserves explicit completion settings. Stop and investigate before continuing if `make all` produces large unrelated rewrites.
+Inspect `dist-zrm` and `dist-flypy` (ignored output) directly: assert all six completion
+namespaces in each source/package matrix are true and every `mohu_*.extended.dict.yaml`
+still imports its `*.wanxiang` table. If an installed `rime_deployer` is available, set
+`RIME_DEPLOYER` explicitly and build an isolated temporary user directory, then inspect
+the six deployed `build/*.schema.yaml` files; otherwise record deployment as skipped, not
+passed. Stop and investigate if `make all` produces large unrelated rewrites.
 
-- [ ] **Step 2: Run the full repository suite**
+- [ ] **Step 2: Run the repository suite with baseline accounting**
 
 ```bash
 make test
 ```
 
-Expected: PASS. Do not pipe through `tail`; preserve the real exit status.
+Run focused changed-file tests first and preserve the exit status. Run `make test` in the
+supported build shell; if it reproduces the known pre-existing missing research-artifact
+failures, record the exact baseline failures and do not call the full suite green. The
+changed Lua/native fixture targets must pass independently. Run
+`make tigerengine-mobile tigerengine-mapping tigerengine-word-score` explicitly even if
+the umbrella target omits them.
 
-- [ ] **Step 3: Run the completion-preserving Weasel benchmark**
+- [ ] **Step 3: Add and run the completion-preserving benchmark**
 
-Use the existing isolated 240-key harness with the same user directory, page size, corpus, model hash, and three-session sampling. Confirm deployed `build/mohu_*.schema.yaml` keeps both completion flags true. Record P50/P90/P95/P99/max and candidate output parity.
+Implement `tools/benchmark_rime_latency.py` by parameterizing the existing temporary
+Weasel/Rime ctypes harness: `--rime-dll`, `--shared-data-dir`, `--user-dir`, `--schema`,
+`--key-list`, `--runs`, and `--output-csv`. The script must reset/create an isolated user
+directory per run, run maintenance, select the schema, process the exact key list, and
+write raw per-key rows. It must print the source commit, schema SHA-256, model SHA-256,
+Rime/Weasel versions, page size, userdb reset policy, and percentile definition.
+
+Run it for three sessions with completion enabled and compare candidate snapshots with a
+tracked parity helper in the Lua tests. Confirm deployed schemas keep both completion flags
+true. Write machine-readable rows plus a human summary to
+`docs/reports/2026-09-05-completion-preserving-latency.md`.
 
 - [ ] **Step 4: Measure native startup in isolated processes**
 
-For at least five measured processes after one warm-up, record:
+`tools/benchmark_tiger_windows.py` accepts `--dll`, `--model`, `--tiny-model`,
+`--lexicon`, `--tiny-lexicon`, `--runtime-dir`, `--runs`, and `--output`. It launches a
+fresh 64-bit child per sample, uses QPC for create/free wall time, records
+`PROCESS_MEMORY_COUNTERS_EX`, `QueryWorkingSetEx` resident pages, and
+`VirtualQueryEx`/`GetMappedFileNameW` primary mappings. It emits one JSON object per
+child and a summary manifest with tool versions and SHA-256 hashes. Measure these paired
+configurations after one warm-up each:
 
 ```text
 real model + one-line lexicon: create wall time, page faults, WS delta
+tiny model + real lexicon:     isolate lexicon fixed cost
 real model + real lexicon:     create wall time, page faults, WS/private delta
 VirtualQueryEx:                primary-model mapping count and resident pages
 after free:                    mapping count and WS
@@ -563,17 +687,37 @@ after free:                    mapping count and WS
 
 Acceptance follows the design document: model-only create <=50 ms, page faults <=2,000, model WS delta <30 MB, one primary mapping, completion-on P99 <50 ms, and finite-stream output parity.
 
-- [ ] **Step 5: Update durable documentation with measured results**
+- [ ] **Step 5: Add the Windows CI fixture gate**
+
+In `.github/workflows/build.yml`, after the existing Windows DLL/model smoke build and
+before runtime-closure upload, run the portable `tigerengine-mobile`,
+`tigerengine-mapping`, and `tigerengine-windows-memory` targets in `msys2 {0}`. Copy
+`lua54.dll` beside the DLL, export
+`TIGER_ENGINE_DLL=$PWD/libtigerengine.dll`, `TIGER_NGRAM=$PWD/mohu-sentence-ngram-v5.bin`,
+and `TIGER_LEXICON=$PWD/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt`, then run
+`python tests/tigerengine_windows_mapping_test.py`. Upload its JSON manifest as a CI
+artifact; fail on missing model/DLL rather than silently skipping. Keep POSIX-only safety
+targets in their existing shell.
+
+The workflow step uses the already-built root `libtigerengine.dll`, downloaded root
+`mohu-sentence-ngram-v5.bin`, repository lexicon, and root `lua54.dll`; it sets `PATH=$PWD`
+before the Python call, runs with `shell: msys2 {0}`, uploads
+`native-memory-manifest.json`, and fails if the probe exits 2 for missing inputs.
+
+- [ ] **Step 6: Update durable documentation with measured results**
 
 Update `tiger_sentence_native/README.md` and `docs/knowledge/cross-candidate-ordering.md` with the strict validation flag, bounded-filter fallback, retained completion semantics, benchmark method, and measured numbers. Do not claim unmeasured Windows/TSF behavior.
 
-- [ ] **Step 6: Commit generated/doc-only follow-up if needed**
+- [ ] **Step 7: Commit generated, workflow, report, and documentation changes**
 
 ```bash
-git add <only the intentional generated and documentation files>
+git add tools/benchmark_tiger_windows.py tools/benchmark_rime_latency.py \
+  docs/reports/2026-09-05-completion-preserving-latency.md \
+  tests/test_mohu_config.py .github/workflows/build.yml \
+  tiger_sentence_native/README.md docs/knowledge/cross-candidate-ordering.md
 git commit -m "docs: record completion-preserving latency results"
 ```
 
-- [ ] **Step 7: Request final code review**
+- [ ] **Step 8: Request final code review**
 
 Review the complete range from `origin/main` to HEAD for candidate correctness, model safety, cleanup paths, missing tests, and unrelated generated churn. Resolve every Critical/Important finding before handoff.

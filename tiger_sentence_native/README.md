@@ -104,6 +104,13 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
   末 2 词)，需容器（MHCTN01）词层或 `word_scorer_model` 显式指定，
   OOV（−20 无信号）不参与重排。
 - `word_order_candidates`：参与重排的候选数上限（默认 20，clamp 2–50）
+- `word_order_scan_budget`：为凑齐可评分 block 最多同步拉取的候选数（默认
+  `word_order_candidates × 3`，clamp 到候选上限至 1000）。在完整 block 或
+  EOF 之前命中该上限时，本轮保持上游原序且不获取/调用 scorer；完整 block
+  恰好由最后一个预算内候选补齐时仍可评分。
+- `word_order_time_budget_ms`：候选收集的协作式时间预算（默认 4ms，0 关闭）。
+  只在两次 iterator 调用之间检查，不能中断一次上游调用；计时器不可用时只
+  关闭时间判断，候选数硬上限继续生效。
 - `word_order_rank_penalty`：名次每前进一位所需的模型分优势（默认 1.0；
   离线网格的平滑平台区 0.95–1.4：0.95 时修好 45.7%/修反 1.5%，1.4 时
   40.3%/1.0%——即修反保护阈值，优势不足不动）

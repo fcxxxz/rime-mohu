@@ -25,7 +25,9 @@ end
 -- scorer_state / char_state 返回预设评分函数（word 信号 / char 信号）。
 local scorer_state = {
   available = true,
+  acquire_error = false,
   fn = nil,
+  acquired = 0,
   invoked = 0,
   last_handle = nil,
   last_history = nil,
@@ -33,7 +35,9 @@ local scorer_state = {
 }
 local char_state = {
   available = true,
+  acquire_error = false,
   fn = nil,
+  acquired = 0,
   invoked = 0,
   last_handle = nil,
   last_history = nil,
@@ -42,10 +46,14 @@ local char_state = {
 package.preload["mohu_sentence"] = function()
   return {
     acquire_word_scorer = function(env)
+      scorer_state.acquired = scorer_state.acquired + 1
+      if scorer_state.acquire_error then error("scorer accessor failed") end
       if not scorer_state.available then return nil end
       return scorer_state.fn, 7
     end,
     acquire_char_scorer = function(env)
+      char_state.acquired = char_state.acquired + 1
+      if char_state.acquire_error then error("scorer accessor failed") end
       if not char_state.available then return nil end
       return char_state.fn, 9
     end,
@@ -156,12 +164,46 @@ end
 local function reset_scorer(scores)
   for _, state in ipairs({ scorer_state, char_state }) do
     state.available = true
+    state.acquire_error = false
+    state.acquired = 0
     state.invoked = 0
     state.last_handle = nil
     state.last_history = nil
     state.last_texts = nil
     state.fn = bind_fn(scores, state)
   end
+end
+
+local function run_filter_stream(env, candidates)
+  yielded = {}
+  local tracker = { advances = 0, first_yield_advances = nil }
+  local old_yield = _G.yield
+  local input = {
+    iter = function()
+      local index = 0
+      return function()
+        tracker.advances = tracker.advances + 1
+        index = index + 1
+        local value = candidates[index]
+        if value == "__ITERATOR_ERROR__" then error("iterator failed") end
+        return value
+      end
+    end,
+  }
+  _G.yield = function(value)
+    if tracker.first_yield_advances == nil then
+      tracker.first_yield_advances = tracker.advances
+    end
+    yielded[#yielded + 1] = value
+    return coroutine.yield(value)
+  end
+  local co = coroutine.create(function() filter.func(input, env) end)
+  while coroutine.status(co) ~= "dead" do
+    local ok, err = coroutine.resume(co)
+    assert(ok, err)
+  end
+  _G.yield = old_yield
+  return yielded, tracker
 end
 
 -- 1) 上下文重排生效：原名次 2 的候选以足够优势胜出。
@@ -290,6 +332,22 @@ do
         same_texts(texts_of(out2), texts_of(input)) and scorer_state.invoked == 0)
 end
 
+do
+  reset_scorer({ -1, -2 })
+  char_state.acquire_error = true
+  local env = make_env({ history = "我想吃" })
+  filter.init(env)
+  local input = { candidate("table", "中心"), candidate("table", "目标") }
+  local out1 = run_filter(env, input)
+  check("scorer accessor error passes through",
+        same_texts(texts_of(out1), texts_of(input)) and env._wo_dead == true)
+  char_state.acquire_error = false
+  reset_scorer({ -1, -2 })
+  local out2 = run_filter(env, input)
+  check("scorer accessor error is not retried",
+        same_texts(texts_of(out2), texts_of(input)) and char_state.acquired == 0)
+end
+
 -- 4) 稳定边界：pinned/native/单字/⚡️ 注释候选在首个可重排候选之前原样
 --    输出；块内 punct 候选位置不动，重排只发生在其余候选之间。
 do
@@ -401,13 +459,203 @@ do
         same_texts(texts_of(out), { "其三", "其一", "其二", "其四", "其五" }))
 end
 
+-- 8) 预算先于 scorer：预算命中前未凑齐完整 block 时必须原序直通，
+--    且过滤器不能为了评分提前触发引擎创建。
+do
+  reset_scorer({ -1, -2, -3 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 3,
+      ["tiger/word_order_scan_budget"] = 4,
+      ["tiger/word_order_time_budget_ms"] = 100000,
+    },
+  })
+  filter.init(env)
+  local input = {
+    candidate("table", "甲"), candidate("table", "乙"),
+    candidate("table", "丙"), candidate("table", "中心"),
+    candidate("table", "目标"), candidate("table", "尾部"),
+  }
+  local out = run_filter_stream(env, input)
+  check("budget before complete block passes source order",
+        same_texts(texts_of(out), texts_of(input)))
+  check("budget before complete block does not acquire scorer",
+        char_state.acquired == 0 and char_state.invoked == 0)
+end
+
+-- 9) 第 budget 个候选刚好补齐 >=2 个槽位时，仍允许一次评分。
+do
+  reset_scorer({ -1, -5 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 2,
+      ["tiger/word_order_scan_budget"] = 4,
+      ["tiger/word_order_time_budget_ms"] = 100000,
+    },
+  })
+  filter.init(env)
+  run_filter_stream(env, {
+    candidate("table", "甲"), candidate("table", "乙"),
+    candidate("table", "中心"), candidate("table", "目标"),
+    candidate("table", "尾部"),
+  })
+  check("budget-th complete block still scores",
+        char_state.acquired == 1 and char_state.invoked == 1)
+end
+
+-- 10) EOF 在预算内且有两个槽位时仍评分；同一 iterator 的尾部只能出现一次。
+do
+  reset_scorer({ -1, -5 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 3,
+      ["tiger/word_order_scan_budget"] = 10,
+      ["tiger/word_order_time_budget_ms"] = 100000,
+    },
+  })
+  filter.init(env)
+  local input = { candidate("table", "中心"), candidate("table", "目标") }
+  local out, tracker = run_filter_stream(env, input)
+  check("EOF with two candidates still scores",
+        char_state.acquired == 1 and char_state.invoked == 1)
+  check("EOF preserves the single iterator",
+        same_texts(texts_of(out), { "中心", "目标" }) and tracker.advances == 3)
+end
+
+-- 11) 迭代器异常只记录一次，已消费候选仍按原序输出，不能让 filter 崩出协程。
+do
+  reset_scorer({ -1, -2 })
+  local errors = 0
+  local old_log = _G.log
+  _G.log = { error = function() errors = errors + 1 end }
+  local env = make_env({
+    history = "我想吃",
+    config = { ["tiger/word_order_scan_budget"] = 10 },
+  })
+  filter.init(env)
+  local out = run_filter_stream(env, {
+    candidate("table", "中心"), "__ITERATOR_ERROR__",
+  })
+  _G.log = old_log
+  check("iterator error keeps consumed candidates", #out == 1 and out[1].text == "中心")
+  check("iterator error logs once", errors == 1)
+end
+
+-- 12) 合法过期 deadline fail-open；时钟抛错（初始或扫描中）只关闭时间预算，
+--     仍受候选数上限约束。
+do
+  local old_api, old_clock = _G.rime_api, os.clock
+  local ticks = 0
+  _G.rime_api = { get_time_ms = function()
+    ticks = ticks + 1
+    return ticks == 1 and 0 or 100
+  end }
+  os.clock = function() return 0 end
+  reset_scorer({ -1, -2 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 3,
+      ["tiger/word_order_scan_budget"] = 10,
+      ["tiger/word_order_time_budget_ms"] = 4,
+    },
+  })
+  filter.init(env)
+  local out, tracker = run_filter_stream(env, {
+    candidate("table", "中心"), candidate("table", "目标"),
+  })
+  check("expired deadline fails open before scoring",
+        #out == 2 and char_state.acquired == 0 and tracker.first_yield_advances == 1)
+  _G.rime_api, os.clock = old_api, old_clock
+end
+
+do
+  local old_api, old_clock = _G.rime_api, os.clock
+  local ticks = 0
+  _G.rime_api = { get_time_ms = function()
+    ticks = ticks + 1
+    return ticks < 5 and 0 or 100
+  end }
+  os.clock = function() return 0 end
+  reset_scorer({ -1, -2 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 3,
+      ["tiger/word_order_scan_budget"] = 10,
+      ["tiger/word_order_time_budget_ms"] = 4,
+    },
+  })
+  filter.init(env)
+  local out = run_filter_stream(env, {
+    candidate("table", "中心"), candidate("table", "目标")
+  })
+  check("EOF call crossing deadline fails open",
+        #out == 2 and char_state.acquired == 0)
+  _G.rime_api, os.clock = old_api, old_clock
+end
+
+do
+  local old_api, old_clock = _G.rime_api, os.clock
+  _G.rime_api = { get_time_ms = function() error("clock unavailable") end }
+  os.clock = function() error("clock unavailable") end
+  reset_scorer({ -1, -2 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 3,
+      ["tiger/word_order_scan_budget"] = 3,
+      ["tiger/word_order_time_budget_ms"] = 4,
+    },
+  })
+  filter.init(env)
+  local input = { candidate("table", "甲"), candidate("table", "乙"),
+                  candidate("table", "丙"), candidate("table", "中心") }
+  local out, tracker = run_filter_stream(env, input)
+  check("initial clock failure falls back to count cap",
+        same_texts(texts_of(out), texts_of(input)) and char_state.acquired == 0 and
+        tracker.first_yield_advances == 3)
+  _G.rime_api, os.clock = old_api, old_clock
+end
+
+do
+  local old_api, old_clock = _G.rime_api, os.clock
+  local ticks = 0
+  _G.rime_api = { get_time_ms = function()
+    ticks = ticks + 1
+    if ticks == 1 then return 0 end
+    error("clock unavailable")
+  end }
+  os.clock = function() error("clock unavailable") end
+  reset_scorer({ -1, -2 })
+  local env = make_env({
+    history = "我想吃",
+    config = {
+      ["tiger/word_order_candidates"] = 3,
+      ["tiger/word_order_scan_budget"] = 3,
+      ["tiger/word_order_time_budget_ms"] = 4,
+    },
+  })
+  filter.init(env)
+  local input = { candidate("table", "甲"), candidate("table", "乙"),
+                  candidate("table", "丙"), candidate("table", "中心") }
+  local out, tracker = run_filter_stream(env, input)
+  check("mid-scan clock failure keeps count bound",
+        same_texts(texts_of(out), texts_of(input)) and char_state.acquired == 0 and
+        tracker.first_yield_advances == 3)
+  _G.rime_api, os.clock = old_api, old_clock
+end
+
 -- ======================================================================
 -- B) acquire_word_scorer 集成（mock dylib）
 -- ======================================================================
 
-local root = "/tmp/mohu-word-order-filter-test"
-os.execute("rm -rf " .. root)
-os.execute("mkdir -p " .. root)
+local path_separator = package.config:sub(1, 1)
+local root = (os.getenv("TEMP") or os.getenv("TMPDIR") or ".") ..
+  path_separator .. "mohu-word-order-filter-test"
 
 rime_api = { get_user_data_dir = function() return root end }
 log = { error = function() end }
@@ -460,7 +708,10 @@ local function fresh(status_text, options)
     assert(symbol == "luaopen_tigerengine", "unexpected loadlib symbol")
     return function()
       local module = {
-        create = function() return 7 end,
+        create = function()
+          calls.creates = (calls.creates or 0) + 1
+          return 7
+        end,
         free = function() end,
         decode = function() return decode_output, 0.1 end,
         status = function(handle)
@@ -515,6 +766,29 @@ do
   local scores = fn(handle, "我想吃", { "自助", "自主" })
   check("packed scorer is callable",
         type(scores) == "table" and scores[1] == -5 and scores[2] == -6)
+end
+
+-- scorer accessor 本身不得创建引擎；translator.init 才拥有生命周期。
+do
+  local mod, calls = fresh(status_line("packed", 364090))
+  local env = make_tiger_env({})
+  local word_fn = mod.acquire_word_scorer(env)
+  local char_fn = mod.acquire_char_scorer(env)
+  check("scorer accessors do not create an engine",
+        word_fn == nil and char_fn == nil and calls.creates == nil)
+end
+
+do
+  local mod = fresh(status_line("off", 0))
+  local translator_env = make_tiger_env({})
+  mod.translator.init(translator_env)
+  -- A real lua_filter owns a different env; the shared module handle must
+  -- still be visible to its accessor.
+  local filter_env = make_tiger_env({})
+  local fn, handle = mod.acquire_char_scorer(filter_env)
+  check("separate filter env can use translator-owned handle",
+        fn ~= nil and handle == 7)
+  mod.translator.fini(translator_env)
 end
 
 -- 2) 纯字符引擎（word_scorer=off）：acquire 返回 nil。

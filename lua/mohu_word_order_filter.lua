@@ -1,7 +1,7 @@
 -- Mohu Word Order Filter
 -- Copyright (c) 2026 ksqsf
 --
--- Ver: 0.1.0
+-- Ver: 0.2.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
@@ -27,9 +27,9 @@
 -- tiger/word_order_candidates（默认 20）、tiger/word_order_rank_penalty
 -- （默认 1.0，离线网格：0.95 时修好 45.7%/修反 1.5%，1.4 时 40.3%/1.0%）、
 -- tiger/word_order_scan_budget（收集阶段总拉取上限，默认
--- word_order_candidates×3：block 只数可重排候选，流前部全是单字时
--- block 永不凑齐、循环会抽干整条流，实测补全流下单键近万候选、
--- 数百毫秒；预算耗尽即以已收集的 block 继续重排，其余流式直通）。
+-- word_order_candidates×3）。预算在完整 block/EOF 之前命中时原序直通，
+-- 不调用 scorer；另有 tiger/word_order_time_budget_ms（默认 4ms）的协作式
+-- 时间边界。计时器失败只关闭时间预算，候选数上限仍生效。
 --
 -- 挂接：mohu_*.schema.yaml filters 列表，mohu_reorder_filter 之后、
 -- candidate_override 之前（用户显式覆盖优先于模型重排）。
@@ -104,6 +104,8 @@ function F.init(env)
   env._wo_penalty = config_number(cfg, "tiger/word_order_rank_penalty", 1.0, 0.0, 100.0)
   env._wo_scan_budget = math.floor(config_number(cfg, "tiger/word_order_scan_budget",
     env._wo_limit * 3, env._wo_limit, 1000))
+  env._wo_time_budget_ms = config_number(cfg, "tiger/word_order_time_budget_ms",
+    4, 0, 1000)
   -- 评分信号：char = 字符续写分（octagram 同型，默认；用主字符模型，
   -- 无词层/无 OOV 概念，实测修好率约为词信号 3 倍）；word = 词级分
   -- （需容器词层或显式 word_scorer_model，OOV −20 无信号不参与）。
@@ -121,6 +123,34 @@ function F.init(env)
 end
 
 function F.fini(env)
+end
+
+local function read_time_ms()
+  local api = rawget(_G, "rime_api")
+  if api and type(api.get_time_ms) == "function" then
+    local ok, value = pcall(api.get_time_ms)
+    if ok and type(value) == "number" and value == value then return value end
+  end
+  if os and type(os.clock) == "function" then
+    local ok, value = pcall(os.clock)
+    if ok and type(value) == "number" and value == value then return value * 1000 end
+  end
+  return nil
+end
+
+local function log_iterator_error(message)
+  if type(log) == "table" and type(log.error) == "function" then
+    pcall(log.error, "mohu_word_order_filter: " .. tostring(message))
+  end
+end
+
+local function valid_candidate(value)
+  if value == nil then return "eof" end
+  local value_type = type(value)
+  if value_type ~= "table" and value_type ~= "userdata" then return "invalid" end
+  local ok, genuine = pcall(function() return value:get_genuine() end)
+  if not ok or genuine == nil then return "invalid" end
+  return "candidate"
 end
 
 -- 候选是否参与重排：多字、非 punct/pinned/native、无简码/固顶标记。
@@ -148,53 +178,115 @@ end
 function F.func(input, env)
   if env._wo_dead then return passthrough(input) end
   if not env._wo_enabled then return passthrough(input) end
-  if not tiger or type(tiger.acquire_word_scorer) ~= "function" then
+  local scorer_accessor
+  if tiger then
+    scorer_accessor = env._wo_signal == "word" and tiger.acquire_word_scorer or
+      tiger.acquire_char_scorer
+  end
+  if type(scorer_accessor) ~= "function" then
     return passthrough(input)
   end
   local history = read_history(env)
   if not history then return passthrough(input) end
-  if not tiger or type(tiger.acquire_word_scorer) ~= "function" then
-    return passthrough(input)
-  end
-  local score_fn, handle
-  if env._wo_signal == "word" then
-    score_fn, handle = tiger.acquire_word_scorer(env)
-  else
-    if type(tiger.acquire_char_scorer) ~= "function" then
-      return passthrough(input)
-    end
-    score_fn, handle = tiger.acquire_char_scorer(env)
-  end
-  if not (score_fn and handle) then return passthrough(input) end
 
   local advance, state = input:iter()
   local prefix, block = {}, {}
   local seen_first = false
-  -- 只收集到限额为止，其余流式直通（不占内存）。
-  -- 扫描预算封顶"为一口气凑 block 而连续拉取"的总量：单字等不可重排
-  -- 候选不数入 block，流前部若全是这类候选，block 永不凑齐，循环会把
-  -- 整条流抽干（补全流下即逐键数百毫秒卡顿的形态）。预算耗尽后以已
-  -- 收集的 block 照常重排（不足 2 个走直通），其余交给 drain() 流式输出。
+  local reorderable_count = 0
   local scans = 0
-  while #block < env._wo_limit do
-    if scans >= env._wo_scan_budget then break end
+  local eof = false
+  local failed = false
+  local complete = false
+  local budget_stop = false
+  local time_enabled = env._wo_time_budget_ms > 0
+  local start_time = time_enabled and read_time_ms() or nil
+  if start_time == nil then time_enabled = false end
+  local deadline = start_time and start_time + env._wo_time_budget_ms or nil
+
+  local function expired()
+    if not time_enabled then return false end
+    local now = read_time_ms()
+    if now == nil then
+      time_enabled = false
+      return false
+    end
+    return now >= deadline
+  end
+
+  -- 只在完整 block 或 EOF 前收集；预算命中时不评分，原序 fail-open。
+  while reorderable_count < env._wo_limit do
+    if scans >= env._wo_scan_budget or expired() then
+      budget_stop = true
+      break
+    end
     scans = scans + 1
-    local cand = advance(state)
-    if cand == nil then break end
-    if not seen_first and reorderable(env, cand) then seen_first = true end
+    local ok, cand = pcall(advance, state)
+    if not ok then
+      log_iterator_error(cand)
+      failed = true
+      break
+    end
+    local kind = valid_candidate(cand)
+    if kind == "eof" then
+      eof = true
+      break
+    elseif kind ~= "candidate" then
+      log_iterator_error("iterator returned a non-candidate value")
+      failed = true
+      break
+    end
+    local classify_ok, is_reorderable = pcall(reorderable, env, cand)
+    if not classify_ok then
+      log_iterator_error("iterator returned an invalid candidate")
+      failed = true
+      break
+    end
+    if is_reorderable then
+      seen_first = true
+      reorderable_count = reorderable_count + 1
+    end
     if seen_first then
       block[#block + 1] = cand
     else
       prefix[#prefix + 1] = cand
     end
   end
-  -- 收集块之后的剩余候选：流式直通。
+
+  complete = reorderable_count >= env._wo_limit
+  -- A candidate call itself may cross the cooperative deadline.  Check once
+  -- before acquiring/scoring so a valid expired clock still fails open; a
+  -- clock failure disables only time budgeting and leaves count semantics.
+  if not failed and expired() then budget_stop = true end
+  local budget_hit = budget_stop or
+    (not eof and not failed and not complete and scans >= env._wo_scan_budget)
+
+  -- 收集块之后的剩余候选：沿用同一个 iterator，异常时只记录一次并停止。
   local function drain()
-    for cand in function() return advance(state) end do yield(cand) end
+    while true do
+      local ok, cand = pcall(advance, state)
+      if not ok then
+        log_iterator_error(cand)
+        return
+      end
+      local kind = valid_candidate(cand)
+      if kind == "eof" then return end
+      if kind ~= "candidate" then
+        log_iterator_error("iterator returned a non-candidate value")
+        return
+      end
+      yield(cand)
+    end
   end
   -- 前缀（首个可重排候选之前的稳定候选）始终原样输出。
   local function yield_prefix()
     for _, c in ipairs(prefix) do yield(c) end
+  end
+
+  if budget_hit or failed then
+    yield_prefix()
+    for _, c in ipairs(block) do yield(c) end
+    if not failed then drain() end
+    return
   end
 
   -- 找出块内参与重排的槽位与文本。
@@ -208,7 +300,33 @@ function F.func(input, env)
   if #slots < 2 then
     yield_prefix()
     for _, c in ipairs(block) do yield(c) end
-    drain()
+    if not eof and not failed then drain() end
+    return
+  end
+
+  local score_fn, handle
+  local acquire
+  if env._wo_signal == "word" then
+    acquire = tiger.acquire_word_scorer
+  else
+    if type(tiger.acquire_char_scorer) ~= "function" then
+      yield_prefix()
+      for _, c in ipairs(block) do yield(c) end
+      if not eof and not failed then drain() end
+      return
+    end
+    acquire = tiger.acquire_char_scorer
+  end
+  local acquire_ok
+  acquire_ok, score_fn, handle = pcall(acquire, env)
+  if not acquire_ok then
+    env._wo_dead = true
+    score_fn, handle = nil, nil
+  end
+  if not (score_fn and handle) then
+    yield_prefix()
+    for _, c in ipairs(block) do yield(c) end
+    if not eof and not failed then drain() end
     return
   end
 
@@ -218,7 +336,7 @@ function F.func(input, env)
     env._wo_dead = true
     yield_prefix()
     for _, c in ipairs(block) do yield(c) end
-    drain()
+    if not eof and not failed then drain() end
     return
   end
 
@@ -254,7 +372,7 @@ function F.func(input, env)
 
   yield_prefix()
   for _, c in ipairs(block) do yield(c) end
-  drain()
+  if not eof and not failed then drain() end
 end
 
 return F

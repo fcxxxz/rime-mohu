@@ -1183,11 +1183,12 @@ function M.acquire_word_scorer(env)
   if tigerengine == nil or type(tigerengine.context_word_scores) ~= "function" then
     return nil
   end
-  local ok, handle = pcall(ensure_engine, env)
-  if ok and handle then
-    return tigerengine.context_word_scores, handle
-  end
-  return nil
+  -- Filters are on the hot candidate path and must not create an engine.  The
+  -- translator owns lifecycle and marks the handle ready during init.
+  -- The filter has a separate Lua env from the translator.  Readiness is
+  -- therefore the module-level live handle, not a per-env flag.
+  if engine_handle == nil then return nil end
+  return tigerengine.context_word_scores, engine_handle
 end
 
 -- 字符续写评分（octagram 同型机制）：字符级主模型即可，不要求词层。
@@ -1197,11 +1198,8 @@ function M.acquire_char_scorer(env)
   if tigerengine == nil or type(tigerengine.context_char_scores) ~= "function" then
     return nil
   end
-  local ok, handle = pcall(ensure_engine, env)
-  if ok and handle then
-    return tigerengine.context_char_scores, handle
-  end
-  return nil
+  if engine_handle == nil then return nil end
+  return tigerengine.context_char_scores, engine_handle
 end
 
 -- tiger/decode_context_chars 缓存读取（schema 变更前不会变化）。

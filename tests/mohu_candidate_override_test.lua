@@ -449,4 +449,372 @@ assert(subject.reorder_direction(key("Control+Down", 0xff54)) == nil)
 assert(subject.reorder_direction(key("Control+Right", 0xff53)) == nil)
 assert(subject.reorder_direction(key("Control+Alt+Up", 0xff52)) == nil)
 
+-- Candidate override Memory must be lazy: ordinary candidate management should not
+-- open the user dictionary, while actions that need user-dictionary inspection do.
+local processor = override.override_processor
+
+local function override_config(db_name)
+    return {
+        get_bool = function(_, path)
+            if path == "mohu/candidate_override/enable" then
+                return true
+            end
+            return nil
+        end,
+        get_int = function(_, path)
+            if path == "mohu/candidate_override/max_candidates" then
+                return 50
+            end
+            return nil
+        end,
+        get_string = function(_, path)
+            if path == "mohu/candidate_override/db_name" then
+                return db_name
+            end
+            if path == "mohu/candidate_manager/memory_namespace" then
+                return "translator"
+            end
+            return nil
+        end,
+    }
+end
+
+local function override_db()
+    local db = { is_loaded = false, data = {} }
+    function db:loaded()
+        return self.is_loaded
+    end
+    function db:open()
+        self.is_loaded = true
+    end
+    function db:close()
+        self.is_loaded = false
+    end
+    function db:query(prefix)
+        local rows = {}
+        for key, value in pairs(self.data) do
+            if key:sub(1, #prefix) == prefix then
+                table.insert(rows, { key, value })
+            end
+        end
+        return {
+            iter = function()
+                local index = 0
+                return function()
+                    index = index + 1
+                    local row = rows[index]
+                    if row == nil then
+                        return nil
+                    end
+                    return row[1], row[2]
+                end
+            end,
+        }
+    end
+    function db:update(key, value)
+        self.data[key] = value
+        return true
+    end
+    return db
+end
+
+local function notifier()
+    return {
+        connect = function()
+            return { disconnect = function() end }
+        end,
+    }
+end
+
+local function processor_env(db_name)
+    local context = {
+        composition = {
+            empty = function() return true end,
+        },
+    }
+    return {
+        engine = {
+            schema = { config = override_config(db_name) },
+            context = {
+                commit_notifier = notifier(),
+                update_notifier = notifier(),
+            },
+        },
+        context = context,
+    }
+end
+
+local function action_context(selected, input, management)
+    local segment = {
+        _start = 0,
+        _end = #input,
+        selected_index = 0,
+        menu = {
+            prepare = function() return 0 end,
+            get_candidate_at = function() return nil end,
+        },
+        get_selected_candidate = function()
+            return selected
+        end,
+    }
+    local context = {
+        input = input,
+        delete_count = 0,
+        refresh_count = 0,
+        options = { candidate_override_management = management or false },
+    }
+    context.composition = {
+        empty = function() return false end,
+        back = function() return segment end,
+    }
+    function context:get_option(name)
+        return self.options[name] or false
+    end
+    function context:set_option(name, value)
+        self.options[name] = value
+    end
+    function context:delete_current_selection()
+        self.delete_count = self.delete_count + 1
+        return true
+    end
+    function context:refresh_non_confirmed_composition()
+        self.refresh_count = self.refresh_count + 1
+    end
+    return context, segment
+end
+
+local function action_env(store, memory, namespace)
+    return {
+        override_enable = true,
+        override_store = store,
+        override_memory = memory,
+        override_memory_namespace = namespace or "translator",
+        override_memory_attempted = memory ~= nil,
+        override_management_option = "candidate_override_management",
+        override_max_candidates = 50,
+        override_pin_indicator = "📌",
+    }
+end
+
+local old_memory = Memory
+local old_level_db = LevelDb
+local memory_create_count = 0
+local memory_disconnect_count = 0
+local memory_update_count = 0
+local lazy_memory = {
+    user_entries = {},
+    dict_entries = {},
+}
+function lazy_memory:user_lookup()
+    return true
+end
+function lazy_memory:iter_user()
+    local index = 0
+    return function()
+        index = index + 1
+        return self.user_entries[index]
+    end
+end
+function lazy_memory:dictiter_lookup(code)
+    local entries = self.dict_entries[code] or {}
+    return {
+        iter = function()
+            local index = 0
+            return function()
+                index = index + 1
+                return entries[index]
+            end
+        end,
+    }
+end
+function lazy_memory:update_userdict(entry, commits, prefix)
+    memory_update_count = memory_update_count + 1
+    entry.commit_count = commits
+    return true
+end
+function lazy_memory:disconnect()
+    memory_disconnect_count = memory_disconnect_count + 1
+end
+
+local lazy_db = override_db()
+LevelDb = function()
+    return lazy_db
+end
+Memory = function()
+    memory_create_count = memory_create_count + 1
+    return lazy_memory
+end
+
+local init_env = processor_env("mohu_candidate_override_lazy_memory")
+processor.init(init_env)
+assert(memory_create_count == 0, "processor.init must not construct Memory")
+assert(init_env.override_memory == nil)
+assert(init_env.override_memory_attempted == false)
+assert(init_env.override_memory_namespace == "translator")
+
+local ordinary_store = {
+    query = function() return {} end,
+    set_hidden_calls = {},
+    set_hidden = function(self, code, text, hidden)
+        table.insert(self.set_hidden_calls, { code, text, hidden })
+        return true
+    end,
+    available = function() return true end,
+}
+local ordinary_context, ordinary_segment = action_context(candidate("Ordinary", "phrase"), "oo", false)
+local ordinary_result = subject.delete_or_restore(ordinary_context, ordinary_segment, "oo", action_env(ordinary_store))
+assert(ordinary_result == 1)
+assert(memory_create_count == 0, "ordinary hide must not construct Memory")
+assert(#ordinary_store.set_hidden_calls == 1 and ordinary_store.set_hidden_calls[1][3] == true)
+
+local move_a = candidate("MoveA", "phrase")
+local move_b = candidate("MoveB", "phrase")
+local move_context, move_segment = action_context(move_b, "mm", false)
+move_segment.selected_index = 1
+move_segment.menu = {
+    prepare = function() return 2 end,
+    get_candidate_at = function(_, index)
+        return index == 0 and move_a or move_b
+    end,
+}
+local move_store = {
+    available = function() return true end,
+    query = function() return {} end,
+    write_order = function(_, texts) return #texts == 2 and texts[1] == "MoveB" end,
+}
+local move_before = memory_create_count
+local move_env = action_env(move_store)
+move_env.engine = { context = move_context }
+local move_key = {
+    keycode = 0x2d,
+    ctrl = function() return true end,
+    shift = function() return false end,
+    release = function() return false end,
+}
+local move_result = processor.func(move_key, move_env)
+assert(move_result == 1)
+assert(memory_create_count == move_before, "candidate move must not construct Memory")
+
+local builtin_store = {
+    query = function()
+        return { Builtin = { hidden = true, rank = -1, tick = 1 } }
+    end,
+    set_hidden_calls = {},
+    set_hidden = function(self, code, text, hidden)
+        table.insert(self.set_hidden_calls, { code, text, hidden })
+        return true
+    end,
+}
+local builtin_context, builtin_segment = action_context(candidate("Builtin", "phrase"), "bb", true)
+local builtin_result = subject.delete_or_restore(builtin_context, builtin_segment, "bb", action_env(builtin_store))
+assert(builtin_result == 1)
+assert(memory_create_count == 0, "builtin hidden restore must not construct Memory")
+assert(#builtin_store.set_hidden_calls == 1 and builtin_store.set_hidden_calls[1][3] == false)
+
+lazy_memory.user_entries = {
+    { text = "UserMade", custom_code = "u u", commit_count = 3 },
+}
+lazy_memory.dict_entries = { ["u u"] = {} }
+local user_store = {
+    query = function()
+        return { UserMade = { hidden = true, rank = -1, tick = 1 } }
+    end,
+    set_hidden_calls = {},
+    set_user_deleted_calls = {},
+    set_hidden = function(self, code, text, hidden)
+        table.insert(self.set_hidden_calls, { code, text, hidden })
+        return true
+    end,
+    set_user_deleted = function(self, code, text, commits)
+        table.insert(self.set_user_deleted_calls, { code, text, commits })
+        return true
+    end,
+}
+local user_candidate = candidate("UserMade", "user_phrase")
+user_candidate.entry = { text = "UserMade", custom_code = "u u", commit_count = 3 }
+local user_context, user_segment = action_context(user_candidate, "uu", false)
+local user_env = action_env(user_store)
+local user_before = memory_create_count
+local user_result = subject.delete_or_restore(user_context, user_segment, "uu", user_env)
+assert(user_result == 1)
+assert(memory_create_count == user_before + 2, "user phrase refresh must retry Memory construction")
+assert(#user_store.set_user_deleted_calls == 1)
+assert(memory_update_count == 1)
+assert(user_env.override_memory == lazy_memory)
+assert(user_env.override_memory_attempted == true)
+assert(user_env.override_memory_namespace == "translator")
+assert(memory_disconnect_count == 1)
+
+local learned_context, learned_segment = action_context(candidate("Builtin", "phrase"), "bb", false)
+local learned_store = { query = function() return {} end }
+local learned_env = action_env(learned_store)
+local learned_before = memory_create_count
+local learned_result = subject.reset_learned_weight(learned_context, learned_segment, "bb", learned_env)
+assert(learned_result == 1)
+assert(memory_create_count == learned_before + 1, "normal Ctrl+0 must create Memory")
+local learned_again = subject.reset_learned_weight(learned_context, learned_segment, "bb", learned_env)
+assert(learned_again == 1)
+assert(memory_create_count == learned_before + 1, "normal Ctrl+0 must reuse Memory")
+
+local management_clear_calls = 0
+local management_context, management_segment = action_context(candidate("Builtin", "phrase"), "bb", true)
+local management_env = action_env({
+    available = function() return true end,
+    clear_code = function() management_clear_calls = management_clear_calls + 1; return true end,
+})
+local management_engine = {
+    context = management_context,
+}
+local management_key = {
+    keycode = 0x30,
+    ctrl = function() return true end,
+    shift = function() return false end,
+    release = function() return false end,
+}
+local management_before = memory_create_count
+local old_engine = management_env.engine
+management_env.engine = management_engine
+local management_result = processor.func(management_key, management_env)
+assert(management_result == 1)
+assert(management_clear_calls == 1)
+assert(memory_create_count == management_before, "management Ctrl+0 must not construct Memory")
+
+local failed_store = {
+    query = function() return {} end,
+    set_hidden_calls = 0,
+    set_user_deleted_calls = 0,
+    set_hidden = function(self) self.set_hidden_calls = self.set_hidden_calls + 1; return true end,
+    set_user_deleted = function(self) self.set_user_deleted_calls = self.set_user_deleted_calls + 1; return true end,
+    release = function() end,
+}
+local failing_candidate = candidate("CannotConnect", "user_phrase")
+failing_candidate.entry = { text = "CannotConnect", custom_code = "c c", commit_count = 1 }
+local failed_context, failed_segment = action_context(failing_candidate, "cc", false)
+local failed_env = action_env(failed_store)
+local failed_old_memory = Memory
+Memory = function()
+    memory_create_count = memory_create_count + 1
+    error("user dictionary unavailable")
+end
+local failed_result = subject.delete_or_restore(failed_context, failed_segment, "cc", failed_env)
+assert(failed_result == 1)
+assert(failed_segment.prompt == "〔无法连接用户词典〕", failed_segment.prompt)
+assert(failed_store.set_hidden_calls == 0)
+assert(failed_store.set_user_deleted_calls == 0)
+Memory = failed_old_memory
+local failed_before_retry = memory_create_count
+subject.refresh_override_memory(failed_env)
+assert(memory_create_count == failed_before_retry + 1, "refresh must retry a failed Memory construction")
+assert(failed_env.override_memory ~= nil)
+assert(failed_env.override_memory_attempted == true)
+processor.fini(failed_env)
+
+processor.fini(init_env)
+assert(init_env.override_memory == nil)
+assert(init_env.override_memory_attempted == false)
+assert(init_env.override_memory_namespace == nil)
+
+LevelDb = old_level_db
+Memory = old_memory
+
 print("candidate override logic: ok")

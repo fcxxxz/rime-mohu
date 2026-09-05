@@ -783,6 +783,12 @@ local function configure(env)
     env.override_hidden_comment = config:get_string("mohu/candidate_override/hidden_comment") or "🗑 Shift+Delete 恢复"
     env.override_reordered_indicator = config:get_string("mohu/candidate_override/reordered_indicator") or "↕"
     env.override_pin_indicator = config:get_string("mohu/pin/indicator") or "📌"
+    env.override_memory_namespace = config:get_string("mohu/candidate_manager/memory_namespace") or "translator"
+    env.override_memory_attempted = false
+    if env.override_memory ~= nil then
+        pcall(function() env.override_memory:disconnect() end)
+    end
+    env.override_memory = nil
     if env.override_enable then
         local db_name = config:get_string("mohu/candidate_override/db_name") or "mohu_candidate_override"
         env.override_store = acquire_store(db_name)
@@ -799,38 +805,62 @@ end
 
 local processor = {}
 
-local function refresh_override_memory(env)
+local function reset_override_memory(env)
     if env.override_memory ~= nil then
         pcall(function() env.override_memory:disconnect() end)
-        env.override_memory = nil
     end
-    if Memory == nil or env.override_memory_namespace == nil then
+    env.override_memory = nil
+    env.override_memory_attempted = false
+    env.override_memory_namespace = nil
+end
+
+local function memory_namespace(env)
+    if env.override_memory_namespace ~= nil then
+        return env.override_memory_namespace
+    end
+    local config = nil
+    if env.engine ~= nil and env.engine.schema ~= nil then
+        config = env.engine.schema.config
+    end
+    local namespace = nil
+    if config ~= nil and config.get_string ~= nil then
+        namespace = config:get_string("mohu/candidate_manager/memory_namespace")
+    end
+    env.override_memory_namespace = namespace or "translator"
+    return env.override_memory_namespace
+end
+
+local function ensure_override_memory(env)
+    if env.override_memory ~= nil then
+        env.override_memory_attempted = true
+        return env.override_memory
+    end
+    if env.override_memory_attempted then
         return nil
     end
-    local ok, memory = pcall(
-        Memory,
-        env.engine,
-        env.engine.schema,
-        env.override_memory_namespace
-    )
-    if ok then
+    env.override_memory_attempted = true
+    if Memory == nil then
+        return nil
+    end
+    local namespace = memory_namespace(env)
+    local engine = env.engine
+    local schema = engine ~= nil and engine.schema or nil
+    local ok, memory = pcall(Memory, engine, schema, namespace)
+    if ok and memory ~= nil then
         env.override_memory = memory
     end
     return env.override_memory
+end
+
+local function refresh_override_memory(env)
+    reset_override_memory(env)
+    return ensure_override_memory(env)
 end
 
 function processor.init(env)
     configure(env)
     if not env.override_enable then
         return
-    end
-    if Memory ~= nil then
-        local config = env.engine.schema.config
-        env.override_memory_namespace = config:get_string("mohu/candidate_manager/memory_namespace") or "translator"
-        local ok, memory = pcall(Memory, env.engine, env.engine.schema, env.override_memory_namespace)
-        if ok then
-            env.override_memory = memory
-        end
     end
     env.override_management_armed = false
     local function reset_management(context)
@@ -858,10 +888,7 @@ function processor.fini(env)
     if env.override_update_notifier ~= nil then
         env.override_update_notifier:disconnect()
     end
-    if env.override_memory ~= nil then
-        pcall(function() env.override_memory:disconnect() end)
-        env.override_memory = nil
-    end
+    reset_override_memory(env)
     release(env)
 end
 
@@ -994,7 +1021,12 @@ local function reset_learned_weight(context, segment, code, env)
         return kNoop
     end
     local text = genuine_text(selected)
-    local entry = learned_builtin_entry(env.override_memory, selected, code)
+    local memory = ensure_override_memory(env)
+    if memory == nil then
+        set_prompt(context, "〔无法连接用户词典〕")
+        return kAccepted
+    end
+    local entry = learned_builtin_entry(memory, selected, code)
     if entry == nil then
         set_prompt(context, "〔当前候选没有可清除的学习权重〕")
         return kAccepted
@@ -1024,7 +1056,17 @@ local function delete_or_restore(context, segment, code, env)
     local record = records[text]
     local management = context:get_option(env.override_management_option)
 
-    local created_entry = user_created_entry(env.override_memory, selected, code)
+    local created_entry = nil
+    if genuine_candidate(selected).type == "user_phrase" then
+        local memory = ensure_override_memory(env)
+        if memory == nil then
+            set_prompt(context, "〔无法连接用户词典〕")
+            return kAccepted
+        end
+        -- Check user-created status before management restore/hide so a
+        -- permanent delete remains stronger than a hidden-record action.
+        created_entry = user_created_entry(memory, selected, code)
+    end
     if created_entry ~= nil then
         local was_hidden = record ~= nil and record.hidden
         if was_hidden and not env.override_store:set_hidden(code, text, false) then
@@ -1137,6 +1179,7 @@ function filter.init(env)
 end
 
 function filter.fini(env)
+    reset_override_memory(env)
     release(env)
 end
 
@@ -1208,6 +1251,7 @@ function order_filter.init(env)
 end
 
 function order_filter.fini(env)
+    reset_override_memory(env)
     release(env)
 end
 
@@ -1301,6 +1345,8 @@ M._test = {
     order_entries = order_entries,
     record_applies = record_applies,
     reorder_direction = reorder_direction,
+    refresh_override_memory = refresh_override_memory,
+    ensure_override_memory = ensure_override_memory,
     swap_texts = swap_texts,
 }
 

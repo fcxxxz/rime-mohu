@@ -103,6 +103,8 @@ speller:
       - mohu:/algebra/user_force_bottom?
 
 translator:
+  enable_completion: true
+  enable_word_completion: true
   dictionary: mohu_flypy.extended
   user_dict: mohu_flypy_sentence_tiger_prefix2
   prism: mohu_flypy
@@ -114,6 +116,8 @@ translator:
   contextual_suggestions: true
 
 translator_static:
+  enable_completion: true
+  enable_word_completion: true
   dictionary: mohu_flypy.extended
   user_dict: mohu_flypy_sentence_tiger_prefix2
   prism: mohu_flypy

@@ -122,10 +122,10 @@ speller:
       - mohu:/algebra/user_force_bottom?
 
 smart:         # 整句输入模式设置，在 top_translator 中被调用
-  # 关闭 librime 默认的音节补全：未完成音节（如双拼首键）会枚举同声母
-  # 全部单字，缓冲式 filter（reorder/word_order）整流抽干时逐键卡顿
-  # 数百毫秒（实测单键 9000+ 候选）。双拼两键即完整音节，不依赖补全。
-  enable_completion: false
+  # 保留音节/词语补全；reorder/word_order 对超大候选流按预算直通，
+  # 避免补全候选被整流抽干造成逐键卡顿。
+  enable_completion: true
+  enable_word_completion: true
   dictionary: mohu_flypy.extended
   user_dict: mohu_flypy_tiger_prefix2
   prism: mohu_flypy
@@ -140,7 +140,8 @@ smart:         # 整句输入模式设置，在 top_translator 中被调用
   max_sentences: 2
 
 smart_static:
-  enable_completion: false   # 同 smart：防补全流被整流抽干
+  enable_completion: true
+  enable_word_completion: true
   dictionary: mohu_flypy.extended
   user_dict: ""
   prism: mohu_flypy

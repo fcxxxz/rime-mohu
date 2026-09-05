@@ -7,7 +7,61 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 
+COMPLETION_NAMESPACES = {
+    "mohu_zrm.schema.yaml": ("smart", "smart_static"),
+    "mohu_flypy.schema.yaml": ("smart", "smart_static"),
+    "mohu_zrm_core.schema.yaml": ("smart", "smart_static"),
+    "mohu_flypy_core.schema.yaml": ("smart", "smart_static"),
+    "mohu_zrm_sentence_core.schema.yaml": ("translator", "translator_static"),
+    "mohu_flypy_sentence_core.schema.yaml": ("translator", "translator_static"),
+}
+
+
+PUBLIC_CORE_SCHEMAS = (
+    "mohu_zrm.schema.yaml",
+    "mohu_flypy.schema.yaml",
+    "mohu_zrm_core.schema.yaml",
+    "mohu_flypy_core.schema.yaml",
+)
+
+
 class MohuConfigTest(unittest.TestCase):
+    def test_dynamic_translators_preserve_completion(self) -> None:
+        for path, namespaces in COMPLETION_NAMESPACES.items():
+            with self.subTest(path=path):
+                schema = yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))
+                for namespace in namespaces:
+                    with self.subTest(namespace=namespace):
+                        self.assertIs(
+                            True,
+                            schema[namespace]["enable_completion"],
+                        )
+                        self.assertIs(
+                            True,
+                            schema[namespace]["enable_word_completion"],
+                        )
+
+    def test_public_and_core_completion_invariants(self) -> None:
+        for path in PUBLIC_CORE_SCHEMAS:
+            with self.subTest(path=path):
+                schema = yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))
+                for namespace in ("fixed", "fixed_legacy", "custom_phrase"):
+                    with self.subTest(namespace=namespace):
+                        self.assertIs(False, schema[namespace]["enable_completion"])
+                for namespace in ("reverse_tiger", "reverse_tiger_backtick"):
+                    with self.subTest(namespace=namespace):
+                        self.assertIs(True, schema[namespace]["enable_completion"])
+
+    def test_extended_dictionaries_keep_wanxiang_import(self) -> None:
+        for scheme in ("zrm", "flypy"):
+            with self.subTest(scheme=scheme):
+                dictionary = yaml.safe_load(
+                    (ROOT / f"mohu_{scheme}.extended.dict.yaml").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                self.assertIn(f"mohu_{scheme}.wanxiang", dictionary["import_tables"])
+
     def test_default_registers_only_public_schemes(self) -> None:
         default = yaml.safe_load((ROOT / "default.yaml").read_text(encoding="utf-8"))
         self.assertEqual(

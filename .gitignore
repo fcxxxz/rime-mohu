@@ -35,6 +35,7 @@ user.yaml
 __pycache__/
 .worktrees/
 .mimosa/
+.tmp/native-tests/
 tiger_sentence_native/lua-5.4.6/src/*.o
 tiger_sentence_native/lua-5.4.6/src/lua
 tiger_sentence_native/lua-5.4.6/src/luac

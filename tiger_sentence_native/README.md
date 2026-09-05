@@ -28,6 +28,24 @@
 `mohu-sentence-ngram-v5.bin` 是原生整句候选模型。放到
 `~/Library/Rime/mohu/model/`；运行时固定读取该文件名。模型缺失或加载失败时记录一次错误并回退普通候选，模型目录不在输入热路径扫描。
 
+### TCSKNM02 页校验与损坏模型回退
+
+TCSKNM02 默认只在启动时校验文件头、分区算术、索引计数/键序和页起始范围；
+不会顺序读取所有上下文页。实际解码首次触及某页时才校验该页的记录和后继表。
+如果页或后继表损坏，当前 native 解码返回 `invalid n-gram page` 错误，Lua 层
+放弃本轮 native 候选并保留 smart/普通候选，不把损坏数据当作“未命中”或继续
+使用不完整的 beam。
+
+发布校验或诊断时可对单次引擎创建启用完整页扫描：
+
+```text
+MOHU_TIGER_STRICT_VALIDATE=1
+```
+
+只有环境变量值严格等于字符串 `1` 才启用；未设置、空值、`0` 或其他值都保持
+按需校验。严格模式在创建阶段发现坏页即拒绝模型；该变量每次创建重新读取，
+不会在进程内缓存。TCSKNM01 与 MHKNM01 的既有启动校验语义不变。
+
 本地开发需要 Lua 5.4 头文件（Squirrel 的 librime-lua 为 5.4.6）：
 
     curl -sL -o lua546.tar.gz https://www.lua.org/ftp/lua-5.4.6.tar.gz
@@ -104,6 +122,13 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
   末 2 词)，需容器（MHCTN01）词层或 `word_scorer_model` 显式指定，
   OOV（−20 无信号）不参与重排。
 - `word_order_candidates`：参与重排的候选数上限（默认 20，clamp 2–50）
+- `word_order_scan_budget`：为凑齐可评分 block 最多同步拉取的候选数（默认
+  `word_order_candidates × 3`，clamp 到候选上限至 1000）。在完整 block 或
+  EOF 之前命中该上限时，本轮保持上游原序且不获取/调用 scorer；完整 block
+  恰好由最后一个预算内候选补齐时仍可评分。
+- `word_order_time_budget_ms`：候选收集的协作式时间预算（默认 4ms，0 关闭）。
+  只在两次 iterator 调用之间检查，不能中断一次上游调用；计时器不可用时只
+  关闭时间判断，候选数硬上限继续生效。
 - `word_order_rank_penalty`：名次每前进一位所需的模型分优势（默认 1.0；
   离线网格的平滑平台区 0.95–1.4：0.95 时修好 45.7%/修反 1.5%，1.4 时
   40.3%/1.0%——即修反保护阈值，优势不足不动）

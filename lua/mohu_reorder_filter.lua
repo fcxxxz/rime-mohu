@@ -1,10 +1,13 @@
 -- Mohu Reorder Filter
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.3.2
+-- Ver: 0.4.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.4.0: 补全保留；先以有界候选数/时间预取。有限流使用完整旧状态机，
+--        超大流按原序直通，避免在首个 yield 前抽干整条补全流。
 --
 -- 0.3.2: 两字 native 候选独立输出：两字终态只可能来自两音节带辅码的
 --        输入（用户已显式消歧），不再要求词库也存在同文本。
@@ -57,8 +60,22 @@ function Top.init(env)
     -- At most THRESHOLD smart candidates are subject to reordering,
     -- for performance's sake.
     env.reorder_threshold = 50
-    env.quick_code_indicator = env.engine.schema.config:get_string("mohu/quick_code_indicator") or "⚡️"
-    env.pin_indicator = env.engine.schema.config:get_string("mohu/pin/indicator") or "📌"
+    local cfg = env.engine.schema.config
+    env.quick_code_indicator = cfg:get_string("mohu/quick_code_indicator") or "⚡️"
+    env.pin_indicator = cfg:get_string("mohu/pin/indicator") or "📌"
+    local function number(key, default, lo, hi)
+        local value
+        local ok, n = pcall(cfg.get_int, cfg, key)
+        if ok and type(n) == "number" then value = n end
+        if value == nil then
+            local ok_s, s = pcall(cfg.get_string, cfg, key)
+            if ok_s then value = tonumber(s) end
+        end
+        if type(value) ~= "number" or value ~= value then value = default end
+        return math.min(hi, math.max(lo, value))
+    end
+    env.reorder_scan_budget = math.floor(number("mohu/reorder_scan_budget", 64, 1, 1000))
+    env.reorder_time_budget_ms = number("mohu/reorder_time_budget_ms", 4, 0, 1000)
 end
 
 function Top.fini(env)
@@ -83,7 +100,7 @@ local kCollecting  = 0
 local kMatching    = 1
 local kDone        = 2
 
-function Top.func(t_input, env)
+local function run_finite(t_input, env)
     local ctx = {
         phase = kCollecting,  -- 当前状态
         fixed_list = {},      -- 等待匹配的固定候选
@@ -120,6 +137,157 @@ function Top.func(t_input, env)
     Top.flush(env, ctx, true)
 end
 
+local function log_iterator_error(message)
+    if type(log) == "table" and type(log.error) == "function" then
+        pcall(log.error, "mohu_reorder_filter: " .. tostring(message))
+    end
+end
+
+local function read_time_ms()
+    local api = rawget(_G, "rime_api")
+    if api and type(api.get_time_ms) == "function" then
+        local ok, value = pcall(api.get_time_ms)
+        if ok and type(value) == "number" and value == value then
+            return value
+        end
+    end
+    if os and type(os.clock) == "function" then
+        local ok, value = pcall(os.clock)
+        if ok and type(value) == "number" and value == value then
+            return value * 1000
+        end
+    end
+    return nil
+end
+
+local function list_input(list)
+    return {
+        iter = function()
+            local index = 0
+            return function()
+                index = index + 1
+                return list[index]
+            end
+        end,
+    }
+end
+
+local function candidate_value(value)
+    if value == nil then return "eof", nil end
+    local value_type = type(value)
+    if value_type ~= "table" and value_type ~= "userdata" then
+        return "invalid", value
+    end
+    local ok, genuine = pcall(function() return value:get_genuine() end)
+    if not ok or genuine == nil then return "invalid", value end
+    return "candidate", value
+end
+
+local function passthrough(env, value)
+    if value.comment == "`F" then
+        value.comment = env.quick_code_indicator
+    end
+    yield(value)
+end
+
+local function drain_passthrough(env, advance, state)
+    while true do
+        local ok, value = pcall(advance, state)
+        if not ok then
+            log_iterator_error(value)
+            return
+        end
+        local kind = candidate_value(value)
+        if kind == "eof" then return end
+        if kind ~= "candidate" then
+            log_iterator_error("iterator returned a non-candidate value")
+            return
+        end
+        passthrough(env, value)
+    end
+end
+
+local function bounded_input(t_input, env)
+    local advance, state = t_input:iter()
+    local buffer = {}
+    local budget = env.reorder_scan_budget
+    local time_enabled = env.reorder_time_budget_ms > 0
+    local start_time = time_enabled and read_time_ms() or nil
+    if start_time == nil then time_enabled = false end
+    local deadline = start_time and start_time + env.reorder_time_budget_ms or nil
+
+    local function expired()
+        if not time_enabled then return false end
+        local now = read_time_ms()
+        if now == nil then
+            -- A broken clock disables only time budgeting; count remains hard.
+            time_enabled = false
+            return false
+        end
+        return now >= deadline
+    end
+
+    local function pull()
+        local ok, value = pcall(advance, state)
+        if not ok then
+            log_iterator_error(value)
+            return "error"
+        end
+        local kind = candidate_value(value)
+        if kind == "eof" then return "eof" end
+        if kind ~= "candidate" then
+            log_iterator_error("iterator returned a non-candidate value")
+            return "error"
+        end
+        buffer[#buffer + 1] = value
+        return "candidate"
+    end
+
+    while #buffer < budget do
+        if expired() then
+            for _, value in ipairs(buffer) do passthrough(env, value) end
+            drain_passthrough(env, advance, state)
+            return
+        end
+        local result = pull()
+        if result == "eof" then
+            if expired() then
+                for _, value in ipairs(buffer) do passthrough(env, value) end
+                return
+            end
+            return run_finite(list_input(buffer), env)
+        elseif result == "error" then
+            for _, value in ipairs(buffer) do passthrough(env, value) end
+            return
+        end
+    end
+
+    -- One sentinel distinguishes an exactly-full finite stream from an oversized
+    -- stream. It is skipped when the valid deadline has already expired.
+    if expired() then
+        for _, value in ipairs(buffer) do passthrough(env, value) end
+        drain_passthrough(env, advance, state)
+        return
+    end
+    local result = pull()
+    if result == "eof" then
+        if expired() then
+            for _, value in ipairs(buffer) do passthrough(env, value) end
+            return
+        end
+        return run_finite(list_input(buffer), env)
+    elseif result == "error" then
+        for _, value in ipairs(buffer) do passthrough(env, value) end
+        return
+    end
+    for _, value in ipairs(buffer) do passthrough(env, value) end
+    drain_passthrough(env, advance, state)
+end
+
+function Top.func(t_input, env)
+    return bounded_input(t_input, env)
+end
+
 --------------------------------------------------------------------------------
 -- 状态转移
 --------------------------------------------------------------------------------
@@ -150,11 +318,13 @@ function Top.handle_collecting(env, ctx, cand)
         -- 看到了 smart2，转向 kMatching 状态。
         ctx.phase = kMatching
 
-        -- 可能收集到了 smart1，先处理。
-        for _, c in ipairs(ctx.delay_slot) do
+        -- 可能收集到了 smart1，先处理。先摘下延迟槽，避免处理过程中
+        -- 状态机清空/替换该字段时同一候选再次从旧列表流出。
+        local delayed = ctx.delay_slot
+        ctx.delay_slot = {}
+        for _, c in ipairs(delayed) do
             Top.handle_matching(env, ctx, c)
         end
-        ctx.delay_slot = {}
 
         -- 处理当前看到的 smart2。
         if ctx.phase == kDone then
@@ -222,19 +392,15 @@ function Top.flush(env, ctx, include_delay_slot)
         local native_type = c:get_genuine().type
         local is_personal = native_type == "mohu_zrm_personal" or
             native_type == "mohu_flypy_personal"
-        -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
+        -- text_length == 2：两音节带辅码输入的两字终态，独立输出。
         if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
             or text_length >= native_independent_min_length
             or text_length == 2 or is_personal then
             Top.yield_exact(env, c)
         end
     end
-    if include_delay_slot then
-        -- 只在完全匹配完毕后才清空延迟槽
-        for _, c in ipairs(ctx.delay_slot) do
-            Top.yield_exact(env, c)
-        end
-        ctx.delay_slot = {}
+    for _, c in ipairs(ctx.delay_slot) do
+        Top.yield_exact(env, c)
     end
     for _, c in ipairs(ctx.smart_list) do
         Top.yield_exact(env, c)
@@ -242,9 +408,6 @@ function Top.flush(env, ctx, include_delay_slot)
     for _, c in ipairs(ctx.trailing_list) do
         Top.yield_exact(env, c)
     end
-    ctx.fixed_list = {}
-    ctx.native_list = {}
-    ctx.smart_list = {}
     ctx.trailing_list = {}
     ctx.lexicon_texts = {}
 end

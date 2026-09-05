@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstdarg>
 #include <cstdint>
@@ -38,6 +39,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #ifdef _WIN32
@@ -60,6 +62,11 @@ namespace {
 thread_local std::string g_last_error;
 std::mutex g_engine_mutex;
 
+#ifdef TIGERENGINE_MAPPING_TEST
+int g_mapping_unmap_count = 0;
+int g_mapping_close_count = 0;
+#endif
+
 void set_error(const char* fmt, ...) {
   char buf[512];
   va_list ap;
@@ -67,6 +74,20 @@ void set_error(const char* fmt, ...) {
   vsnprintf(buf, sizeof(buf), fmt, ap);
   va_end(ap);
   g_last_error = buf;
+}
+
+// A malformed mobile-model page is different from an ordinary missing
+// context.  Keep a dedicated exception type so every native entry point can
+// preserve the fail-open signal instead of silently assigning a fallback
+// probability.
+class InvalidPageError : public std::runtime_error {
+ public:
+  InvalidPageError() : std::runtime_error("invalid n-gram page") {}
+};
+
+bool strict_mobile_validation_enabled() {
+  const char* value = std::getenv("MOHU_TIGER_STRICT_VALIDATE");
+  return value != nullptr && std::strcmp(value, "1") == 0;
 }
 
 inline uint32_t rd_u32(const uint8_t* p) { uint32_t v; memcpy(&v, p, 4); return v; }
@@ -141,23 +162,45 @@ struct MappedFile {
     return *this;
   }
   // 在既有映射上开非持有视图（单文件容器内嵌多模型时复用同一次 mmap）。
-  void set_view(const uint8_t* base, size_t len) {
+  void set_borrowed_view(const uint8_t* base, size_t len) {
+    release();
     data = const_cast<uint8_t*>(base);
     size = len;
     owned = false;
   }
   void release() {
+    if (owned) {
 #ifdef _WIN32
-    if (data) UnmapViewOfFile(data);
-    if (mapping) CloseHandle(mapping);
-    mapping = nullptr;
-#else
-    if (owned && data) munmap(data, size);
+      if (data) {
+        UnmapViewOfFile(data);
+#ifdef TIGERENGINE_MAPPING_TEST
+        ++g_mapping_unmap_count;
 #endif
+      }
+      if (mapping) {
+        CloseHandle(mapping);
+#ifdef TIGERENGINE_MAPPING_TEST
+        ++g_mapping_close_count;
+#endif
+      }
+#else
+      if (data) {
+        munmap(data, size);
+#ifdef TIGERENGINE_MAPPING_TEST
+        ++g_mapping_unmap_count;
+#endif
+      }
+#endif
+    }
     data = nullptr;
     size = 0;
+    owned = true;
+#ifdef _WIN32
+    mapping = nullptr;
+#endif
   }
   bool open(const char* path) {
+    release();
 #ifdef _WIN32
     HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -169,6 +212,14 @@ struct MappedFile {
     if (!GetFileSizeEx(file, &file_size) || file_size.QuadPart <= 0) {
       set_error("cannot stat %s", path);
       CloseHandle(file);
+      release();
+      return false;
+    }
+    if (static_cast<unsigned long long>(file_size.QuadPart) >
+        static_cast<unsigned long long>(SIZE_MAX)) {
+      set_error("model is too large: %s", path);
+      CloseHandle(file);
+      release();
       return false;
     }
     size = (size_t)file_size.QuadPart;
@@ -176,6 +227,7 @@ struct MappedFile {
     CloseHandle(file);
     if (mapping == nullptr) {
       set_error("cannot mmap %s", path);
+      release();
       return false;
     }
     void* view = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0);
@@ -183,6 +235,7 @@ struct MappedFile {
       CloseHandle(mapping);
       mapping = nullptr;
       set_error("cannot mmap %s", path);
+      release();
       return false;
     }
     data = (uint8_t*)view;
@@ -192,23 +245,17 @@ struct MappedFile {
     if (fd < 0) { set_error("cannot open %s", path); return false; }
     struct stat st;
     if (fstat(fd, &st) != 0 || st.st_size <= 0) {
-      set_error("cannot stat %s", path); ::close(fd); return false;
+      set_error("cannot stat %s", path); ::close(fd); release(); return false;
     }
     size = (size_t)st.st_size;
     void* p = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
     ::close(fd);
-    if (p == MAP_FAILED) { set_error("cannot mmap %s", path); return false; }
+    if (p == MAP_FAILED) { set_error("cannot mmap %s", path); release(); return false; }
     data = (uint8_t*)p;
     return true;
 #endif
   }
-#ifdef _WIN32
   ~MappedFile() { release(); }
-#else
-  ~MappedFile() {
-    if (owned && data) munmap(data, size);
-  }
-#endif
 };
 
 const uint64_t kShift = 2097152;  // 2^21，容一个 Unicode 码点
@@ -222,6 +269,7 @@ struct CtxCacheEntry {
   double lambda_ = 1.0;
   int64_t successor_count = 0;
   size_t successor_position = 0;
+  bool invalid = false;
 };
 
 template <typename K>
@@ -268,6 +316,7 @@ struct KnModel {
   uint64_t bi_section_start = 0, tri_section_start = 0;
   int64_t bi_ctx_total = 0, tri_ctx_total = 0;
   FifoCache<uint64_t> cache_b{16384}, cache_t{16384};
+  std::unordered_set<int64_t> invalid_b_pages, invalid_t_pages;
 
   bool range_ok(uint64_t offset, uint64_t length) const {
     return offset <= file.size && length <= static_cast<uint64_t>(file.size) - offset;
@@ -282,20 +331,39 @@ struct KnModel {
   }
 
   bool load(const char* p) {
-    if (!file.open(p)) return false;
-    path = p;
-    return load_common(p);
+    MappedFile mapped;
+    if (!mapped.open(p)) {
+      *this = KnModel{};
+      return false;
+    }
+    return load_mapped(std::move(mapped), p);
+  }
+
+  // Publish a parsed model only after all metadata has loaded successfully.
+  // The temporary owns the mapping while parsing, so every failure path releases
+  // it without leaving stale pointers or cache entries in the target object.
+  bool load_mapped(MappedFile&& mapped, const char* label) {
+    KnModel fresh;
+    fresh.file = std::move(mapped);
+    fresh.path = label;
+    if (!fresh.load_common(label)) {
+      *this = KnModel{};
+      return false;
+    }
+    *this = std::move(fresh);
+    return true;
   }
 
   // 容器内视图加载：[base, base+len) 视作独立模型文件（内部偏移自洽）。
   bool load_view(const uint8_t* base, uint64_t len, const char* label) {
     if (len > (uint64_t)SIZE_MAX) {
       set_error("model view too large: %s", label);
+      *this = KnModel{};
       return false;
     }
-    file.set_view(base, (size_t)len);
-    path = label;
-    return load_common(label);
+    MappedFile view;
+    view.set_borrowed_view(base, (size_t)len);
+    return load_mapped(std::move(view), label);
   }
 
   bool load_common(const char* p) {
@@ -346,80 +414,107 @@ struct KnModel {
   bool load_mobile() {
     const uint8_t* d = file.data;
     mobile = true;
-    if (file.size < 104) { set_error("truncated mobile n-gram"); return false; }
+    if (file.size < 104) {
+      set_error("truncated mobile n-gram");
+      return false;
+    }
     size_t p = 8;
     auto u32 = [&]() { uint32_t v = rd_u32(d + p); p += 4; return v; };
     auto u64 = [&]() { uint64_t v = rd_u64(d + p); p += 8; return v; };
-    uint32_t version = u32();
-    uint32_t header_size = u32();
-    uint64_t file_size = u64();
-    index_stride = u32();
-    (void)u32();               // reserved
-    uni_count = u32();
-    (void)u32();               // reserved
-    uint64_t uni_off = u32();  // 注意：uni_off 是 I4
-    (void)u32();               // reserved/alignment after the I4 offset
-    uint64_t bi_ctx = u32();
-    bi_index_count = u32();
-    uint64_t bi_blocks_off = u64();
-    uint64_t bi_index_off = u64();
-    uint64_t tri_ctx = u32();
-    (void)u32();               // reserved/alignment before the index count
-    tri_index_count = u32();
-    (void)u32();               // reserved
-    uint64_t tri_blocks_off = u64();
-    uint64_t tri_index_off = u64();
-    if (version != 1 || header_size != 104) { set_error("unsupported mobile n-gram version"); return false; }
-    if (bi_ctx > static_cast<uint64_t>(INT64_MAX) || tri_ctx > static_cast<uint64_t>(INT64_MAX) ||
-        index_stride < 16 || (uint64_t)file.size != file_size ||
-        !range_ok(uni_off, static_cast<uint64_t>(uni_count) * 8) ||
-        !range_ok(bi_index_off, static_cast<uint64_t>(bi_index_count) * 16) ||
-        !range_ok(tri_index_off, static_cast<uint64_t>(tri_index_count) * 16) ||
-        !(uni_off >= header_size && bi_blocks_off >= uni_off) ||
-        !(bi_blocks_off <= bi_index_off) || !(bi_index_off <= tri_blocks_off) ||
-        !(tri_blocks_off <= tri_index_off) || tri_index_off > file.size ||
-        bi_blocks_off > file.size || tri_blocks_off > file.size ||
-        bi_index_off > file.size) {
-      set_error("invalid mobile n-gram layout");
+    const uint32_t version = u32();
+    const uint32_t header_size = u32();
+    const uint64_t declared_file_size = u64();
+    const uint32_t raw_stride = u32();
+    (void)u32();
+    const uint32_t raw_uni_count = u32();
+    (void)u32();
+    const uint64_t uni_off = u32();
+    (void)u32();
+    const uint64_t bi_ctx = u32();
+    const uint32_t raw_bi_index_count = u32();
+    const uint64_t bi_blocks_off = u64();
+    const uint64_t bi_index_off = u64();
+    const uint64_t tri_ctx = u32();
+    (void)u32();
+    const uint32_t raw_tri_index_count = u32();
+    (void)u32();
+    const uint64_t tri_blocks_off = u64();
+    const uint64_t tri_index_off = u64();
+
+    if (version != 1 || header_size != 104 || declared_file_size != file.size ||
+        raw_stride < 16 || raw_uni_count == 0) {
+      set_error("invalid mobile n-gram header");
       return false;
     }
-    if (uni_count == 0 || static_cast<uint64_t>(uni_count) > UINT64_MAX / 8 ||
-        static_cast<uint64_t>(bi_index_count) > UINT64_MAX / 16 ||
-        static_cast<uint64_t>(tri_index_count) > UINT64_MAX / 16) {
-      set_error("mobile n-gram count overflow");
+    const uint64_t stride = raw_stride;
+    const uint64_t uni_count_u = raw_uni_count;
+    const uint64_t bi_index_count_u = raw_bi_index_count;
+    const uint64_t tri_index_count_u = raw_tri_index_count;
+    const uint64_t expected_bi = bi_ctx == 0 ? 0 : (bi_ctx - 1) / stride + 1;
+    const uint64_t expected_tri = tri_ctx == 0 ? 0 : (tri_ctx - 1) / stride + 1;
+    if (expected_bi != bi_index_count_u || expected_tri != tri_index_count_u ||
+        bi_ctx > static_cast<uint64_t>(INT64_MAX) ||
+        tri_ctx > static_cast<uint64_t>(INT64_MAX) ||
+        bi_index_count_u > static_cast<uint64_t>(INT64_MAX) ||
+        tri_index_count_u > static_cast<uint64_t>(INT64_MAX)) {
+      set_error("invalid mobile n-gram index count");
       return false;
     }
-    const uint64_t uni_bytes = static_cast<uint64_t>(uni_count) * 8;
-    const uint64_t bi_index_bytes = static_cast<uint64_t>(bi_index_count) * 16;
-    const uint64_t tri_index_bytes = static_cast<uint64_t>(tri_index_count) * 16;
-    if (uni_off > bi_blocks_off || uni_bytes > bi_blocks_off - uni_off ||
-        bi_index_off > tri_blocks_off || bi_index_bytes > tri_blocks_off - bi_index_off ||
-        tri_index_off > file.size || tri_index_bytes > file.size - tri_index_off) {
-      set_error("mobile n-gram index exceeds section");
+    auto checked_bytes = [](uint64_t count, uint64_t element, uint64_t* out) {
+      if (element == 0 || count > UINT64_MAX / element) return false;
+      *out = count * element;
+      return true;
+    };
+    uint64_t uni_bytes = 0, bi_index_bytes = 0, tri_index_bytes = 0;
+    if (!checked_bytes(uni_count_u, 8, &uni_bytes) ||
+        !checked_bytes(bi_index_count_u, 16, &bi_index_bytes) ||
+        !checked_bytes(tri_index_count_u, 16, &tri_index_bytes) ||
+        uni_off < header_size || bi_blocks_off < uni_off ||
+        bi_index_off < bi_blocks_off || tri_blocks_off < bi_index_off ||
+        tri_index_off < tri_blocks_off || tri_index_off > file.size ||
+        !range_ok(uni_off, uni_bytes) ||
+        uni_bytes > bi_blocks_off - uni_off ||
+        !range_ok(bi_index_off, bi_index_bytes) ||
+        bi_index_bytes > tri_blocks_off - bi_index_off ||
+        !range_ok(tri_index_off, tri_index_bytes) ||
+        tri_index_bytes > file.size - tri_index_off) {
+      set_error("invalid mobile n-gram section layout");
       return false;
     }
-    auto validate_index = [&](uint64_t index_off, uint32_t count,
+
+    auto validate_index = [&](uint64_t index_off, uint64_t index_count,
                               uint64_t section_start, uint64_t section_end) {
-      for (uint32_t i = 0; i < count; ++i) {
-        const uint64_t entry = index_off + static_cast<uint64_t>(i) * 16;
+      uint64_t previous_key = 0;
+      bool have_previous = false;
+      for (uint64_t i = 0; i < index_count; ++i) {
+        const uint64_t entry_delta = i * 16;  // count was checked above
+        const uint64_t entry = index_off + entry_delta;
+        const uint64_t key = rd_u64(d + entry);
         const uint64_t page = rd_u64(d + entry + 8);
-        if (page < section_start || page >= section_end || !range_ok(page, 16)) return false;
+        if (page < section_start || page > section_end ||
+            16 > section_end - page ||
+            (have_previous && key < previous_key)) {
+          return false;
+        }
+        previous_key = key;
+        have_previous = true;
       }
       return true;
     };
-    if (!validate_index(bi_index_off, bi_index_count, bi_blocks_off, tri_blocks_off) ||
-        !validate_index(tri_index_off, tri_index_count, tri_blocks_off, file.size)) {
-      set_error("mobile n-gram page offset is outside section");
+    if (!validate_index(bi_index_off, bi_index_count_u, bi_blocks_off, bi_index_off) ||
+        !validate_index(tri_index_off, tri_index_count_u, tri_blocks_off, tri_index_off)) {
+      set_error("invalid mobile n-gram page index");
       return false;
     }
-    auto validate_pages = [&](uint64_t index_off, uint32_t index_count,
+
+    auto validate_pages = [&](uint64_t index_off, uint64_t index_count,
                               uint64_t context_count, uint64_t section_end) {
-      for (uint32_t page = 0; page < index_count; ++page) {
-        const uint64_t entry = index_off + static_cast<uint64_t>(page) * 16;
+      for (uint64_t page = 0; page < index_count; ++page) {
+        const uint64_t entry = index_off + page * 16;
         const uint64_t page_offset = rd_u64(d + entry + 8);
-        const uint64_t consumed = static_cast<uint64_t>(page) * index_stride;
-        if (consumed >= context_count) continue;
-        const uint64_t records = std::min<uint64_t>(index_stride, context_count - consumed);
+        const uint64_t consumed = page * stride;
+        if (consumed >= context_count) return false;
+        const uint64_t records = std::min<uint64_t>(stride, context_count - consumed);
         uint64_t position = page_offset;
         for (uint64_t record = 0; record < records; ++record) {
           if (position > section_end || 16 > section_end - position) return false;
@@ -433,20 +528,28 @@ struct KnModel {
       }
       return true;
     };
-    if (!validate_pages(bi_index_off, bi_index_count, bi_ctx, tri_blocks_off) ||
-        !validate_pages(tri_index_off, tri_index_count, tri_ctx, file.size)) {
+    if (strict_mobile_validation_enabled() &&
+        (!validate_pages(bi_index_off, bi_index_count_u, bi_ctx, bi_index_off) ||
+         !validate_pages(tri_index_off, tri_index_count_u, tri_ctx, tri_index_off))) {
       set_error("mobile n-gram successor table is outside section");
       return false;
     }
+
+    uni_count = static_cast<int64_t>(uni_count_u);
+    index_stride = static_cast<int64_t>(stride);
+    bi_index_count = static_cast<int64_t>(bi_index_count_u);
+    tri_index_count = static_cast<int64_t>(tri_index_count_u);
     uni_base = d + uni_off;
-    bi_ctx_total = (int64_t)bi_ctx;
-    tri_ctx_total = (int64_t)tri_ctx;
+    bi_ctx_total = static_cast<int64_t>(bi_ctx);
+    tri_ctx_total = static_cast<int64_t>(tri_ctx);
     bi_index = d + bi_index_off;
     tri_index = d + tri_index_off;
-    bi_section_end = tri_blocks_off;   // 二元块区间结束
-    tri_section_end = tri_index_off;   // 三元块区间结束
+    bi_section_end = bi_index_off;
+    tri_section_end = tri_index_off;
     bi_section_start = bi_blocks_off;
     tri_section_start = tri_blocks_off;
+    invalid_b_pages.clear();
+    invalid_t_pages.clear();
     unknown_unigram = rd_f32(uni_base + 4);
     return true;
   }
@@ -464,7 +567,12 @@ struct KnModel {
     return unknown_unigram;
   }
 
-  struct CtxResult { double lambda_; double prob; bool observed; };
+  struct CtxResult {
+    double lambda_ = 1.0;
+    double prob = 0.0;
+    bool observed = false;
+    bool invalid = false;
+  };
 
   // legacy 表查询
   CtxResult legacy_lookup(bool trigram, uint64_t key_u64, uint32_t key_u32) const {
@@ -504,7 +612,7 @@ struct KnModel {
       if (v == (ctx_entry == 8 ? (uint64_t)key_u32 : key_u64))
         lambda_ = rd_f32(at + (ctx_entry == 8 ? 4 : 8));
     }
-    return {lambda_, prob, observed};
+    return {lambda_, prob, observed, false};
   }
 
   const uint8_t* page_base(const uint8_t* index_data, int64_t index_count,
@@ -516,9 +624,10 @@ struct KnModel {
       return nullptr;
     const uint64_t index_offset = static_cast<uint64_t>(index_data - file.data);
     const uint64_t at = static_cast<uint64_t>(page) * 16;
-    if (!range_ok(index_offset + at, 16)) return nullptr;
+    if (at > UINT64_MAX - index_offset || !range_ok(index_offset + at, 16)) return nullptr;
     const uint64_t offset = rd_u64(index_data + at + 8);
-    if (offset < section_start || offset >= section_end || !range_ok(offset, 16)) return nullptr;
+    if (offset < section_start || offset > section_end ||
+        16 > section_end - offset) return nullptr;
     return file.data + offset;
   }
 
@@ -526,13 +635,13 @@ struct KnModel {
                             double lambda_, uint32_t target, uint64_t section_end) const {
     if (!data || data < file.data || data > file.data + file.size || count < 0 ||
         section_end > file.size || static_cast<uint64_t>(count) > UINT64_MAX / 8) {
-      return {lambda_, 0.0, false};
+      return {lambda_, 0.0, false, true};
     }
     const uint64_t data_offset = static_cast<uint64_t>(data - file.data);
     if (data_offset > section_end || static_cast<uint64_t>(position) > section_end - data_offset ||
         static_cast<uint64_t>(count) * 8 >
             section_end - data_offset - static_cast<uint64_t>(position))
-      return {lambda_, 0.0, false};
+      return {lambda_, 0.0, false, true};
     int64_t lo = 0, hi = count;
     while (lo < hi) {
       int64_t mid = lo + (hi - lo) / 2;
@@ -540,9 +649,14 @@ struct KnModel {
     }
     if (lo < count) {
       const uint8_t* at = data + position + lo * 8;
-      if (rd_u32(at) == target) return {lambda_, rd_f32(at + 4), true};
+      if (rd_u32(at) == target) {
+        const double probability = rd_f32(at + 4);
+        if (!std::isfinite(probability) || probability < 0.0)
+          return {lambda_, 0.0, false, true};
+        return {lambda_, probability, true, false};
+      }
     }
-    return {lambda_, 0.0, false};
+    return {lambda_, 0.0, false, false};
   }
 
   int64_t find_page(const uint8_t* index_data, int64_t index_count, uint64_t key) const {
@@ -556,56 +670,107 @@ struct KnModel {
 
   CtxResult mobile_lookup(bool trigram, uint64_t key, uint32_t target) {
     FifoCache<uint64_t>& cache = trigram ? cache_t : cache_b;
+    std::unordered_set<int64_t>& invalid_pages = trigram ? invalid_t_pages : invalid_b_pages;
     const uint8_t* index_data = trigram ? tri_index : bi_index;
     int64_t index_count = trigram ? tri_index_count : bi_index_count;
     uint64_t section_start = trigram ? tri_section_start : bi_section_start;
     uint64_t section_end = trigram ? tri_section_end : bi_section_end;
     int64_t context_total = trigram ? tri_ctx_total : bi_ctx_total;
 
+    auto invalid = []() { return CtxResult{1.0, 0.0, false, true}; };
+    auto missing = []() { return CtxResult{1.0, 0.0, false, false}; };
     if (CtxCacheEntry* c = cache.lookup(key)) {
-      if (c->missing) return {1.0, 0.0, false};
+      if (c->invalid) return invalid();
+      if (c->missing) return missing();
       const uint8_t* data = page_base(index_data, index_count, c->page, section_start, section_end);
-      return scan_successors(data, c->successor_position, c->successor_count, c->lambda_, target,
-                             section_end);
+      if (!data) {
+        invalid_pages.insert(c->page);
+        c->invalid = true;
+        return invalid();
+      }
+      CtxResult result = scan_successors(data, c->successor_position,
+                                         c->successor_count, c->lambda_, target,
+                                         section_end);
+      if (result.invalid) {
+        invalid_pages.insert(c->page);
+        c->invalid = true;
+      }
+      return result;
     }
     int64_t page = find_page(index_data, index_count, key);
     if (page < 0) {
       cache.remember(key, {true, -1, 1.0, 0, 0});
-      return {1.0, 0.0, false};
+      return missing();
     }
+    if (invalid_pages.find(page) != invalid_pages.end()) return invalid();
     const uint8_t* data = page_base(index_data, index_count, page, section_start, section_end);
-    if (!data) return {1.0, 0.0, false};
-    if (page < 0 || context_total < 0) return {1.0, 0.0, false};
+    if (!data) {
+      invalid_pages.insert(page);
+      cache.remember(key, {false, page, 1.0, 0, 0, true});
+      return invalid();
+    }
+    if (context_total < 0 || index_stride < 1 ||
+        static_cast<uint64_t>(page) > UINT64_MAX /
+            static_cast<uint64_t>(index_stride)) {
+      invalid_pages.insert(page);
+      cache.remember(key, {false, page, 1.0, 0, 0, true});
+      return invalid();
+    }
     const uint64_t page_start = static_cast<uint64_t>(page) *
                                 static_cast<uint64_t>(index_stride);
     if (page_start >= static_cast<uint64_t>(context_total))
-      return {1.0, 0.0, false};
+      return missing();
     const uint64_t remaining_u = std::min<uint64_t>(
         static_cast<uint64_t>(index_stride),
         static_cast<uint64_t>(context_total) - page_start);
-    if (remaining_u > static_cast<uint64_t>(INT64_MAX)) return {1.0, 0.0, false};
+    if (remaining_u > static_cast<uint64_t>(INT64_MAX)) {
+      invalid_pages.insert(page);
+      cache.remember(key, {false, page, 1.0, 0, 0, true});
+      return invalid();
+    }
     const int64_t remaining = static_cast<int64_t>(remaining_u);
     size_t position = 0;
+    uint64_t previous_context_key = 0;
+    bool have_previous_context = false;
     for (int64_t i = 0; i < remaining; ++i) {
       const uint64_t data_offset = static_cast<uint64_t>(data - file.data);
-      if (data_offset > section_end || static_cast<uint64_t>(position) > section_end - data_offset ||
-          16 > section_end - data_offset - static_cast<uint64_t>(position)) return {1.0, 0.0, false};
+      const uint64_t position_u = static_cast<uint64_t>(position);
+      if (data_offset > section_end || position_u > section_end - data_offset ||
+          16 > section_end - data_offset - position_u) {
+        invalid_pages.insert(page);
+        cache.remember(key, {false, page, 1.0, 0, 0, true});
+        return invalid();
+      }
       uint64_t context_key = rd_u64(data + position);
       double lambda_ = rd_f32(data + position + 8);
       int32_t succ = rd_i32(data + position + 12);
-      if (succ < 0 || static_cast<uint64_t>(succ) > UINT64_MAX / 8 ||
-          static_cast<uint64_t>(succ) * 8 > section_end - data_offset - static_cast<uint64_t>(position) - 16)
-        return {1.0, 0.0, false};
+      if ((have_previous_context && context_key < previous_context_key) ||
+          !std::isfinite(lambda_) || lambda_ < 0.0 || succ < 0 ||
+          static_cast<uint64_t>(succ) > UINT64_MAX / 8 ||
+          static_cast<uint64_t>(succ) * 8 >
+              section_end - data_offset - position_u - 16) {
+        invalid_pages.insert(page);
+        cache.remember(key, {false, page, 1.0, 0, 0, true});
+        return invalid();
+      }
+      previous_context_key = context_key;
+      have_previous_context = true;
       position += 16;
       if (context_key == key) {
         cache.remember(key, {false, page, lambda_, succ, position});
-        return scan_successors(data, position, succ, lambda_, target, section_end);
+        CtxResult result = scan_successors(data, position, succ, lambda_, target,
+                                           section_end);
+        if (result.invalid) {
+          invalid_pages.insert(page);
+          if (CtxCacheEntry* cached = cache.lookup(key)) cached->invalid = true;
+        }
+        return result;
       }
       if (context_key > key) break;
       position += (size_t)succ * 8;
     }
     cache.remember(key, {true, -1, 1.0, 0, 0});
-    return {1.0, 0.0, false};
+    return missing();
   }
 
   CtxResult lookup_context(bool trigram, uint64_t key_u64, uint32_t key_u32, uint32_t target) {
@@ -616,6 +781,7 @@ struct KnModel {
   double logp(uint32_t a, uint32_t b, uint32_t c) {
     double unigram = lookup_unigram(c);
     KnModel::CtxResult bi = lookup_context(false, (uint64_t)b, b, c);
+    if (bi.invalid) throw InvalidPageError();
     if (!std::isfinite(unigram) || unigram < 0.0 ||
         !std::isfinite(bi.prob) || bi.prob < 0.0 ||
         !std::isfinite(bi.lambda_) || bi.lambda_ < 0.0) {
@@ -623,6 +789,7 @@ struct KnModel {
     }
     double bigram = bi.prob + bi.lambda_ * unigram;
     KnModel::CtxResult tri = lookup_context(true, pack2(a, b), (uint32_t)pack2(a, b), c);
+    if (tri.invalid) throw InvalidPageError();
     if (!std::isfinite(bigram) || bigram < 0.0 ||
         !std::isfinite(tri.prob) || tri.prob < 0.0 ||
         !std::isfinite(tri.lambda_) || tri.lambda_ < 0.0) {
@@ -635,7 +802,9 @@ struct KnModel {
   }
 
   bool has_observed_bigram(uint32_t a, uint32_t b) {
-    return lookup_context(false, (uint64_t)a, a, b).observed;
+    CtxResult result = lookup_context(false, (uint64_t)a, a, b);
+    if (result.invalid) throw InvalidPageError();
+    return result.observed;
   }
 };
 
@@ -647,6 +816,7 @@ struct KnModel {
 // 「申请很迷茫 vs 神情很迷茫」这类频率无法裁决的同音竞争。
 struct WordModel {
   MappedFile file;
+  std::string path;
   std::vector<std::string> vocab;            // id -> 词（0=<s> 1=</s>）
   std::unordered_map<std::string, uint32_t> ids;
   std::vector<float> uni;                    // id -> P(w)
@@ -794,18 +964,39 @@ struct WordModel {
   }
 
   bool load(const char* p) {
-    if (!file.open(p)) return false;
-    return load_common(p);
+    MappedFile mapped;
+    if (!mapped.open(p)) {
+      *this = WordModel{};
+      return false;
+    }
+    return load_mapped(std::move(mapped), p);
+  }
+
+  // Publish a parsed model only after all metadata has loaded successfully.
+  // The temporary owns the mapping while parsing, so every failure path releases
+  // it without leaving stale pointers or cache entries in the target object.
+  bool load_mapped(MappedFile&& mapped, const char* label) {
+    WordModel fresh;
+    fresh.file = std::move(mapped);
+    fresh.path = label;
+    if (!fresh.load_common(label)) {
+      *this = WordModel{};
+      return false;
+    }
+    *this = std::move(fresh);
+    return true;
   }
 
   // 容器内视图加载：与非持有 MappedFile 视图配合，从单文件容器取词级层。
   bool load_view(const uint8_t* base, uint64_t len, const char* label) {
     if (len > (uint64_t)SIZE_MAX) {
       set_error("model view too large: %s", label);
+      *this = WordModel{};
       return false;
     }
-    file.set_view(base, (size_t)len);
-    return load_common(label);
+    MappedFile view;
+    view.set_borrowed_view(base, (size_t)len);
+    return load_mapped(std::move(view), label);
   }
 
   bool load_common(const char* p) {
@@ -1978,19 +2169,27 @@ struct Engine {
     auto it = logp_cache.find(key);
     if (it != logp_cache.end()) return it->second;
     double v = model.logp(a, b, c);
+    if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
     if (blend_mode) {
       double w = blend.logp(a, b, c);
-      if (std::isfinite(v) && std::isfinite(w)) {
-        double p1 = std::exp(std::max(-700.0, v));
-        double p2 = std::exp(std::max(-700.0, w));
-        v = std::log(blend_alpha * p1 + (1.0 - blend_alpha) * p2);
-      }
+      if (!std::isfinite(w)) throw std::runtime_error("invalid n-gram probability");
+      const double p1 = std::exp(std::max(-700.0, v));
+      const double p2 = std::exp(std::max(-700.0, w));
+      const double mixed = blend_alpha * p1 + (1.0 - blend_alpha) * p2;
+      if (!(mixed > 0.0) || !std::isfinite(mixed))
+        throw std::runtime_error("invalid n-gram probability");
+      v = std::log(mixed);
     }
     if (user_weight < 1.0 && !user.empty()) {
       double pu = user.logp(a, b, c);
-      double p1 = std::exp(std::max(-700.0, v));
-      double p2 = std::exp(std::max(-700.0, pu));
-      v = std::log(user_weight * p1 + (1.0 - user_weight) * p2);
+      if (!std::isfinite(v) || !std::isfinite(pu))
+        throw std::runtime_error("invalid n-gram probability");
+      const double p1 = std::exp(std::max(-700.0, v));
+      const double p2 = std::exp(std::max(-700.0, pu));
+      const double mixed = user_weight * p1 + (1.0 - user_weight) * p2;
+      if (!(mixed > 0.0) || !std::isfinite(mixed))
+        throw std::runtime_error("invalid n-gram probability");
+      v = std::log(mixed);
     }
     if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
     if (logp_cache.size() > 65536) logp_cache.clear();
@@ -2457,6 +2656,21 @@ struct Engine {
     logp_cache.clear();
   }
 
+  // A lazy page failure can occur halfway through beam expansion.  Never keep
+  // that partial frontier or a score cache alive for the next composition.
+  void abort_decode() {
+    pool.clear();
+    states.clear();
+    cached_result = DecodeResult();
+    cached_raw.clear();
+    cache_valid = false;
+    cached_with_early = false;
+    has_terminal_phrase_states = false;
+    logp_cache.clear();
+    scorer_logp_cache.clear();
+    word_ctx_valid = false;
+  }
+
   void invalidate_decode_cache(const std::string& raw, bool include_early) {
     // A non-letter composition is not a valid native frontier.  Retaining
     // buckets from the previous composition would allow a later letter suffix
@@ -2592,7 +2806,89 @@ void copy_last_error(char* out, int capacity) noexcept {
   if (out && capacity > 0) snprintf(out, capacity, "%s", g_last_error.c_str());
 }
 
+#ifdef TIGERENGINE_MAPPING_TEST
+int mapping_ownership_probe_impl() {
+  g_mapping_unmap_count = 0;
+  g_mapping_close_count = 0;
+
+  char path[L_tmpnam] = {};
+  if (!std::tmpnam(path)) return 10;
+  {
+    FILE* stream = std::fopen(path, "wb");
+    if (!stream) return 11;
+    const uint8_t bytes[] = {
+        0x4d, 0x48, 0x43, 0x54, 0x4e, 0x30, 0x31, 0x00,
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+    };
+    const bool written = std::fwrite(bytes, 1, sizeof(bytes), stream) == sizeof(bytes);
+    std::fclose(stream);
+    if (!written) {
+      std::remove(path);
+      return 12;
+    }
+  }
+
+  int result = 0;
+  {
+    MappedFile owner;
+    if (!owner.open(path)) {
+      result = 13;
+    } else {
+      const uint8_t expected = owner.data[3];
+      {
+        MappedFile first_view;
+        first_view.set_borrowed_view(owner.data + 2, owner.size - 2);
+        if (first_view.owned || first_view.data[1] != expected) {
+          result = 14;
+        }
+        first_view.release();
+        if (!first_view.owned || first_view.data || first_view.size) result = 15;
+      }
+      if (!result && owner.data[3] != expected) result = 16;
+
+      if (!result) {
+        MappedFile second_view;
+        second_view.set_borrowed_view(owner.data + 4, owner.size - 4);
+        MappedFile moved_view(std::move(second_view));
+        if (second_view.data || second_view.size || !second_view.owned ||
+            moved_view.owned || moved_view.data[0] != owner.data[4]) {
+          result = 17;
+        }
+        // Reusing a borrowed object must release only its view and restore the
+        // default owner state before it is used again.
+        moved_view.set_borrowed_view(owner.data + 1, owner.size - 1);
+        moved_view.release();
+        if (!moved_view.owned || moved_view.data || moved_view.size) result = 18;
+      }
+
+      MappedFile moved_owner(std::move(owner));
+      if (owner.data || owner.size || !owner.owned) {
+        result = 19;
+      } else if (!moved_owner.data || moved_owner.data[3] != expected) {
+        result = 20;
+      }
+      moved_owner.release();
+      if (moved_owner.data || moved_owner.size || !moved_owner.owned) result = 21;
+    }
+    owner.release();
+  }
+  std::remove(path);
+  if (result) return result;
+  if (g_mapping_unmap_count != 1) return 22;
+#ifdef _WIN32
+  if (g_mapping_close_count != 1) return 23;
+#endif
+  return 0;
+}
+#endif
+
 }  // namespace
+
+#ifdef TIGERENGINE_MAPPING_TEST
+extern "C" int tigerengine_mapping_ownership_probe() {
+  return mapping_ownership_probe_impl();
+}
+#endif
 
 extern "C" {
 
@@ -2609,64 +2905,81 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
     auto e = std::make_unique<Engine>();
     if (beam_width > 0) e->beam = beam_width;
     if (all_ranks_always >= 0) e->all_ranks_always = all_ranks_always != 0;
-    // 单文件容器（MHCTN01）：一次 mmap 同携字符与词级模型。词层仅供
-    // 候选评分（packed_word_scorer），解码仍走字符级，与非容器行为一致；
-    // 词层缺失/损坏时降级为纯字符引擎（评分接口报错，解码不受影响）。
-    std::string container_error;
-    bool container_done = false;
-    if (e->container.open(model_path)) {
-      if (e->container.size >= 64 &&
-          memcmp(e->container.data, "MHCTN01", 7) == 0) {
-        const uint8_t* cd = e->container.data;
-        size_t q = 8;
-        auto u32c = [&]() { uint32_t v = rd_u32(cd + q); q += 4; return v; };
-        auto u64c = [&]() { uint64_t v = rd_u64(cd + q); q += 8; return v; };
-        const uint32_t version = u32c();
-        const uint32_t header_size = u32c();
-        const uint64_t file_size = u64c();
-        const uint32_t flags = u32c();
-        (void)u32c();  // reserved
-        const uint64_t char_off = u64c(), char_len = u64c();
-        const uint64_t word_off = u64c(), word_len = u64c();
-        const bool has_char = (flags & 1u) != 0, has_word = (flags & 2u) != 0;
-        auto section_ok = [&](uint64_t off, uint64_t len) {
-          return off >= (uint64_t)header_size && off <= e->container.size &&
-                 len <= e->container.size - off;
-        };
-        if (version != 1 || header_size != 64 || file_size != e->container.size ||
-            q > header_size) {
-          container_error = "invalid MHCTN01 container header";
-        } else if (!has_char || !section_ok(char_off, char_len)) {
-          container_error = "container requires a valid char section";
-        } else if (!e->model.load_view(e->container.data + char_off, char_len,
-                                       model_path)) {
-          container_error = tiger_last_error();
-        } else {
-          container_done = true;
-          if (has_word && section_ok(word_off, word_len) &&
-              e->wm.load_view(e->container.data + word_off, word_len, model_path)) {
-            e->packed_word_scorer = true;
-          }
-        }
-      } else {
-        // 打开成功但不是容器：释放宿主映射，走传统两级加载。
-        e->container.release();
-      }
+    // Map the primary file once, then dispatch by its magic.  A model loader
+    // takes ownership by move, while container sub-models remain borrowed views
+    // of this host mapping.  In particular, do not probe the same path through
+    // several loaders: each failed probe would otherwise fault/map the whole V5
+    // file before the successful loader gets a chance to use it.
+    if (!e->container.open(model_path)) {
+      copy_last_error(err, errcap);
+      return -1;
     }
-    if (!container_done && !e->wm.load(model_path)) {
-      // 非 MHKNM01 → 尝试字符级 TCSKNM。两级加载器共用 last_error；
-      // 分别记录，避免把词级模型的报错误报成最终失败原因。
-      const std::string word_error = tiger_last_error();
-      if (!e->model.load(model_path)) {
-        set_error("char model: %s (word model was tried first: %s%s%s)",
-                  tiger_last_error(), word_error.c_str(),
-                  container_error.empty() ? "" : "; container: ",
-                  container_error.c_str());
+    if (e->container.size < 8) {
+      set_error("model is too small to identify: %s", model_path);
+      copy_last_error(err, errcap);
+      return -1;
+    }
+    const uint8_t* primary = e->container.data;
+    if (memcmp(primary, "MHCTN01", 7) == 0) {
+      // 单文件容器（MHCTN01）：一次 mmap 同携字符与词级模型。词层仅供
+      // 候选评分（packed_word_scorer），解码仍走字符级，与非容器行为一致；
+      // 词层缺失/损坏时降级为纯字符引擎（评分接口报错，解码不受影响）。
+      if (e->container.size < 64) {
+        set_error("invalid MHCTN01 container header");
         copy_last_error(err, errcap);
         return -1;
       }
-    } else if (!container_done) {
+      const uint8_t* cd = e->container.data;
+      size_t q = 8;
+      auto u32c = [&]() { uint32_t v = rd_u32(cd + q); q += 4; return v; };
+      auto u64c = [&]() { uint64_t v = rd_u64(cd + q); q += 8; return v; };
+      const uint32_t version = u32c();
+      const uint32_t header_size = u32c();
+      const uint64_t file_size = u64c();
+      const uint32_t flags = u32c();
+      (void)u32c();  // reserved
+      const uint64_t char_off = u64c(), char_len = u64c();
+      const uint64_t word_off = u64c(), word_len = u64c();
+      const bool has_char = (flags & 1u) != 0, has_word = (flags & 2u) != 0;
+      auto section_ok = [&](uint64_t off, uint64_t len) {
+        return off >= (uint64_t)header_size && off <= e->container.size &&
+               len <= e->container.size - off;
+      };
+      if (version != 1 || header_size != 64 || file_size != e->container.size ||
+          q > header_size) {
+        set_error("invalid MHCTN01 container header");
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (!has_char || !section_ok(char_off, char_len)) {
+        set_error("container requires a valid char section");
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (!e->model.load_view(e->container.data + char_off, char_len, model_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
+      if (has_word && section_ok(word_off, word_len) &&
+          e->wm.load_view(e->container.data + word_off, word_len, model_path)) {
+        e->packed_word_scorer = true;
+      }
+    } else if (memcmp(primary, "TCSKNM01", 8) == 0 ||
+               memcmp(primary, "TCSKNM02", 8) == 0) {
+      if (!e->model.load_mapped(std::move(e->container), model_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
+    } else if (memcmp(primary, "MHKNM01", 7) == 0) {
+      if (!e->wm.load_mapped(std::move(e->container), model_path)) {
+        copy_last_error(err, errcap);
+        return -1;
+      }
       e->word_mode = true;
+    } else {
+      set_error("unknown model format: %s", model_path);
+      copy_last_error(err, errcap);
+      return -1;
     }
     if (!e->lex.load(lexicon_path)) {
       copy_last_error(err, errcap);
@@ -3029,6 +3342,12 @@ int tiger_engine_context_char_scores(int handle, const char* context_text,
       }
     }
     return g_engines[handle]->context_char_scores(context_text, cands, out_scores);
+  } catch (const InvalidPageError& error) {
+    set_error("%s", error.what());
+    return -1;
+  } catch (const std::exception& error) {
+    set_error("%s", error.what());
+    return -1;
   } catch (...) {
     set_error("char scores failed");
     return -1;
@@ -3075,6 +3394,7 @@ void tiger_engine_free(int handle) {
 
 int tiger_decode(int handle, const char* raw, int include_early,
                  char* out, int outcap, double* ms) {
+  Engine* e = nullptr;
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
     if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
@@ -3089,22 +3409,26 @@ int tiger_decode(int handle, const char* raw, int include_early,
       set_error("raw input exceeds maximum length");
       return -1;
     }
-    Engine* e = g_engines[handle].get();
-    struct timespec t0;
-    clock_gettime(CLOCK_MONOTONIC, &t0);
+    e = g_engines[handle].get();
+    const auto t0 = std::chrono::steady_clock::now();
     DecodeResult& r = e->decode(raw, include_early != 0);
-    struct timespec t1;
-    clock_gettime(CLOCK_MONOTONIC, &t1);
-    if (ms) *ms = (t1.tv_sec - t0.tv_sec) * 1000.0 + (t1.tv_nsec - t0.tv_nsec) / 1e6;
+    const auto t1 = std::chrono::steady_clock::now();
+    if (ms) *ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     if (!serialize(r, out, outcap)) {
       set_error("output buffer too small");
       return -1;
     }
     return (int)r.items.size();
-  } catch (const std::exception&) {
-    set_error("engine decode failed");
+  } catch (const InvalidPageError& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
+    return -1;
+  } catch (const std::exception& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
     return -1;
   } catch (...) {
+    if (e) e->abort_decode();
     set_error("engine decode failed");
     return -1;
   }
@@ -3112,6 +3436,7 @@ int tiger_decode(int handle, const char* raw, int include_early,
 
 int tiger_decode_full(int handle, const char* raw, int include_early,
                       char* out, int outcap) {
+  Engine* e = nullptr;
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
     if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
@@ -3126,17 +3451,23 @@ int tiger_decode_full(int handle, const char* raw, int include_early,
       set_error("raw input exceeds maximum length");
       return -1;
     }
-    Engine* e = g_engines[handle].get();
+    e = g_engines[handle].get();
     DecodeResult r = e->decode_full(raw, include_early != 0);
     if (!serialize(r, out, outcap)) {
       set_error("output buffer too small");
       return -1;
     }
     return (int)r.items.size();
-  } catch (const std::exception&) {
-    set_error("engine decode failed");
+  } catch (const InvalidPageError& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
+    return -1;
+  } catch (const std::exception& error) {
+    if (e) e->abort_decode();
+    set_error("%s", error.what());
     return -1;
   } catch (...) {
+    if (e) e->abort_decode();
     set_error("engine decode failed");
     return -1;
   }
@@ -3151,8 +3482,12 @@ int tiger_status(int handle, char* out, int outcap) {
     const char* ws_state = e->explicit_scorer ? "explicit"
                            : e->word_mode ? "primary"
                            : e->packed_word_scorer ? "packed" : "off";
+    const std::string& primary_path = e->word_mode ? e->wm.path : e->model.path;
+    const char* primary_format = e->word_mode ? "MHKNM01"
+                              : e->model.mobile ? "TCSKNM02" : "TCSKNM01";
+    const size_t primary_size = e->word_mode ? e->wm.file.size : e->model.file.size;
     char buf[1024];
-    const int written = snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d\tuser_tri=%zu\tuser_weight=%.3f\tword_scorer=%s\tword_vocab=%zu", e->model.path.c_str(), e->model.mobile ? "TCSKNM02" : "TCSKNM01", (unsigned long long)e->model.file.size, e->lex.codes.size(), e->beam, e->user.tri.size(), e->user_weight, ws_state, ws ? ws->vocab.size() : (size_t)0);
+    const int written = snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d\tuser_tri=%zu\tuser_weight=%.3f\tword_scorer=%s\tword_vocab=%zu", primary_path.c_str(), primary_format, (unsigned long long)primary_size, e->lex.codes.size(), e->beam, e->user.tri.size(), e->user_weight, ws_state, ws ? ws->vocab.size() : (size_t)0);
     (void)written;
     if (out && outcap > 0) snprintf(out, outcap, "%s", buf);
     return 0;

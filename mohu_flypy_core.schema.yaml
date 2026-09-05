@@ -120,6 +120,10 @@ speller:
       - mohu:/algebra/user_force_bottom?
 
 smart:         # 整句输入模式设置，在 top_translator 中被调用
+  # 保留音节/词语补全；reorder/word_order 对超大候选流按预算直通，
+  # 避免补全候选被整流抽干造成逐键卡顿。
+  enable_completion: true
+  enable_word_completion: true
   dictionary: mohu_flypy.extended
   user_dict: mohu_flypy_tiger_prefix2
   prism: mohu_flypy
@@ -134,6 +138,8 @@ smart:         # 整句输入模式设置，在 top_translator 中被调用
   max_sentences: 2
 
 smart_static:
+  enable_completion: true
+  enable_word_completion: true
   dictionary: mohu_flypy.extended
   user_dict: mohu_flypy_tiger_prefix2
   prism: mohu_flypy

@@ -380,6 +380,28 @@ int l_set_reading_prior_weight(lua_State* L) {
   return 1;
 }
 
+int l_set_neural_rerank(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* model_path = luaL_checkstring(L, 2);
+  const char* vocab_path = luaL_checkstring(L, 3);
+  double weight = luaL_checknumber(L, 4);
+  double margin = luaL_checknumber(L, 5);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_neural_rerank((int)handle_value, model_path,
+                                        vocab_path, weight, margin);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "neural rerank setup failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
 int l_user_model_export(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -474,6 +496,7 @@ int luaopen_tigerengine(lua_State* L) {
       {"context_char_scores", l_context_char_scores},
       {"set_user_model_weight", l_set_user_model_weight},
       {"set_reading_prior_weight", l_set_reading_prior_weight},
+      {"set_neural_rerank", l_set_neural_rerank},
       {"user_model_export", l_user_model_export},
       {"user_model_import", l_user_model_import},
       {"status", l_status},

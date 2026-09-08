@@ -40,6 +40,9 @@
 #include <unordered_set>
 #include <vector>
 
+// 神经重排：40M char LM 推理器（Accelerate 框架，无外部依赖）
+#include "neural_infer.h"
+
 #ifdef _WIN32
 // windows.h 定义 min/max 宏会破坏 std::min/std::max，必须先声明 NOMINMAX。
 #define NOMINMAX
@@ -1020,6 +1023,11 @@ struct LexEntry {
   int rank;
   std::vector<uint32_t> chars;  // 预拆码点
   bool personal = false;
+  // 简词：多字词的缩写码（码长 < 2×字数，如 pv=配置、pvwj=配置文件）。
+  // 默认只允许整段命中；abbrev_edges 打开后可作为长句内部边。
+  // abbrev_exact＝码长恰等于字数（一音一键），strict 模式只允许这类边。
+  bool abbrev = false;
+  bool abbrev_exact = false;
   double personal_boost = 0.0;
   // 读音先验 log P(该读音|该字)：由码表可选第 5 列（读音条件简频）在
   // 装载期按 (字, 双拼) 去重归一得出，如「万」mò ≈ log(1/1.2M) 而
@@ -1090,6 +1098,8 @@ struct Lexicon {
         e.chars.push_back(cp);
       }
       if (e.chars.size() != 1) has_multi_char_entries = true;
+      e.abbrev = e.chars.size() > 1 && code.size() < 2 * e.chars.size();
+      e.abbrev_exact = e.abbrev && code.size() == e.chars.size();
       codes[code].push_back(std::move(e));
       if (freq_rank.find(text) == freq_rank.end()) freq_rank[text] = fr;
       len_set.insert((int)code.size());
@@ -1726,6 +1736,19 @@ struct Engine {
   // 条件窗口恰为 2 字）。词级上下文（pw2/pw1）不参与播种，维持 <s>。
   bool has_decode_context = false;
   uint32_t ctx_prev2 = kBOS, ctx_prev1 = kBOS;
+  // 简词内部边（实验）：>0 时允许静态简词条目作为长句内部边，
+  // 数值为参与边的 rank 上限（1=仅首选简词）。默认 0=维持现状。
+  // strict 打开时仅允许「一音一键」简词（码长==字数），排除 2 键
+  // 三四字词与 4 键五字以上长词这类超省键条目。
+  int abbrev_edges_max_rank = 0;
+  bool abbrev_strict = false;
+
+  // 神经重排（mohu/neural_rerank）：40M char LM 异步打分。
+  // load() 成功后 neural_scorer.is_loaded() 为 true；
+  // weight <= 0 时完全旁路（零开销）。
+  mohu::nlm::NeuralScorer neural_scorer;
+  double neural_weight = 0.0;   // 融合权重，0 = 关
+  double neural_margin = 0.7;   // V5 z-margin 门控阈值
 
   // 整段最近上屏文本 -> 尾部至多 window 个 CJK 码点作左上文；无汉字则
   // 清除（与 librime 整段传递、模型侧定窗口的口径一致）。上下文变化
@@ -1970,6 +1993,53 @@ struct Engine {
       }
       out[i] = s;
     }
+    // 神经重排：V5 分差小于阈值时，用 40M char LM 重排。
+    if (neural_scorer.is_loaded() && neural_weight > 0.0 &&
+        candidates.size() >= 2) {
+      // 取前 K 个算 z-margin（与 Lua filter 相同的 topk 逻辑）
+      size_t k = std::min(candidates.size(), (size_t)5);
+      double sum = 0, sumsq = 0;
+      for (size_t i = 0; i < k; ++i) {
+        sum += out[i];
+        sumsq += out[i] * out[i];
+      }
+      double mean = sum / (double)k;
+      double var = sumsq / (double)k - mean * mean;
+      if (var > 0) {
+        double std_ = std::sqrt(var);
+        double z_first = -1e18, z_second = -1e18;
+        for (size_t i = 0; i < k; ++i) {
+          double z = (out[i] - mean) / std_;
+          if (z > z_first) { z_second = z_first; z_first = z; }
+          else if (z > z_second) z_second = z;
+        }
+        if ((z_first - z_second) < neural_margin) {
+          FILE* dbg2 = fopen("/tmp/neural_fired", "a");
+          if (dbg2) { fprintf(dbg2, "m=%.3f\n", z_first - z_second); fclose(dbg2); }
+          // 门控触发：调用神经模型
+          std::vector<float> nsums = neural_scorer.score(context_text, candidates);
+          if (nsums.size() == candidates.size()) {
+            // z 归一化神经分数
+            double nmean = 0, nsq = 0;
+            for (size_t i = 0; i < k; ++i) {
+              nmean += nsums[i];
+              nsq += (double)nsums[i] * nsums[i];
+            }
+            nmean /= (double)k;
+            double nvar = nsq / (double)k - nmean * nmean;
+            if (nvar > 0) {
+              double nstd = std::sqrt(nvar);
+              // 融合：final_z = v5_z + weight * neural_z
+              for (size_t i = 0; i < candidates.size(); ++i) {
+                double vz = (out[i] - mean) / std_;
+                double nz = (i < k) ? ((double)nsums[i] - nmean) / nstd : 0.0;
+                out[i] = vz + neural_weight * nz;
+              }
+            }
+          }
+        }
+      }
+    }
     return (int)candidates.size();
   }
 
@@ -2110,10 +2180,18 @@ struct Engine {
           states[consumed_end]->truncated = true;
         for (State* item : current) {
           for (const LexEntry& cand : *chosen) {
-            // 静态多字词保持整段命中语义；个人词允许成为长句内部边。
-            if (cand.chars.size() != 1 && !cand.personal &&
-                !(pos == 0 && consumed_end == length)) continue;
-            if (cand.chars.size() != 1 && !cand.personal) has_terminal_phrase_states = true;
+            // 静态多字词保持整段命中语义；个人词允许成为长句内部边；
+            // 简词（缩写码）在 abbrev_edges 打开时同样允许做内部边。
+            const bool abbrev_edge_ok = abbrev_edges_max_rank > 0 && cand.abbrev &&
+                                        cand.rank <= abbrev_edges_max_rank &&
+                                        (!abbrev_strict || cand.abbrev_exact);
+            const bool whole_input_edge = (pos == 0 && consumed_end == length);
+            if (cand.chars.size() != 1 && !cand.personal && !abbrev_edge_ok &&
+                !whole_input_edge) continue;
+            // 整段命中的静态多字词在输入继续增长后语义会失效（整段→内部），
+            // 必须禁用增量复用；纯内部边（个人词、简词）无此问题。
+            if (cand.chars.size() != 1 && !cand.personal && whole_input_edge)
+              has_terminal_phrase_states = true;
             double score = item->score;
             uint32_t prev2 = item->prev2, prev1 = item->prev1;
             uint32_t pw2 = item->pw2, pw1 = item->pw1;
@@ -2873,6 +2951,92 @@ int tiger_engine_set_reading_prior_weight(int handle, double weight) {
     return 1;
   } catch (...) {
     set_error("reading prior weight update failed");
+    return -1;
+  }
+}
+
+/* 简词内部边（实验）：max_rank=0 关闭（默认，简词仅整段命中）；
+   >=1 打开并限制参与内部边的简词 rank 上限。 */
+int tiger_engine_set_abbrev_edges(int handle, int max_rank) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (max_rank < 0 || max_rank > 1000) {
+      set_error("abbrev edge max rank must be in [0, 1000]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->abbrev_edges_max_rank == max_rank) return 0;
+    e->abbrev_edges_max_rank = max_rank;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("abbrev edge update failed");
+    return -1;
+  }
+}
+
+/* 简词严格模式：仅允许码长==字数的简词做内部边（需先打开 abbrev_edges）。 */
+int tiger_engine_set_abbrev_strict(int handle, int on) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->abbrev_strict == (on != 0)) return 0;
+    e->abbrev_strict = on != 0;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("abbrev strict update failed");
+    return -1;
+  }
+}
+
+/* 神经重排：加载 40M char LM 权重 + 词表，启用语义候选重排。
+   weight = 0 关闭；margin = V5 z-score 门控阈值（低于才触发神经打分）。 */
+int tiger_engine_set_neural_rerank(int handle, const char* model_path,
+                                   const char* vocab_path,
+                                   double weight, double margin) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (weight <= 0.0) {
+      e->neural_weight = 0.0;
+      return 0;  // disabled
+    }
+    if (!model_path || !vocab_path) {
+      set_error("neural rerank requires model and vocab paths");
+      return -1;
+    }
+    if (!e->neural_scorer.is_loaded()) {
+      if (!e->neural_scorer.load(model_path)) {
+        set_error("failed to load neural model weights");
+        return -1;
+      }
+    }
+    if (!e->neural_scorer.vocab_loaded()) {
+      if (!e->neural_scorer.load_vocab(vocab_path)) {
+        set_error("failed to load neural vocab");
+        return -1;
+      }
+    }
+    e->neural_weight = std::min(1.0, std::max(0.01, weight));
+    e->neural_margin = std::min(10.0, std::max(0.0, margin));
+    FILE* dbg = fopen("/tmp/neural_loaded", "w");
+    if (dbg) { fprintf(dbg, "ok w=%.2f m=%.2f\n", e->neural_weight, e->neural_margin); fclose(dbg); }
+    return 1;
+  } catch (...) {
+    set_error("neural rerank setup failed");
     return -1;
   }
 }

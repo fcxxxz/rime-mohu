@@ -30,6 +30,15 @@ int tiger_engine_set_user_model_weight(int handle, double static_weight);
  * frequency). 0 disables, default 1.0. Returns 1 applied, 0 no change,
  * -1 error. Old lexicons without the column stay neutral at any weight. */
 int tiger_engine_set_reading_prior_weight(int handle, double weight);
+/* Experimental abbreviated-word internal edges: max_rank = 0 disables
+ * (default; abbreviated words match the whole input only), >= 1 enables
+ * static abbreviated entries (code shorter than 2 keys per char) as
+ * internal sentence-lattice edges, bounded by that rank cap. Returns
+ * 1 applied, 0 no change, -1 error. */
+int tiger_engine_set_abbrev_edges(int handle, int max_rank);
+/* Restrict abbreviation edges to exact one-key-per-char entries
+ * (code length == char count). Returns 1 applied, 0 no change, -1 error. */
+int tiger_engine_set_abbrev_strict(int handle, int on);
 /* Snapshot blob of the user layer; caller owns and must free() the buffer.
  * *size_out receives the byte length (the blob is binary and may contain
  * NUL bytes). Empty model yields ""; NULL on error. */
@@ -65,6 +74,13 @@ int tiger_engine_context_word_scores(int handle, const char* context_text,
 int tiger_engine_context_char_scores(int handle, const char* context_text,
                                      const char* candidates, int candidate_count,
                                      double* out_scores);
+/* Neural rerank: load a TinyCharLM binary weights file + vocab.json for
+ * semantic candidate scoring. weight in [0,1] controls blending (0 = off);
+ * margin is the z-score threshold below which the neural scorer is invoked.
+ * Returns 1 applied, 0 no change, -1 error. */
+int tiger_engine_set_neural_rerank(int handle, const char* model_path,
+                                   const char* vocab_path,
+                                   double weight, double margin);
 void tiger_engine_free(int handle);
 /* include_early is a deprecated ABI compatibility flag; the canonical Lua
  * translator always passes 0 and never exposes early-commit results. */

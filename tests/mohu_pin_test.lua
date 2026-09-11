@@ -474,10 +474,25 @@ pin.panacea_translator.func("tnfb", { start = 0, _end = 4 }, {
     escaped_infix = "\\\\",
     indicator = "📌",
 })
-assert(#yielded == 1)
-assert(yielded[1].type == "pinned")
-assert(yielded[1].text == "头脑风暴")
-assert(yielded[1].comment == "📌")
+assert(#yielded == 0,
+    "panacea translator must not duplicate ordinary pinned candidates; pin_filter owns them")
+local semantic_meta = require("mohu_semantic_meta")
+
+yielded = {}
+pin.panacea_translator.func("tnfb//", { start = 0, _end = 6 }, {
+    pin_enable = true,
+    escaped_infix = "//",
+    indicator = "📌",
+})
+assert(#yielded == 1 and yielded[1].type == "pin_tip")
+local tip_provenance = semantic_meta.resolve(yielded[1])
+assert(type(tip_provenance) == "table" and
+    tip_provenance.provenance_version == "mohu-pin-ui/v1" and
+    tip_provenance.source == "pin_ui" and
+    tip_provenance.candidate_type == "pin_tip" and
+    tip_provenance.protected == true and
+    tip_provenance.synthetic == true,
+    "pin tip candidates must retain protected UI provenance")
 Candidate = original_candidate
 yield = original_yield
 

@@ -4,9 +4,10 @@ schema:
   version: "20260829"
   author:
     - 自然码发明人：周志农
-    - 方案制作：ksqsf
+    - 魔然作者：ksqsf
+    - 魔虎方案制作：晴
   description: |
-    基于自然码双拼和 TCSKNM 的魔虎整句输入方案。
+    基于自然码双拼和虎码12字根做辅码的魔虎整句输入方案。
   dependencies:
     - mohu_zrm_fixed
     # 部署只会编译一级依赖的码表，因此 legacy 码表也需直接列出
@@ -42,6 +43,8 @@ switches:
     states: [ U关, U开 ]
   - name: contextual_order
     states: [ 单次候选调频, 跨候选调频 ]
+  - name: neural_rerank
+    states: [ 魔虎语义关, 魔虎语义开 ]
   - name: quick_code_hint
     states: [ 简码提示关, 简码提示 ]
   - name: aux_hint
@@ -93,6 +96,8 @@ engine:
     - lua_filter@*mohu_pin*pin_filter
     - lua_filter@*mohu_reorder_filter
     - lua_filter@*mohu_word_order_filter
+    # 暂停整句显示裁剪：2026-09-09 实测该层导致简快码首选丢失，待回归修复后恢复。
+    # - lua_filter@*mohu_sentence_visibility_filter
     - lua_filter@*mohu_candidate_override*override_order_filter
     - lua_filter@*mohu_candidate_override*override_filter
     - lua_filter@*mohu_ijrq_filter
@@ -104,16 +109,22 @@ engine:
     - lua_filter@*mohu_charset_comment_filter  # Unicode 区位提示
     - lua_filter@*mohu_unicode_display_filter  # Unicode 编码提示
     - uniquifier
+    - lua_filter@*mohu_semantic_gate_filter  # 语义重排（共用 neural_rerank 大模型开关）
 
 navigator:
   # 在音节跳转时，跳过音节末尾的分隔符 ' ，设为 after_delimiter 恢复 Rime 默认行为
   syllable_jump_position: before_delimiter
 
 speller:
+  # 允许进入编码串的字符集合；不在这里的按键由其他组件处理。
   alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/=;'
+  # 音节分隔符；用于明确编码分段。
   delimiter: " '"
+  # 是否允许拼写器自动选择候选；还受下面的匹配条件约束。
   auto_select: true
+  # 只有编码匹配此正则时才允许自动选择，不是所有输入都自动上屏。
   auto_select_pattern: ^;(\w+|;)
+  # 编码变换规则，引用的补丁按顺序组合生成拼写索引。
   algebra:
     __patch:
       - mohu:/algebra/user_force_top?
@@ -122,79 +133,152 @@ speller:
       - mohu:/algebra/user_sentence_bottom?
       - mohu:/algebra/user_force_bottom?
 
-smart:         # 整句输入模式设置，在 top_translator 中被调用
+# smart：主力智能翻译器。
+# 用户正常输入时，mohu_express_translator 会优先调用它。
+# 它使用 mohu_zrm.extended 词典，可以输出单字、词语和整句；也可以读取用户词典。
+# 它负责“按当前输入组织句子”和上下文排序，不等于固定码的前缀补全。
+smart:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_zrm.extended
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_zrm_tiger_prefix2
+  # 拼写索引名，负责将输入编码映射到词典音节；不是另一份词库。
   prism: mohu_zrm
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 5
+  # 造句搜索时保留的同音候选数量；不是整个候选菜单的数量上限。
   max_homophones: 7
+  # 允许显示拼写提示的候选最大字数；0 表示关闭此类提示。
   spelling_hints: 3
+  # 是否使用上下文感知的候选排序；不是编码前缀补全，也不是上屏后预测下一个词。
   contextual_suggestions: true
+  # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  # 词典查询的核心词长参数（音节数），不是输入框最多能输入的按键数。
   core_word_length: 4
+  # 词长限制参数（音节数），不是候选数量；整句可以由多个词组成。
   max_word_length: 10
+  # 智能翻译器最多生成的整句候选数；不限制词典候选总数。
   max_sentences: 2
 
+# smart_static：smart 的静态副本。
+# 它使用同一套系统词典，但关闭用户词典，避免学习记录影响结果。
+# 长输入或需要稳定对照结果时使用；它仍然可以补全和造句，区别只是没有用户调频。
 smart_static:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_zrm.extended
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: ""
+  # 拼写索引名，负责将输入编码映射到词典音节；不是另一份词库。
   prism: mohu_zrm
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 5
+  # 造句搜索时保留的同音候选数量；不是整个候选菜单的数量上限。
   max_homophones: 7
+  # 允许显示拼写提示的候选最大字数；0 表示关闭此类提示。
   spelling_hints: 3
+  # 是否使用上下文感知的候选排序；不是编码前缀补全，也不是上屏后预测下一个词。
   contextual_suggestions: true
+  # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  # 词典查询的核心词长参数（音节数），不是输入框最多能输入的按键数。
   core_word_length: 4
+  # 词长限制参数（音节数），不是候选数量；整句可以由多个词组成。
   max_word_length: 10
+  # 智能翻译器最多生成的整句候选数；不限制词典候选总数。
   max_sentences: 2
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
 
-fixed:         # 固顶输入模式设置，在 top_translator 中被调用
+# fixed：唯一简字模式使用的固定码翻译器。
+# 它读取 mohu_zrm_fixed，适合“码表里有什么就查什么”的固定候选。
+# 菜单选「唯一简字」时使用此段（multi_short_code=true），不是布尔值 false。
+fixed:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_zrm_fixed
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 100
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
+  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
   enable_encoder: false
+  # 是否利用上屏历史自动造词；依赖 enable_encoder，编码器关闭时仅设 true 不会生效。
   encode_commit_history: true
 
+# fixed_legacy：多重简字模式使用的旧版固定码翻译器。
+# 它读取 mohu_zrm_fixed_legacy；菜单选「多重简字」（multi_short_code=false）时使用此段，
+# 所以只打开 fixed/enable_completion 对 kjk 不会生效。
 fixed_legacy:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_zrm_fixed_legacy
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 100
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
+  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
   enable_encoder: false
+  # 是否利用上屏历史自动造词；依赖 enable_encoder，编码器关闭时仅设 true 不会生效。
   encode_commit_history: true
 
 translator_legacy:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_zrm_fixed_legacy
 
 custom_phrase: # 自定义短语
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: ""
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_zrm_custom_phrases
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: stabledb
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 1000
 
 tiger:
+  # 原生整句引擎使用的双拼方案标识（zrm 自然码，flypy 小鹤）。
   scheme: zrm
+  # 原生候选的类型标记，供后续过滤器识别来源。
   candidate_type: mohu_zrm
+  # 原生引擎动态库路径；空字符串使用加载器的默认查找路径。
   engine_lib: ""
+  # 进程内魔虎语义 C2 模型与字符词表；仅在“魔虎语义开”且歧义门控
+  # 命中时按需加载，不启动外部服务。
+  semantic_model: mohu_semantic/mohu_semantic.onnx
+  semantic_vocab: mohu_semantic/vocab.tsv
+  # 原生语言模型资源路径，不是用户词典。
   model: mohu/model
+  # 原生整句引擎的编码词表路径。
   lexicon: mohu/data/zrm/mohu_zrm.lexicon.txt
+  # 束搜索宽度；扩大可保留更多搜索路径，也会增加计算开销。
   beam: 200
+  # 长输入时是否允许全部词条档位参与竞争。
   all_ranks: true
   # 读音先验权重：码表第 5 列（读音条件简频）→ log P(读音|字) 并入路径
   # 分，压制多音字罕用读音（如「万」mò）拼出的首选；0 关闭。
   reading_prior_weight: 1.0
+  # 上下文翻译器切换长输入处理分支的编码长度门槛。
   long_input_length: 5
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 50
+  # 从哪个配置段读取个人词典设置；smart 表示复用智能词典配置。
   personal_lexicon_namespace: smart
-  personal_lexicon_max_rows: 4096
+  # 刻意不设 personal_lexicon_max_rows：一旦设置就会回退到「整体扫描 + 全局
+  # 排序」路径，且行数截断会被误判成删词、每轮刷新触发整表重建，表现为打字时
+  # 周期性卡顿。根因与验证见 docs/reports/2026-09-11-personal-lexicon-refresh-lag.md。
   # 用户调频层：上屏文本喂入内存三元计数表，与静态模型按权重融合
   user_model: true
   user_model_weight: 0.85          # 静态模型权重（1.0 = 关闭用户层）
@@ -206,9 +290,18 @@ tiger:
   # 存在上文时是否让 native 接管 4 键纯双拼词码（默认 false：保留 smart
   # 已学词频权威；实测字符级模型裸排 4 键低于词库词频约 7pp）。
   decode_context_takeover: false
+  # 是否允许词序重排功能；实际是否重排还受运行时开关和候选保护规则控制。
   word_order: true
+  # 词序重排检查的候选窗口大小；不是菜单最多显示的候选数。
   word_order_candidates: 20
+  # 重排时对原有位置的惩罚权重；0 不加该项位置惩罚。
   word_order_rank_penalty: 1.0
+  # 整句候选的菜单显示条数（搜狗式：首条整句 + 词组）。重排仍用完整
+  # 候选池（word_order_candidates），本项只影响菜单可见条数；0 = 全部显示。
+  # sentence_min_chars：计入配额的最小候选字数（默认 3；两字词与辅码
+  # 消歧输入不裁）。
+  sentence_visible_candidates: 1
+  sentence_min_chars: 3
 
 chaifen:
   option_name: chaifen
@@ -241,20 +334,31 @@ reverse_format:
     - xform/^o(lf|bh|cj|vy|hm)//
 
 reverse_tiger:
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: reverse_tiger
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: tiger
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: true
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "ohm"
+  # 进入此功能时显示的提示文字。
   tips: 〔虎〕
   __include: reverse_format
 
 reverse_tiger_backtick:
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: reverse_tiger_backtick
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: tiger
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: true
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "`"
+  # 进入此功能时显示的提示文字。
   tips: 〔虎〕
   __include: reverse_format
+  # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/^`//
 

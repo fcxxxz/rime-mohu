@@ -10,6 +10,14 @@
 
 ## 1. 一页纸现状
 
+- **2026-09-08 独立神经开关**：两主方案的 `neural_rerank`（大模型关／开）
+  默认关闭，与 V5 `contextual_order` 独立。`option_sync` 保存并跨应用同步，
+  不设置 schema `reset`，避免覆盖重启恢复值。关闭启动不加载神经权重；
+  已加载后关闭只归零 neural weight，后续字符 scorer 调用前同步当前上下文
+  的开关，缓存 scorer / 共享引擎也不能漏过。开启复用已加载权重、不重建 V5。
+  两开关都关直接保留原序；仅神经开启时，没有实际融合也保留原序。
+  真实神经测试驱动必须显式设置 `neural_rerank=true`，不能只配模型路径。
+
 - **功能**：`contextual_order`（跨候选调频）开启且上屏历史含汉字时，
   引擎对菜单前 N 个 smart 候选按上下文续写分重排。四档输入（纯双拼/
   首辅/末辅/首末辅）全覆盖：纯双拼走本 filter，辅码档走引擎解码左上下文
@@ -43,9 +51,116 @@
 
 ## 2. 架构地图
 
+**2026-09-10 魔虎语义进程内化**：外部 Python scorer 服务形态已撤销——
+librime-lua 无 luasocket 且要求用户自启进程不成立。C2 改由
+`libtigerengine.dylib` 内建 ONNX Runtime 会话推理（`semantic_infer.h`，
+`tiger/semantic_model|semantic_vocab`，默认 `mohu_semantic/` 下模型+词表，
+`mohu/runtime/libonnxruntime.1.dylib` 以 @loader_path 随包分发）。
+开关文案改为「魔虎语义关／魔虎语义开」；模型加载失败自动把开关退回
+「关」，因此开关保持「开」即加载成功。候选身份按最终菜单 slots 顺序
+传入 native（跨 filter 的 Lua userdata 身份不稳定，弱表谱系解析已移除）。
+`make tigerengine-semantic`（需 MOHU_SEMANTIC_MODEL/VOCAB 环境变量）覆盖
+原生方向性/释放测试。
+
+**2026-09-10 TinyCharLM 移除决定**：同方法生产菜单对比（同一评估器、同一门控/保护槽/
+margin、两套共 89,970 个真实菜单）中，TinyCharLM 在两种决策口径下全面回退
+（probe -3.13pp、tnews -10.24pp，0.5 融合口径同样为负），而 C2 是唯一产生净收益
+的后端（tnews +0.072pp CI 显著为正）。原生 char-LM 融合路径（`neural_infer.h`、
+`neural_rerank_policy.h`、`set_neural_rerank` ABI、`scores.neural_reranked` 回填、
+Lua 输入门控与开关观察者）已全部移除；dylib 重建后 245KB。`neural_rerank` 开关
+现在唯一驱动 C2 语义服务（`lua/mohu_semantic_gate_filter.lua`，`uniquifier` 之后，
+SCORE2 + 大端帧）。V5 的 `context_char_scores` 原样保留，供跨候选调频与语义门控
+使用。下文 2026-09-08 的神经融合段落仅作历史记录，机制已不存在。
+见 [同方法对比报告](../reports/2026-09-10-model-comparison.md)。
+
+**2026-09-08 可选神经重排补充**：以下默认 V5 边界仍有效；配置神经模型时，
+native 可以参与评分探测，但只有本次 `scores.neural_reranked == true` 才参与
+回填。门控使用前五个不同文本的静态 V5 分，不含用户学习层；它只决定是否值得
+尝试神经评分，不能证明神经翻转首选正确。神经分在 personalized V5 分的标准化
+空间融合后映回 native 分数尺度，`weight=1` 也被限制为最多 0.5 的辅助权重，
+不再允许神经接管。native 第一名有退分下限；首选翻转必须同时满足：拟提升候选
+为神经第一名、相对其他非 native 第一名候选有足够神经优势、相对 native 第一名
+另有独立神经优势，并以最小 native 分差跨过受保护分数线。任一条件不满足时整批
+保留原始 native 分数并返回未应用标记；首选不变时只允许有限低位重排，最终稳定
+排序不变同样不标记成功。门控回退不能让 native 探测挤占普通候选原来的重排窗口。
+真实候选集、上文、本次评分和最终菜单必须一起验收，调试标记文件存在不能证明本次
+推理已生效。见 [神经重排修复报告](../reports/2026-09-08-neural-rerank-fix.md)。
+
+**2026-09-08 性能实现补充（已随输入门控部署本机）**：字符神经 scorer 改为
+按 token 前缀 trie 共享每层 Transformer/QKV，并复用唯一预测位置的全词表
+分布；末字仍计分，只省其无用输入隐藏状态。注意力严格限制祖先，位置编码
+按路径深度；超过 256 节点改走有界路径注意力，避免整树平方内存。GELU 和
+logsumexp 使用 Accelerate 向量算子，保持原评分目标。新增
+`tiger/neural_rerank_context_chars`（0–160，默认160），与 V5 的末两字窗口
+独立；先截取最近一条上屏文本尾部，再过滤 OOV。没有跨键评分缓存。
+「外婆」实际20候选的节点数120→33、输出行60→31，隔离完整末键热态中位数
+35.9→15.6ms，仍未达到10ms且冷启动无延迟保证。详见
+[优化实现与验收](../reports/2026-09-08-neural-rerank-optimization.md)。
+随后完成输入门控并覆盖本机三个运行文件、重启 Squirrel：不足两个完整双拼
+音节不调用神经推理；达到门槛后仍需至少两个不同有效候选和静态 V5 不确定性
+门控。有无上屏历史共用此规则；无历史且神经未实际融合时保持原序。候选
+preedit 分段不能可靠对应候选字数时保守跳过，不以总字母数猜测完整音节。
+部署、回滚位置及最终真实链路验收见
+[神经输入门控报告](../reports/2026-09-08-neural-input-gate.md)。
+随后用户现场发现个人词整段 preedit（如 `jwgzle`）被严格音节门控排成稳定
+前缀：上文存在、神经已成功融合，仍无法移动个人词。native 现仅在每个
+二字母片段能在静态码表验证对应单字时，为个人词生成 `jw gz le` 形式，
+不放宽门控、不清空学习。验收必须包含真实 `_personal` 类型和 preedit，
+不能用普通候选成功替代。详见
+[个人词分段修复](../reports/2026-09-08-neural-personal-preedit.md)。
+200例同码词离线窗口诊断中，2/4/8/16/160字正确率分别84/89.5/90/92/91.5%；
+2字仅省约0.44ms纯推理中位数却修坏20例，默认不缩窗。该样本最长上文37字、
+候选池2–4项且未做训练去重，不等于正式质量基准。同窗口新旧评分3030对的
+完整排名一致，原始分最大绝对差1.907e-5。
+
+**2026-09-09 smart 补全关闭的实测结论**：用户将 `smart:` 段
+`enable_completion`/`enable_word_completion` 显式设为 false（历史状态为
+librime 默认开启，仓库 schema 从未显式配置；魔然主翻译器同样未配置，
+即两代方案一直默认开；`enable_word_completion` 在魔虎仓库从未出现）
+后，**打字延迟体感显著下降，未发现功能损失**。归因：补全让
+script_translator 每键在 122MB 的 mohu_zrm.extended 码表上做前缀扫描，
+产生超大候选流（用户 11:49 的注释「避免补全候选被整流抽干造成逐键
+卡顿」即为同一问题的过滤器侧缓解）。功能影响面核实：单字出简让全
+**不受影响**——简码提前出字走拼写代数 `abbrev/^(.{3}).$/$1/`（四码字
+自动生成三码拼写，词表层真匹配），与补全无关；真正依赖补全的只有
+**词级码前缀匹配**（如 3 键提前出三字词），而词级让全 `ijrq/
+enable_word` 本就关闭。**诗词长句联想实测不依赖此开关**：
+`wfjpngyb`（问君能有）在补全开启时候选流中也没有任何 ≥5 字候选——
+尽管「问君能有几多愁」「问渠哪得清如许」都在 base 词表和编译产物中
+（逐候选落盘日志 + 反编译 table.bin 验证）——smart 层根本不产出这类
+长词条补全；用户记忆中的诗词联想来自虎码方案（rime-tiger 的
+tigress_ci 诗词词库）。native 词表也没有这两句。待观察项：词级
+「少打几码」场景（用户日常依赖度低）。
+
+**2026-09-09 整句菜单显示裁剪（不改排序）**：新增
+`lua/mohu_sentence_visibility_filter.lua`（挂 word_order 之后、
+candidate_override 之前），配置 `tiger/sentence_visible_candidates`
+（默认 1，clamp 0–50；0 = 全部显示恢复旧行为）。重排链看的候选池
+不变——翻译器仍产 20 条（`mohu_tiger_sentence.lua` 的
+`candidate_limit`）、word_order 仍按 `word_order_candidates=20` 批量
+评分——本 filter 只裁显示层。
+**句形判定（类型无关）**：覆盖到输入末尾（与 word_order 的
+consumes_current_input 同型判定）＋ 达到门槛字数（`tiger/
+sentence_min_chars` 默认 3，两字词与辅码消歧不裁）＋ 字数不超过覆盖
+段音节容量（字母数/2）。稳定边界（一律不裁）：punct/pinned、⚡️/📌 标记、
+不足门槛字数、声母简码/缩写匹配（容量超额即简码，词表 6,734 条如
+`abjh→阿波罗计划`）、部分跨度候选（词组选词）。
+**当日三轮实测回归（均已修复）**：① 首次部署因线上 schema 残留
+`mohu:/algebra/drop_last_code?` 死引用导致 zrm 编译失败，Rime 静默
+沿用旧产物（排查教训：每次部署后必须查日志 `error building config`）；
+② 只裁 native 类型时误裁声母简码——简码以无 ⚡️ 标记的 native 候选
+出现，用户实测「简快码首选丢失」后停用，音节容量豁免修复；③ 只裁
+native 时 express 全长词组与 `_personal` 变体顶上——用户模型会把
+反复输入的长句全部学成 `mohu_zrm_personal` 类型（逐条 yield 落盘
+日志实证），故句形判定必须类型无关、personal 不豁免；个人短词由门槛保护。诊断方法教训：filter 是惰性协程，菜单只拉前几条，
+收尾日志对长输入永不执行，必须逐 yield 即时落盘。
+单测：`tests/mohu_sentence_visibility_filter_test.lua`（12 项）。
+
 ```
 上屏历史 commit_history:latest_text()（与 librime GetPrecedingText 同源）
-  │ contextual_order 开 && 含 CJK（字节 \228-\233）才继续，否则零成本直通
+  │ contextual_order 必须开启；默认 V5 仍要求 CJK 上文
+  │ 可选神经：至少两个完整音节和两个不同有效候选；无上文允许 BOS 评分
+  │ 无上文时只有本次 neural_reranked=true 才重排，门控回退保持原序
   ▼
 lua/mohu_word_order_filter.lua   ← lua_filter，两个主方案 filters 第 4 位
   │   （mohu_reorder_filter 之后、candidate_override 之前：用户显式覆盖
@@ -157,7 +272,13 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
 6. **`make test 2>&1 | tail` 会吞退出码**（管道取 tail 的 0）——查
    pipestatus 或直接跑。
 7. mira 测试 `mohu_zrm::cross_candidate_order` 在 HEAD 即失败（与词级重排
-   无关，已在干净提交复现）。
+   无关，已在干净提交复现）。**更关键的是：mira 默认根本跑不到 native。**
+   Lua 5.5 / 5.4 ABI 不匹配（`luaopen` 失败）+ `dist-*` 缺
+   `libonnxruntime.1.dylib` + 不随包发 ngram 模型，三层叠加使引擎 fail-open，
+   于是 native 相关用例既会**假失败**（`automatic_word_learning::vsmc`）也会
+   **假通过**（`default::jiivo`，native 可用时返回 `既拙`）。评估 native 排序
+   别只看 mira；构造可用宿主与完整对照见
+   `docs/reports/2026-09-11-mira-native-blind-spot.md`。
 8. 新 lua_filter 组件本身有逐候选桥接开销（fresh 直通也有 ~+0.1ms p50/
    0.4ms p95）——延迟优化的方向是并入 mohu_reorder_filter，不是优化评分。
 9. **读音先验的回归口径**（2026-09-04）：改动只影响 native 解码的 fresh

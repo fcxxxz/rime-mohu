@@ -17,6 +17,10 @@ NATIVE_LUA = (
 WINDOWS_ENTRY = "libtigerengine.dll"
 WINDOWS_MANIFEST = "runtime-manifest.json"
 WINDOWS_PRELOAD = "runtime-preload.txt"
+MACOS_ENGINE = "libtigerengine.dylib"
+# libtigerengine.dylib 以 @loader_path 解析这些依赖，必须和它放在同一个
+# runtime/ 目录里（见 tiger_sentence_native/README.md「魔虎语义」一节）。
+MACOS_ENGINE_DEPENDENCIES = ("libonnxruntime.1.dylib",)
 
 
 def valid_runtime_name(name: object) -> bool:
@@ -93,6 +97,45 @@ def copy_windows_runtime(source: Path, destination: Path) -> None:
         shutil.copy2(source_file, destination / source_file.name)
 
 
+def copy_macos_engine_dependencies(destination: Path) -> None:
+    """把 native 引擎的 macOS 动态库依赖一并放进 runtime/。
+
+    `libtigerengine.dylib` 用 `-Wl,-rpath,@loader_path` 解析
+    `libonnxruntime.1.dylib`（魔虎语义的进程内 ONNX 推理）。漏拷它时 dlopen
+    直接失败、引擎静默 fail-open，表现为「模型已安装但首选仍走 smart 词典」；
+    任何以 `source_dir` 指向 dist-* 的 mira 运行也会稳定复现。缺文件时显式报错，
+    而不是发出一个装不上的包。
+    """
+    for name in MACOS_ENGINE_DEPENDENCIES:
+        source = ROOT / "tiger_sentence_native" / name
+        if not source.is_file():
+            raise ValueError(
+                f"macOS runtime is missing {name}; {MACOS_ENGINE} resolves it via "
+                f"@loader_path (see tiger_sentence_native/README.md)"
+            )
+        shutil.copy2(source, destination / source.name)
+
+
+def copy_semantic_model(destination: Path) -> None:
+    """把魔虎语义 C2 模型与词表复制进包内 mohu_semantic/。
+
+    方案默认 `tiger/semantic_model|semantic_vocab` 指向该目录；漏拷时
+    「魔虎语义开」会在首次命中时加载失败并把开关退回「关」。缺文件时
+    显式报错，而不是发出一个语义功能装不上的包。
+    """
+    semantic_dir = ROOT / "mohu_semantic"
+    for name in ("mohu_semantic.onnx", "vocab.tsv"):
+        source = semantic_dir / name
+        if not source.is_file():
+            raise ValueError(
+                f"semantic model asset is missing: {source} "
+                "(see mohu_semantic/README.md)"
+            )
+        target = destination / "mohu_semantic" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+
 def build_flat(
     scheme: str, destination: Path, windows_runtime: Path | None = None
 ) -> None:
@@ -124,13 +167,15 @@ def build_flat(
         encoding="utf-8",
     )
 
-    runtime_source = ROOT / "tiger_sentence_native" / "libtigerengine.dylib"
+    runtime_source = ROOT / "tiger_sentence_native" / MACOS_ENGINE
     if runtime_source.is_file():
         runtime_dir = destination / "mohu" / "runtime"
         runtime_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(runtime_source, runtime_dir / runtime_source.name)
+        copy_macos_engine_dependencies(runtime_dir)
     if windows_runtime is not None:
         copy_windows_runtime(windows_runtime, destination / "mohu" / "runtime")
+    copy_semantic_model(destination)
 
 
 def main() -> None:

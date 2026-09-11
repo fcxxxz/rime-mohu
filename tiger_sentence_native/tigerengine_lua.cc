@@ -328,7 +328,7 @@ int l_context_char_scores(lua_State* L) {
   if (n > 0) {
     std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
     rc = tiger_engine_context_char_scores((int)handle_value, context,
-                                          joined.c_str(), (int)n, scores.data());
+        joined.c_str(), (int)n, scores.data());
     if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
   }
   if (rc < 0) {
@@ -376,28 +376,6 @@ int l_set_reading_prior_weight(lua_State* L) {
     if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
   }
   if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "reading prior weight update failed");
-  lua_pushboolean(L, 1);
-  return 1;
-}
-
-int l_set_neural_rerank(lua_State* L) {
-  lua_Integer handle_value = luaL_checkinteger(L, 1);
-  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
-                       handle_value <= std::numeric_limits<int>::max(),
-                1, "engine handle is out of range");
-  const char* model_path = luaL_checkstring(L, 2);
-  const char* vocab_path = luaL_checkstring(L, 3);
-  double weight = luaL_checknumber(L, 4);
-  double margin = luaL_checknumber(L, 5);
-  int rc;
-  char error[512] = {0};
-  {
-    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
-    rc = tiger_engine_set_neural_rerank((int)handle_value, model_path,
-                                        vocab_path, weight, margin);
-    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
-  }
-  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "neural rerank setup failed");
   lua_pushboolean(L, 1);
   return 1;
 }
@@ -465,6 +443,78 @@ int l_status(lua_State* L) {
   return 1;
 }
 
+int l_semantic_create(lua_State* L) {
+  const char* model = luaL_checkstring(L, 1);
+  const char* vocab = luaL_checkstring(L, 2);
+  char error[512] = {0};
+  int handle;
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    handle = tiger_semantic_create(model, vocab, error, sizeof(error));
+  }
+  if (handle < 0) {
+    lua_pushnil(L);
+    lua_pushstring(L, error[0] ? error : tiger_last_error());
+    return 2;
+  }
+  lua_pushinteger(L, handle);
+  return 1;
+}
+
+int l_semantic_score(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  const char* context = luaL_checkstring(L, 2);
+  luaL_checktype(L, 3, LUA_TTABLE);
+  luaL_checktype(L, 4, LUA_TTABLE);
+  const lua_Integer count = luaL_len(L, 3);
+  luaL_argcheck(L, count >= 1 && count <= 20, 3,
+                "semantic candidate count out of range");
+  luaL_argcheck(L, luaL_len(L, 4) == count, 4,
+                "semantic score count mismatch");
+  std::string joined;
+  std::vector<double> native(static_cast<size_t>(count));
+  for (lua_Integer i = 1; i <= count; ++i) {
+    lua_rawgeti(L, 3, i);
+    const char* text = luaL_checkstring(L, -1);
+    if (i > 1) joined.push_back('\n');
+    joined.append(text);
+    lua_pop(L, 1);
+    lua_rawgeti(L, 4, i);
+    native[static_cast<size_t>(i - 1)] = luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  std::vector<double> scores(static_cast<size_t>(count));
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_semantic_score(static_cast<int>(handle_value), context,
+                              joined.c_str(), native.data(),
+                              static_cast<int>(count), scores.data());
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) {
+    lua_pushnil(L);
+    lua_pushstring(L, error[0] ? error : "semantic scoring failed");
+    return 2;
+  }
+  lua_createtable(L, static_cast<int>(count), 0);
+  for (lua_Integer i = 1; i <= count; ++i) {
+    lua_pushnumber(L, scores[static_cast<size_t>(i - 1)]);
+    lua_rawseti(L, -2, i);
+  }
+  return 1;
+}
+
+int l_semantic_free(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    tiger_semantic_free(static_cast<int>(handle_value));
+  }
+  return 0;
+}
+
 int l_last_error(lua_State* L) {
   char error[512] = {0};
   {
@@ -496,7 +546,9 @@ int luaopen_tigerengine(lua_State* L) {
       {"context_char_scores", l_context_char_scores},
       {"set_user_model_weight", l_set_user_model_weight},
       {"set_reading_prior_weight", l_set_reading_prior_weight},
-      {"set_neural_rerank", l_set_neural_rerank},
+      {"semantic_create", l_semantic_create},
+      {"semantic_score", l_semantic_score},
+      {"semantic_free", l_semantic_free},
       {"user_model_export", l_user_model_export},
       {"user_model_import", l_user_model_import},
       {"status", l_status},

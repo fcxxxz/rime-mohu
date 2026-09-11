@@ -67,6 +67,19 @@ pin:
     # 可用「目标编码 + Ctrl+;」或「目标编码// + 空格」进入加词；选词后按 Enter 保存。
     freestyle: true
 
+# 魔虎语义候选重排（neural_rerank 开关，Squirrel 进程内 ONNX 推理）。
+# 关闭、模型加载失败或返回异常时逐字节保持原菜单序。
+semantic_rerank:
+  enable: true
+  # V5 上下文分 top-2 z 分差低于该值才运行语义模型（歧义门控）。
+  gate_margin: 0.5
+  # 首选翻转需要语义 z 分领先的最小值。
+  semantic_margin: 0.15
+  # 参与重排的窗口候选数。
+  candidates: 5
+  # 首次可重排候选前最多缓存的候选总数。
+  limit: 20
+
 key_bindings:
   # 分号用于次选
   # ※ 注意，默认模式（mohu.schema.yaml）的分号次选功能由 mohu_processor.lua 提供，不使用该配置。

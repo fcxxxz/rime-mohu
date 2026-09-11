@@ -6,7 +6,7 @@
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
 --
--- 跨候选调频·词级重排：contextual_order 开启且上屏历史含汉字时，用引擎
+-- 默认 V5 跨候选调频：contextual_order 开启且上屏历史含汉字时，用引擎
 -- 对菜单前 N 个 smart 候选批量取上下文续写分，按「模型分 − rank_penalty ×
 -- (名次−1)」融合后稳定重排——词频权威保留，模型只在上下文条件下提升
 -- 续写概率更高的候选（重排，不顶替；−7.3pp 接管实验的教训）。
@@ -18,8 +18,8 @@
 --   word ＝ 词级分 logP(词|上文末 2 词)（需容器词层或显式
 --     word_scorer_model；OOV −20 无信号不参与重排）。
 --
--- 稳定边界：punct / pinned / native 引擎候选（已带上下文，避免双重计分）
--- / 简码与固顶标记（⚡️/📌）/ 单字候选一律不参与重排，保持原位。只重排
+-- 稳定边界：punct / pinned / 简码与固顶标记（⚡️/📌）/ 单字保持原位；
+-- native 引擎候选仅在配置神经模型且本次神经融合成功时参与重排。只重排
 -- 顺序：不删候选、不改文本、不新建候选。
 --
 -- 可用性：旧 dylib、引擎未就绪、评分出错 → 逐字节直通；评分出错后本
@@ -48,16 +48,11 @@ local function passthrough(input)
   for cand in input:iter() do yield(cand) end
 end
 
--- 上屏历史：contextual_order 开启且 commit_history 尾部含汉字才重排。
--- 无闭包版本：热路径上少一次闭包分配与整段 pcall。
 local function read_history(env)
   local context = env.engine and env.engine.context
-  if not (context and context.get_option and
-          context:get_option("contextual_order")) then
-    return nil
-  end
+  if not context then return "" end
   local hist = context.commit_history
-  if not hist then return nil end
+  if not hist then return "" end
   local text
   if type(hist.latest_text) == "function" then
     local ok, value = pcall(hist.latest_text, hist)
@@ -69,7 +64,15 @@ local function read_history(env)
       text:find("[\228-\233]") ~= nil then
     return text
   end
-  return nil
+  return ""
+end
+
+local function consumes_current_input(env, candidate, genuine)
+  local context = env.engine and env.engine.context
+  local raw = context and context.input
+  if type(raw) ~= "string" then return false end
+  local finish = tonumber(candidate._end or genuine._end) or #raw
+  return finish == #raw
 end
 
 local function config_flag(cfg, key, default)
@@ -117,7 +120,7 @@ end
 function F.fini(env)
 end
 
--- 候选是否参与重排：多字、非 punct/pinned/native、无简码/固顶标记。
+-- 候选是否参与评分：多字、非 punct/pinned/native、无简码/固顶标记。
 local function reorderable(env, cand)
   local g = cand.get_genuine and cand:get_genuine() or cand
   local t = g.type
@@ -127,6 +130,7 @@ local function reorderable(env, cand)
   if type(text) ~= "string" or text == "" then return false end
   local len = utf8.len(text)
   if not len or len < 2 then return false end
+  if not consumes_current_input(env, cand, g) then return false end
   local comment = g.comment
   if type(comment) == "string" and comment ~= "" then
     if env._wo_quick ~= "" and comment:sub(1, #env._wo_quick) == env._wo_quick then
@@ -139,17 +143,15 @@ local function reorderable(env, cand)
   return true
 end
 
-function F.func(input, env)
+local function reorder(input, env)
   if env._wo_dead then return passthrough(input) end
   if not env._wo_enabled then return passthrough(input) end
+  if not env._wo_contextual_order then return passthrough(input) end
   if not tiger or type(tiger.acquire_word_scorer) ~= "function" then
     return passthrough(input)
   end
   local history = read_history(env)
-  if not history then return passthrough(input) end
-  if not tiger or type(tiger.acquire_word_scorer) ~= "function" then
-    return passthrough(input)
-  end
+  if history == nil or history == "" then return passthrough(input) end
   local score_fn, handle
   if env._wo_signal == "word" then
     score_fn, handle = tiger.acquire_word_scorer(env)
@@ -162,11 +164,18 @@ function F.func(input, env)
   if not (score_fn and handle) then return passthrough(input) end
 
   local advance, state = input:iter()
+  local exhausted = false
+  local function next_candidate()
+    if exhausted then return nil end
+    local cand = advance(state)
+    if cand == nil then exhausted = true end
+    return cand
+  end
   local prefix, block = {}, {}
   local seen_first = false
   -- 只收集到限额为止，其余流式直通（不占内存）。
   while #block < env._wo_limit do
-    local cand = advance(state)
+    local cand = next_candidate()
     if cand == nil then break end
     if not seen_first and reorderable(env, cand) then seen_first = true end
     if seen_first then
@@ -177,7 +186,7 @@ function F.func(input, env)
   end
   -- 收集块之后的剩余候选：流式直通。
   local function drain()
-    for cand in function() return advance(state) end do yield(cand) end
+    for cand in next_candidate do yield(cand) end
   end
   -- 前缀（首个可重排候选之前的稳定候选）始终原样输出。
   local function yield_prefix()
@@ -185,20 +194,24 @@ function F.func(input, env)
   end
 
   -- 找出块内参与重排的槽位与文本。
-  local slots, texts = {}, {}
+  local slots, texts, distinct = {}, {}, {}
+  local distinct_count = 0
   for i = 1, #block do
     if reorderable(env, block[i]) then
       slots[#slots + 1] = i
       texts[#texts + 1] = block[i].text
+      if not distinct[block[i].text] then
+        distinct[block[i].text] = true
+        distinct_count = distinct_count + 1
+      end
     end
   end
-  if #slots < 2 then
+  if #slots < 2 or distinct_count < 2 then
     yield_prefix()
     for _, c in ipairs(block) do yield(c) end
     drain()
     return
   end
-
   local ok, scores = pcall(score_fn, handle, history, texts)
   if not ok or type(scores) ~= "table" or #scores ~= #texts then
     -- 评分失败：直通并停用（可用性：不每键重试报错）。
@@ -217,9 +230,9 @@ function F.func(input, env)
   local word_signal = env._wo_signal == "word"
   local active = {}  -- 参与重排的槽位（slots 内序号，升序）＋融合分
   for k = 1, #slots do
-    local s = tonumber(scores[k])
-    if type(s) == "number" and s == s and (not word_signal or s > -19.9) then
-      active[#active + 1] = { pos = k, s = s - penalty * (k - 1) }
+    local score = tonumber(scores[k])
+    if type(score) == "number" and score == score and (not word_signal or score > -19.9) then
+      active[#active + 1] = { pos = k, s = score - penalty * (k - 1) }
     end
   end
   if #active >= 2 then
@@ -242,6 +255,13 @@ function F.func(input, env)
   yield_prefix()
   for _, c in ipairs(block) do yield(c) end
   drain()
+end
+
+function F.func(input, env)
+  local context = env.engine and env.engine.context
+  env._wo_contextual_order = context and context.get_option and
+    context:get_option("contextual_order") == true or false
+  return reorder(input, env)
 end
 
 return F

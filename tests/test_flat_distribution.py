@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import filecmp
 import json
 import re
 import shutil
@@ -108,6 +109,46 @@ class FlatDistributionTest(unittest.TestCase):
                             if path.name in expected
                         },
                     )
+
+    def test_flat_packages_ship_macos_engine_and_its_dependency(self) -> None:
+        # libtigerengine.dylib 以 @loader_path 解析 libonnxruntime.1.dylib。只拷引擎
+        # 会让 native 通道 dlopen 失败并静默 fail-open（模型装了也不生效），
+        # 以 dist-* 作为 source_dir 的 mira 运行同样会复现。
+        with tempfile.TemporaryDirectory() as tmp:
+            destination = Path(tmp) / "zrm"
+            self.build("zrm", destination)
+            runtime = destination / "mohu" / "runtime"
+            engine = runtime / "libtigerengine.dylib"
+            dependency = runtime / "libonnxruntime.1.dylib"
+            self.assertTrue(engine.is_file())
+            self.assertTrue(dependency.is_file())
+            self.assertTrue(
+                filecmp.cmp(
+                    ROOT / "tiger_sentence_native" / "libonnxruntime.1.dylib",
+                    dependency,
+                    shallow=False,
+                )
+            )
+
+    def test_flat_packages_ship_semantic_model_assets(self) -> None:
+        # 魔虎语义进程内 C2 推理必需模型与词表；漏拷时「魔虎语义开」
+        # 首次命中即加载失败并把开关退回「关」，表现为功能装了不生效。
+        with tempfile.TemporaryDirectory() as tmp:
+            destination = Path(tmp) / "zrm"
+            self.build("zrm", destination)
+            semantic = destination / "mohu_semantic"
+            model = semantic / "mohu_semantic.onnx"
+            vocab = semantic / "vocab.tsv"
+            self.assertTrue(model.is_file())
+            self.assertTrue(vocab.is_file())
+            self.assertTrue(
+                filecmp.cmp(ROOT / "mohu_semantic" / "mohu_semantic.onnx",
+                            model, shallow=False)
+            )
+            self.assertTrue(
+                filecmp.cmp(ROOT / "mohu_semantic" / "vocab.tsv",
+                            vocab, shallow=False)
+            )
 
     def test_windows_runtime_requires_engine_entry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

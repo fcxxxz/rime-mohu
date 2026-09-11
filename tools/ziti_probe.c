@@ -9,7 +9,10 @@
 // 用法:
 //   probe <部署目录> <方案id>            查询模式：每行一个编码，输出 首页候选
 //   probe <部署目录> <方案id> commit     回放模式：每行一串按键，输出 上屏文本
-//   probe <部署目录> <方案id> neural     查询模式并打开 native 神经重排开关
+//   probe <部署目录> <方案id> set:a=1,b=0 [commit] [dump:a,b]
+//                                        set: 先设置运行时开关（如 neural_rerank=1）；
+//                                        dump: 处理完所有输入后打印这些开关的当前值。
+//   查询模式支持 "C:<编码>" 行：输入编码并按空格上屏首选，用于构造上屏历史。
 //
 // 部署目录需含方案全部 yaml/lua/opencc/gram 与 default.custom.yaml，
 // 并把 *_fixed_legacy 方案一并列入 schema_list，否则 lua 翻译器加载
@@ -19,25 +22,46 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void apply_options(RimeApi* rime, RimeSessionId session, const char* spec) {
+  char buf[256];
+  snprintf(buf, sizeof(buf), "%s", spec);
+  char* save = NULL;
+  for (char* token = strtok_r(buf, ",", &save); token;
+       token = strtok_r(NULL, ",", &save)) {
+    char* eq = strchr(token, '=');
+    if (!eq) continue;
+    *eq = 0;
+    int value = atoi(eq + 1);
+    rime->set_option(session, token, value);
+    fprintf(stderr, "option %s=%d\n", token, value);
+  }
+}
+
 int main(int argc, char** argv) {
   if (argc < 3) {
-    fprintf(stderr, "usage: probe <user_data_dir> <schema_id> [commit]\n");
+    fprintf(stderr, "usage: probe <user_data_dir> <schema_id> [commit] [set:a=1,b=0]\n");
     return 2;
   }
   const char* user_dir = argv[1];
   const char* schema_id = argv[2];
-  int commit_mode = (argc > 3 && strcmp(argv[3], "commit") == 0);
-  int neural_mode = (argc > 3 && strcmp(argv[3], "neural") == 0);
+  int commit_mode = 0;
+  const char* option_spec = NULL;
+  const char* dump_spec = NULL;
+  for (int i = 3; i < argc; i++) {
+    if (strcmp(argv[i], "commit") == 0)
+      commit_mode = 1;
+    else if (strncmp(argv[i], "set:", 4) == 0)
+      option_spec = argv[i] + 4;
+    else if (strncmp(argv[i], "dump:", 5) == 0)
+      dump_spec = argv[i] + 5;
+  }
 
   static const char* kModules[] = {"default", "plugins", NULL};
   RIME_STRUCT(RimeTraits, traits);
-  // Keep the neural probe's userdb namespace separate from an active Squirrel
-  // session.  Shared LevelDB locks can otherwise make a healthy rerank look
-  // like a fail-open baseline during validation.
-  traits.app_name = neural_mode ? "mohu-neural-probe" : "mohu-ziti-probe";
+  traits.app_name = "mohu-ziti-probe";
   traits.user_data_dir = user_dir;
   traits.shared_data_dir = user_dir;
-  traits.log_dir = neural_mode ? "/tmp/mohu-neural-probe-logs" : "/tmp/mohu-ziti/logs";
+  traits.log_dir = "/tmp/mohu-ziti/logs";
   traits.modules = kModules;
   RimeApi* rime = rime_get_api();
   rime->setup(&traits);
@@ -59,7 +83,8 @@ int main(int argc, char** argv) {
     fprintf(stderr, "failed to select schema %s\n", schema_id);
     return 5;
   }
-  if (neural_mode)
+  if (option_spec)
+    apply_options(rime, session, option_spec);
 
   char line[256];
   while (fgets(line, sizeof(line), stdin)) {
@@ -67,12 +92,21 @@ int main(int argc, char** argv) {
     while (n > 0 && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = 0;
     if (n == 0) continue;
 
+    int commit_prefix = (n > 2 && line[0] == 'C' && line[1] == ':');
+    const char* keys = commit_prefix ? line + 2 : line;
+
     rime->clear_composition(session);
     int unhandled = 0;
-    for (size_t i = 0; i < n; i++) {
-      int keycode = (int)(unsigned char)line[i];
+    for (size_t i = 0; i < strlen(keys); i++) {
+      int keycode = (int)(unsigned char)keys[i];
       if (!rime->process_key(session, keycode, 0))
         unhandled = 1;
+    }
+    if (commit_prefix) {
+      rime->process_key(session, 0x20, 0);  // 空格上屏首选，构造历史
+      if (unhandled)
+        fprintf(stderr, "unhandled key in commit: %s\n", keys);
+      continue;
     }
 
     if (commit_mode) {
@@ -102,12 +136,24 @@ int main(int argc, char** argv) {
       count = 10;
     for (int i = 0; i < count; i++) {
       const char* text = ctx.menu.candidates[i].text;
+      const char* comment = ctx.menu.candidates[i].comment;
       printf("\t%s", text ? text : "");
+      if (comment && comment[0])
+        printf("〔%s〕", comment);
     }
     printf("\n");
     rime->free_context(&ctx);
   }
 
+  if (dump_spec) {
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s", dump_spec);
+    char* save = NULL;
+    for (char* token = strtok_r(buf, ",", &save); token;
+         token = strtok_r(NULL, ",", &save))
+      printf("OPTION %s=%d\n", token, rime->get_option(session, token));
+    fflush(stdout);
+  }
   rime->destroy_session(session);
   rime->finalize();
   return 0;

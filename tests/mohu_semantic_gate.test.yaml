@@ -1,0 +1,59 @@
+## 语义门控 filter 的真实 Rime 会话契约测试：
+## 1) 大模型开关（neural_rerank）开启 + scorer 服务缺席（socket 不存在）
+##    时，菜单必须与无 filter 基线逐字节一致（fail-open）；断言镜像
+##    tests/mohu_zrm.test.yaml 的 curated_short_codes_multi 已验证用例。
+## 2) 大模型开关关闭时同样保持基线（开关共享语义）。
+## 带上屏历史的用例驱动 filter 的主动路径（读历史 → 谱系检查 →
+## socket 失败 → 直通）。
+
+schema: mohu_zrm
+source_dir: ../dist-zrm
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == right
+  end
+
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+deploy:
+  service_absent_switch_on_parity:
+    patch:
+      switches/@4/reset: 1
+      switches/@10/reset: 1
+      mohu/semantic_rerank/socket: /nonexistent/mohu-semantic.sock
+    tests:
+      # 以下镜像 curated_short_codes_multi 基线（fail-open 必须逐项一致）
+      - send: tz
+        assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资') and eq(cand[2].comment, '⚡️')
+      - send: jw
+        assert: eq(cand[1].text, '家') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '加')
+      - send: hd
+        assert: eq(cand[1].text, '黄') and eq(cand[2].text, '很多') and eq(cand[3].text, '回答')
+      - send: ypnm
+        assert: eq(cand[1].text, '云辇')
+      # 上屏历史驱动 filter 主动路径后仍必须逐字节直通
+      - send: jw{space}tz
+        assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资')
+      - send: jw{space}hd
+        assert: eq(cand[1].text, '黄') and eq(cand[2].text, '很多')
+      # 上文存在时的完整菜单仍含 native 候选（无候选丢失）
+      - send: jw{space}uhhl
+        assert: has_text(cand, '上海')
+
+  switch_off_parity:
+    patch:
+      switches/@4/reset: 1
+      switches/@10/reset: 0
+      mohu/semantic_rerank/socket: /nonexistent/mohu-semantic.sock
+    tests:
+      - send: tz
+        assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资')
+      - send: jw{space}hd
+        assert: eq(cand[1].text, '黄') and eq(cand[2].text, '很多')

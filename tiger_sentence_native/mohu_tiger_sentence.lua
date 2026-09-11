@@ -22,12 +22,34 @@ local M = {}
 local runtime = require("mohu_runtime")
 local personal_lexicon = require("mohu_personal_lexicon")
 
+-- 语义菜单导出尚未接入 schema。这里的绑定只保留 native decode 的同次调用
+-- 谱系，供将来的隔离观察器按 genuine 候选读取；加载失败不影响候选生成。
+local semantic_meta = nil
+do
+  local ok, module = pcall(require, "mohu_semantic_meta")
+  if ok and type(module) == "table" and type(module.bind) == "function" then
+    semantic_meta = module
+  end
+end
+
 -- librime-lua builds differ in how they expose logging: most ship a `log`
 -- table, but some Tiger weasel builds register `log` as a plain function.
 -- Indexing a function value raises, so never touch fields before type checks.
 local function log_error(message)
   if type(log) == "table" then
     if type(log.error) == "function" then
+      pcall(log.error, message)
+    end
+  elseif type(log) == "function" then
+    pcall(log, message)
+  end
+end
+
+local function log_warning(message)
+  if type(log) == "table" then
+    if type(log.warning) == "function" then
+      pcall(log.warning, message)
+    elseif type(log.error) == "function" then
       pcall(log.error, message)
     end
   elseif type(log) == "function" then
@@ -108,6 +130,10 @@ local engine_signature = nil
 local engine_config_error_logged = false
 local word_scorer_ready = nil       -- nil=未知 true=词层可用 false=不可用
 local word_scorer_error_logged = false
+local semantic_handle = nil
+local semantic_model_path = nil
+local semantic_vocab_path = nil
+local semantic_load_failed = false
 
 -- 读音先验默认权重：码表第 5 列（读音条件简频）归一为 log P(读音|字)
 -- 并入路径分，补偿字符级模型不认读音的盲区（如「万」mò 拼「万虎」）。
@@ -242,8 +268,19 @@ local function ensure_engine(env)
   local all_ranks_value =
     (all_ranks == nil or all_ranks == "true" or all_ranks == "1") and 1 or 0
   local scorer_override = conf("word_scorer_model")
+  local semantic_model = conf("semantic_model") or "mohu_semantic/mohu_semantic.onnx"
+  local semantic_vocab = conf("semantic_vocab") or "mohu_semantic/vocab.tsv"
+  if semantic_model:sub(1, 1) ~= "/" and not semantic_model:match("^%a:[/\\]") then
+    semantic_model = runtime.user_data_dir() .. "/" .. semantic_model
+  end
+  if semantic_vocab:sub(1, 1) ~= "/" and not semantic_vocab:match("^%a:[/\\]") then
+    semantic_vocab = runtime.user_data_dir() .. "/" .. semantic_vocab
+  end
+  semantic_model_path = semantic_model
+  semantic_vocab_path = semantic_vocab
   local signature = table.concat(
-    { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "" }, "\28")
+    { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "",
+      semantic_model, semantic_vocab }, "\28")
 
   if engine_handle ~= nil then
     if engine_signature == signature then return engine_handle end
@@ -807,6 +844,12 @@ local function init_personal_lexicon(env)
     local ok, value = pcall(cfg.get_int, cfg, "tiger/personal_lexicon_max_rows")
     if ok and type(value) == "number" and value >= 0 then
       env._mohu_personal_max_rows = value
+      -- 显式上限会回退到整体扫描路径（需全局排序），并使行数截断天然
+      -- 缺席于负载；设置它之前请确认已了解代价，见
+      -- docs/reports/2026-09-11-personal-lexicon-refresh-lag.md。
+      log_warning("mohu_sentence: tiger/personal_lexicon_max_rows = " ..
+        tostring(value) .. " is set; personal lexicon refresh uses the " ..
+        "monolithic path (full scan + global sort) instead of the sliced path")
     end
   end
   local ok, memory = pcall(Memory, env.engine, env.engine.schema, namespace)
@@ -895,6 +938,14 @@ local function release_engine(env)
   engine_config_error_logged = false
   word_scorer_ready = nil
   word_scorer_error_logged = false
+  if semantic_handle ~= nil and tigerengine and
+      type(tigerengine.semantic_free) == "function" then
+    pcall(tigerengine.semantic_free, semantic_handle)
+  end
+  semantic_handle = nil
+  semantic_model_path = nil
+  semantic_vocab_path = nil
+  semantic_load_failed = false
 end
 
 -- 解析 C 输出协议：
@@ -1138,6 +1189,51 @@ local function candidate_prefix_boundary(item, prefix_text, raw_boundary)
   return text_bytes
 end
 
+local function bind_native_decode_provenance(candidate, item, candidate_type,
+    context_input_raw, decoded_raw, segment_start, prefix_raw_boundary, preedit)
+  if semantic_meta == nil or (type(candidate) ~= "table" and
+      type(candidate) ~= "userdata") or type(item) ~= "table" then
+    return
+  end
+  if not finite_number(item.score) or not finite_number(item.confidence) or
+      not finite_number(item.max_rank) or type(item.segmented) ~= "string" or
+      type(preedit) ~= "string" or type(context_input_raw) ~= "string" or
+      type(decoded_raw) ~= "string" then
+    return
+  end
+  local raw_lengths = {}
+  for text_bytes, raw_length in pairs(item.raw_lengths or {}) do
+    local parsed_text_bytes = tonumber(text_bytes)
+    local parsed_raw_length = tonumber(raw_length)
+    if finite_number(parsed_text_bytes) and parsed_text_bytes >= 0 and
+        parsed_text_bytes == math.floor(parsed_text_bytes) and
+        finite_number(parsed_raw_length) and parsed_raw_length >= 0 and
+        parsed_raw_length == math.floor(parsed_raw_length) then
+      raw_lengths[parsed_text_bytes] = parsed_raw_length
+    end
+  end
+  -- Candidate() uses the active segment's original Context.input byte bounds.
+  -- The observer later converts these through the tested ABI map and rejects
+  -- any raw/input normalization mismatch before writing a training record.
+  pcall(semantic_meta.bind, candidate, {
+    provenance_version = "mohu-native-decode/v1",
+    source = "native",
+    candidate_type = candidate_type,
+    native_score = item.score,
+    native_score_kind = "static_or_personalized_v5",
+    native_confidence = item.confidence,
+    native_max_rank = item.max_rank,
+    personal = item.personal == true,
+    segmented = item.segmented,
+    active_preedit = preedit,
+    context_input_raw = context_input_raw,
+    decoded_raw = decoded_raw,
+    segment_start_byte = segment_start,
+    prefix_raw_length = prefix_raw_boundary,
+    raw_lengths = raw_lengths,
+  })
+end
+
 -- ---------------------------------------------------------------- 候选输出
 
 -- tiger/perf_log 开启时按轮次输出 native/Lua 分层耗时，用于长句延迟归因；
@@ -1155,6 +1251,28 @@ local function perf_end(env, raw, phase)
     "mohu_sentence perf len=%d native=%.2fms lua=%.2fms phase=%s",
     #raw, tonumber(decode_ms) or 0, (os.clock() - started) * 1000,
     tostring(phase)))
+end
+
+-- 供候选管理（lua/mohu_candidate_override.lua 等）在删除/清权重 userdb
+-- 词条后同步刷新 native 个人词层。分片刷新只在输入组合为空时推进，
+-- 显式删除操作等不到那个时机，因此这里走一次性整体快照（接受单次
+-- 扫描成本，换取当前组合内即时生效）。memory 必须与个人词快照同源
+-- （translator 的 smart 命名空间 Memory）。引擎未就绪时静默返回 false。
+function M.refresh_personal_now(memory)
+  if memory == nil or engine_handle == nil or tigerengine == nil or
+      type(tigerengine.set_personal_lexicon) ~= "function" then
+    return false
+  end
+  local ok, payload = pcall(personal_lexicon.snapshot, memory, nil)
+  if not ok or type(payload) ~= "string" then
+    return false
+  end
+  local ok_set, err = pcall(tigerengine.set_personal_lexicon, engine_handle, payload)
+  if not ok_set then
+    log_error("mohu_sentence: manual personal refresh failed: " .. tostring(err))
+    return false
+  end
+  return true
 end
 
 M.translator = {}
@@ -1190,6 +1308,41 @@ function M.acquire_word_scorer(env)
   return nil
 end
 
+-- 魔虎语义 C2 进程内评分。首次请求时按需加载 ONNX；加载失败自动关闭
+-- neural_rerank 菜单开关，使“魔虎语义开”本身成为加载成功状态。
+function M.semantic_score(env, history, texts, native_scores)
+  local context = env and env.engine and env.engine.context
+  if not (context and context.get_option and context:get_option("neural_rerank")) then
+    return nil
+  end
+  if tigerengine == nil or type(tigerengine.semantic_create) ~= "function" or
+      type(tigerengine.semantic_score) ~= "function" then
+    if context.set_option then context:set_option("neural_rerank", false) end
+    return nil
+  end
+  if semantic_handle == nil and not semantic_load_failed then
+    local ok, handle, why = pcall(tigerengine.semantic_create,
+      semantic_model_path or "", semantic_vocab_path or "")
+    if ok and type(handle) == "number" then
+      semantic_handle = handle
+    else
+      semantic_load_failed = true
+      log_error("mohu_tiger_sentence: semantic model load failed: " ..
+        tostring(why or handle))
+      if context.set_option then context:set_option("neural_rerank", false) end
+      return nil
+    end
+  end
+  if semantic_handle == nil then return nil end
+  local ok, scores = pcall(tigerengine.semantic_score, semantic_handle,
+    history, texts, native_scores)
+  if not ok or type(scores) ~= "table" or #scores ~= #texts then
+    log_error("mohu_tiger_sentence: semantic scoring failed")
+    return nil
+  end
+  return scores
+end
+
 -- 字符续写评分（octagram 同型机制）：字符级主模型即可，不要求词层。
 -- 引擎未装载时返回 nil（与 ensure_decode_context 同触发条件，有 CJK
 -- 历史的组合 translator 已装载引擎）。
@@ -1199,7 +1352,15 @@ function M.acquire_char_scorer(env)
   end
   local ok, handle = pcall(ensure_engine, env)
   if ok and handle then
-    return tigerengine.context_char_scores, handle
+    if not env._tiger_char_score_fn then
+      env._tiger_char_score_fn = function(scoring_handle, history, texts)
+        if tigerengine == nil or engine_handle ~= scoring_handle then
+          error("mohu_tiger_sentence: stale character scorer")
+        end
+        return tigerengine.context_char_scores(scoring_handle, history, texts)
+      end
+    end
+    return env._tiger_char_score_fn, handle
   end
   return nil
 end
@@ -1360,6 +1521,8 @@ function M.translator.func(input, seg, env)
         if item.personal then candidate_type = candidate_type .. "_personal" end
         local cand = Candidate(candidate_type, seg.start, seg._end, text, "")
         cand.preedit = preedit
+        bind_native_decode_provenance(cand, item, candidate_type,
+          context_input_raw, raw, segment_start, prefix_raw_boundary, preedit)
         cand.quality = candidate_quality - yielded * 0.001
         yield(cand)
         yielded = yielded + 1

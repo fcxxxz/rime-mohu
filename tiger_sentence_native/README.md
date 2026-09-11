@@ -104,6 +104,17 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
   末 2 词)，需容器（MHCTN01）词层或 `word_scorer_model` 显式指定，
   OOV（−20 无信号）不参与重排。
 - `word_order_candidates`：参与重排的候选数上限（默认 20，clamp 2–50）
+- `sentence_visible_candidates`：整句候选的菜单显示条数（默认 1，clamp
+  0–50；0 = 全部显示）。`lua/mohu_sentence_visibility_filter.lua` 在
+  word_order 之后只裁显示层：跨候选调频与神经重排仍用完整候选池，菜单
+  仅露出前 N 条「句形」候选，其余让位给词组候选（搜狗式首条整句 +
+  词组）。句形判定类型无关（门槛 `tiger/sentence_min_chars` 默认 3，
+  两字词与辅码消歧输入不裁）——native 整句、express 全长词组、
+  `_personal` 变体（用户模型会把反复输入的长句学成 mohu_*_personal）
+  同样计入配额；句形 = 覆盖到输入末尾 + 达到门槛字数 + 字数不超过覆盖段
+  音节容量。不裁：punct/pinned、⚡️/📌 标记、不足 5 字（选词输入，
+  含个人短词）、声母简码/缩写匹配（字数超容量，词表 6 千余条如
+  `abjh→阿波罗计划`）、部分跨度候选（词组选词）。
 - `word_order_rank_penalty`：名次每前进一位所需的模型分优势（默认 1.0；
   离线网格的平滑平台区 0.95–1.4：0.95 时修好 45.7%/修反 1.5%，1.4 时
   40.3%/1.0%——即修反保护阈值，优势不足不动）
@@ -148,12 +159,11 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
 - 数字键交给默认 `selector` 选候选；分号与快捷键仍由 `mohu_processor` 处理。
 - 动态库、模型、码表或 scorer 加载失败时记录一次错误，并自动保留默认魔虎候选。
 - 方案不会在输入过程中提前上屏；候选确认、空格和回车均交给 Rime 默认编辑器处理。
-- 神经重排只作用于原生整句候选，不改变置顶、固顶、自定义词和全局 filter 的优先级。
-  每次 composition 只在传输前一次性选择评分预算：默认五条，native 首选不确定且
-  候选分支足够多时可扩到已配置上限（协议上限二十条），未评分尾部保持原生顺序。
-  同一次请求内完成比较；超过五条的请求内部固定为 20 行 kernel 形状，短序列补到
-  8 token。不同序列 bucket 的量化 kernel 仍可能产生轻微数值漂移，不能把跨请求的
-  绝对分数当作同一标尺。
+- 可选的语义重排不再位于本引擎：TinyCharLM 字级神经融合已于 2026-09-10 移除
+  （同方法生产菜单对比中相对 C2 全面回退，见 docs/reports/2026-09-10-model-comparison.md）。
+  `neural_rerank`（大模型）开关现在唯一驱动 C2 语义学生服务，由
+  `lua/mohu_semantic_gate_filter.lua` 在 `uniquifier` 之后接管；本引擎只保留
+  V5 上下文字符评分（`context_char_scores`）供门控与跨候选调频使用。
 - 提前上屏功能已移除；scorer 超时、模型不匹配或服务不可用时只回退候选顺序，
   不会改写组合或吞掉输入。
 - 原生引擎句柄按 Rime 进程生命周期复用；修改模型或路径后需要重新加载 Rime。
@@ -164,10 +174,35 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
 - 旧版 `mohu_llm_*` / Qwen 神经重排方案已移除；当前发行包只有
   `mohu_zrm` 与 `mohu_flypy`，均使用 `mohu/model/` 下的 V5 native 模型。
 
+## 魔虎语义（进程内 C2 语义重排）
+
+`mohu_zrm` / `mohu_flypy` 的方案菜单提供 `neural_rerank` 开关（F4 展开，
+「魔虎语义关／魔虎语义开」，默认关闭）。打开后，`uniquifier` 之后的
+`lua/mohu_semantic_gate_filter.lua` 在 V5 上下文字符分 top-2 z 分差低于
+`mohu/semantic_rerank/gate_margin`（歧义菜单）时，调用 `libtigerengine.dylib`
+内建的 ONNX Runtime 会话给候选打分：模型与词表由 `tiger/semantic_model` /
+`tiger/semantic_vocab` 指定（默认 `mohu_semantic/mohu_semantic.onnx` 与
+`mohu_semantic/vocab.tsv`，用户目录相对路径），首次命中时按需加载，全程在
+Squirrel 进程内完成，没有外部服务或额外进程。
+
+- 单字、简码（⚡️）与置顶（📌）候选为冻结槽；模型缺失、加载失败、打分
+  异常时逐字节保持原菜单序。
+- 首位翻转需要语义 z 分领先超过 `mohu/semantic_rerank/semantic_margin`。
+- **加载状态即开关状态**：模型加载失败会自动把「魔虎语义」开关退回
+  「关」并记录一次日志；因此开关能保持「开」就表示模型已成功加载。
+- `libonnxruntime.1.dylib` 随引擎放在 `mohu/runtime/`，dylib 以
+  `@loader_path` 解析，无需安装 Homebrew 依赖（Windows 侧由
+  `runtime-preload.txt` 依赖闭包预载）。
+
+原生测试：`make tigerengine-semantic`（设置 `MOHU_SEMANTIC_MODEL` 与
+`MOHU_SEMANTIC_VOCAB` 环境变量后运行真实模型方向性/释放测试）。
+Lua 侧验证：`lua tests/mohu_semantic_gate_filter_test.lua`。
+模型中立对比与历史报告见 `docs/reports/2026-09-10-model-comparison.md`。
+
 ## 验证记录（2026-08-26）
 
-- 原生引擎与既有 Lua 基准的对拍脚本可复用 `tools/ziti_probe.c`；该工具现在支持
-  `neural` 参数并使用 Squirrel 自带的 Lua 5.4/librime 栈。
+- 原生引擎与既有 Lua 基准的对拍脚本可复用 `tools/ziti_probe.c`
+  （查询/commit 两种模式，使用 Squirrel 自带的 Lua 5.4/librime 栈）。
 - 延迟：纯双拼 20.2 → 1.8ms/键（直连）/ 2.24ms/键（全链路），真实码形更快
 - 完整流水线探针：`vhrg1` 上屏「中华人民共和国」，`tz2` 上屏「投资」，
   `/date1` 上屏当前日期。

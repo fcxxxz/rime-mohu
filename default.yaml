@@ -29,6 +29,7 @@ switcher:
     - inflexible
     - unicode_comment
     - contextual_order
+    - neural_rerank
     - quick_code_hint
     - aux_hint
     - multi_short_code

@@ -40,9 +40,6 @@
 #include <unordered_set>
 #include <vector>
 
-// 神经重排：40M char LM 推理器（Accelerate 框架，无外部依赖）
-#include "neural_infer.h"
-
 #ifdef _WIN32
 // windows.h 定义 min/max 宏会破坏 std::min/std::max，必须先声明 NOMINMAX。
 #define NOMINMAX
@@ -55,6 +52,7 @@
 #endif
 
 #include "tigerengine.h"
+#include "semantic_infer.h"
 
 namespace {
 
@@ -62,6 +60,7 @@ namespace {
 
 thread_local std::string g_last_error;
 std::mutex g_engine_mutex;
+std::vector<std::unique_ptr<mohu::semantic::Scorer>> g_semantic_scorers;
 
 void set_error(const char* fmt, ...) {
   char buf[512];
@@ -1023,6 +1022,7 @@ struct LexEntry {
   int rank;
   std::vector<uint32_t> chars;  // 预拆码点
   bool personal = false;
+  bool personal_full_syllables = false;
   // 简词：多字词的缩写码（码长 < 2×字数，如 pv=配置、pvwj=配置文件）。
   // 默认只允许整段命中；abbrev_edges 打开后可作为长句内部边。
   // abbrev_exact＝码长恰等于字数（一音一键），strict 模式只允许这类边。
@@ -1191,6 +1191,15 @@ struct Lexicon {
   std::string personal_payload;
   std::unordered_map<std::string, double> personal_boosts;
   std::unordered_map<std::string, int> personal_counts;
+  // 上一次负载里实际出现过的键。用来区分两种「键不在本轮负载中」：
+  //   - 曾在上一次负载、这次消失 => 用户真实删词，必须回退基线整表重建；
+  //   - 从未进入过任何负载（由 adjust_personal 即时注入，可能只是被
+  //     personal_lexicon_max_rows 之类的行数上限截断在头部之外）=> 不构成
+  //     删词证据。保留其词边与计数，绝不因此触发整表重建。
+  // 少了这个区分，行数上限会让每一轮刷新都退化成「codes = base_codes +
+  // rebuild_metadata()」的同步整表重建：bench_decode 在 5000 行个人词 +
+  // 真实码表下实测 P50≈43ms / max≈74ms，且每轮都发生（按键线程上的冻结）。
+  std::unordered_set<std::string> personal_payload_keys;
 
   struct PersonalRow {
     std::string code;
@@ -1219,6 +1228,22 @@ struct Lexicon {
       proper_prefixes.insert(code.substr(0, l));
   }
 
+  bool personal_has_full_syllables(const std::string& code,
+                                   const std::vector<uint32_t>& chars) const {
+    if (chars.size() < 2 || code.size() != chars.size() * 2) return false;
+    for (size_t index = 0; index < chars.size(); ++index) {
+      const auto found = base_codes.find(code.substr(index * 2, 2));
+      if (found == base_codes.end()) return false;
+      const uint32_t character = chars[index];
+      const bool matches = std::any_of(found->second.begin(), found->second.end(),
+          [character](const LexEntry& entry) {
+            return entry.chars.size() == 1 && entry.chars.front() == character;
+          });
+      if (!matches) return false;
+    }
+    return true;
+  }
+
   // 应用一行个人词：命中静态同码同词则只叠加 boost，否则新增个人条目并登记元数据。
   void apply_personal_row(const PersonalRow& row) {
     auto& entries = codes[row.code];
@@ -1226,6 +1251,7 @@ struct Lexicon {
       if (existing.text == row.text) {
         existing.personal_boost = row.boost;
         existing.personal = true;
+        existing.personal_full_syllables = personal_has_full_syllables(row.code, existing.chars);
         return;
       }
     }
@@ -1240,6 +1266,7 @@ struct Lexicon {
       utf8_next(ch.data(), ch.size(), 0, &cp, &n);
       entry.chars.push_back(cp);
     }
+    entry.personal_full_syllables = personal_has_full_syllables(row.code, entry.chars);
     if (entry.chars.size() != 1) has_multi_char_entries = true;
     entries.push_back(std::move(entry));
     note_personal_code(row.code);
@@ -1288,7 +1315,11 @@ struct Lexicon {
                              bool* changed) {
     bool incremental = true;
     for (const auto& applied : personal_boosts) {
-      if (index.find(applied.first) == index.end()) {
+      if (index.find(applied.first) != index.end()) continue;
+      // 只有「上次负载里有、这次没了」才是真实删词。从未进入过负载的键
+      // （adjust_personal 在两次快照之间即时注入的提交）在负载被行数上限
+      // 截断时天然缺席，不能当作删词证据，否则每轮刷新都会整表重建。
+      if (personal_payload_keys.find(applied.first) != personal_payload_keys.end()) {
         incremental = false;
         break;
       }
@@ -1332,6 +1363,12 @@ struct Lexicon {
       rebuild_metadata();
       *changed = true;
     }
+
+    // 本轮负载的键集成为下一轮判断「真实删词」的基准。整体替换而非合并：
+    // 重建分支会丢弃全部非负载个人词，基准必须与实际生效的负载键集一致。
+    personal_payload_keys.clear();
+    personal_payload_keys.reserve(index.size());
+    for (const auto& kv : index) personal_payload_keys.insert(kv.first);
   }
 
   // 返回 0 = 负载与上次相同（未变更，调用方可保留解码缓存），
@@ -1743,13 +1780,6 @@ struct Engine {
   int abbrev_edges_max_rank = 0;
   bool abbrev_strict = false;
 
-  // 神经重排（mohu/neural_rerank）：40M char LM 异步打分。
-  // load() 成功后 neural_scorer.is_loaded() 为 true；
-  // weight <= 0 时完全旁路（零开销）。
-  mohu::nlm::NeuralScorer neural_scorer;
-  double neural_weight = 0.0;   // 融合权重，0 = 关
-  double neural_margin = 0.7;   // V5 z-margin 门控阈值
-
   // 整段最近上屏文本 -> 尾部至多 window 个 CJK 码点作左上文；无汉字则
   // 清除（与 librime 整段传递、模型侧定窗口的口径一致）。上下文变化
   // 时整帧 beam 缓存作废（旧状态内嵌的是旧条件下的分数）。
@@ -1993,60 +2023,10 @@ struct Engine {
       }
       out[i] = s;
     }
-    // 神经重排：V5 分差小于阈值时，用 40M char LM 重排。
-    if (neural_scorer.is_loaded() && neural_weight > 0.0 &&
-        candidates.size() >= 2) {
-      // 取前 K 个算 z-margin（与 Lua filter 相同的 topk 逻辑）
-      size_t k = std::min(candidates.size(), (size_t)5);
-      double sum = 0, sumsq = 0;
-      for (size_t i = 0; i < k; ++i) {
-        sum += out[i];
-        sumsq += out[i] * out[i];
-      }
-      double mean = sum / (double)k;
-      double var = sumsq / (double)k - mean * mean;
-      if (var > 0) {
-        double std_ = std::sqrt(var);
-        double z_first = -1e18, z_second = -1e18;
-        for (size_t i = 0; i < k; ++i) {
-          double z = (out[i] - mean) / std_;
-          if (z > z_first) { z_second = z_first; z_first = z; }
-          else if (z > z_second) z_second = z;
-        }
-        if ((z_first - z_second) < neural_margin) {
-          FILE* dbg2 = fopen("/tmp/neural_fired", "a");
-          if (dbg2) { fprintf(dbg2, "m=%.3f\n", z_first - z_second); fclose(dbg2); }
-          // 门控触发：调用神经模型
-          std::vector<float> nsums = neural_scorer.score(context_text, candidates);
-          if (nsums.size() == candidates.size()) {
-            // z 归一化神经分数
-            double nmean = 0, nsq = 0;
-            for (size_t i = 0; i < k; ++i) {
-              nmean += nsums[i];
-              nsq += (double)nsums[i] * nsums[i];
-            }
-            nmean /= (double)k;
-            double nvar = nsq / (double)k - nmean * nmean;
-            if (nvar > 0) {
-              double nstd = std::sqrt(nvar);
-              // 融合：final_z = v5_z + weight * neural_z
-              for (size_t i = 0; i < candidates.size(); ++i) {
-                double vz = (out[i] - mean) / std_;
-                double nz = (i < k) ? ((double)nsums[i] - nmean) / nstd : 0.0;
-                out[i] = vz + neural_weight * nz;
-              }
-            }
-          }
-        }
-      }
-    }
-    return (int)candidates.size();
+    return static_cast<int>(candidates.size());
   }
 
-  double logp(uint32_t a, uint32_t b, uint32_t c) {
-    uint64_t key = ((uint64_t)a << 42) | ((uint64_t)b << 21) | c;
-    auto it = logp_cache.find(key);
-    if (it != logp_cache.end()) return it->second;
+  double static_logp(uint32_t a, uint32_t b, uint32_t c) {
     double v = model.logp(a, b, c);
     if (blend_mode) {
       double w = blend.logp(a, b, c);
@@ -2056,6 +2036,14 @@ struct Engine {
         v = std::log(blend_alpha * p1 + (1.0 - blend_alpha) * p2);
       }
     }
+    return v;
+  }
+
+  double logp(uint32_t a, uint32_t b, uint32_t c) {
+    uint64_t key = ((uint64_t)a << 42) | ((uint64_t)b << 21) | c;
+    auto it = logp_cache.find(key);
+    if (it != logp_cache.end()) return it->second;
+    double v = static_logp(a, b, c);
     if (user_weight < 1.0 && !user.empty()) {
       double pu = user.logp(a, b, c);
       double p1 = std::exp(std::max(-700.0, v));
@@ -2220,6 +2208,16 @@ struct Engine {
               score += reading_prior_weight * cand.reading_prior;
             score += cand.personal_boost;
             std::string piece = raw.substr(pos, consumed_end - pos);
+            if (cand.personal_full_syllables) {
+              piece.clear();
+              piece.reserve(consumed_end - pos + cand.chars.size() - 1);
+              for (size_t offset = 0; offset < static_cast<size_t>(code_length); offset += 2) {
+                if (offset != 0) piece += ' ';
+                piece.append(raw, pos + offset, 2);
+              }
+              piece.append(raw, pos + static_cast<size_t>(code_length),
+                           consumed_end - pos - static_cast<size_t>(code_length));
+            }
             std::string segmented = item->segmented.empty() ? piece
                 : item->segmented + " " + piece;
             std::string text = item->text + cand.text;
@@ -2517,8 +2515,8 @@ struct Engine {
     }
     compute_consensus(consensus_paths, consensus_paths_complete, &result);
     // When the exposed lists are capped, advertise that their bounded rows may
-    // still be used for the neural early-commit heuristic.  The Lua side only
-    // accepts a high-confidence prefix with consistent visible boundaries.
+    // still be used by early-commit consumers.  The Lua side only accepts a
+    // high-confidence prefix with consistent visible boundaries.
     result.visible_consensus = include_early &&
         (result.truncated || result.early_truncated) &&
         result.items.size() + result.early.size() >= 2;
@@ -2998,51 +2996,6 @@ int tiger_engine_set_abbrev_strict(int handle, int on) {
   }
 }
 
-/* 神经重排：加载 40M char LM 权重 + 词表，启用语义候选重排。
-   weight = 0 关闭；margin = V5 z-score 门控阈值（低于才触发神经打分）。 */
-int tiger_engine_set_neural_rerank(int handle, const char* model_path,
-                                   const char* vocab_path,
-                                   double weight, double margin) {
-  try {
-    std::lock_guard<std::mutex> lock(g_engine_mutex);
-    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
-      set_error("invalid engine handle");
-      return -1;
-    }
-    Engine* e = g_engines[handle].get();
-    if (weight <= 0.0) {
-      e->neural_weight = 0.0;
-      return 0;  // disabled
-    }
-    if (!model_path || !vocab_path) {
-      set_error("neural rerank requires model and vocab paths");
-      return -1;
-    }
-    if (!e->neural_scorer.is_loaded()) {
-      if (!e->neural_scorer.load(model_path)) {
-        set_error("failed to load neural model weights");
-        return -1;
-      }
-    }
-    if (!e->neural_scorer.vocab_loaded()) {
-      if (!e->neural_scorer.load_vocab(vocab_path)) {
-        set_error("failed to load neural vocab");
-        return -1;
-      }
-    }
-    e->neural_weight = std::min(1.0, std::max(0.01, weight));
-    e->neural_margin = std::min(10.0, std::max(0.0, margin));
-    FILE* dbg = fopen("/tmp/neural_loaded", "w");
-    if (dbg) { fprintf(dbg, "ok w=%.2f m=%.2f\n", e->neural_weight, e->neural_margin); fclose(dbg); }
-    return 1;
-  } catch (...) {
-    set_error("neural rerank setup failed");
-    return -1;
-  }
-}
-
-/* 返回 malloc 分配的快照 blob 与其字节数（*size_out），调用方负责 free()；
- * 空模型返回 ""，错误返回 NULL。blob 是二进制，可能含 NUL，禁止当 C 字符串用。 */
 char* tiger_engine_user_model_export(int handle, size_t* size_out) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
@@ -3197,6 +3150,95 @@ int tiger_engine_context_char_scores(int handle, const char* context_text,
     set_error("char scores failed");
     return -1;
   }
+}
+
+int tiger_semantic_create(const char* model_path, const char* vocab_path,
+                          char* error, int error_capacity) {
+  try {
+    if (!model_path || !vocab_path) {
+      set_error("semantic model and vocabulary paths are required");
+      if (error && error_capacity > 0)
+        std::snprintf(error, static_cast<size_t>(error_capacity), "%s",
+                      g_last_error.c_str());
+      return -1;
+    }
+    auto scorer = std::make_unique<mohu::semantic::Scorer>();
+    std::string why;
+    if (!scorer->load(model_path, vocab_path, &why)) {
+      set_error("semantic scorer load failed: %s", why.c_str());
+      if (error && error_capacity > 0)
+        std::snprintf(error, static_cast<size_t>(error_capacity), "%s",
+                      g_last_error.c_str());
+      return -1;
+    }
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    for (size_t i = 0; i < g_semantic_scorers.size(); ++i) {
+      if (!g_semantic_scorers[i]) {
+        g_semantic_scorers[i] = std::move(scorer);
+        return static_cast<int>(i);
+      }
+    }
+    g_semantic_scorers.push_back(std::move(scorer));
+    return static_cast<int>(g_semantic_scorers.size() - 1);
+  } catch (...) {
+    set_error("semantic scorer create failed");
+    return -1;
+  }
+}
+
+int tiger_semantic_score(int handle, const char* context_text,
+                         const char* candidates, const double* native_scores,
+                         int candidate_count, double* out_scores) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= static_cast<int>(g_semantic_scorers.size()) ||
+        !g_semantic_scorers[handle]) {
+      set_error("invalid semantic scorer handle");
+      return -1;
+    }
+    if (!context_text || !candidates || !native_scores || !out_scores ||
+        candidate_count <= 0 || candidate_count > 20) {
+      set_error("semantic scorer arguments invalid");
+      return -1;
+    }
+    std::vector<std::string> texts;
+    texts.reserve(static_cast<size_t>(candidate_count));
+    const char* cursor = candidates;
+    for (int i = 0; i < candidate_count; ++i) {
+      const char* newline = std::strchr(cursor, '\n');
+      if (!newline) {
+        if (i + 1 < candidate_count) {
+          set_error("semantic candidates fewer than count");
+          return -1;
+        }
+        texts.emplace_back(cursor);
+      } else {
+        texts.emplace_back(cursor, static_cast<size_t>(newline - cursor));
+        cursor = newline + 1;
+      }
+    }
+    std::vector<double> native(native_scores,
+                               native_scores + candidate_count);
+    std::string why;
+    const auto scores = g_semantic_scorers[handle]->score(
+        context_text, texts, native, &why);
+    if (scores.size() != static_cast<size_t>(candidate_count)) {
+      set_error("semantic scorer failed: %s", why.c_str());
+      return -1;
+    }
+    for (int i = 0; i < candidate_count; ++i)
+      out_scores[i] = static_cast<double>(scores[static_cast<size_t>(i)]);
+    return candidate_count;
+  } catch (...) {
+    set_error("semantic scorer failed");
+    return -1;
+  }
+}
+
+void tiger_semantic_free(int handle) {
+  std::lock_guard<std::mutex> lock(g_engine_mutex);
+  if (handle >= 0 && handle < static_cast<int>(g_semantic_scorers.size()))
+    g_semantic_scorers[handle].reset();
 }
 
 int tiger_engine_user_model_import(int handle, const char* blob, size_t blob_size) {

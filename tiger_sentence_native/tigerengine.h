@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,13 +76,14 @@ int tiger_engine_context_word_scores(int handle, const char* context_text,
 int tiger_engine_context_char_scores(int handle, const char* context_text,
                                      const char* candidates, int candidate_count,
                                      double* out_scores);
-/* Neural rerank: load a TinyCharLM binary weights file + vocab.json for
- * semantic candidate scoring. weight in [0,1] controls blending (0 = off);
- * margin is the z-score threshold below which the neural scorer is invoked.
- * Returns 1 applied, 0 no change, -1 error. */
-int tiger_engine_set_neural_rerank(int handle, const char* model_path,
-                                   const char* vocab_path,
-                                   double weight, double margin);
+/* 进程内魔虎语义 C2 scorer。候选为换行分隔 UTF-8，native_scores 与候选
+ * 同序；成功返回 candidate_count，失败返回 -1。 */
+int tiger_semantic_create(const char* model_path, const char* vocab_path,
+                          char* error, int error_capacity);
+int tiger_semantic_score(int handle, const char* context_text,
+                         const char* candidates, const double* native_scores,
+                         int candidate_count, double* out_scores);
+void tiger_semantic_free(int handle);
 void tiger_engine_free(int handle);
 /* include_early is a deprecated ABI compatibility flag; the canonical Lua
  * translator always passes 0 and never exposes early-commit results. */

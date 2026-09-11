@@ -57,12 +57,14 @@ local filter = require("mohu_word_order_filter")
 local yielded = {}
 yield = function(candidate) yielded[#yielded + 1] = candidate end
 
-local function candidate(kind, text, comment)
+local function candidate(kind, text, comment, span)
   local value = {
     type = kind,
     text = text,
-    preedit = "mohu",
+    preedit = string.rep("aa ", utf8.len(text)):sub(1, -2),
     comment = comment or "",
+    start = span and span.start or 0,
+    _end = span and span.finish or nil,
   }
   function value:get_genuine() return self end
   return value
@@ -72,7 +74,10 @@ local function make_env(options)
   options = options or {}
   local config = options.config or {}
   local ctx = {
-    options = { contextual_order = options.contextual_order ~= false },
+    input = options.input or "jwgzle",
+    options = {
+      contextual_order = options.contextual_order ~= false,
+    },
     commit_history = {
       latest_text = function() return options.history or "" end,
     },
@@ -143,10 +148,11 @@ local function bind_fn(scores, state)
     state.last_handle = handle
     state.last_history = history
     state.last_texts = texts
+    state.batches[#state.batches + 1] = texts
     if type(scores) == "table" then
       -- 评分函数契约：返回个数必须与候选文本数一致。
       local out = {}
-      for index = 1, #texts do out[index] = scores[index] end
+      for index = 1, #texts do out[index] = scores[texts[index]] or scores[index] end
       return out
     end
     return error(scores)  -- 字符串：让 pcall 失败
@@ -160,6 +166,7 @@ local function reset_scorer(scores)
     state.last_handle = nil
     state.last_history = nil
     state.last_texts = nil
+    state.batches = {}
     state.fn = bind_fn(scores, state)
   end
 end
@@ -186,6 +193,23 @@ do
         char_state.invoked == 1 and char_state.last_handle == 9 and
         char_state.last_history == "我想吃" and
         same_texts(char_state.last_texts, { "中心", "目标", "其他", "另外", "其余" }))
+end
+
+-- 2) 未消费完整输入的候选不参与重排（部分输入补全候选不挤占完整候选）。
+do
+  reset_scorer({ ["拐角处"] = -4, ["乖缴"] = -5 })
+  local env = make_env({ history = "外婆", input = "gyjciu" })
+  filter.init(env)
+  local input = {
+    candidate("table", "拐角处", nil, { finish = 6 }),
+    candidate("table", "拐角", nil, { finish = 4 }),
+    candidate("table", "乖缴", nil, { finish = 6 }),
+  }
+  local out = run_filter(env, input)
+  check("partial-input candidates do not displace complete candidates",
+        same_texts(texts_of(out), { "拐角处", "拐角", "乖缴" }))
+  check("partial-input candidates are excluded from the score batch",
+        same_texts(char_state.last_texts, { "拐角处", "乖缴" }))
 end
 
 -- 2) 各降级路径直通：输出与输入逐候选相同，且不触发评分。
@@ -401,6 +425,50 @@ do
         same_texts(texts_of(out), { "其三", "其一", "其二", "其四", "其五" }))
 end
 
+-- 8) native/punct 候选不参与重排：无论位置如何保持原位，普通候选在
+--    其余窗口内按分数重排。
+local window_scores = {
+  ["原生甲"] = -2, ["原生乙"] = -3,
+  ["普通甲"] = -10, ["普通乙"] = -1, ["普通丙"] = 100,
+}
+for _, scenario in ipairs({
+  { name = "two-native prefix", limit = 2, batches = 1,
+    input = { candidate("mohu_zrm", "原生甲"), candidate("mohu_zrm", "原生乙"),
+              candidate("table", "普通甲"), candidate("table", "普通乙"), candidate("table", "普通丙") },
+    expected = { "原生甲", "原生乙", "普通乙", "普通甲", "普通丙" } },
+  { name = "native inside ordinary window", limit = 3, batches = 1,
+    input = { candidate("pinned", "固顶词"), candidate("mohu_zrm", "原生甲"),
+              candidate("table", "普通甲"), candidate("mohu_flypy_personal", "原生乙"),
+              candidate("table", "普通乙"), candidate("table", "普通丙") },
+    expected = { "固顶词", "原生甲", "普通乙", "原生乙", "普通甲", "普通丙" } },
+  { name = "interior native blocks a single-slot window", limit = 2, batches = 0,
+    input = { candidate("table", "普通甲"), candidate("mohu_zrm", "原生甲"),
+              candidate("table", "普通乙"), candidate("table", "普通丙") },
+    expected = { "普通甲", "原生甲", "普通乙", "普通丙" } },
+  { name = "native with punctuation prefix", limit = 2, batches = 1,
+    input = { candidate("mohu_zrm", "原生甲"), candidate("punct", "，，"),
+              candidate("table", "普通甲"), candidate("table", "普通乙"), candidate("table", "普通丙") },
+    expected = { "原生甲", "，，", "普通乙", "普通甲", "普通丙" } },
+}) do
+  local env = make_env({
+    history = "外婆",
+    config = { ["tiger/word_order_candidates"] = scenario.limit },
+  })
+  filter.init(env)
+  reset_scorer(window_scores)
+  local out = run_filter(env, scenario.input)
+  check(scenario.name .. " keeps protected slots and reorders the rest",
+        same_texts(texts_of(out), scenario.expected))
+  check(scenario.name .. " scores exactly when two slots are eligible",
+        char_state.invoked == scenario.batches)
+  local within_limit = true
+  for _, batch in ipairs(char_state.batches) do
+    within_limit = within_limit and #batch <= scenario.limit
+    for _, text in ipairs(batch) do within_limit = within_limit and text ~= "普通丙" end
+  end
+  check(scenario.name .. " preserves the per-batch limit and unscored tail", within_limit)
+end
+
 -- ======================================================================
 -- B) acquire_word_scorer 集成（mock dylib）
 -- ======================================================================
@@ -451,7 +519,8 @@ end
 -- 每个场景重新 dofile，重置模块级 engine/word_scorer_ready 状态。
 local function fresh(status_text, options)
   options = options or {}
-  local calls = {}
+  local calls = { errors = {} }
+  log = { error = function(message) calls.errors[#calls.errors + 1] = message end }
   package.preload["mohu_tiger_reranker"] = function()
     return { init = function() end, fini = function() end,
              rerank = function() return nil end }
@@ -496,6 +565,18 @@ local function fresh(status_text, options)
     end
   end
   return dofile("tiger_sentence_native/mohu_tiger_sentence.lua"), calls
+end
+
+local function check_char_scorer(name, fn, handle, calls)
+  check(name .. " exposes a callable wrapper", type(fn) == "function" and handle == 7)
+  if type(fn) ~= "function" then return end
+  local candidates = { "自助", "自主" }
+  local scores = fn(handle, "我想吃", candidates)
+  check(name .. " forwards scoring arguments", calls.char_scored and
+        calls.char_scored.handle == handle and calls.char_scored.context == "我想吃" and
+        calls.char_scored.candidates == candidates)
+  check(name .. " returns native scores",
+        type(scores) == "table" and scores[1] == -5.5 and scores[2] == -6.5)
 end
 
 local function acquire_with(status_text, options, config)
@@ -560,11 +641,7 @@ do
   local env = make_tiger_env({})
   mod.translator.init(env)
   local fn, handle = mod.acquire_char_scorer(env)
-  check("char scorer available with plain char engine",
-        fn ~= nil and handle == 7 and fn == calls.module.context_char_scores)
-  local scores = fn(handle, "我想吃", { "自助", "自主" })
-  check("char scorer is callable",
-        type(scores) == "table" and scores[1] == -5.5 and scores[2] == -6.5)
+  check_char_scorer("plain char engine", fn, handle, calls)
   mod.translator.fini(env)
 end
 

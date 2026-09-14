@@ -52,20 +52,36 @@ jobs:
           gcc -O2 -shared -DLUA_BUILD_AS_DLL $core $lib -o lua54.dll
           gcc -O2 -DLUA_BUILD_AS_DLL lua.c -o lua.exe lua54.dll
 
-      - name: Build and smoke-test the Windows engine
+      - name: Fetch onnxruntime for Windows
         shell: msys2 {0}
         run: |
-          g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ -static \
+          # tigerengine.cc 内建魔虎语义进程内推理（semantic_infer.h），
+          # 编译与运行都需要 onnxruntime。官方 win-x64 zip：lib/ 内含
+          # onnxruntime.lib 与 onnxruntime.dll，include/ 含 C++ API 头。
+          curl --fail --location --retry 3 --retry-all-errors \
+            --output ort.zip \
+            "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-1.20.1.zip"
+          python -m zipfile -e ort.zip .
+
+      - name: Build and smoke-test the Windows engine
+        shell: msys2 {0}
+        env:
+          ORT_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
+        run: |
+          g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
             -I tiger_sentence_native -I lua-5.4.8/src \
+            -I "$ORT_HOME/include" -L "$ORT_HOME/lib" \
             tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
-            lua-5.4.8/src/lua54.dll -o libtigerengine.dll
+            lua-5.4.8/src/lua54.dll -lonnxruntime -o libtigerengine.dll
           objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
+          cp "$ORT_HOME/lib/onnxruntime.dll" ./
           curl --fail --location \
             --retry 3 --retry-all-errors \
             --output mohu-sentence-ngram-v5.bin \
             "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/mohu-sentence-ngram-v5.bin"
-          g++ -O2 -std=c++17 -I tiger_sentence_native \
-            tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc -o nativetest.exe
+          g++ -O2 -std=c++17 -I tiger_sentence_native -I "$ORT_HOME/include" \
+            tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc \
+            -L "$ORT_HOME/lib" -lonnxruntime -o nativetest.exe
           printf '1\tufqyhfmimh\n' > keys.txt
           ./nativetest.exe mohu-sentence-ngram-v5.bin \
             tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt keys.txt out.txt
@@ -98,8 +114,10 @@ jobs:
           TIGER_ENGINE_DLL: ${{ github.workspace }}/libtigerengine.dll
           TIGER_NGRAM: ${{ github.workspace }}/mohu-sentence-ngram-v5.bin
           TIGER_LEXICON: ${{ github.workspace }}/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
+          ONNXRUNTIME_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
         run: |
           make tigerengine-snapshot-io tigerengine-mobile tigerengine-mapping
+          cp "$ONNXRUNTIME_HOME/lib/onnxruntime.dll" .tmp/native-tests/
           make tigerengine-windows-memory \
             TIGER_MEMORY_OUTPUT=.tmp/native-tests/tigerengine-windows-mapping.json
 
@@ -118,6 +136,7 @@ jobs:
           --entry libtigerengine.dll
           --search-dir .
           --search-dir lua-5.4.8/src
+          --search-dir onnxruntime-win-x64-1.20.1/lib
           --objdump objdump
           --output windows-runtime
 
@@ -152,7 +171,8 @@ jobs:
           path: windows-runtime
 
       - name: Install OpenCC
-        run: brew install opencc
+        run: brew install opencc onnxruntime
+        # onnxruntime：build.sh 编译 libtigerengine（内建语义推理）需要其头文件
 
       - name: Build native engine
         run: make tigerengine-native

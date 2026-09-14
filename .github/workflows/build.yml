@@ -139,6 +139,7 @@ jobs:
           --search-dir .
           --search-dir lua-5.4.8/src
           --search-dir onnxruntime-win-x64-1.20.1/lib
+          --search-dir /mingw64/bin
           --objdump objdump
           --output windows-runtime
 

@@ -15,9 +15,14 @@ ONNXRUNTIME_HOME ?= /opt/homebrew/opt/onnxruntime
 ORT_INCLUDES = -I$(ONNXRUNTIME_HOME)/include/onnxruntime -I$(ONNXRUNTIME_HOME)/include -I tiger_sentence_native
 ifeq ($(OS),Windows_NT)
 ORT_TEST_LIBS = -L$(ONNXRUNTIME_HOME)/lib -lonnxruntime
+# MinGW 不识别 onnxruntime 头文件在 _WIN32 分支使用的 MSVC 写法
+# `_stdcall`（GCC 关键字是双下划线 __stdcall；x64 上该调用约定本就被
+# 忽略），用预处理器映射绕过。
+ORT_DEFINES = -D_stdcall=__stdcall
 TIGER_EXTRA_LDFLAGS =
 else
 ORT_TEST_LIBS = -L$(ONNXRUNTIME_HOME)/lib -lonnxruntime -Wl,-rpath,$(ONNXRUNTIME_HOME)/lib
+ORT_DEFINES =
 TIGER_EXTRA_LDFLAGS = -framework Accelerate
 endif
 
@@ -156,7 +161,7 @@ tigerengine-user-model:
 
 tigerengine-snapshot-io:
 	@mkdir -p .tmp/native-tests
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_INCLUDES) \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) $(ORT_INCLUDES) \
 		tests/tigerengine_snapshot_io_test.cc tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) \
 		-o .tmp/native-tests/tigerengine_snapshot_io_test
 	.tmp/native-tests/tigerengine_snapshot_io_test
@@ -188,14 +193,14 @@ tigerengine-semantic:
 # the primary mapping. The test-only ABI is compiled into this binary only.
 tigerengine-mapping:
 	@mkdir -p .tmp/native-tests
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 -DTIGERENGINE_MAPPING_TEST \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) -DTIGERENGINE_MAPPING_TEST \
 		$(ORT_INCLUDES) tests/tigerengine_mapping_ownership_test.cc \
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) -o .tmp/native-tests/tigerengine_mapping_ownership_test
 	.tmp/native-tests/tigerengine_mapping_ownership_test
 
 tigerengine-mobile:
 	@mkdir -p .tmp/native-tests
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_INCLUDES) \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) $(ORT_INCLUDES) \
 		tests/tigerengine_mobile_test.cc tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) \
 		-o .tmp/native-tests/tigerengine_mobile_test
 	python tests/tigerengine_mobile_cases.py .tmp/native-tests/tigerengine_mobile_test

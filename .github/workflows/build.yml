@@ -69,6 +69,7 @@ jobs:
           ORT_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
         run: |
           g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
+            -D_stdcall=__stdcall \
             -I tiger_sentence_native -I lua-5.4.8/src \
             -I "$ORT_HOME/include" -L "$ORT_HOME/lib" \
             tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
@@ -79,7 +80,8 @@ jobs:
             --retry 3 --retry-all-errors \
             --output mohu-sentence-ngram-v5.bin \
             "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/mohu-sentence-ngram-v5.bin"
-          g++ -O2 -std=c++17 -I tiger_sentence_native -I "$ORT_HOME/include" \
+          g++ -O2 -std=c++17 -D_stdcall=__stdcall \
+            -I tiger_sentence_native -I "$ORT_HOME/include" \
             tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc \
             -L "$ORT_HOME/lib" -lonnxruntime -o nativetest.exe
           printf '1\tufqyhfmimh\n' > keys.txt

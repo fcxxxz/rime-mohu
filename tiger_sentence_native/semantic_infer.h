@@ -61,7 +61,14 @@ class Scorer {
       }
       options.SetIntraOpNumThreads(threads);
       options.SetInterOpNumThreads(1);
+      // Windows 上 ORTCHAR_T 是 wchar_t（路径构造为宽字符重载），
+      // mac/Linux 为 char；模型路径来自配置（ASCII），直接拓宽。
+#ifdef _WIN32
+      std::wstring wide_path(model_path.begin(), model_path.end());
+      session_ = std::make_unique<Ort::Session>(*env_, wide_path.c_str(), options);
+#else
       session_ = std::make_unique<Ort::Session>(*env_, model_path.c_str(), options);
+#endif
       return true;
     } catch (const Ort::Exception& ex) {
       if (error) *error = ex.what();

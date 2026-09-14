@@ -100,6 +100,13 @@ function F.init(env)
   local cfg = env.engine.schema.config
   env._wo_enabled = config_flag(cfg, "tiger/word_order", true)
   env._wo_limit = math.floor(config_number(cfg, "tiger/word_order_candidates", 20, 2, 50))
+  -- 收集窗口的扫描上界：防止候选流前部全是不可重排候选（补全单字洪流）
+  -- 时无界拉干整条流。默认为窗口的 8 倍；正常菜单的前缀（简码/固顶）远小于此。
+  env._wo_scan_limit = math.floor(config_number(cfg, "tiger/word_order_scan_limit",
+    env._wo_limit * 8, env._wo_limit, 2000))
+  -- 扫描时间上界（毫秒）：候选数上界之外再封顶墙钟时间，保证不同首
+  -- 字母桶、不同单候选处理成本下扫描开销一致有界。
+  env._wo_scan_ms = config_number(cfg, "tiger/word_order_scan_ms", 2.0, 0.5, 50.0)
   env._wo_penalty = config_number(cfg, "tiger/word_order_rank_penalty", 1.0, 0.0, 100.0)
   -- 评分信号：char = 字符续写分（octagram 同型，默认；用主字符模型，
   -- 无词层/无 OOV 概念，实测修好率约为词信号 3 倍）；word = 词级分
@@ -152,6 +159,11 @@ local function reorder(input, env)
   end
   local history = read_history(env)
   if history == nil or history == "" then return passthrough(input) end
+  -- 1 键输入不可能出现 ≥2 字候选（不足一个完整音节，补全也只产出
+  -- 单字），扫描纯属浪费；补全开启时 1 键的字母桶洪流（'w' 实测
+  -- 2,889 个候选）会放大扫描成本。见 2026-09-14 perkey-latency 报告。
+  local raw = env.engine and env.engine.context and env.engine.context.input
+  if type(raw) ~= "string" or #raw < 2 then return passthrough(input) end
   local score_fn, handle
   if env._wo_signal == "word" then
     score_fn, handle = tiger.acquire_word_scorer(env)
@@ -173,10 +185,21 @@ local function reorder(input, env)
   end
   local prefix, block = {}, {}
   local seen_first = false
-  -- 只收集到限额为止，其余流式直通（不占内存）。
-  while #block < env._wo_limit do
+  -- 只收集到限额为止，其余流式直通（不占内存）。扫描同样有界：已检视
+  -- 候选超过 scan_limit 仍未凑齐重排窗口时放弃本次重排、直接流式直通。
+  -- 补全开启时 1 键输入的候选流全是不可重排的单字（'w' 桶实测 2,889 个），
+  -- block 永远填不满、无界扫描会把整条流拉干（2026-09-14 定位，见
+  -- docs/reports/2026-09-14-perkey-latency.md）。
+  local scanned = 0
+  local scan_clock = os.clock()
+  while #block < env._wo_limit and scanned < env._wo_scan_limit do
+    if scanned >= 8 and scanned % 8 == 0 and
+        (os.clock() - scan_clock) * 1000 > env._wo_scan_ms then
+      break
+    end
     local cand = next_candidate()
     if cand == nil then break end
+    scanned = scanned + 1
     if not seen_first and reorderable(env, cand) then seen_first = true end
     if seen_first then
       block[#block + 1] = cand

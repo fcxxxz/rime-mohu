@@ -21,18 +21,9 @@ switcher:
     - Control+grave
     - Control+Shift+grave
     - F4
-  save_options:
-    - full_shape
-    - ascii_punct
-    - extended_charset
-    - emoji
-    - inflexible
-    - unicode_comment
-    - contextual_order
-    - neural_rerank
-    - quick_code_hint
-    - aux_hint
-    - multi_short_code
+  # 开关持久化不走 librime 的 save_options/user.yaml：那会与
+  # lua/option_sync.lua + lua/option_state_data.lua（跨应用同步的唯一来源）
+  # 形成双写，重启恢复时两份状态互相打架。用户状态文件不随包分发。
   fold_options: true
   abbreviate_options: true
   option_list_separator: '／'

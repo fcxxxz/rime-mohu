@@ -57,6 +57,17 @@ function Top.init(env)
     -- At most THRESHOLD smart candidates are subject to reordering,
     -- for performance's sake.
     env.reorder_threshold = 50
+    -- kDone 尾部缓冲上界：超过后提前冲刷并直通剩余候选。补全开启时
+    -- 1 键输入的 smart 尾部可达数千候选（'w' 实测 2,889 个），无界缓冲
+    -- 会把整条流物化、逐键 ~50ms（2026-09-14 定位，见
+    -- docs/reports/2026-09-14-perkey-latency.md）。
+    env.trailing_limit = 48
+    pcall(function()
+        local n = env.engine.schema.config:get_int("mohu/reorder/trailing_limit")
+        if type(n) == "number" and n == n and n >= 8 then
+            env.trailing_limit = math.floor(n)
+        end
+    end)
     env.quick_code_indicator = env.engine.schema.config:get_string("mohu/quick_code_indicator") or "⚡️"
     env.pin_indicator = env.engine.schema.config:get_string("mohu/pin/indicator") or "📌"
 end
@@ -90,7 +101,8 @@ function Top.func(t_input, env)
         fixed_next = 1,       -- 下一个待匹配的固定候选匹配的
         native_list = {},     -- 原生整句候选不参与 fixed/smart 身份替换
         smart_list = {},      -- 等待匹配的整句候选
-        trailing_list = {},   -- fixed 匹配完成后暂存的其余候选
+        trailing_list = {},   -- fixed 匹配完成后暂存的其余候选（上界 trailing_limit）
+        flushed_early = false, -- 尾部超限提前冲刷后置位：后续候选直通
         lexicon_texts = {},   -- 本轮非 native 候选的文本集合
         threshold = env.reorder_threshold,
         pin_set = {},         -- 候选是否是 pinned
@@ -106,8 +118,30 @@ function Top.func(t_input, env)
         elseif native_sentence_types[cand:get_genuine().type] then
             table.insert(ctx.native_list, cand)
         elseif ctx.phase == kDone then
-            ctx.lexicon_texts[cand.text] = true
-            table.insert(ctx.trailing_list, cand)
+            if ctx.flushed_early or #ctx.native_list == 0 then
+                -- 无 native 候选（≤4 键打词场景：tiger 引擎不运行）时尾部
+                -- 缓冲与去重集合都没有职责，直接流式输出。native 的
+                -- quality（50）在流序上先于 smart（5），首个 smart 出现时
+                -- native_list 已完备，该判断没有竞态。
+                if not (ctx.flushed_early and ctx.emitted_native_texts and
+                        ctx.emitted_native_texts[cand.text]) then
+                    if not ctx.flushed_early then
+                        Top.flush(env, ctx, true)  -- 先清残余 smart_list，保证顺序
+                        ctx.flushed_early = true
+                    end
+                    Top.yield_exact(env, cand)
+                end
+            elseif #ctx.trailing_list >= env.trailing_limit then
+                -- native 候选（quality 更高）在流序上必先于 smart 到达，
+                -- 此时已全部收进 native_list；提前冲刷后剩余尾部直接输出。
+                -- 冲刷后 lexicon_texts 不再增长，去重职责就此结束。
+                Top.flush(env, ctx, true)
+                ctx.flushed_early = true
+                Top.yield_exact(env, cand)
+            else
+                ctx.lexicon_texts[cand.text] = true
+                table.insert(ctx.trailing_list, cand)
+            end
         elseif ctx.phase == kCollecting then
             ctx.lexicon_texts[cand.text] = true
             Top.handle_collecting(env, ctx, cand)
@@ -217,6 +251,13 @@ function Top.flush(env, ctx, include_delay_slot)
     for i = ctx.fixed_next, #ctx.fixed_list do
         Top.yield_exact(env, ctx.fixed_list[i])
     end
+    -- native 与 smart 的同文本候选 text/comment 相同但 preedit 分段不同
+    -- （native 是引擎的词级分段如「xnys ka」＝信用|卡，smart 是音节分段
+    -- 「xn ys ka」），uniquifier 按 preedit 判不等、不会合并，造成同文
+    -- 双候选（如 xnyska 出现两个「信用卡」）。这里在 native 输出时记录
+    -- 文本，smart 侧同文本跳过——由 native 版本代表该文本（提交走
+    -- native 的个人词路径，与「模型负责排序」的设计一致）。
+    local emitted_native_texts = {}
     for _, c in ipairs(ctx.native_list) do
         local text_length = utf8.len(c.text) or 0
         local native_type = c:get_genuine().type
@@ -227,20 +268,28 @@ function Top.flush(env, ctx, include_delay_slot)
             or text_length >= native_independent_min_length
             or text_length == 2 or is_personal then
             Top.yield_exact(env, c)
+            emitted_native_texts[c.text] = true
         end
     end
+    ctx.emitted_native_texts = emitted_native_texts
     if include_delay_slot then
         -- 只在完全匹配完毕后才清空延迟槽
         for _, c in ipairs(ctx.delay_slot) do
-            Top.yield_exact(env, c)
+            if not emitted_native_texts[c.text] then
+                Top.yield_exact(env, c)
+            end
         end
         ctx.delay_slot = {}
     end
     for _, c in ipairs(ctx.smart_list) do
-        Top.yield_exact(env, c)
+        if not emitted_native_texts[c.text] then
+            Top.yield_exact(env, c)
+        end
     end
     for _, c in ipairs(ctx.trailing_list) do
-        Top.yield_exact(env, c)
+        if not emitted_native_texts[c.text] then
+            Top.yield_exact(env, c)
+        end
     end
     ctx.fixed_list = {}
     ctx.native_list = {}

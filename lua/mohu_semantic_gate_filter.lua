@@ -133,8 +133,14 @@ function F.init(env)
   env._se_enabled = config_flag(cfg, "mohu/semantic_rerank/enable", true)
   env._se_margin = config_number(cfg, "mohu/semantic_rerank/semantic_margin", 0.15, 0.0, 100.0)
   env._se_gate_margin = config_number(cfg, "mohu/semantic_rerank/gate_margin", 0.5, 0.0, 100.0)
+  env._se_word_gate = config_flag(cfg, "mohu/semantic_rerank/word_gate", false)
   env._se_k = math.floor(config_number(cfg, "mohu/semantic_rerank/candidates", 5, 2, 20))
   env._se_limit = math.floor(config_number(cfg, "mohu/semantic_rerank/limit", 20, 2, 50))
+  -- 扫描上界：与 word_order_filter 同型的防护——候选流前部全是不可重排
+  -- 候选（补全单字洪流）时避免无界拉干整条流。
+  env._se_scan_limit = math.floor(config_number(cfg, "mohu/semantic_rerank/scan_limit",
+    env._se_limit * 8, env._se_limit, 2000))
+  env._se_scan_ms = config_number(cfg, "mohu/semantic_rerank/scan_ms", 2.0, 0.5, 50.0)
   env._se_quick = ""
   env._se_pin = ""
   pcall(function()
@@ -162,6 +168,11 @@ function F.func(input, env)
   end
   local history = read_history(env)
   if not history then return passthrough(input) end
+  -- 与 word_order_filter 同型的 1 键短路：不足一个完整音节时不存在
+  -- ≥2 字候选，扫描与门控均无意义。
+  if type(context.input) ~= "string" or #context.input < 2 then
+    return passthrough(input)
+  end
   if history ~= env._se_last_context then
     env._se_last_context = history
     cache, cache_order = {}, {}
@@ -172,9 +183,16 @@ function F.func(input, env)
   local advance, state = input:iter()
   local prefix, block = {}, {}
   local seen_first = false
-  while #block < env._se_limit do
+  local scanned = 0
+  local scan_clock = os.clock()
+  while #block < env._se_limit and scanned < env._se_scan_limit do
+    if scanned >= 8 and scanned % 8 == 0 and
+        (os.clock() - scan_clock) * 1000 > env._se_scan_ms then
+      break
+    end
     local cand = advance(state)
     if cand == nil then break end
+    scanned = scanned + 1
     if not seen_first and reorderable(env, cand) then seen_first = true end
     if seen_first then
       block[#block + 1] = cand
@@ -220,7 +238,17 @@ function F.func(input, env)
     end
   end
   if (first - second) >= env._se_gate_margin then
-    return keep_native()
+    -- 词证据分歧门（可选补充）：V5 自信但 top1 接不成词而 top2 接词典
+    -- 多字词时仍开门——「引擎自信地错」的词边回退类由此放行。旧 dylib
+    -- 无该 ABI 或未开启时逐字节保持原行为（keep_native）。
+    local open = false
+    if env._se_word_gate then
+      local ok, flag = pcall(tiger.word_disagreement, env, texts)
+      open = ok and flag == 1
+    end
+    if not open then
+      return keep_native()
+    end
   end
 
   -- 歧义菜单：进程内 C2 scorer 重排前 K 个参与候选。V5 上下文字符分

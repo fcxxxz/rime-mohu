@@ -78,6 +78,9 @@ def recreate_destination(destination: Path) -> None:
 
 def copy_runtime_directories(scheme: str, destination: Path) -> None:
     copy_path(ROOT / "lua", destination / "lua")
+    # option_state_data.lua 是用户机器上的运行时开关状态，绝不随包分发：
+    # 覆盖安装会把用户开关重置成仓库里的测试残值。
+    (destination / "lua" / "option_state_data.lua").unlink(missing_ok=True)
 
     other_scheme = "flypy" if scheme == "zrm" else "zrm"
     mohu_destination = destination / "mohu"

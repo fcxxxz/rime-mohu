@@ -14,7 +14,8 @@ local function now_ms()
   return math.floor(os.clock() * 1000)
 end
 
--- 与 default.yaml 的 switcher/save_options 保持一致。
+-- 开关持久化与跨应用同步的唯一来源（default.yaml 不再配置 save_options，
+-- user.yaml 不参与；此列表即需要持久化/同步的开关全集）。
 local COMMON_OPTIONS = {
   "ascii_punct",
   "full_shape",

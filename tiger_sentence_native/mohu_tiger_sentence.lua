@@ -127,6 +127,7 @@ local tigerengine = nil
 local decode_ms = 0
 local engine_references = 0
 local engine_signature = nil
+local engine_raw_signature = nil
 local engine_config_error_logged = false
 local word_scorer_ready = nil       -- nil=未知 true=词层可用 false=不可用
 local word_scorer_error_logged = false
@@ -139,6 +140,12 @@ local semantic_load_failed = false
 -- 并入路径分，补偿字符级模型不认读音的盲区（如「万」mò 拼「万虎」）。
 -- 0 关闭；旧码表（无第 5 列）任何权重下都保持中性。
 local reading_prior_weight_default = 1.0
+
+-- 词边先验默认权重：静态多字词作长句句中内部边并每边加该有界分，
+-- 「词典里有这个词」在路径分中投票（librime entry_weight+Query 结构的
+-- native 对应物），修「只吃一口气」类跨词界粘连反杀（详见
+-- docs/reports/2026-09-13-word-edge-prior.md）。0 关闭并逐字节保持旧行为。
+local word_edge_weight_default = 1.5
 
 local function report_engine_error(message)
   engine_error = message
@@ -243,6 +250,26 @@ local function ensure_engine(env)
     end
     return nil
   end
+  -- 快速路径：引擎已存在且原始配置字符串未变时直接返回句柄。
+  -- resolve_model 用 io.popen 起子进程列目录，若放在缓存检查之前，
+  -- ensure_engine 每次被调都会 fork 一次（ensure_decode_context 与
+  -- acquire_char_scorer 均逐键调用），实测每键多付约 10ms
+  -- （2026-09-14 隔离工作区采样定位）。
+  local raw_signature = table.concat(
+    { conf("engine_lib") or "", conf("model") or "", conf("lexicon") or "",
+      conf("beam") or "", conf("all_ranks") or "",
+      conf("word_scorer_model") or "", conf("semantic_model") or "",
+      conf("semantic_vocab") or "" }, "\28")
+  if engine_handle ~= nil then
+    if engine_raw_signature == raw_signature then return engine_handle end
+    if not engine_config_error_logged then
+      engine_config_error_logged = true
+      log_error("mohu_tiger_sentence: native engine configuration changed; reload required")
+    end
+    return nil
+  end
+  if engine_error then return nil end
+
   local paths = runtime.paths()
   local lib = resolve_runtime_path(conf("engine_lib"), paths) or paths.engine
   local configured_model = resolve_runtime_path(conf("model"), paths)
@@ -281,16 +308,6 @@ local function ensure_engine(env)
   local signature = table.concat(
     { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "",
       semantic_model, semantic_vocab }, "\28")
-
-  if engine_handle ~= nil then
-    if engine_signature == signature then return engine_handle end
-    if not engine_config_error_logged then
-      engine_config_error_logged = true
-      log_error("mohu_tiger_sentence: native engine configuration changed; reload required")
-    end
-    return nil
-  end
-  if engine_error then return nil end
 
   -- The Windows loader does not search the engine DLL's own directory for its
   -- dependencies.  The build's dependency-closure collector emits a
@@ -377,8 +394,19 @@ local function ensure_engine(env)
   if type(tigerengine.set_reading_prior_weight) == "function" then
     pcall(tigerengine.set_reading_prior_weight, h, reading_weight)
   end
+  -- 词边先验权重：tiger/word_edge_weight（0 关闭）。旧 ABI dylib 无该
+  -- 函数时静默保持引擎内建默认（0=旧行为）；非法值回退默认。
+  local word_edge_weight = tonumber(conf("word_edge_weight"))
+  if word_edge_weight == nil or not finite_number(word_edge_weight) or
+      word_edge_weight < 0 or word_edge_weight > 4 then
+    word_edge_weight = word_edge_weight_default
+  end
+  if type(tigerengine.set_word_edge_weight) == "function" then
+    pcall(tigerengine.set_word_edge_weight, h, word_edge_weight)
+  end
   engine_handle = h
   engine_signature = signature
+  engine_raw_signature = raw_signature
   return h
 end
 
@@ -935,6 +963,7 @@ local function release_engine(env)
   decode_output_error_logged = false
   decode_ms = 0
   engine_signature = nil
+  engine_raw_signature = nil
   engine_config_error_logged = false
   word_scorer_ready = nil
   word_scorer_error_logged = false
@@ -1363,6 +1392,21 @@ function M.acquire_char_scorer(env)
     return env._tiger_char_score_fn, handle
   end
   return nil
+end
+
+-- 词证据分歧门：top1 在公共前缀后接不成词拼装而 top2 接词典多字词
+-- 时返回 1（引擎 freq_rank 查表，旧 ABI 无该函数时恒 0＝不开门）。
+function M.word_disagreement(env, texts)
+  if tigerengine == nil or type(tigerengine.word_disagreement) ~= "function" then
+    return 0
+  end
+  if type(texts) ~= "table" or #texts < 2 then return 0 end
+  local ok, handle = pcall(ensure_engine, env)
+  if not ok or not handle then return 0 end
+  local ok_call, flag = pcall(tigerengine.word_disagreement, handle,
+    table.concat(texts, "\n"), #texts)
+  if ok_call and type(flag) == "number" then return flag end
+  return 0
 end
 
 -- tiger/decode_context_chars 缓存读取（schema 变更前不会变化）。

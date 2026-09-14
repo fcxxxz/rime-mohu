@@ -96,8 +96,9 @@ engine:
     - lua_filter@*mohu_pin*pin_filter
     - lua_filter@*mohu_reorder_filter
     - lua_filter@*mohu_word_order_filter
-    # 暂停整句显示裁剪：2026-09-09 实测该层导致简快码首选丢失，待回归修复后恢复。
-    # - lua_filter@*mohu_sentence_visibility_filter
+    # 整句显示裁剪（搜狗式：首条整句+词组）。2026-09-09 三轮回归已修
+    # （音节容量豁免/类型无关判定，12 项单测），2026-09-14 重新接线启用。
+    - lua_filter@*mohu_sentence_visibility_filter
     - lua_filter@*mohu_candidate_override*override_order_filter
     - lua_filter@*mohu_candidate_override*override_filter
     - lua_filter@*mohu_ijrq_filter
@@ -151,6 +152,12 @@ smart:
   spelling_hints: 3
   # 是否使用上下文感知的候选排序；不是编码前缀补全，也不是上屏后预测下一个词。
   contextual_suggestions: true
+  # 是否输出未完成编码的补全候选。开启（与 moran 默认一致）：1 键时
+  # smart 流会出现整字母桶的单字洪流（'w' 实测 2,889 个），必须配合
+  # word_order/semantic filter 的扫描上界（word_order_scan_limit）才不会
+  # 被整流抽干——2026-09-14 已修复并量化，见
+  # docs/reports/2026-09-14-perkey-latency.md。
+  enable_completion: true
   # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
@@ -268,6 +275,10 @@ tiger:
   # 读音先验权重：码表第 5 列（读音条件简频）→ log P(读音|字) 并入路径
   # 分，压制多音字罕用读音（如「万」mò）拼出的首选；0 关闭。
   reading_prior_weight: 1.0
+  # 词边先验权重：静态多字词可作长句句中内部边，每条内部词边加该有界
+  # 分——「词典里有这个词」在路径分中投票，压住「只吃一口气」类错词与
+  # 后文跨词界粘连的反杀；0 关闭并逐字节保持旧行为。
+  word_edge_weight: 1.5
   # 上下文翻译器切换长输入处理分支的编码长度门槛。
   long_input_length: 5
   # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。

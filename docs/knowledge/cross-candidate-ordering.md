@@ -12,7 +12,11 @@
 
 - **2026-09-08 独立神经开关**：两主方案的 `neural_rerank`（大模型关／开）
   默认关闭，与 V5 `contextual_order` 独立。`option_sync` 保存并跨应用同步，
-  不设置 schema `reset`，避免覆盖重启恢复值。关闭启动不加载神经权重；
+  不设置 schema `reset`，避免覆盖重启恢复值。**2026-09-14 起单一来源化**：
+  default.yaml 撤销 `switcher/save_options`（user.yaml 不再参与开关持久化，
+  避免与状态文件双写打架）；`lua/option_state_data.lua` 为用户运行时状态，
+  不入 git、不随包分发（build_split_dist 打包时显式剔除；随包覆盖会把
+  用户开关重置成仓库测试残值——09-14 的「魔虎语义开关异常」事故根源）。关闭启动不加载神经权重；
   已加载后关闭只归零 neural weight，后续字符 scorer 调用前同步当前上下文
   的开关，缓存 scorer / 共享引擎也不能漏过。开启复用已加载权重、不重建 V5。
   两开关都关直接保留原序；仅神经开启时，没有实际融合也保留原序。
@@ -131,6 +135,25 @@ enable_word` 本就关闭。**诗词长句联想实测不依赖此开关**：
 长词条补全；用户记忆中的诗词联想来自虎码方案（rime-tiger 的
 tigress_ci 诗词词库）。native 词表也没有这两句。待观察项：词级
 「少打几码」场景（用户日常依赖度低）。
+**2026-09-14 复发并修复入库**：那次关闭只改在线上文件，09-13/09-14
+的仓库→线上同步把修复覆盖丢失；隔离工作区逐键探针实测补全开启时
+每段第一键 ~68–80ms。现已把 `smart/enable_completion: false` 显式写入
+两主方案 schema（连注释带历史，防止再被「清理」）。
+**同日第二处每键回归**：`ensure_engine` 曾在缓存检查前调用
+`resolve_model`（io.popen 起 `find` 子进程，d22d0e2 引入），被逐键调用
+等于每键 fork 一次、约 10ms/键；已加原始配置签名的快速路径。两项修复
+后每段第一键 68–81ms→1.3–1.7ms、词中后续键 10–23ms→1.6–4.2ms。
+**补全代价的精确机制（同日傍晚补充）**：1 键输入时补全产出全字母桶的
+单字洪流（'w'=2,889 / 'j'=7,557 个候选），word_order_filter 的收集循环
+（`while #block < limit`）因单字全部不可重排而把整条流拉干，逐候选
+~18µs × 洪流 = 51–252ms/键；moran 同开补全但无此扫描者、菜单只拉 5 个，
+故 1.4ms——「补全洪流 × 无界跳过扫描」的组合才是根因，词表大小（1.7×）
+是干扰项。将来若恢复补全，应给 word_order 加已检视数上界。**同日已实施并重新打开
+补全（moran 一致形态）**：word_order/semantic gate 扫描双上界（数量×8 +
+墙钟 2ms）与 1 键短路、reorder 尾部缓冲上界（48）+ native 空表直通；
+修复后补全开启下首键 'w'/'j' = 4.2/7.3ms（moran 同开补全为 1.6/4.9ms，
+差值为链深结构成本）。完整定位、数字与探针方法见
+[每键延迟报告](../reports/2026-09-14-perkey-latency.md)。
 
 **2026-09-09 整句菜单显示裁剪（不改排序）**：新增
 `lua/mohu_sentence_visibility_filter.lua`（挂 word_order 之后、
@@ -138,7 +161,15 @@ candidate_override 之前），配置 `tiger/sentence_visible_candidates`
 （默认 1，clamp 0–50；0 = 全部显示恢复旧行为）。重排链看的候选池
 不变——翻译器仍产 20 条（`mohu_tiger_sentence.lua` 的
 `candidate_limit`）、word_order 仍按 `word_order_candidates=20` 批量
-评分——本 filter 只裁显示层。
+评分——本 filter 只裁显示层。**2026-09-14 重新接线**：09-09 的三轮
+回归修复（音节容量豁免/类型无关判定 + 12 项单测）已落在 filter 代码，
+但 schema 接线当时保持注释「待回归修复后恢复」、一直未启用；09-14
+在两主方案 schema 恢复启用，实测 jsj 简码完好、整句只显示 1 条。
+**同日 reorder 同文去重**：native（词级 preedit「xnys ka」）与 smart
+（音节 preedit「xn ys ka」）同文候选因 preedit 分段差异不被 uniquifier
+合并，造成 xnyska 双「信用卡」；flush 现在输出 native 时记录文本、
+smart 侧同文本跳过（详见
+[每键延迟报告](../reports/2026-09-14-perkey-latency.md) 傍晚第三轮）。
 **句形判定（类型无关）**：覆盖到输入末尾（与 word_order 的
 consumes_current_input 同型判定）＋ 达到门槛字数（`tiger/
 sentence_min_chars` 默认 3，两字词与辅码消歧不裁）＋ 字数不超过覆盖
@@ -223,6 +254,17 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
   为 log P(读音|字) 先验并入每步路径分（`tiger/reading_prior_weight`，
   默认 1.0，0 关闭）。贝叶斯上是给 LM 补上 P(码|字) 似然项，与
   octagram 的 entry_weight+Query 加法融合同构。
+- **字符级模型看不见词界（2026-09-13 修，词边先验）**：字符三元独占的
+  路径分会被「错词与后文跨词界粘连」反杀——`vegeuurufaviiiyikbqiuuruyivgjuhw`
+  （这个输入法**支持**一口气输入一整句话）首选「只吃」：V5 局部对「支持」
+  领先 6.18 nats，被「只吃一口」搭配的 7.26 反杀，净输 1.09；「支持」是
+  viii 的 rank-1 词条而「只吃」不是词，词表证据此前不可见（多字词只允许
+  整段命中边）。修复：`tiger/word_edge_weight`（schema 默认 1.5，0=逐字节
+  旧行为）让静态多字词作句中内部边并每边加有界分——librime
+  entry_weight+Query 词频地板结构的 native 对应物。19,996 句整句 top1
+  62.2%→65.4%（w=1.5；语料峰值 0.5 档 65.8%），回退主因是码表缺词
+  （暴利/农妇/对华）。详见
+  [词边先验报告](../reports/2026-09-13-word-edge-prior.md)。
 - **词信号的天花板不在语料量而在分词管线**：kn5 用 1.5GB 七源语料重训仅
   13.2→14.9%。根因：jieba 用户词典（mohu_userdict.txt）里「上/海/一/三」
   等单字被灌 4,000,000 级词频，log(上)+log(海)≫log(上海) →「上海/三国/
@@ -295,6 +337,11 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
 - **词层升级路径**：修 mohu_userdict.txt 单字频率 → 重分词 → 重训
   （train_wordkn.cc，64GB 内存跑 35M 句峰值 ~14GB，~51 分钟）→ word/mix
   信号实验。kn5（/tmp/mohu-word-kn5.bin，797MB）不入库不上线。
+  **2026-09-13 判决**：词级解码重启前提（同源分词词典＋可商用语料＋
+  在线词级个人模型）未满足前不再投入——净新增收益实测仅 13%（vs 字符
+  45%），且与词边先验的稳定核心重叠；词对选择性归语义层（C3 计划见
+  训练合同）。青简外部对照与完整论证见
+  [词级判决报告](../reports/2026-09-13-word-decode-verdict.md)。
 - **上调空间**：penalty 降到 0.95 可到修好 45.7%/修反 1.5%（模拟口径），
   需要更激进时动 schema 默认即可，无需改代码。
 - **Windows**：引擎源码已含全部功能，需用新源码重编 libtigerengine.dll

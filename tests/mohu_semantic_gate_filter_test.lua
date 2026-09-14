@@ -86,6 +86,7 @@ local function run(cands, env_over)
       context = {
         get_option = function(_, name) return name == "neural_rerank" end,
         commit_history = { latest_text = function() return "今天的会议" end },
+        input = "niha",
       },
     },
   }
@@ -211,6 +212,7 @@ local function cache_run()
         context = {
           get_option = function(_, name) return name == "neural_rerank" end,
           commit_history = { latest_text = function() return "今天的会议" end },
+          input = "niha",
         },
       },
     }

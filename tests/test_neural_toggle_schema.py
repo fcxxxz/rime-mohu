@@ -30,11 +30,17 @@ class NeuralToggleSchemaTest(unittest.TestCase):
                 )
                 self.assertIn("lua_processor@*option_sync", schema["engine"]["processors"])
 
-    def test_switcher_saves_neural_and_v5_options_independently(self):
+    def test_option_persistence_is_single_sourced(self):
         config = yaml.safe_load((ROOT / "default.yaml").read_text(encoding="utf-8"))
-        saved = config["switcher"]["save_options"]
-        self.assertEqual(saved.count("neural_rerank"), 1)
-        self.assertEqual(saved.count("contextual_order"), 1)
+        self.assertNotIn(
+            "save_options",
+            config.get("switcher", {}),
+            "开关持久化应由 option_sync + lua/option_state_data.lua 单一来源承担，"
+            "save_options/user.yaml 双写会在重启恢复时打架",
+        )
+        option_sync = (ROOT / "lua" / "option_sync.lua").read_text(encoding="utf-8")
+        for name in ("neural_rerank", "contextual_order"):
+            self.assertIn(f'"{name}"', option_sync)
 
 
 if __name__ == "__main__":

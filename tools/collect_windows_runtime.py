@@ -37,6 +37,12 @@ SYSTEM_DLLS = frozenset(
         "winhttp.dll",
         "winmm.dll",
         "ws2_32.dll",
+        # VC++ 2015-2022 运行库（onnxruntime.dll 的依赖）：宿主 Weasel 为
+        # MSVC 构建、其安装器已前置 VC++ 运行库，用户机器必然存在，
+        # 不随包再分发微软二进制。
+        "msvcp140.dll",
+        "vcruntime140.dll",
+        "vcruntime140_1.dll",
     }
 )
 HOST_DLLS = frozenset({"rime.dll"})

@@ -41,6 +41,9 @@ SYSTEM_DLLS = frozenset(
         # MSVC 构建、其安装器已前置 VC++ 运行库，用户机器必然存在，
         # 不随包再分发微软二进制。
         "msvcp140.dll",
+        "msvcp140_1.dll",
+        "msvcp140_2.dll",
+        "concrt140.dll",
         "vcruntime140.dll",
         "vcruntime140_1.dll",
     }

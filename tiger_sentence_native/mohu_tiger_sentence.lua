@@ -7,7 +7,7 @@
 --   lua_translator@*mohu_tiger_sentence*translator
 -- 配置（schema 内 tiger/ 节，均可省略）：
 --   tiger/engine_lib: 引擎 dylib 路径（默认 <用户目录>/mohu/runtime/libtigerengine.dylib）
---   tiger/model:      模型目录或显式文件路径（默认 <用户目录>/mohu/model/）
+--   tiger/model:      模型文件或模型目录（默认固定为 <用户目录>/mohu/model/mohu-sentence-ngram-v5.bin）
 --   tiger/scheme:      双拼方案标识（zrm 或 flypy）
 --   tiger/candidate_type: native 候选类型（默认按 scheme 推导）
 --   tiger/lexicon:    码表路径（默认由 runtime resolver 提供）
@@ -730,8 +730,8 @@ end
 -- 上屏文本喂入 native 引擎的内存三元计数表；解码时每个 trigram 查询按
 -- P = w·P_V5 + (1-w)·P_用户 概率域融合（w = tiger/user_model_weight，
 -- 默认 0.85，V5 主导）。静态模型文件永不改写；计数经二进制快照跨会话
--- 持久化（默认 mohu/config/user-ngram.snapshot，安装器不触碰该
--- 目录，重装存活）。旧 ABI dylib（无 update_user_model）自动停用本层。
+-- 持久化（默认 mohu/config/user-ngram.snapshot；发行包预建目录但不含
+-- 快照，更新时不会覆盖用户数据）。旧 ABI dylib（无 update_user_model）自动停用本层。
 local user_model_weight_default = 0.85
 local user_model_snapshot_interval_default = 64
 
@@ -743,6 +743,12 @@ local function user_model_available()
     type(tigerengine.set_user_model_weight) == "function"
 end
 
+local function native_snapshot_io_available()
+  return tigerengine ~= nil and
+    type(tigerengine.read_snapshot_file) == "function" and
+    type(tigerengine.atomic_write_snapshot_file) == "function"
+end
+
 local function config_flag(cfg, key, default)
   local value = config_string(cfg, key)
   if value == "true" or value == "1" then return true end
@@ -750,24 +756,24 @@ local function config_flag(cfg, key, default)
   return default
 end
 
-local function ensure_snapshot_directory(directory)
-  -- 失败时后续 io.open 自然失败，快照被安全跳过。
-  if package.config:sub(1, 1) == "\\" then
-    pcall(os.execute, 'md "' .. directory .. '" 2>nul')
-  else
-    pcall(os.execute, "mkdir -p '" .. directory:gsub("'", "'\\''") .. "'")
-  end
-end
-
 local function user_model_write_snapshot(env)
   if not (env and env._tiger_user_model_on) then return end
   if not user_model_available() then return end
+  local native_io = native_snapshot_io_available()
+  local posix_fallback = package.config:sub(1, 1) ~= "\\"
+  if not native_io and not posix_fallback then return end
   local ok, blob = pcall(tigerengine.user_model_export, engine_handle)
   if not ok or type(blob) ~= "string" then return end
   local path = env._tiger_user_model_path
   if not path then return end
-  local directory = path:match("^(.*)[/\\][^/\\]+$")
-  if directory then ensure_snapshot_directory(directory) end
+  if native_io then
+    local ok_write, result = pcall(tigerengine.atomic_write_snapshot_file, path, blob)
+    if ok_write and result == true then env._tiger_user_model_dirty = false end
+    return
+  end
+
+  -- Compatibility for older POSIX dylibs. On Windows all file I/O stays in
+  -- native code so UTF-8 user paths never pass through narrow CRT functions.
   local temporary = path .. ".tmp-" .. tostring(os.time()) .. "-" ..
     tostring(math.random(1000000))
   local file = io.open(temporary, "wb")  -- blob 是二进制，可含 NUL
@@ -814,13 +820,20 @@ local function init_user_model(env)
     return
   end
   pcall(tigerengine.set_user_model_weight, engine_handle, weight)
-  local file = io.open(env._tiger_user_model_path, "rb")
-  if file then
-    local blob = file:read("*a")
-    file:close()
-    if type(blob) == "string" and #blob > 0 then
-      pcall(tigerengine.user_model_import, engine_handle, blob)
+  local blob
+  if native_snapshot_io_available() then
+    local ok_read, content = pcall(
+      tigerengine.read_snapshot_file, env._tiger_user_model_path)
+    if ok_read then blob = content end
+  elseif package.config:sub(1, 1) ~= "\\" then
+    local file = io.open(env._tiger_user_model_path, "rb")
+    if file then
+      blob = file:read("*a")
+      file:close()
     end
+  end
+  if type(blob) == "string" and #blob > 0 then
+    pcall(tigerengine.user_model_import, engine_handle, blob)
   end
   local context = env.engine.context
   if context and context.commit_notifier then
@@ -1330,11 +1343,12 @@ function M.acquire_word_scorer(env)
   if tigerengine == nil or type(tigerengine.context_word_scores) ~= "function" then
     return nil
   end
-  local ok, handle = pcall(ensure_engine, env)
-  if ok and handle then
-    return tigerengine.context_word_scores, handle
-  end
-  return nil
+  -- Filters are on the hot candidate path and must not create an engine.  The
+  -- translator owns lifecycle and marks the handle ready during init.
+  -- The filter has a separate Lua env from the translator.  Readiness is
+  -- therefore the module-level live handle, not a per-env flag.
+  if engine_handle == nil then return nil end
+  return tigerengine.context_word_scores, engine_handle
 end
 
 -- 魔虎语义 C2 进程内评分。首次请求时按需加载 ONNX；加载失败自动关闭

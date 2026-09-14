@@ -26,7 +26,25 @@
 解压对应 zip 到 Rime 用户目录，然后执行一次“重新部署”。
 
 `mohu-sentence-ngram-v5.bin` 是原生整句候选模型。放到
-`~/Library/Rime/mohu/model/`，文件名遵循 `mohu-sentence-ngram-vN.bin`；运行时会按数字版本自动选择最高版本。模型缺失或加载失败时回退普通候选。
+`~/Library/Rime/mohu/model/`；运行时固定读取该文件名。模型缺失或加载失败时记录一次错误并回退普通候选，模型目录不在输入热路径扫描。
+
+### TCSKNM02 页校验与损坏模型回退
+
+TCSKNM02 默认只在启动时校验文件头、分区算术、索引计数/键序和页起始范围；
+不会顺序读取所有上下文页。实际解码首次触及某页时才校验该页的记录和后继表。
+如果页或后继表损坏，当前 native 解码返回 `invalid n-gram page` 错误，Lua 层
+放弃本轮 native 候选并保留 smart/普通候选，不把损坏数据当作“未命中”或继续
+使用不完整的 beam。
+
+发布校验或诊断时可对单次引擎创建启用完整页扫描：
+
+```text
+MOHU_TIGER_STRICT_VALIDATE=1
+```
+
+只有环境变量值严格等于字符串 `1` 才启用；未设置、空值、`0` 或其他值都保持
+按需校验。严格模式在创建阶段发现坏页即拒绝模型；该变量每次创建重新读取，
+不会在进程内缓存。TCSKNM01 与 MHKNM01 的既有启动校验语义不变。
 
 本地开发需要 Lua 5.4 头文件（Squirrel 的 librime-lua 为 5.4.6）：
 
@@ -79,14 +97,15 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
 - `long_input_length`：达到该 canonical raw 输入长度后（Rime 双拼音节之间的空格会先移除），express translator 使用不读 userdb 的 `smart_static`（默认 5）。smart userdb 的多字学习记录通过 native 个人词边快照和提交增量参与长句解码，不依赖按长度切换候选所有权
 - `personal_lexicon_namespace`：个人词 `Memory` 使用的 `smart` userdb 命名空间
 - `personal_lexicon_max_rows`：同步到 native 引擎的个人多字词上限（默认不限制；需要时可显式设回如 4096）
-- `user_model`：用户调频层开关（默认 true）。含中文的上屏文本会喂入
+- `user_model`：用户调频层开关（默认 true）。含非 ASCII 字符的上屏文本会喂入
   native 引擎的内存三元计数表，解码时每个 trigram 查询按
   `P = w·P_静态 + (1-w)·P_用户` 概率域融合——静态模型文件永不改写，
   调频学习全部发生在这一层
 - `user_model_weight`：静态模型权重 w（默认 0.85；设 1.0 等价关闭用户层）
 - `user_model_snapshot`：计数表二进制快照路径（默认
-  `mohu/config/user-ngram.snapshot`。
-- `user_model_snapshot_interval`：每 N 次中文上屏写一次快照（默认 64；
+  `mohu/config/user-ngram.snapshot`）。当前 runtime 通过原生 UTF-8 路径接口读写；
+  官方方案包预建默认父目录，覆盖路径时父目录须已存在。
+- `user_model_snapshot_interval`：每 N 次含非 ASCII 字符的上屏写一次快照（默认 64；
   方案卸载时若有未落盘计数也会兜底快照一次）
 - `personal_refresh_interval`：个人词快照的时间防抖秒数（默认 30；设为 0 关闭防抖）
 - `decode_context_chars`：跨候选左上文窗口（默认 2）。`contextual_order`
@@ -125,6 +144,13 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
   音节容量。不裁：punct/pinned、⚡️/📌 标记、不足 5 字（选词输入，
   含个人短词）、声母简码/缩写匹配（字数超容量，词表 6 千余条如
   `abjh→阿波罗计划`）、部分跨度候选（词组选词）。
+- `word_order_scan_budget`：为凑齐可评分 block 最多同步拉取的候选数（默认
+  `word_order_candidates × 3`，clamp 到候选上限至 1000）。在完整 block 或
+  EOF 之前命中该上限时，本轮保持上游原序且不获取/调用 scorer；完整 block
+  恰好由最后一个预算内候选补齐时仍可评分。
+- `word_order_time_budget_ms`：候选收集的协作式时间预算（默认 4ms，0 关闭）。
+  只在两次 iterator 调用之间检查，不能中断一次上游调用；计时器不可用时只
+  关闭时间判断，候选数硬上限继续生效。
 - `word_order_rank_penalty`：名次每前进一位所需的模型分优势（默认 1.0；
   离线网格的平滑平台区 0.95–1.4：0.95 时修好 45.7%/修反 1.5%，1.4 时
   40.3%/1.0%——即修反保护阈值，优势不足不动）

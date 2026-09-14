@@ -32,6 +32,7 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
+            make
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-python
 
@@ -73,6 +74,15 @@ jobs:
           cat > smoke.lua <<'LUA'
           local dll, model, lexicon = ...
           local engine = assert(package.loadlib(dll, "luaopen_tigerengine"))()
+          local snapshot = "用户快照.bin"
+          local expected = "new\0snapshot"
+          assert(engine.atomic_write_snapshot_file(snapshot, "old"))
+          assert(engine.atomic_write_snapshot_file(snapshot, expected))
+          assert(engine.read_snapshot_file(snapshot) == expected)
+          local missing, read_error = engine.read_snapshot_file("missing/snapshot.bin")
+          assert(missing == nil and type(read_error) == "string")
+          local wrote, write_error = engine.atomic_write_snapshot_file("missing/snapshot.bin", "x")
+          assert(wrote == false and type(write_error) == "string")
           local handle = assert(engine.create(model, lexicon, 200, 1))
           local output = assert(engine.decode(handle, "ufqyhfmimh", false))
           assert(output:find("迷茫", 1, true), output)
@@ -81,6 +91,25 @@ jobs:
           ./lua-5.4.8/src/lua.exe smoke.lua "$PWD/libtigerengine.dll" \
             "$PWD/mohu-sentence-ngram-v5.bin" \
             "$PWD/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt"
+
+      - name: Probe primary model mapping on Windows
+        shell: msys2 {0}
+        env:
+          TIGER_ENGINE_DLL: ${{ github.workspace }}/libtigerengine.dll
+          TIGER_NGRAM: ${{ github.workspace }}/mohu-sentence-ngram-v5.bin
+          TIGER_LEXICON: ${{ github.workspace }}/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
+        run: |
+          make tigerengine-snapshot-io tigerengine-mobile tigerengine-mapping
+          make tigerengine-windows-memory \
+            TIGER_MEMORY_OUTPUT=.tmp/native-tests/tigerengine-windows-mapping.json
+
+      - name: Upload Windows mapping probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: tigerengine-windows-mapping-${{ github.run_number }}-${{ github.run_attempt }}
+          path: .tmp/native-tests/tigerengine-windows-mapping.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Collect Windows runtime closure
         shell: msys2 {0}
@@ -162,6 +191,8 @@ jobs:
           test -x dist-flypy/解除隔离.command
           test -f dist-zrm/mohu/model/README.md
           test -f dist-flypy/mohu/model/README.md
+          test -f dist-zrm/mohu/config/README.md
+          test -f dist-flypy/mohu/config/README.md
           test ! -e dist-zrm/base
           test ! -e dist-flypy/base
           test ! -e dist-zrm/mohu/model/mohu-sentence-ngram-v5.bin
@@ -241,6 +272,7 @@ jobs:
             "dist-flypy:rime-mohu-flypy-latest.zip"; do
             directory="${pair%%:*}"
             archive="${pair##*:}"
+            unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md" >/dev/null
             unzip -Z1 "$archive" | grep -Fx "mohu/runtime/runtime-preload.txt" >/dev/null
             jq -r '.files[].name' "$directory/mohu/runtime/runtime-manifest.json" | \
               while IFS= read -r runtime_file; do

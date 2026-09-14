@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/build.yml"
 
 
@@ -51,7 +50,24 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             "runtime-manifest.json",
         ):
             self.assertIn(expected, workflow)
-        self.assertNotIn("TIGER_ENGINE_DLL", workflow)
+
+    def test_windows_runtime_smoke_covers_snapshot_replacement(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        windows_job = workflow.split("  windows-runtime:", 1)[1].split(
+            "\n  build:", 1
+        )[0]
+
+        self.assertIn("engine.atomic_write_snapshot_file", windows_job)
+        self.assertIn("engine.read_snapshot_file", windows_job)
+        self.assertIn("make tigerengine-snapshot-io", windows_job)
+
+    def test_release_packages_preserve_snapshot_parent_directory(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("test -f dist-zrm/mohu/config/README.md", workflow)
+        self.assertIn("test -f dist-flypy/mohu/config/README.md", workflow)
+        self.assertIn(
+            'unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md"', workflow
+        )
 
     def test_windows_smoke_test_downloads_model_without_github_cli(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -81,6 +97,7 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
         self.assertIn("shell: msys2 {0}", collection_step)
         self.assertIn("python tools/collect_windows_runtime.py", collection_step)
         self.assertIn("--objdump objdump", collection_step)
+        self.assertNotIn("TIGER_ENGINE_DLL", collection_step)
         self.assertNotIn("shell: pwsh", windows_job)
         self.assertNotIn(r"C:\msys64", windows_job)
 

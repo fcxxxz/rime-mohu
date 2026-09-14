@@ -4,7 +4,11 @@ local runtime = dofile("tiger_sentence_native/mohu_runtime.lua")
 
 local root = os.tmpname()
 os.remove(root)
-assert(os.execute("mkdir -p " .. root) == true)
+if package.config:sub(1, 1) == "\\" then
+  assert(os.execute('mkdir "' .. root .. '"') == true)
+else
+  assert(os.execute("mkdir -p " .. root) == true)
+end
 
 local function touch(name)
   local file = assert(io.open(root .. "/" .. name, "w"))
@@ -21,25 +25,30 @@ touch("mohu-sentence-ngram-v7-preview.bin")
 touch("mohu-sentence-ngram-vx.bin")
 touch("other.bin")
 
+-- Runtime selection is intentionally fixed. Model discovery belongs to the
+-- package/deployment step; the Lua hot path must never spawn a shell.
+local original_popen = io.popen
+io.popen = function()
+  error("runtime model resolution must not call io.popen")
+end
+
 local selected = runtime.resolve_model({ model_dir = root })
-assert(selected == root .. "/mohu-sentence-ngram-v6.0.1.bin",
-  "highest numeric version must win: " .. tostring(selected))
+assert(selected == root .. "/mohu-sentence-ngram-v5.bin",
+  "fixed v5 model must be selected: " .. tostring(selected))
 
-os.remove(root .. "/mohu-sentence-ngram-v6.0.1.bin")
 selected = runtime.resolve_model({ model_dir = root })
-assert(selected == root .. "/mohu-sentence-ngram-v6.bin",
-  "integer v6 must beat decimal v5.10: " .. tostring(selected))
-
-os.remove(root .. "/mohu-sentence-ngram-v6.bin")
-selected = runtime.resolve_model({ model_dir = root })
-assert(selected == root .. "/mohu-sentence-ngram-v5.10.bin",
-  "v5.10 must beat v5.2 numerically: " .. tostring(selected))
+assert(selected == root .. "/mohu-sentence-ngram-v5.bin",
+  "repeated resolution must remain fixed: " .. tostring(selected))
 
 os.remove(root .. "/mohu-sentence-ngram-v5.bin")
-os.remove(root .. "/mohu-sentence-ngram-v5.2.bin")
-os.remove(root .. "/mohu-sentence-ngram-v5.10.bin")
-assert(runtime.resolve_model({ model_dir = root }) == nil,
-  "no valid model must return nil")
+assert(runtime.resolve_model({ model_dir = root }) == root .. "/mohu-sentence-ngram-v5.bin",
+  "missing model still returns the fixed path for one-time engine error reporting")
 
-os.execute("rm -rf " .. root)
-print("Mohu model version selection tests passed")
+io.popen = original_popen
+
+if package.config:sub(1, 1) == "\\" then
+  os.execute('rmdir /s /q "' .. root .. '"')
+else
+  os.execute("rm -rf " .. root)
+end
+print("Mohu fixed model path tests passed")

@@ -159,6 +159,9 @@ smart:
   # 被整流抽干——2026-09-14 已修复并量化，见
   # docs/reports/2026-09-14-perkey-latency.md。
   enable_completion: true
+  # 词组补全显式开启（librime 默认亦为开）：打满 4 个完整音节后更长的
+  # 词条会作为补全候选出现；配合 reorder/word_order 的扫描上界防护。
+  enable_word_completion: true
   # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/

@@ -39,6 +39,7 @@ lua/option_state_data.lua
 __pycache__/
 .worktrees/
 .mimosa/
+.tmp/native-tests/
 tiger_sentence_native/lua-5.4.6/src/*.o
 tiger_sentence_native/lua-5.4.6/src/lua
 tiger_sentence_native/lua-5.4.6/src/luac
@@ -161,3 +162,5 @@ nul
 !/research/semantic_student/archive/gpu-box/sweep/dev-m0.15.json
 !/research/semantic_student/archive/gpu-box/sweep/sweep-d50-384-tnews.json
 !/research/semantic_student/archive/gpu-box/sweep/sweep-d50-384-probe.json
+/mohu/config/user-ngram.snapshot
+/mohu/config/user-ngram.snapshot.tmp-*

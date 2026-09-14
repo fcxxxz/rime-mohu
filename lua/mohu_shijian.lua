@@ -6,6 +6,29 @@
 ------------------------------------
 -- *******农历节气计算部分
 -- ========角度变换===============
+
+local semantic_meta = nil
+do
+  local ok, module = pcall(require, "mohu_semantic_meta")
+  if ok and type(module) == "table" and type(module.bind) == "function" then
+    semantic_meta = module
+  end
+end
+
+local function emit_temporal(candidate)
+  if semantic_meta ~= nil then
+    pcall(semantic_meta.bind, candidate, {
+      provenance_version = "mohu-temporal/v1",
+      source = "temporal",
+      candidate_type = candidate.type,
+      protected = true,
+      synthetic = true,
+      native_score_kind = "unavailable",
+    })
+  end
+  yield(candidate)
+end
+
 local rad = 180 * 3600 / math.pi -- 每弧度的角秒数
 local RAD = 180 / math.pi -- 每弧度的角度数
 function int2(v) -- 取整数部分
@@ -1889,107 +1912,107 @@ local function translator(input, seg)
     date = os.date("%Y-%m-%d")
     num_year = os.date("%j/") .. IsLeap(os.date("%Y"))
     candidate = Candidate("date", seg.start, seg._end, date, num_year)
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = os.date("%Y/%m/%d")
     num_year = os.date("%j/") .. IsLeap(os.date("%Y"))
     candidate = Candidate("date", seg.start, seg._end, date, num_year)
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = os.date("%Y.%m.%d")
     num_year = os.date("%j/") .. IsLeap(os.date("%Y"))
     candidate = Candidate("date", seg.start, seg._end, date, num_year)
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = os.date("%Y年%m月%d日")
     date = string.gsub(date, "(%D)0", "%1")
     candidate = Candidate("date", seg.start, seg._end, date, num_year)
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = string.gsub(os.date("%m/%d/%Y"), "([^%d])0+", "%1")
     date = string.gsub(date, "^0+", "")
     candidate = Candidate("date", seg.start, seg._end, date, num_year)
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = CnDate_translator(os.date("%Y%m%d"))
     candidate = Candidate("date", seg.start, seg._end, date, num_year)
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = lunarJzl(os.date("%Y%m%d%H"))
     candidate = Candidate("date", seg.start, seg._end, date, " ")
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = Date2LunarDate(os.date("%Y%m%d")) .. JQtest(os.date("%Y%m%d"))
     candidate = Candidate("date", seg.start, seg._end, date, "")
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = Date2LunarDate(os.date("%Y%m%d")) .. GetLunarSichen(os.date("%H"), 1)
     candidate = Candidate("date", seg.start, seg._end, date, "")
-    yield(candidate)
+    emit_temporal(candidate)
 
   elseif route == "cdate" then
     date = Date2LunarDate(os.date("%Y%m%d")) .. JQtest(os.date("%Y%m%d"))
     candidate = Candidate("date", seg.start, seg._end, date, "")
     candidate.quality = 1.1
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = lunarJzl(os.date("%Y%m%d%H"))
     candidate = Candidate("date", seg.start, seg._end, date, " ")
     candidate.quality = 1.1
-    yield(candidate)
+    emit_temporal(candidate)
 
     date = Date2LunarDate(os.date("%Y%m%d")) .. GetLunarSichen(os.date("%H"), 1)
     candidate = Candidate("date", seg.start, seg._end, date, "")
     candidate.quality = 1.1
-    yield(candidate)
+    emit_temporal(candidate)
     -- 时间
   elseif route == "time" then
     time = string.gsub(os.date("%H:%M"), "", "")
     time_discrpt = GetLunarSichen(os.date("%H"), 1)
     candidate = Candidate("time", seg.start, seg._end, time, time_discrpt)
-    yield(candidate)
+    emit_temporal(candidate)
 
     time = format_Time() .. string.gsub(os.date("%I:%M"), "", "")
     candidate = Candidate("time", seg.start, seg._end, time, time_discrpt)
-    yield(candidate)
+    emit_temporal(candidate)
 
     time = string.gsub(os.date("%H:%M:%S"), "", "")
     candidate = Candidate("time", seg.start, seg._end, time, time_discrpt)
-    yield(candidate)
+    emit_temporal(candidate)
 
     time = string.gsub(os.date("%H点%M分%S秒"), "^0", "")
     candidate = Candidate("time", seg.start, seg._end, time, time_discrpt)
-    yield(candidate)
+    emit_temporal(candidate)
     -- 星期几 周几
   elseif route == "week" then
     weekday = chinese_weekday(os.date("%w"))
     num_weekday = "第" .. iso_week_number() .. "周"
     candidate = Candidate("xq", seg.start, seg._end, weekday, num_weekday)
-    yield(candidate)
+    emit_temporal(candidate)
 
     weekday = chinese_weekday2(os.date("%w"))
     candidate = Candidate("xq", seg.start, seg._end, weekday, num_weekday)
-    yield(candidate)
+    emit_temporal(candidate)
 
     weekday = os.date("%a")
     candidate = Candidate("xq", seg.start, seg._end, weekday, num_weekday)
-    yield(candidate)
+    emit_temporal(candidate)
 
     weekday = os.date("%A")
     candidate = Candidate("xq", seg.start, seg._end, weekday, num_weekday)
-    yield(candidate)
+    emit_temporal(candidate)
   elseif route == "week_number" then
      weekno = iso_week_number()
      candidate = Candidate("oww", seg.start, seg._end, "W" .. weekno, "周")
-     yield(candidate)
+     emit_temporal(candidate)
      candidate = Candidate("oww", seg.start, seg._end, "第" .. weekno .. "周", "周")
-     yield(candidate)
+     emit_temporal(candidate)
     -- 节气 已修复崩溃问题
   elseif route == "jieqi" then
     local keyword, jqs
     jqs = GetNowTimeJq(os.date("%Y%m%d", os.time() - 3600 * 24 * 15))
     for i, jq in ipairs(jqs) do
-      yield(Candidate("jwql", seg.start, seg._end, jq, "〔节气〕"))
+      emit_temporal(Candidate("jwql", seg.start, seg._end, jq, "〔节气〕"))
     end
     -- 农历查询
   elseif string.sub(input, 1, 1) == "N" then
@@ -1999,7 +2022,7 @@ local function translator(input, seg)
         lunar = QueryLunarInfo(n)
         if #lunar > 0 then
           for i = 1, #lunar do
-            yield(Candidate(input, seg.start, seg._end, lunar[i][1], lunar[i][2]))
+            emit_temporal(Candidate(input, seg.start, seg._end, lunar[i][1], lunar[i][2]))
           end
         end
       end
@@ -2007,13 +2030,13 @@ local function translator(input, seg)
     -- ISO 8601 / RFC 3339 的时间格式 （固定东八区）
   elseif route == "rfc3339" then
     local current_time = os.time()
-    yield(Candidate(input, seg.start, seg._end, os.date('%Y-%m-%d %H:%M:%S', current_time), "年-月-日 时:分:秒"))
-    yield(Candidate(input, seg.start, seg._end, os.date('%Y-%m-%dT%H:%M:%S+08:00', current_time), "年-月-日T时:分:秒+时区"))
-    yield(Candidate(input, seg.start, seg._end, os.date('%Y%m%d%H%M%S', current_time), "年月日时分秒"))
+    emit_temporal(Candidate(input, seg.start, seg._end, os.date('%Y-%m-%d %H:%M:%S', current_time), "年-月-日 时:分:秒"))
+    emit_temporal(Candidate(input, seg.start, seg._end, os.date('%Y-%m-%dT%H:%M:%S+08:00', current_time), "年-月-日T时:分:秒+时区"))
+    emit_temporal(Candidate(input, seg.start, seg._end, os.date('%Y%m%d%H%M%S', current_time), "年月日时分秒"))
     -- Unix Epoch Clock / Timestamp 时间格式
   elseif route == "epoch" then
     local current_time = os.time()
-    yield(Candidate(input, seg.start, seg._end, string.format('%d', current_time), "Unix Timestamp"))
+    emit_temporal(Candidate(input, seg.start, seg._end, string.format('%d', current_time), "Unix Timestamp"))
   end -- if
 end -- function
 

@@ -94,6 +94,7 @@ def load_engine(
     expected_engine_sha256: str | None = TIGER_ENGINE_SHA256,
     expected_model_sha256: str | None = TIGER_NGRAM_SHA256,
     expected_lexicon_sha256: str | None = TIGER_LEXICON_SHA256,
+    word_edge_weight: float | None = None,
 ):
     if expected_engine_sha256 is not None:
         verify_file_hash(lib_path, expected_engine_sha256, label="Tiger engine")
@@ -120,6 +121,15 @@ def load_engine(
         str(model).encode(), str(lexicon).encode(), 200, 1, err, len(err))
     if handle < 0:
         raise SystemExit(f"engine create failed: {err.value.decode()}")
+    if word_edge_weight is not None:
+        # 词边先验网格评测：0=旧行为基线，>0 启用句中内部词边加有界分。
+        lib.tiger_engine_set_word_edge_weight.argtypes = [ctypes.c_int, ctypes.c_double]
+        lib.tiger_engine_set_word_edge_weight.restype = ctypes.c_int
+        rc = lib.tiger_engine_set_word_edge_weight(handle, ctypes.c_double(word_edge_weight))
+        if rc < 0:
+            lib.tiger_engine_free(handle)
+            message = lib.tiger_last_error().decode()
+            raise SystemExit(f"set word edge weight failed: {message}")
     try:
         if expected_engine_sha256 is not None:
             verify_file_hash(lib_path, expected_engine_sha256, label="Tiger engine after load")
@@ -283,6 +293,8 @@ def main() -> None:
     parser.add_argument("--lexicon-sha256", default=TIGER_LEXICON_SHA256)
     parser.add_argument("--engine-sha256", default=TIGER_ENGINE_SHA256)
     parser.add_argument("--allow-unpinned-resources", action="store_true")
+    parser.add_argument("--word-edge-weight", type=float, default=None,
+                        help="词边先验权重（0=旧行为基线；缺省用引擎默认 0）")
     parser.add_argument("--lua-frameworks", type=Path, default=DEFAULT_SQUIRREL_FRAMEWORKS)
     args = parser.parse_args()
     try:
@@ -321,6 +333,7 @@ def main() -> None:
         expected_engine_sha256=expected_engine_sha256,
         expected_model_sha256=expected_model_sha256,
         expected_lexicon_sha256=expected_lexicon_sha256,
+        word_edge_weight=args.word_edge_weight,
     )
     try:
         run_manifest: dict[str, object] = {
@@ -330,6 +343,7 @@ def main() -> None:
             "latency_scope": "native tiger_decode only",
             "shard": {"index": shard_index, "count": shard_count},
             "allow_unpinned_resources": args.allow_unpinned_resources,
+            "word_edge_weight": args.word_edge_weight,
             "resources": {
                 "engine": resource_metadata(args.lib, expected_engine_sha256, label="Tiger engine"),
                 "model": resource_metadata(args.model, expected_model_sha256, label="Tiger n-gram"),

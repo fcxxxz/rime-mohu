@@ -11,6 +11,7 @@ TIGER_EQUIVALENTS = {
 }
 
 _CODE_PATTERN = re.compile(r"^[a-z]+$")
+_CHAIFEN_PATTERN = re.compile(r"^(\S)\t〔(.+?)&nbsp;·&nbsp;[a-z]+〕")
 
 
 class AuxiliaryEntry(NamedTuple):
@@ -19,6 +20,13 @@ class AuxiliaryEntry(NamedTuple):
     ``normal`` is the primary auxiliary (positions 1-2). ``compat14`` and
     ``compat13`` are lower-priority compatibility plays built from positions
     1-4 (preferred) and 1-3; they may be empty.
+
+    Compat positions only keep 大码 letters: a Tiger full code ends with the
+    last root's 小码 when the character has at most three roots (1-2 root
+    codes pad to 大大+小, 3-root codes are 大大大+小; 4+ root codes are all
+    大码). With a known root count, ``compat14`` is dropped for ≤3-root
+    characters and ``compat13`` for ≤2-root characters. Characters without
+    decomposition data (extension-block rarities) keep the legacy derivation.
     """
 
     normal: str
@@ -91,12 +99,19 @@ def select_primary_code(codes: Iterable[str]) -> str | None:
     return next(code for code in values if len(code) == longest)
 
 
-def to_auxiliary_entry(code: str) -> AuxiliaryEntry:
+def to_auxiliary_entry(code: str, root_count: int | None = None) -> AuxiliaryEntry:
     if not _CODE_PATTERN.fullmatch(code):
         raise ValueError(f"invalid Tiger code: {code!r}")
     normal = code[:2]
     compat14 = code[0] + code[3] if len(code) >= 4 else ""
     compat13 = code[0] + code[2] if len(code) >= 3 else ""
+    if root_count is not None:
+        # 辅码兼容位只用大码：≤3 根的全码末位是末根小码（无 14 位），
+        # ≤2 根的第 3 位已是末根小码（无 13 位）。
+        if root_count <= 3:
+            compat14 = ""
+        if root_count <= 2:
+            compat13 = ""
     if compat14 == normal:
         compat14 = ""
     if compat13 == normal or compat13 == compat14:
@@ -104,16 +119,28 @@ def to_auxiliary_entry(code: str) -> AuxiliaryEntry:
     return AuxiliaryEntry(normal, compat14, compat13)
 
 
+def load_root_counts(path: Path) -> dict[str, int]:
+    """Read per-character root counts from tools/data/tiger_chaifen.txt."""
+    result: dict[str, int] = {}
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+        match = _CHAIFEN_PATTERN.match(raw_line)
+        if match:
+            result[match.group(1)] = len(match.group(2))
+    return result
+
+
 def build_auxiliary_map(
     path: Path,
     required_chars: Iterable[str] = (),
+    root_counts: Mapping[str, int] | None = None,
 ) -> dict[str, AuxiliaryEntry]:
     tiger_codes = load_tiger_codes(path)
     result: dict[str, AuxiliaryEntry] = {}
     for char, codes in tiger_codes.items():
         primary = select_primary_code(codes)
         if primary:
-            result[char] = to_auxiliary_entry(primary)
+            count = root_counts.get(char) if root_counts is not None else None
+            result[char] = to_auxiliary_entry(primary, count)
 
     for alias, canonical in TIGER_EQUIVALENTS.items():
         if canonical in result:

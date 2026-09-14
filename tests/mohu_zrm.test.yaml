@@ -58,9 +58,11 @@ deploy:
         assert: eq(cand[1].text, '利') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '梨') and eq(cand[2].comment, '⚡️')
       - send: lixp
         assert: eq(cand[1].text, '黎') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '励')
-      # 暮 由 four_code_char_yield_exempt 豁免四码让位规则
+      # 暮/幕 交换简频（tools/data/chars.txt）：mulo 归暮，幕 让位到 mulr
       - send: mulo
-        assert: eq(cand[1].text, '幕') and eq(cand[2].text, '暮') and eq(cand[2].comment, '⚡️')
+        assert: eq(cand[1].text, '暮') and eq(cand[1].comment, '⚡️')
+      - send: mulr
+        assert: eq(cand[1].text, '幕')
       # 手工加词
       - send: ypnm
         assert: eq(cand[1].text, '云辇')

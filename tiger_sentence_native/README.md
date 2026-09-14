@@ -62,9 +62,19 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
 - `beam`：束宽（默认 200）
 - `all_ranks`：>4 键时全部档位竞争（默认 true）
 - `reading_prior_weight`：读音先验权重（默认 1.0，0 关闭，范围 0–4）。
-  码表第 5 列读音简频 → log P(读音|字) 并入每步路径分，补偿字符级
-  模型不认读音的盲区（万 mò 拼「万虎」排 mohuz 首选）。旧 ABI dylib
+  码表第 5 列读音简频 → log P(读音|字) 并入每步路径分，补偿字符级模型
+  不认读音的盲区（万 mò 拼「万虎」排 mohuz 首选）。旧 ABI dylib
   无 `set_reading_prior_weight` 或旧 4 列码表时自动中性/默认
+- `word_edge_weight`：词边先验权重（默认 1.5，0 关闭并逐字节保持旧行为，
+  范围 0–4）。>0 时允许静态多字词（非个人词/非简词）作为长句句中内部
+  beam 边，并给每条内部词边加该有界分——「词典里有这个词」在路径分中
+  获得一次投票，对应 librime/万象 `entry_weight + Query` 加法融合结构
+  的 native 对应物。修「这个输入法支持一口气输入一整句话」被
+  `vegeuurufaviiiyikbqiuuruyivgjuhw` 解成「只吃」一类错词与后文跨词界
+  粘连（只吃一口）反杀正确词条的问题：V5 局部本就偏好「支持」（+6.18
+  nats），词边加票只需压住 1.09 的粘连逆差。整段命中边（≤4 键词查询）
+  维持原语义不加成，行为不变；旧 ABI dylib 无 `set_word_edge_weight`
+  时静默保持关闭。评测见 `docs/reports/2026-09-13-word-edge-prior.md`
 - `initial_quality`：原生候选质量（默认 50）。固顶候选为 100，默认 smart 候选为 5
 - `long_input_length`：达到该 canonical raw 输入长度后（Rime 双拼音节之间的空格会先移除），express translator 使用不读 userdb 的 `smart_static`（默认 5）。smart userdb 的多字学习记录通过 native 个人词边快照和提交增量参与长句解码，不依赖按长度切换候选所有权
 - `personal_lexicon_namespace`：个人词 `Memory` 使用的 `smart` userdb 命名空间

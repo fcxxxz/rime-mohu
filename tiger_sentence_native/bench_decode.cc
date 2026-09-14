@@ -180,6 +180,24 @@ int main(int argc, char** argv) {
     txn_bench(base, "txn commit no-change");
     txn_bench(grown, "txn commit growth (+200)");
     txn_bench(base, "txn commit shrink rebuild");
+
+    // 行数上限截断场景：负载是"按提交次数取头部"的子集，上屏即时注入的新词
+    // 计数为 1、排不进头部，于是每轮负载都不含它。修复前这会被误判成"用户
+    // 删词"，每轮都退化成整表重建；修复后应保持增量。
+    {
+      timed_apply(base, noop);  // 让 base 成为"上一轮负载"的基准
+      std::vector<double> off_payload;
+      for (int round = 0; round < 5; ++round) {
+        const std::string text = "截断词" + std::to_string(round);
+        if (tiger_engine_adjust_personal(handle, "zzzzqy", text.c_str(), 1) != 1) {
+          std::cerr << "adjust_personal failed: " << tiger_last_error() << "\n";
+          tiger_engine_free(handle);
+          exit(1);
+        }
+        timed_apply(base, off_payload);
+      }
+      report("set_personal after off-payload commit", off_payload);
+    }
   }
 
   static const char* kRaws[] = {

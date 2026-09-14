@@ -141,6 +141,8 @@ jobs:
           test -f dist-flypy/mohu_flypy.schema.yaml
           test -f dist-zrm/mohu/runtime/libtigerengine.dylib
           test -f dist-flypy/mohu/runtime/libtigerengine.dylib
+          test -f dist-zrm/mohu/runtime/libonnxruntime.1.dylib
+          test -f dist-flypy/mohu/runtime/libonnxruntime.1.dylib
           test -f dist-zrm/mohu/runtime/libtigerengine.dll
           test -f dist-flypy/mohu/runtime/libtigerengine.dll
           test -f dist-zrm/mohu/runtime/runtime-preload.txt

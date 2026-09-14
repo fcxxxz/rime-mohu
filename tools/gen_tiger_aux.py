@@ -3,7 +3,11 @@
 import sys
 from pathlib import Path
 
-from tiger_aux import build_auxiliary_map, write_auxiliary_tsv
+from tiger_aux import (
+    build_auxiliary_map,
+    load_root_counts,
+    write_auxiliary_tsv,
+)
 
 
 def load_characters(path: Path) -> list[str]:
@@ -26,7 +30,11 @@ def main() -> None:
         if char not in seen:
             seen.add(char)
             characters.append(char)
-    mapping = build_auxiliary_map(Path("tiger.dict.yaml"), characters)
+    mapping = build_auxiliary_map(
+        Path("tiger.dict.yaml"),
+        characters,
+        root_counts=load_root_counts(Path("tools/data/tiger_chaifen.txt")),
+    )
     write_auxiliary_tsv({char: mapping[char] for char in characters}, sys.stdout)
 
 

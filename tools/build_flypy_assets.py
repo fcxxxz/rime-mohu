@@ -421,6 +421,7 @@ def build() -> None:
         write(ROOT / filename.replace("mohu_zrm", "mohu_flypy"), flypy_schema(zrm_text))
 
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build Flypy assets")
     parser.add_argument(

@@ -380,6 +380,48 @@ int l_set_reading_prior_weight(lua_State* L) {
   return 1;
 }
 
+int l_set_word_edge_weight(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double weight = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_word_edge_weight((int)handle_value, weight);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "word edge weight update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+int l_word_disagreement(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  size_t candidates_len = 0;
+  const char* candidates = luaL_checklstring(L, 2, &candidates_len);
+  const lua_Integer count_value = luaL_checkinteger(L, 3);
+  luaL_argcheck(L, count_value >= 0 && count_value <= 10000, 3,
+                "candidate count is out of range");
+  int flag = 0;
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_word_disagreement((int)handle_value, candidates,
+                                        (int)count_value, &flag);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "word disagreement check failed");
+  lua_pushinteger(L, flag);
+  return 1;
+}
+
 int l_user_model_export(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -546,6 +588,8 @@ int luaopen_tigerengine(lua_State* L) {
       {"context_char_scores", l_context_char_scores},
       {"set_user_model_weight", l_set_user_model_weight},
       {"set_reading_prior_weight", l_set_reading_prior_weight},
+      {"set_word_edge_weight", l_set_word_edge_weight},
+      {"word_disagreement", l_word_disagreement},
       {"semantic_create", l_semantic_create},
       {"semantic_score", l_semantic_score},
       {"semantic_free", l_semantic_free},

@@ -10,11 +10,16 @@ engine:
     - table_translator@translator
 
 speller:
+  # 允许进入编码串的字符集合；不在这里的按键由其他组件处理。
   alphabet: abcdefghijklmnopqrstuvwxyz
   max_code_length: 4
 
 translator:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_zrm_fixed_legacy
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false

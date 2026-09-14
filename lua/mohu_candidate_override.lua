@@ -652,20 +652,25 @@ local function is_builtin(memory, code, text)
     return normalized ~= code and lookup(normalized)
 end
 
+-- 查找候选对应的用户自造词条。native 引擎候选（个人词层在引擎内）没有
+-- user_phrase 类型与 entry，一律走 userdb 扫描；音节码允许输入侧带辅码
+-- （存储码是输入码的前缀），完全对不上时以唯一同文词条兜底。
 local function user_created_entry(memory, cand, code)
     local genuine = genuine_candidate(cand)
-    if memory == nil or genuine.type ~= "user_phrase" then
+    if memory == nil then
         return nil
     end
     local normalized = normalize_code(code)
     local text = genuine_text(cand)
-    local entry_ok, selected_entry = pcall(function()
-        return genuine.entry
-    end)
-    if entry_ok and selected_entry ~= nil then
-        local stored_code = entry_code(selected_entry)
-        if normalize_code(stored_code) == normalized and selected_entry.text == text then
-            return not is_builtin(memory, stored_code, text) and selected_entry or nil
+    if genuine.type == "user_phrase" then
+        local entry_ok, selected_entry = pcall(function()
+            return genuine.entry
+        end)
+        if entry_ok and selected_entry ~= nil then
+            local stored_code = entry_code(selected_entry)
+            if normalize_code(stored_code) == normalized and selected_entry.text == text then
+                return not is_builtin(memory, stored_code, text) and selected_entry or nil
+            end
         end
     end
     local ok, found = pcall(function()
@@ -675,16 +680,36 @@ local function user_created_entry(memory, cand, code)
         return nil
     end
     local created = nil
+    local text_matches = 0
+    local text_fallback = nil
     ok = pcall(function()
         for entry in memory:iter_user() do
             local stored_code = entry_code(entry)
-            if normalize_code(stored_code) == normalized and entry.text == text then
-                created = not is_builtin(memory, stored_code, text) and entry or nil
-                return
+            if entry.text == text then
+                local user_created = not is_builtin(memory, stored_code, text)
+                if user_created then
+                    text_matches = text_matches + 1
+                    text_fallback = entry
+                end
+                local stored_norm = normalize_code(stored_code)
+                local code_match = stored_norm == normalized
+                if not code_match and #stored_norm > 0 and #normalized >= #stored_norm then
+                    code_match = normalized:sub(1, #stored_norm) == stored_norm
+                end
+                if code_match and user_created then
+                    created = entry
+                    return
+                end
             end
         end
     end)
-    return ok and created or nil
+    if not ok then
+        return nil
+    end
+    if created == nil and text_matches == 1 then
+        created = text_fallback
+    end
+    return created
 end
 
 local function is_user_created(memory, cand, code)
@@ -1011,6 +1036,69 @@ local function reset_learned_weight(context, segment, code, env)
     return kAccepted
 end
 
+-- userdb 词条删除/清权重后同步 native 引擎的个人词层。引擎在启动时把
+-- 个人词快照进内存，userdb 变化不会自动传导；显式操作需要即时刷新，
+-- 否则删掉的词在当前组合里立刻被引擎个人边顶回来。懒加载避免测试
+-- 环境与模块加载顺序依赖（引擎未就绪时静默直通）。
+local function refresh_engine_personal(memory)
+    local ok, sentence = pcall(require, "mohu_tiger_sentence")
+    if ok and sentence ~= nil and type(sentence.refresh_personal_now) == "function" then
+        pcall(sentence.refresh_personal_now, memory)
+    end
+end
+
+-- 永久删除用户自造词：override 标记 + userdb 扣减 + 当前候选移除 +
+-- native 引擎个人词层同步刷新。count 为删除前的提交计数（清权重后
+-- userdb 里可能已寻不回条目，armed 路径依赖它补写标记）。
+local function finish_permanent_delete(context, env, selected, text, stored_code, count, code)
+    local records = env.override_store:query(code)
+    local record = records ~= nil and records[text] or nil
+    local was_hidden = record ~= nil and record.hidden
+    if was_hidden and not env.override_store:set_hidden(code, text, false) then
+        set_prompt(context, "〔永久删除失败：无法清理隐藏记录〕")
+        return kAccepted
+    end
+    if not env.override_store:set_user_deleted(stored_code, text, count) then
+        if was_hidden then
+            pcall(function() env.override_store:set_hidden(code, text, true) end)
+        end
+        set_prompt(context, "〔永久删除失败：无法记录删除状态〕")
+        return kAccepted
+    end
+    local created_entry = user_created_entry(env.override_memory, selected, code)
+    if created_entry ~= nil then
+        local update_ok, updated = pcall(function()
+            return env.override_memory:update_userdict(created_entry, -1, "")
+        end)
+        if not update_ok or updated == false then
+            pcall(function() env.override_store:set_user_deleted(stored_code, text, -1) end)
+            if was_hidden then
+                pcall(function() env.override_store:set_hidden(code, text, true) end)
+            end
+            set_prompt(context, "〔永久删除失败：无法写入用户词典〕")
+            return kAccepted
+        end
+    end
+    mark_user_deleted(stored_code, text, count)
+    mark_context_user_deleted(context, stored_code, text, count)
+    local ok, deleted = pcall(function()
+        return context:delete_current_selection()
+    end)
+    if not ok or deleted == false then
+        if was_hidden then
+            pcall(function() env.override_store:set_hidden(code, text, true) end)
+        end
+        set_prompt(context, "〔永久删除失败：无法写入用户词典〕")
+        return kAccepted
+    end
+    env.override_weight_cleared = nil
+    refresh_engine_personal(env.override_memory)
+    refresh_override_memory(env)
+    refresh(context)
+    set_prompt(context, "〔已永久删除「" .. text .. "」〕")
+    return kAccepted
+end
+
 local function delete_or_restore(context, segment, code, env)
     local selected = segment:get_selected_candidate()
     if selected == nil then
@@ -1024,48 +1112,41 @@ local function delete_or_restore(context, segment, code, env)
     local record = records[text]
     local management = context:get_option(env.override_management_option)
 
+    -- 两段式：第一按清空学习权重，两秒内第二按永久删除。armed 状态让
+    -- 第二按不依赖 userdb 条目是否仍可寻回（清零后可能已被丢弃）。
+    local armed = env.override_weight_cleared
+    local seg_norm = normalize_code(code)
+    if armed ~= nil and armed.text == text and armed.seg == seg_norm
+        and (os.clock() - armed.time) <= 2.0 then
+        return finish_permanent_delete(context, env, selected, text,
+            armed.entry_code, armed.count, code)
+    end
+    env.override_weight_cleared = nil
+
     local created_entry = user_created_entry(env.override_memory, selected, code)
     if created_entry ~= nil then
-        local was_hidden = record ~= nil and record.hidden
-        if was_hidden and not env.override_store:set_hidden(code, text, false) then
-            set_prompt(context, "〔永久删除失败：无法清理隐藏记录〕")
-            return kAccepted
-        end
-        local stored_code = normalize_code(entry_code(created_entry))
-        if not env.override_store:set_user_deleted(stored_code, text, created_entry.commit_count) then
-            if was_hidden then
-                pcall(function() env.override_store:set_hidden(code, text, true) end)
+        local count = tonumber(created_entry.commit_count) or 0
+        if count > 0 then
+            local update_ok, updated = pcall(function()
+                return env.override_memory:update_userdict(created_entry, -count, "")
+            end)
+            if not update_ok or updated == false then
+                set_prompt(context, "〔清空权重失败：无法写入用户词典〕")
+                return kAccepted
             end
-            set_prompt(context, "〔永久删除失败：无法记录删除状态〕")
+            env.override_weight_cleared = {
+                text = text,
+                seg = seg_norm,
+                entry_code = normalize_code(entry_code(created_entry)),
+                count = count,
+                time = os.clock(),
+            }
+            refresh_engine_personal(env.override_memory)
+            set_prompt(context, "〔已清空「" .. text .. "」的学习权重；两秒内再按一次永久删除〕")
             return kAccepted
         end
-        local update_ok, updated = pcall(function()
-            return env.override_memory:update_userdict(created_entry, -1, "")
-        end)
-        if not update_ok or updated == false then
-            pcall(function() env.override_store:set_user_deleted(stored_code, text, -1) end)
-            if was_hidden then
-                pcall(function() env.override_store:set_hidden(code, text, true) end)
-            end
-            set_prompt(context, "〔永久删除失败：无法写入用户词典〕")
-            return kAccepted
-        end
-        mark_user_deleted(entry_code(created_entry), text, created_entry.commit_count)
-        mark_context_user_deleted(context, entry_code(created_entry), text, created_entry.commit_count)
-        local ok, deleted = pcall(function()
-            return context:delete_current_selection()
-        end)
-        if not ok or deleted == false then
-            if was_hidden then
-                pcall(function() env.override_store:set_hidden(code, text, true) end)
-            end
-            set_prompt(context, "〔永久删除失败：无法写入用户词典〕")
-            return kAccepted
-        end
-        refresh_override_memory(env)
-        refresh(context)
-        set_prompt(context, "〔已永久删除「" .. text .. "」〕")
-        return kAccepted
+        return finish_permanent_delete(context, env, selected, text,
+            normalize_code(entry_code(created_entry)), count, code)
     end
 
     if management and record ~= nil and record.hidden then
@@ -1290,6 +1371,7 @@ M.is_context_user_deleted = is_context_user_deleted
 M.is_user_deleted = is_user_deleted
 M.mark_context_user_deleted = mark_context_user_deleted
 M.mark_user_deleted = mark_user_deleted
+M.refresh_engine_personal = refresh_engine_personal
 M._test = {
     acquire_store = acquire_store,
     delete_or_restore = delete_or_restore,

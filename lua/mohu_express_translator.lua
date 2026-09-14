@@ -89,6 +89,59 @@ local mohu = require("mohu")
 local contextual = require("mohu_contextual_translator")
 local top = {}
 
+local semantic_meta = nil
+do
+    local ok, module = pcall(require, "mohu_semantic_meta")
+    if ok and type(module) == "table" and type(module.bind) == "function" then
+        semantic_meta = module
+    end
+end
+
+-- 语义谱系：fixed/smart 候选在离开查询边界前绑定不可变来源事实。
+-- 绑定失败不影响候选输出；二次绑定（缓冲重放）被静默忽略。
+local function lexical_translator_name(env, translator)
+    if translator == env.static_translator then
+        return "smart_static"
+    end
+    if translator == env.runtime_alternate then
+        return "fixed_alternate"
+    end
+    if translator == env.runtime_primary then
+        return "fixed_primary"
+    end
+    return "smart"
+end
+
+local function bind_lexical_provenance(env, cand, source, translator_name)
+    if semantic_meta == nil then
+        return
+    end
+    local genuine_type = nil
+    local dynamic_type = nil
+    if cand.get_genuine ~= nil then
+        local ok, genuine = pcall(cand.get_genuine, cand)
+        if ok and genuine ~= nil and type(genuine.type) == "string" then
+            genuine_type = genuine.type
+        end
+    end
+    if cand.get_dynamic_type ~= nil then
+        local ok, dynamic = pcall(cand.get_dynamic_type, cand)
+        if ok and type(dynamic) == "string" then
+            dynamic_type = dynamic
+        end
+    end
+    pcall(semantic_meta.bind, cand, {
+        provenance_version = "mohu-lexical/v1",
+        source = source,
+        candidate_type = cand.type,
+        genuine_type = genuine_type,
+        dynamic_type = dynamic_type,
+        lexical_translator = translator_name,
+        native_score_kind = "unavailable_rime_lexical",
+        query_preedit = cand.preedit,
+    })
+end
+
 local kAny = 0
 local kChar = 1
 local kWord = 2
@@ -237,7 +290,9 @@ function top.func(input, seg, env)
                 end
                 top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, words)
             elseif not is_sentence_making then  -- input_len > 4，输出所有
+                local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
                 for cand in fixed_res:iter() do
+                    bind_lexical_provenance(env, cand, "fixed", fixed_name)
                     top.output_from_fixed(env, cand, is_sentence_making)
                 end
             end
@@ -259,7 +314,9 @@ function top.func(input, seg, env)
     local inject_words = {}  -- valid only when inject_has_priority
     local num_injections = 0 -- valid only when inject_has_priority
     if (not fixed_triggered and input_len == 4) then
+        local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
         for cand in mohu.query_translation(contextual.get_runtime(env), input, seg, nil) do
+            bind_lexical_provenance(env, cand, "fixed", fixed_name)
             local cand_len = utf8.len(cand.text)
             if (env.inject_fixed_chars and cand_len == 1) or (env.inject_fixed_words and cand_len > 2 and not is_sentence_making) then
                 if cand_len ~= 1 or (cand_len == 1 and not env.quick_code_indicator_skip_chars) then
@@ -412,7 +469,9 @@ function top.func(input, seg, env)
 
     -- 最后：如果 smart 输出为空，并且 fixed 之前没有调用过，此时再尝试调用一下
     if env.output_i == 0 then
+        local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
         for cand in mohu.query_translation(contextual.get_runtime(env), input, seg, nil) do
+            bind_lexical_provenance(env, cand, "fixed", fixed_name)
             if not is_sentence_making or utf8.len(cand.text) == 1 then
                 cand.comment = indicator
                 yield(cand)
@@ -592,7 +651,9 @@ end
 function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word, char_filter)
     local chars = {}
     local words = {}
+    local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
     for cand in translation:iter() do
+        bind_lexical_provenance(env, cand, "fixed", fixed_name)
         local cand_len = utf8.len(cand.text)
         if include_chars and cand_len == 1 and (char_filter == nil or char_filter(cand)) then
             table.insert(chars, cand)
@@ -611,7 +672,10 @@ end
 -- | Query the smart translator for input, and transform the comment
 -- | for candidates whose length is 2 or 3 characters long.
 function top.raw_query_smart(env, input, seg, with_comment)
+    local translator = contextual.get_for_input(env, input)
+    local translator_name = lexical_translator_name(env, translator)
     local transform = function(cand)
+        bind_lexical_provenance(env, cand, "smart", translator_name)
         local cand_len = utf8.len(cand.text)
         if cand_len == 2 or cand_len == 3 then
             if with_comment then
@@ -624,7 +688,7 @@ function top.raw_query_smart(env, input, seg, with_comment)
         end
         return cand
     end
-    return mohu.query_translation(contextual.get_for_input(env, input), input, seg, transform)
+    return mohu.query_translation(translator, input, seg, transform)
 end
 
 -- Merge non-nil values in l1 and l2 into a new list.

@@ -761,8 +761,79 @@ Every future quality number must state its measurement layer (decoder /
 pipeline / end-to-end). Prior native-replay numbers are re-scoped as
 decoder-layer ablation records in the v1 launch report.
 
+### C3 replan (2026-09-13)
+
+**依据**（详见 [词边先验报告](../reports/2026-09-13-word-edge-prior.md) 与
+[词级判决报告](../reports/2026-09-13-word-decode-verdict.md)）：
+
+- C2 在新增的「合法词 vs 合法词」对抗类上救回 1%（201/204 维持错误），
+  根因是训练分布外＋容量；老师 Qwen3-0.6B 同协议 52%、Qwen3.5-0.8B
+  58%——监督信号存在且可蒸馏；
+- 词级解码路径已判不投入（kn5 实测 13% vs 字符 45%，分词管线为根因）；
+  码表补词被机制证明会复发（词边分辨力依赖词表不完整）；
+- 47% 的对抗 case 死于门关（V5 top-2 z 分差 ≥ 0.5「自信地错」），
+  门控需要「词证据分歧」扩展条件。
+
+**C3 计划**（全部基于 `research/semantic_student/` 现有管线）：
+
+1. **P0 对抗集挖掘**：词边网格逐 case 翻转（w0↔w15 双向 + 词对分叉
+   菜单，扩展 `word_edge_grid_analysis.py`，19,996 句 × 7 权重可挖
+   5–8k 菜单）＋同码词对注入真实前缀（lexicon 同码词对自动枚举，
+   标注 synthetic，按 §5 仅作回归探针）＋ native-v2 全量保留（防
+   灾难遗忘）。协议沿用 `qwen-semantic-rerank/v1`，候选身份 =
+   menu_index，对抗菜单携带 w15 native_score。
+2. **P1 老师升级打标**：Qwen3.5-0.8B（本机 MLX 4bit，HF 缓存在），
+   协议＝公共前缀上下文＋续写 sum_logp（无 EOS，单请求内排序可比）；
+   软标签（分数差）而非仅 argmax，保 margin 信息与部署侧 0.15 翻转
+   阈值的对应；抽检 200 条定老师错误率与学生目标上限。
+3. **P2 架构训练**：model.py 现成 listwise 共享上下文 Transformer，
+   容量 8.7M → 30–60M（d_model 512/6 层起）；损失＝listwise KL(老师
+   分布‖学生)＋真值交叉熵加权；候选长度分布扩到 16+ 字（C2 整句
+   候选 OOD 的直接修复）；特征集不变（context/candidate/native_score/
+   syllable_count/char_len/has_score/native_rank）→ ABI 零改动；
+   配比 native-v2 : 词对对抗 : 整句候选 ≈ 6:3:1 起步。
+4. **P3 导出集成**：export_onnx.py fp32＋int8；延迟预算 p50 ≤15ms /
+   p95 ≤60ms（C2 现为 12.5/66.9ms），超预算砍层数不砍特征；
+   vocab.tsv 同格式（含 score_mean/std 头）。
+5. **P4 三层评测（预注册门槛）**：L1 对抗集救回率 ≥ 老师的 70%（≈
+   40%+）且固定回归套件（xtji/gyjciu/hklipu/李火旺…）零回退；L2 全
+   语料双侧模拟（19,996 全部门开菜单，门控 0.5/margin 0.15）：净
+   top1 ≥ +1pp 且 修好:修反 ≥ 3:1；L3 生产重放走 §8 全套（含开关关
+   逐字节 parity 与延迟/内存）。并行工作流：词证据分歧门（「top1
+   分叉点不用词典词而 top2 用」即开门）先离线测 483 回退覆盖，过 L2
+   再进引擎。
+6. **P5 发布**：仍走「魔虎语义」开关 opt-in；加载失败自动退关（现有
+   机制）；回滚＝换回 C2 onnx 文件。
+
+**C3 v1 执行结果（2026-09-13，全程本地 Mac）**：P0–P5 已跑通，结果与
+判定见 [C3 报告](../reports/2026-09-13-c3-semantic-student.md)。要点：
+词形态（w=1.5 双形态数据＋部署同源 V5 上下文分特征）net +0.88%、
+9.3:1（C2 为 +0.28%、5.8:1），margin 平台 0.15–0.5；整句形态中性；
+对抗类救回 12.8%（老师 58%）未达 L1 门槛，adv-eval（混合形态）净
+−1.18%。**C3 已于同日部署**（margin 0.3）。
+
+**C4 老师 KL 蒸馏终局判决（2026-09-13）**：42k 教师软标签＋KL 训练后，
+强制全开门口径救回率 12.7%→13.5%（老师 58%）——**蒸馏无法把预训练
+实体知识注入 18.7M 学生，该路线关闭**；C4 与 C3 相当无全面优势，发行
+维持 C3。详见 [C4 判决报告](../reports/2026-09-13-c4-teacher-distillation-verdict.md)。
+
+**词证据分歧门交付（2026-09-13 晚）**：`word_disagreement` ABI＋过滤器
+接线随包默认启用（`mohu/semantic_rerank/word_gate: true`）。现役 C3
+＋门扩展在 tnews 词测试净 **+1.06%/10.5:1**（门开覆盖 4,209→5,787，
+新开门菜单首选率 70.1%→80.8%）——L2 预注册门槛（≥+1pp）就此达标；
+句测试中性。终局见
+[词门交付报告](../reports/2026-09-13-word-gate-c5-final.md)。
+
+**C5 容量判决（2026-09-13 深夜）**：41.6M＋KL 与 18.7M＋KL 的对抗类
+强制全开门救回率完全相同（13.5%）——容量翻倍零增益，学生路线实测
+封顶 12.7–13.5%（老师 58%）。C5 词净 +0.94%/20.7:1，不替换 C3
+（+1.06%/10.5:1、体积 2.4 倍小）；工件保留为「最小修反」口径备选。
+见 [C5 报告](../reports/2026-09-13-c5-capacity-final.md)。
+
 ## References
 
+- [词边先验报告（对抗救援分析与 C2/Qwen 对照数字）](../reports/2026-09-13-word-edge-prior.md)
+- [词级判决与青简对照](../reports/2026-09-13-word-decode-verdict.md)
 - [Cross-candidate ordering](cross-candidate-ordering.md)
 - [Native Tiger README](../../tiger_sentence_native/README.md)
 - [Tiny character scorer report](../reports/2026-09-07-tiny-char-scorer.md)

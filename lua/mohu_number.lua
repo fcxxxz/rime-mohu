@@ -173,12 +173,32 @@ local function translateNumStr(str)
     return result
 end
 
+local semantic_meta = nil
+do
+    local ok, module = pcall(require, "mohu_semantic_meta")
+    if ok and type(module) == "table" and type(module.bind) == "function" then
+        semantic_meta = module
+    end
+end
+
 local function translator(input, seg)
     if input:match("^(S+%d+)(%.?)(%d*)$") ~= nil then
         local str = input:gsub("^(%a+)", "")
         local conversions = translateNumStr(str)
         for i = 1, #conversions do
-            yield(Candidate(input, seg.start, seg._end, conversions[i][2], conversions[i][1]))
+            local candidate = Candidate(input, seg.start, seg._end, conversions[i][2], conversions[i][1])
+            if semantic_meta ~= nil then
+                pcall(semantic_meta.bind, candidate, {
+                    provenance_version = "mohu-number/v1",
+                    source = "number",
+                    candidate_type = input,
+                    protected = true,
+                    synthetic = true,
+                    native_score_kind = "unavailable",
+                    conversion_kind = conversions[i][1],
+                })
+            end
+            yield(candidate)
         end
     end
 end

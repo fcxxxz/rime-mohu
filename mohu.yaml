@@ -73,8 +73,15 @@ semantic_rerank:
   enable: true
   # V5 上下文分 top-2 z 分差低于该值才运行语义模型（歧义门控）。
   gate_margin: 0.5
-  # 首选翻转需要语义 z 分领先的最小值。
-  semantic_margin: 0.15
+  # 词证据分歧门：分差达标（本会关门）但 top1 接不成词而 top2 接词典
+  # 多字词时仍开门（引擎 freq_rank 查表，含跨词界中分窗口）。tnews 词
+  # 测试净 +1.06%、10.5:1（覆盖 4209→5787）；句测试中性。旧 dylib 无
+  # 该 ABI 时逐字节保持原行为。
+  word_gate: true
+  # 首选翻转需要语义 z 分领先的最小值。C3 起上调至 0.3：词菜单净效应
+  # 平台区 0.15–0.5，0.3 档修好:修反 26.7:1（0.15 档 9.3:1），
+  # 见 docs/reports/2026-09-13-c3-semantic-student.md。
+  semantic_margin: 0.3
   # 参与重排的窗口候选数。
   candidates: 5
   # 首次可重排候选前最多缓存的候选总数。

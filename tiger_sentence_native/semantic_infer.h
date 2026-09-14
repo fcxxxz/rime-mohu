@@ -51,7 +51,15 @@ class Scorer {
                                         "mohu-semantic");
       Ort::SessionOptions options;
       options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-      options.SetIntraOpNumThreads(1);
+      // 语义推理在 filter 阶段（解码之后）短时运行，与 beam 解码不并发
+      // 争用；单线程会把 C3（K=5）推到 ~32ms，双线程实测 ~18ms。
+      // MOHU_SEMANTIC_THREADS 可覆盖（1=旧行为）。
+      int threads = 2;
+      if (const char* env_threads = getenv("MOHU_SEMANTIC_THREADS")) {
+        int value = atoi(env_threads);
+        if (value >= 1 && value <= 8) threads = value;
+      }
+      options.SetIntraOpNumThreads(threads);
       options.SetInterOpNumThreads(1);
       session_ = std::make_unique<Ort::Session>(*env_, model_path.c_str(), options);
       return true;

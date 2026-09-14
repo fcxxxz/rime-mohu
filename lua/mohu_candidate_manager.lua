@@ -3,6 +3,14 @@
 local override = require("mohu_candidate_override")
 local pin = require("mohu_pin")
 
+local semantic_meta = nil
+do
+    local ok, module = pcall(require, "mohu_semantic_meta")
+    if ok and type(module) == "table" and type(module.bind) == "function" then
+        semantic_meta = module
+    end
+end
+
 local M = {}
 local kAccepted = 1
 local kNoop = 2
@@ -305,6 +313,11 @@ local function perform_action(category, code, text, deps)
                     if deps.override_store.set_user_deleted ~= nil then
                         deps.override_store:set_user_deleted(record.code, text, record.entry.commit_count)
                     end
+                    -- 同步 native 引擎个人词层，否则词条在当前组合里
+                    -- 立刻被引擎内存中的个人边顶回来。
+                    if override.refresh_engine_personal ~= nil then
+                        override.refresh_engine_personal(deps.memory)
+                    end
                 end
                 return ok and result ~= false
             end
@@ -531,6 +544,17 @@ end
 
 local function emit(cand_type, seg, text, comment, index, preedit)
     local cand = Candidate(cand_type, seg.start, seg._end, text, comment)
+    if semantic_meta ~= nil then
+        pcall(semantic_meta.bind, cand, {
+            provenance_version = "mohu-manager/v1",
+            source = "manager",
+            candidate_type = cand_type,
+            protected = true,
+            synthetic = true,
+            native_score_kind = "unavailable",
+            record_index = index,
+        })
+    end
     cand.quality = 1000000 - (index or 0)
     if preedit ~= nil then
         cand.preedit = preedit
@@ -628,6 +652,7 @@ M._test = {
     category_preedit = category_preedit,
     category_counts = category_counts,
     code_from_comment = code_from_comment,
+    emit = emit,
     find_user_created_record = find_user_created_record,
     override_records = override_records,
     parse_route = parse_route,

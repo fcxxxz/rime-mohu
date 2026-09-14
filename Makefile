@@ -176,6 +176,21 @@ tigerengine-word-score:
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) -framework Accelerate -o /tmp/tigerengine_word_score_test
 	/tmp/tigerengine_word_score_test
 
+# 词边先验：静态多字词句中内部边 + 有界加分（0=旧行为）。真实 V5 模型
+# 上的翻案/可逆/整段查询不变性；模型缺失（未安装或未设 TIGER_NGRAM）时
+# 自动跳过。
+tigerengine-word-edge:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_edge_test.cc \
+		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) -framework Accelerate -o /tmp/tigerengine_word_edge_test
+	/tmp/tigerengine_word_edge_test
+
+# 词证据分歧门：top1 接不成词而 top2 接词典词 → 开门标志。真实模型 +
+# 码表上的分类断言；资源缺失时自动跳过。
+tigerengine-word-gate:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_gate_test.cc \
+		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) -framework Accelerate -o /tmp/tigerengine_word_gate_test
+	/tmp/tigerengine_word_gate_test
+
 # Decode latency benchmark; pass the installed model explicitly, e.g.
 #   make tigerengine-bench TIGER_NGRAM=~/Library/Rime/mohu-sentence-ngram-v5.bin
 tigerengine-bench:
@@ -203,6 +218,8 @@ test: dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-lua-safety
 	$(MAKE) tigerengine-user-model
 	$(MAKE) tigerengine-reading-prior
+	$(MAKE) tigerengine-word-edge
+	$(MAKE) tigerengine-word-gate
 	$(MAKE) tigerengine-context
 	$(MAKE) tigerengine-semantic
 	uv run python -m unittest tests.test_neural_toggle_schema -v
@@ -272,4 +289,4 @@ test: dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-semantic tigerengine-word-score tigerengine-bench dist-zrm dist-flypy test lint-python
+.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-semantic tigerengine-word-score tigerengine-word-edge tigerengine-word-gate tigerengine-bench dist-zrm dist-flypy test lint-python

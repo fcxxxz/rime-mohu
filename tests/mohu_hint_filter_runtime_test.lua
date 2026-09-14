@@ -37,6 +37,7 @@ ShadowCandidate = function(candidate, candidate_type, text, comment)
 end
 
 local mohu = require("mohu")
+local semantic_meta = require("mohu_semantic_meta")
 mohu.load_zrmdb = function()
     aux_table_loads = aux_table_loads + 1
     return {
@@ -151,9 +152,12 @@ yielded = {}
 local hidden_match = candidate()
 hidden_match.text = "连接"
 hidden_match.comment = "y↓"
+assert(semantic_meta.bind(hidden_match, { origin = "native" }))
 filter.func(translation(hidden_match), env)
 assert(yielded[1].comment == "")
 assert(yielded[1]:get_genuine().comment == "y↓")
+assert(semantic_meta.resolve(yielded[1]).origin == "native",
+  "hint ShadowCandidate must preserve producer provenance")
 
 quick_code_hint = true
 yielded = {}

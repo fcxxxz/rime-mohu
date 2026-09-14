@@ -136,4 +136,73 @@ end)
 assert(merged() == "a" and merged() == "b" and merged() == "s1" and merged() == "s2",
     "chained iterator must replay the buffer before resuming the stream")
 
+-- 语义谱系：fixed/smart 候选必须在查询边界绑定不可变来源事实
+local semantic_meta = require("mohu_semantic_meta")
+
+local function fake_translation(cands)
+    local index = 0
+    return {
+        iter = function()
+            return function()
+                index = index + 1
+                return cands[index]
+            end
+        end,
+    }
+end
+
+local smart_stub = {}
+local smart_env = { contextual_translator = smart_stub }
+function smart_stub.query(_, input, seg)
+    assert(input == "niho" and seg.start == 0)
+    local function lexical(text, cand_type)
+        local cand = { text = text, type = cand_type, preedit = "ni hao", comment = "" }
+        function cand:get_genuine() return self end
+        return cand
+    end
+    return fake_translation({ lexical("你好", "phrase"), lexical("拟好", "user_phrase") })
+end
+for bound in translator.raw_query_smart(smart_env, "niho", { start = 0, _end = 4 }, false) do
+    local provenance = semantic_meta.resolve(bound)
+    assert(type(provenance) == "table" and
+        provenance.provenance_version == "mohu-lexical/v1" and
+        provenance.source == "smart" and
+        provenance.lexical_translator == "smart" and
+        provenance.candidate_type == bound.type and
+        provenance.genuine_type == bound.type and
+        provenance.native_score_kind == "unavailable_rime_lexical" and
+        provenance.query_preedit == "ni hao",
+        "smart candidates must retain lexical provenance at the query boundary")
+end
+
+local fixed_yielded = {}
+local original_yield = yield
+yield = function(candidate)
+    table.insert(fixed_yielded, candidate)
+end
+local fixed_char = { text = "佳", type = "table", preedit = "jwrg", comment = "" }
+function fixed_char:get_genuine() return self end
+local fixed_env = {
+    engine = { context = { get_option = function() return true end } },
+    runtime_primary = {},
+    quick_code_indicator = "`F",
+}
+translator.output_begin(fixed_env)
+translator.output_fixed_chars_first(
+    fixed_env,
+    fake_translation({ fixed_char }),
+    false,
+    true
+)
+yield = original_yield
+assert(#fixed_yielded == 1)
+local fixed_provenance = semantic_meta.resolve(fixed_yielded[1])
+assert(type(fixed_provenance) == "table" and
+    fixed_provenance.provenance_version == "mohu-lexical/v1" and
+    fixed_provenance.source == "fixed" and
+    fixed_provenance.lexical_translator == "fixed_primary" and
+    fixed_provenance.candidate_type == "table" and
+    fixed_provenance.native_score_kind == "unavailable_rime_lexical",
+    "fixed candidates must retain lexical provenance at the query boundary")
+
 print("Mohu express IJRQ ordering tests passed")

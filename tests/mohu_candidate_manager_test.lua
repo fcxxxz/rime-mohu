@@ -361,4 +361,36 @@ assert(context.input == "\\gl", context.input)
 assert(context.push_input_count == 2, context.push_input_count)
 assert(manager.manager_processor.func(modifier_release, processor_env) == 2)
 
+-- 语义谱系：管理界面候选必须是受保护的合成来源记录
+local semantic_meta = require("mohu_semantic_meta")
+local original_candidate = Candidate
+local original_yield = yield
+local manager_yielded = {}
+Candidate = function(cand_type, start_pos, end_pos, text, comment)
+    return {
+        type = cand_type,
+        start = start_pos,
+        _end = end_pos,
+        text = text,
+        comment = comment,
+    }
+end
+yield = function(candidate)
+    table.insert(manager_yielded, candidate)
+end
+subject.emit("mohu_manager_nav_h", { start = 0, _end = 2 }, "隐藏的内置词", "3 条", 1)
+assert(#manager_yielded == 1)
+local manager_provenance = semantic_meta.resolve(manager_yielded[1])
+assert(type(manager_provenance) == "table" and
+    manager_provenance.provenance_version == "mohu-manager/v1" and
+    manager_provenance.source == "manager" and
+    manager_provenance.candidate_type == "mohu_manager_nav_h" and
+    manager_provenance.protected == true and
+    manager_provenance.synthetic == true and
+    manager_provenance.native_score_kind == "unavailable" and
+    manager_provenance.record_index == 1,
+    "manager candidates must retain producer provenance")
+Candidate = original_candidate
+yield = original_yield
+
 print("candidate manager logic: ok")

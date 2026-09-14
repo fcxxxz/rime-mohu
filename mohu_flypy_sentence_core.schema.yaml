@@ -93,8 +93,11 @@ navigator:
   syllable_jump_position: before_delimiter
 
 speller:
+  # 允许进入编码串的字符集合；不在这里的按键由其他组件处理。
   alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/=;'
+  # 音节分隔符；用于明确编码分段。
   delimiter: " '"
+  # 编码变换规则，引用的补丁按顺序组合生成拼写索引。
   algebra:
     __patch:
       - mohu:/algebra/user_force_top?
@@ -103,14 +106,22 @@ speller:
       - mohu:/algebra/user_force_bottom?
 
 translator:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_flypy.extended
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_flypy_sentence_tiger_prefix2
+  # 拼写索引名，负责将输入编码映射到词典音节；不是另一份词库。
   prism: mohu_flypy
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 5
+  # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/([a-z][a-z][a-z][a-z])o/$1°/
+  # 词典查询的核心词长参数（音节数），不是输入框最多能输入的按键数。
   core_word_length: 4
+  # 词长限制参数（音节数），不是候选数量；整句可以由多个词组成。
   max_word_length: 10
+  # 是否使用上下文感知的候选排序；不是编码前缀补全，也不是上屏后预测下一个词。
   contextual_suggestions: true
 
 translator_static:
@@ -125,11 +136,17 @@ translator_static:
   contextual_suggestions: true
 
 custom_phrase: # 自定义短语
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: ""
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_flypy_custom_phrases
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: stabledb
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 10
 
 chaifen:
@@ -161,20 +178,31 @@ reverse_format:
     - xform/^o(lf|bh|cj|vy|hm)//
 
 reverse_tiger:
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: reverse_tiger
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: tiger
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: true
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "ohm"
+  # 进入此功能时显示的提示文字。
   tips: 〔虎〕
   __include: reverse_format
 
 reverse_tiger_backtick:
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: reverse_tiger_backtick
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: tiger
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: true
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "`"
+  # 进入此功能时显示的提示文字。
   tips: 〔虎〕
   __include: reverse_format
+  # 只调整输入框中编码的显示格式，不修改实际输入或词典编码。
   preedit_format:
     - xform/^`//
 

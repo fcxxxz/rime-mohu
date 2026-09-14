@@ -14,6 +14,7 @@ from tools.tiger_aux import (
     AuxiliaryEntry,
     build_auxiliary_map,
     load_auxiliary_tsv,
+    load_root_counts,
     load_tiger_codes,
     select_longest_codes,
     select_primary_code,
@@ -126,6 +127,44 @@ class TigerAuxUnitTest(unittest.TestCase):
             AuxiliaryEntry("pn", "pw"),
         )
 
+    def test_compat_positions_drop_small_code_letters(self):
+        # 辅码兼容位只用大码：≤3 根的全码末位是末根小码（无 14 位），
+        # ≤2 根的第 3 位已是末根小码（无 13 位）。
+        self.assertEqual(
+            to_auxiliary_entry("cgmk", root_count=3),
+            AuxiliaryEntry("cg", "", "cm"),
+        )
+        self.assertEqual(
+            to_auxiliary_entry("cgt", root_count=2),
+            AuxiliaryEntry("cg"),
+        )
+        self.assertEqual(
+            to_auxiliary_entry("unid", root_count=3),
+            AuxiliaryEntry("un", "", "ui"),
+        )
+        # 四根及以上末位仍是大码，兼容位保留。
+        self.assertEqual(
+            to_auxiliary_entry("vzbm", root_count=4),
+            AuxiliaryEntry("vz", "vm", "vb"),
+        )
+        # 根数未知（扩展区无拆分数据）保持旧派生。
+        self.assertEqual(
+            to_auxiliary_entry("cgmk"),
+            AuxiliaryEntry("cg", "ck", "cm"),
+        )
+
+    def test_load_root_counts_from_chaifen(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "tiger_chaifen.txt"
+            path.write_text(
+                "的\t〔白勹丶&nbsp;·&nbsp;unid〕\n"
+                "灶\t〔火土&nbsp;·&nbsp;cgt〕\n"
+                "一\t〔一&nbsp;·&nbsp;fi〕\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(load_root_counts(path), {"的": 3, "灶": 2, "一": 1})
+
     def test_missing_required_character_is_an_error(self):
         with TemporaryDirectory() as directory:
             path = Path(directory) / "tiger.dict.yaml"
@@ -207,23 +246,37 @@ class TigerAuxRepositoryTest(unittest.TestCase):
                     cls.characters.append(char)
 
     def test_repository_map_covers_every_character(self):
-        mapping = build_auxiliary_map(self.root / "tiger.dict.yaml", self.characters)
+        mapping = build_auxiliary_map(
+            self.root / "tiger.dict.yaml",
+            self.characters,
+            root_counts=load_root_counts(
+                self.root / "tools/data/tiger_chaifen.txt"
+            ),
+        )
 
         self.assertTrue(set(self.characters).issubset(mapping))
-        self.assertEqual(mapping["的"], AuxiliaryEntry("un", "ud", "ui"))
+        # 的=白勹丶（3 根）无 14 位；码=石马、兒=臼儿（2 根）无 13 位；
+        # 高/儿/⺄ 为单根字，本就无兼容位。
+        self.assertEqual(mapping["的"], AuxiliaryEntry("un", "", "ui"))
         self.assertEqual(mapping["高"], AuxiliaryEntry("gg"))
-        self.assertEqual(mapping["码"], AuxiliaryEntry("mn", "", "mm"))
+        self.assertEqual(mapping["码"], AuxiliaryEntry("mn"))
         self.assertEqual(mapping["儿"], AuxiliaryEntry("pe"))
-        self.assertEqual(mapping["兒"], AuxiliaryEntry("pp", "", "pe"))
+        self.assertEqual(mapping["兒"], AuxiliaryEntry("pp"))
         self.assertEqual(mapping["𖿲"], AuxiliaryEntry("pe"))
-        self.assertEqual(mapping["𖿳"], AuxiliaryEntry("pp", "", "pe"))
+        self.assertEqual(mapping["𖿳"], AuxiliaryEntry("pp"))
         self.assertEqual(mapping["⺄"], AuxiliaryEntry("ae"))
 
     def test_generated_tsv_matches_repository_map(self):
         generated_path = self.root / "tools/data/tiger_aux.txt"
         self.assertTrue(generated_path.is_file())
 
-        expected = build_auxiliary_map(self.root / "tiger.dict.yaml", self.characters)
+        expected = build_auxiliary_map(
+            self.root / "tiger.dict.yaml",
+            self.characters,
+            root_counts=load_root_counts(
+                self.root / "tools/data/tiger_chaifen.txt"
+            ),
+        )
         actual = load_auxiliary_tsv(generated_path)
         self.assertEqual(actual, {char: expected[char] for char in self.characters})
 
@@ -721,23 +774,62 @@ class FixedDictionaryTest(unittest.TestCase):
                 threshold: (audit.group_count, audit.non_first_count)
                 for threshold, audit in after.items()
             },
-            {1500: (0, 0), 3500: (1, 1), 6000: (5, 5), 8105: (8, 9)},
+            {1500: (0, 0), 3500: (6, 6), 6000: (27, 27), 8105: (45, 47)},
         )
         self.assertEqual(after[8105].codeable_count, 3285)
+        # 2026-09-10 辅码兼容位只用大码后，小码救援位（≤3 根字的 14 位、
+        # ≤2 根字的 13 位）全部退出，未救援组从 8 组升到 45 组。
         self.assertEqual(
             [
                 (group.code, "".join(group.characters), "".join(group.unresolved))
                 for group in after[8105].groups
             ],
             [
+                ("bidv", "哔吡", "吡"),
+                ("bifh", "弊敝祕", "敝"),
+                ("bozn", "钹镈", "镈"),
+                ("dibi", "嫡氐媂", "氐"),
+                ("dljp", "袋贷黛岱垈", "黛"),
+                ("fuhb", "父斧釜", "斧"),
+                ("hucc", "蝴煳", "煳"),
+                ("ignd", "骋珵", "珵"),
+                ("jilc", "芨芰", "芰"),
+                ("jueg", "桔枸", "枸"),
+                ("juvc", "崌腒", "腒"),
+                ("jwvs", "胛岬", "岬"),
+                ("klhv", "恺忾", "忾"),
+                ("lilx", "藜苈", "苈"),
                 ("lixf", "厉励", "励"),
+                ("lixp", "梨黎犁黧", "黧"),
+                ("lqnb", "骝珋", "珋"),
+                ("luyc", "颅鸬", "鸬"),
                 ("muqg", "牡睦", "睦"),
-                ("qiev", "栖杞桤", "桤"),
+                ("qiev", "栖杞桤", "杞桤"),
                 ("qifb", "祇郪", "郪"),
+                ("qift", "祈祁", "祁"),
+                ("qikr", "沏柒", "柒"),
+                ("qivv", "岂屺", "屺"),
+                ("sidi", "嗣咝", "咝"),
+                ("sixz", "厮虒", "虒"),
                 ("uijg", "侍仕", "仕"),
+                ("ukpd", "劭召", "召"),
+                ("vbix", "绉鸼", "鸼"),
                 ("viuk", "执挚鸷贽絷", "鸷絷"),
+                ("vivc", "肢炙", "炙"),
+                ("wzcq", "煨煟", "煟"),
+                ("wzxb", "委魏逶", "魏"),
                 ("xico", "螅屃", "屃"),
+                ("xiqv", "牺饩", "饩"),
+                ("xivz", "巇嶍", "嶍"),
+                ("xizq", "铣𠅤", "𠅤"),
+                ("yibp", "彝刈", "刈"),
+                ("yijt", "依佚", "佚"),
                 ("yizc", "奕弈", "弈"),
+                ("yjcc", "炎焱剡", "焱"),
+                ("ynlt", "荫龂", "龂"),
+                ("yufn", "迂盂邘", "盂"),
+                ("yuqv", "愚禺", "禺"),
+                ("yylw", "营莹莺荧萤萦茔蓥䓨", "萤"),
             ],
         )
 
@@ -754,16 +846,22 @@ class FixedDictionaryTest(unittest.TestCase):
             self.root / "mohu_zrm.chars.dict.yaml"
         )
         smart_pairs = {(fields[0], fields[1]) for fields in smart_rows}
+        # 3 根字（莺 lwxn）无 14 位（ln 是末根小码），13 位 lx 保留；
+        # 4 根字（莹 lwni、励 xfps）两位兼容都在；凿只留 13 位 cm。
         self.assertTrue(
             {
                 ("莺", "yy;lx"),
-                ("莺", "yy;ln"),
                 ("萤", "yy;lc"),
                 ("莹", "yy;ln"),
                 ("莹", "yy;li"),
                 ("励", "li;xs"),
+                ("凿", "zk;cm"),
+                ("灶", "zk;cg"),
             }.issubset(smart_pairs)
         )
+        self.assertNotIn(("莺", "yy;ln"), smart_pairs)
+        self.assertNotIn(("凿", "zk;ck"), smart_pairs)
+        self.assertNotIn(("灶", "zk;ct"), smart_pairs)
 
         legacy_rows = self.dictionary_rows(
             self.root / "mohu_zrm_tiger_fixed_legacy.dict.yaml"
@@ -774,21 +872,24 @@ class FixedDictionaryTest(unittest.TestCase):
                 ("蕉", "jcl"),
                 ("藠", "jclu"),
                 ("莺", "yylx"),
-                ("莺", "yyln"),
                 ("萤", "yylc"),
                 ("莹", "yyln"),
                 ("莹", "yyli"),
                 ("萦", "yyli"),
                 ("励", "lixs"),
+                ("灶", "zkcg"),
+                ("凿", "zkcm"),
             }.issubset(legacy_pairs)
         )
         legacy_weights = {
             (fields[0], fields[1]): fields[2]
             for fields in legacy_rows
         }
-        self.assertEqual(legacy_weights[("莺", "yyln")], "25291")
-        self.assertEqual(legacy_weights[("莹", "yyli")], "106488")
+        self.assertEqual(legacy_weights[("莺", "yylx")], "25291")
+        self.assertEqual(legacy_weights[("莹", "yyli")], "0")
         self.assertEqual(legacy_weights[("励", "lixs")], "0")
+        self.assertNotIn(("莺", "yyln"), legacy_pairs)
+        self.assertNotIn(("凿", "zkck"), legacy_pairs)
 
     def test_mirror_codes_collapse_to_single_quick_code(self):
         legacy_rows = self.dictionary_rows(
@@ -828,8 +929,9 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertIn("莹\tyk;lw\t106488", rows)
         # 兼容打法（13/14 位）随正常辅码一起保留；
         # 救援目标字保留全权重，其余字为低权重 0。
-        self.assertIn("莺\tyk;ln\t25291", rows)
+        # 3 根字的 14 位（莺 ln）是小码位，已按大码规则退出。
         self.assertIn("莺\tyk;lx\t25291", rows)
+        self.assertNotIn("莺\tyk;ln\t25291", rows)
         self.assertIn("萤\tyk;lc\t13116", rows)
         self.assertIn("莹\tyk;ln\t106488", rows)
         self.assertIn("莹\tyk;li\t106488", rows)
@@ -849,10 +951,10 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         rows = set(result.stdout.splitlines())
         self.assertIn("莺\tyy;lx\t25291", rows)
-        self.assertIn("莺\tyy;ln\t25291", rows)
         self.assertIn("萤\tyy;lc\t13116", rows)
         self.assertIn("莹\tyy;ln\t106488", rows)
         self.assertIn("莹\tyy;li\t106488", rows)
+        self.assertNotIn("莺\tyy;ln\t25291", rows)
         self.assertNotIn("的\tde;ui\t76938354", rows)
         self.assertNotIn("的\tde;ud\t76938354", rows)
         self.assertNotIn("蕉\tjc;lc\t9223", rows)
@@ -1526,9 +1628,17 @@ class FixedDictionaryTest(unittest.TestCase):
     def test_legacy_fixed_tables_preserve_moran_multi_short_code(self):
         expected_gai = {"zrm": "glv", "flypy": "gdv"}
         expected_ning = {"zrm": "ny", "flypy": "nk"}
+        # 2026-09-08 读音覆盖修复：新登记的多音字读音获得短码分配，且
+        # 10 个会挤占既有高频短码的读音（大tai/乐yao/骑ji 等）已退出登记；
+        # 3/4 键计数纯新增（1/2 键不变，无既有莫然码被挤掉）。
+        # 2026-09-10 凿/灶字序互换（zrm 4 键 +1），随后辅码兼容位只用
+        # 大码：小码救援位退出，zrm 4 键 4073 -> 3887（flypy 无兼容救援，
+        # 计数不变）。
+        # 2026-09-11 班登记次级简码 bjn（借斑的码位，bjp 保留），
+        # zrm/flypy 3 键各 +1：4567 -> 4568。
         expected_lengths = {
-            "zrm": {1: 42, 2: 434, 3: 4547, 4: 4051},
-            "flypy": {1: 42, 2: 434, 3: 4547, 4: 3412},
+            "zrm": {1: 42, 2: 434, 3: 4568, 4: 3887},
+            "flypy": {1: 42, 2: 434, 3: 4568, 4: 3433},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1649,6 +1759,27 @@ class FixedDictionaryTest(unittest.TestCase):
                     self.assertEqual("", char_row[2])
 
     def test_generated_short_codes_prefix_current_full_codes(self):
+        # 手工登记的次级简码（mohu_fixed_secondary_codes.tsv）是「借同码字码位」
+        # 的例外，允许不是该字全码的前缀（如 班 bjn 挂到斑的 bjn 上），
+        # 不参与前缀自洽校验。自动生成的短码仍必须满足全码前缀。
+        exempt = set()
+        secondary_path = self.root / "tools/data/mohu_fixed_secondary_codes.tsv"
+        for line in secondary_path.read_text(encoding="utf-8-sig").splitlines():
+            if not line.strip() or line.startswith("#"):
+                continue
+            char, code = [field.strip() for field in line.split("\t")]
+            exempt.add((char, code))
+            if len(code) >= 2:
+                exempt.add(
+                    (
+                        char,
+                        rebuild_fixed_tiger.flypyify1(
+                            rebuild_fixed_tiger.unzrmify1(code[:2])
+                        )
+                        + code[2:],
+                    )
+                )
+
         for scheme in ("zrm", "flypy"):
             full_codes = defaultdict(set)
             for fields in self.dictionary_rows(
@@ -1664,6 +1795,8 @@ class FixedDictionaryTest(unittest.TestCase):
                         self.root / f"mohu_{scheme}_tiger_fixed{suffix}.dict.yaml"
                     ):
                         char, short_code = fields[:2]
+                        if (char, short_code) in exempt:
+                            continue
                         if not any(
                             full_code.startswith(short_code)
                             for full_code in full_codes[char]
@@ -1763,7 +1896,7 @@ class FixedDictionaryTest(unittest.TestCase):
         self.assertEqual(len({row["char"] for row in rows}), 83951)
         self.assertEqual(
             sum(row["classification"] == "compatibility" for row in rows),
-            94844,
+            94829,
         )
 
         readings_by_char = defaultdict(list)
@@ -1786,7 +1919,9 @@ class FixedDictionaryTest(unittest.TestCase):
                 categories["all-compat"] += 1
         self.assertEqual(
             categories,
-            {"all-modern": 8121, "mixed": 1, "all-compat": 75829},
+            # 2026-09-08 读音覆盖修复后的快照（与 rebuild_fixed_tiger 的
+            # EXPECTED_SIMPLIFIED_READING_CATEGORIES 同步更新）。
+            {"all-modern": 8129, "mixed": 20, "all-compat": 75802},
         )
         self.assertEqual(classification[("吃", "chi")], "modern")
         self.assertNotIn(("吃", "ji"), classification)
@@ -1837,10 +1972,14 @@ class TigerDecompositionTest(unittest.TestCase):
                 self.assertIn(full_code, decomposition[char])
 
         auxiliary = load_auxiliary_tsv(self.root / "tools/data/tiger_aux.txt")
-        self.assertEqual(auxiliary["的"], AuxiliaryEntry("un", "ud", "ui"))
+        # 2026-09-10 起辅码兼容位只用大码：的（3 根 unid）无 14 位 ud，
+        # 兒（2 根 ppe）无 13 位 pe。
+        self.assertEqual(auxiliary["的"], AuxiliaryEntry("un", "", "ui"))
         self.assertEqual(auxiliary["一"], AuxiliaryEntry("fi"))
         self.assertEqual(auxiliary["儿"], AuxiliaryEntry("pe"))
-        self.assertEqual(auxiliary["兒"], AuxiliaryEntry("pp", "", "pe"))
+        self.assertEqual(auxiliary["兒"], AuxiliaryEntry("pp"))
+        self.assertEqual(auxiliary["凿"], AuxiliaryEntry("cg", "", "cm"))
+        self.assertEqual(auxiliary["灶"], AuxiliaryEntry("cg"))
 
     def test_tiger_equivalent_aliases_have_decomposition_hints(self):
         decomposition = self.load_mapping(self.root / "opencc/mohu_chaifen.txt")

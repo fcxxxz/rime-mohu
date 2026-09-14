@@ -47,11 +47,11 @@ FIXED_CHAR_CODE_OVERRIDES_PATH = (
 )
 SECONDARY_SHORT_CODES_PATH = ROOT / "tools/data/mohu_fixed_secondary_codes.tsv"
 EXPECTED_SIMPLIFIED_READING_CATEGORIES = {
-    "all-modern": 8121,
-    "mixed": 1,
-    "all-compat": 75829,
+    "all-modern": 8129,
+    "mixed": 20,
+    "all-compat": 75802,
 }
-EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 94844
+EXPECTED_SIMPLIFIED_COMPATIBILITY_READINGS = 94829
 EXPECTED_COMPATIBILITY_CHARACTER_COUNT = 8105
 LEGACY_MULTI_SHORT_CODE_MAX_LENGTH = 2
 MULTI_CASCADE_CODE_LENGTHS = (3, 4)
@@ -1336,6 +1336,8 @@ def main() -> int:
             f"characters, got {len(compatibility_order)}"
         )
     # 兼容打法救援：13/14 位兼容码优先取 14（首个四码的 1+4 位），再取 13。
+    # 辅码兼容位只用大码：根数可判时，≤3 根字无 14 位（末位是末根小码）、
+    # ≤2 根字无 13 位（第 3 位已是末根小码），过滤发生在 tiger_aux 生成侧。
     auxiliary_records = load_auxiliary_tsv(auxiliary_path)
     compatibility_auxiliary_codes = {
         char: entry.compat_codes()

@@ -32,6 +32,20 @@ int tiger_engine_set_user_model_weight(int handle, double static_weight);
  * frequency). 0 disables, default 1.0. Returns 1 applied, 0 no change,
  * -1 error. Old lexicons without the column stay neutral at any weight. */
 int tiger_engine_set_reading_prior_weight(int handle, double weight);
+/* Bounded word-edge prior: 0 disables (default; static multi-char words
+ * match the whole input only), >0 lets static dictionary words act as
+ * sentence-internal beam edges and adds this bounded bonus per internal
+ * word edge, mirroring librime's entry_weight + grammar additive fusion.
+ * Range [0, 4]. */
+int tiger_engine_set_word_edge_weight(int handle, double weight);
+/* Word-evidence disagreement gate: given newline-joined candidate texts in
+ * ranked order, returns out_flag=1 when the top candidate continues the
+ * common (codepoint-aligned) prefix with a non-word glued segment while the
+ * runner-up continues with a dictionary multi-char word — i.e. lexicon
+ * evidence contradicts the menu order. Use as a supplementary gate-open
+ * condition when the V5 top-2 z-margin alone would close the gate. */
+int tiger_engine_word_disagreement(int handle, const char* candidates,
+                                   int candidate_count, int* out_flag);
 /* Experimental abbreviated-word internal edges: max_rank = 0 disables
  * (default; abbreviated words match the whole input only), >= 1 enables
  * static abbreviated entries (code shorter than 2 keys per char) as

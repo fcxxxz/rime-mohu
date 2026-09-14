@@ -1,6 +1,7 @@
 package.path = "./tiger_sentence_native/?.lua;./lua/?.lua;" .. package.path
 
 local original_loadlib = package.loadlib
+local semantic_meta = require("mohu_semantic_meta")
 local yielded = {}
 local create_calls = 0
 local free_calls = 0
@@ -123,6 +124,26 @@ assert(yielded[1].type == "mohu_zrm",
 assert(yielded[1].quality == 50, "native candidates must use configured quality")
 assert(yielded[1].preedit == "ab cd ef",
   "native candidates must preserve the segmented preedit")
+local provenance = semantic_meta.resolve(yielded[1])
+assert(type(provenance) == "table" and
+  provenance.provenance_version == "mohu-native-decode/v1" and
+  provenance.source == "native" and
+  provenance.candidate_type == "mohu_zrm" and
+  provenance.native_score == 0 and
+  provenance.native_score_kind == "static_or_personalized_v5" and
+  provenance.native_confidence == 0 and provenance.native_max_rank == 1 and
+  provenance.personal == false and provenance.segmented == "ab cd ef" and
+  provenance.active_preedit == "ab cd ef" and
+  provenance.context_input_raw == "abcdef" and provenance.decoded_raw == "abcdef" and
+  provenance.segment_start_byte == 0 and provenance.prefix_raw_length == 0 and
+  provenance.raw_lengths[3] == 2 and provenance.raw_lengths[6] == 4,
+  "native candidates must retain same-decode semantic provenance")
+local shadow = {
+  type = "mohu_reordered",
+  get_genuine = function() return yielded[1] end,
+}
+assert(semantic_meta.resolve(shadow) == provenance,
+  "semantic provenance must resolve through a candidate wrapper")
 
 -- Learned native edges carry an explicit identity so the downstream merger can
 -- keep them visible even when no smart candidate has refreshed yet.

@@ -699,6 +699,44 @@ void expect_personal_overlay_large_payload_is_accepted() {
   tiger_engine_free(handle);
 }
 
+void expect_personal_preedit_has_verified_syllable_boundaries() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  {
+    std::ofstream stream(lexicon_path, std::ios::app);
+    stream << "abcd\t甲丁\t1\t1\n";
+  }
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(),
+                                         200, 1, error, sizeof(error));
+  assert(handle >= 0);
+  char output[8192] = {};
+
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲丁\t8\n") == 0);
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲丁\tab cd\t") != nullptr);
+  assert(tiger_decode_full(handle, "abcdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲丁戊\tab cd ef\t") != nullptr);
+  assert(std::strstr(output, "6:4,9:6\t1\n") != nullptr);
+  assert(tiger_decode_full(handle, "abcd1", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲丁\tab cd1\t") != nullptr);
+
+  assert(tiger_engine_set_personal_lexicon(handle, "") == 0);
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲丁\tabcd\t") != nullptr);
+  assert(tiger_engine_adjust_personal(handle, "abcdef", "甲丁戊", 1) == 1);
+  assert(tiger_decode_full(handle, "abcdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲丁戊\tab cd ef\t") != nullptr);
+
+  assert(tiger_engine_set_personal_lexicon(handle, "abcdef\t甲乙戊\t8\n") == 0);
+  assert(tiger_decode_full(handle, "abcdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙戊\tabcdef\t") != nullptr);
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲丁戊\t8\n") == 0);
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲丁戊\tabcd\t") != nullptr);
+  tiger_engine_free(handle);
+}
+
 void expect_personal_edge_deltas_are_immediate() {
   const std::string model_path = write_many_candidate_model();
   const std::string lexicon_path = write_personal_overlay_lexicon();
@@ -766,6 +804,45 @@ void expect_personal_incremental_refresh_paths() {
   std::memset(output, 0, sizeof(output));
   assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
   assert(std::strstr(output, "甲乙") != nullptr);
+
+  tiger_engine_free(handle);
+}
+
+// 行数上限截断不得被误判为「用户删词」：由 adjust_personal 在两次快照之间
+// 即时注入、从未出现在任何负载里的键，在下一次负载仍不含它时不得触发整表
+// 重建，其词边必须保留；而曾经出现在负载里的键消失，仍必须回退重建。
+void expect_personal_truncation_does_not_force_rebuild() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(), 200, 1,
+                                         error, sizeof(error));
+  assert(handle >= 0);
+  char output[8192] = {};
+
+  // 负载只含「甲乙」，模拟 personal_lexicon_max_rows 把其余词截断在头部之外。
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t8\n") == 0);
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  // 上屏即时注入一个不在负载里的新词（提交次数 1，排不进头部）。
+  assert(tiger_engine_adjust_personal(handle, "cdef", "丙丁", 1) == 1);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") != nullptr);
+
+  // 下一轮负载依旧不含它（被截断）：这是「不在负载里」，不是「被删掉」，
+  // 绝不能整表重建——重建会抹掉这条即时词边。
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t9\n") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") != nullptr);
+
+  // 对照：曾经出现在负载里的键消失，必须照旧回退重建（甲乙消失）。
+  assert(tiger_engine_set_personal_lexicon(handle, "") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") == nullptr);
 
   tiger_engine_free(handle);
 }
@@ -926,9 +1003,11 @@ int main() {
   expect_include_early_is_part_of_decode_cache_identity();
   expect_final_candidates_include_pathmaps();
   expect_personal_overlay_replacement_and_internal_edges();
+  expect_personal_preedit_has_verified_syllable_boundaries();
   expect_personal_overlay_large_payload_is_accepted();
   expect_personal_edge_deltas_are_immediate();
   expect_personal_incremental_refresh_paths();
+  expect_personal_truncation_does_not_force_rebuild();
   expect_personal_transaction_paths();
   expect_stale_engine_handles_are_rejected();
   expect_null_api_rejected();

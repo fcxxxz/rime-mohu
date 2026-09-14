@@ -35,6 +35,14 @@ local hints = {
   { code = "pfbj", label = "皮肤编辑" },
 }
 
+local semantic_meta = nil
+do
+  local ok, module = pcall(require, "mohu_semantic_meta")
+  if ok and type(module) == "table" and type(module.bind) == "function" then
+    semantic_meta = module
+  end
+end
+
 local function starts_with(text, prefix)
   return text:sub(1, #prefix) == prefix
 end
@@ -51,6 +59,17 @@ local function translator(input, seg)
       count = count + 1
       local text = "/" .. item.code .. " " .. item.label
       local candidate = Candidate("symbol_hint", seg.start, seg._end, text, "继续输入 " .. item.code)
+      if semantic_meta ~= nil then
+        pcall(semantic_meta.bind, candidate, {
+          provenance_version = "mohu-symbol-hint/v1",
+          source = "symbol_hint",
+          candidate_type = "symbol_hint",
+          protected = true,
+          synthetic = true,
+          native_score_kind = "unavailable",
+          symbol_code = item.code,
+        })
+      end
       candidate.quality = -1000 - count
       yield(candidate)
     end

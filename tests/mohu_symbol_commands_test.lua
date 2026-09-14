@@ -99,4 +99,37 @@ for _, input in ipairs({
     assert(#yielded > 0, input)
 end
 
+-- 语义谱系：symbol_hint 与 temporal 候选必须携带受保护的合成来源记录
+local semantic_meta = require("mohu_semantic_meta")
+local hint_candidates = translate("/")
+local hint_provenance = semantic_meta.resolve(hint_candidates[1])
+assert(type(hint_provenance) == "table" and
+    hint_provenance.provenance_version == "mohu-symbol-hint/v1" and
+    hint_provenance.source == "symbol_hint" and
+    hint_provenance.candidate_type == "symbol_hint" and
+    hint_provenance.protected == true and
+    hint_provenance.synthetic == true and
+    hint_provenance.native_score_kind == "unavailable" and
+    type(hint_provenance.symbol_code) == "string",
+    "symbol_hint candidates must retain producer provenance")
+local hint_shadow = {
+    type = "mohu_wrapped",
+    get_genuine = function() return hint_candidates[1] end,
+}
+assert(semantic_meta.resolve(hint_shadow) == hint_provenance,
+    "symbol_hint provenance must resolve through a wrapper")
+
+yielded = {}
+shijian.func("/date", { start = 0, _end = 5 }, {})
+assert(#yielded > 0)
+local temporal_provenance = semantic_meta.resolve(yielded[1])
+assert(type(temporal_provenance) == "table" and
+    temporal_provenance.provenance_version == "mohu-temporal/v1" and
+    temporal_provenance.source == "temporal" and
+    temporal_provenance.candidate_type == "date" and
+    temporal_provenance.protected == true and
+    temporal_provenance.synthetic == true and
+    temporal_provenance.native_score_kind == "unavailable",
+    "temporal candidates must retain producer provenance")
+
 print("symbol command tests passed")

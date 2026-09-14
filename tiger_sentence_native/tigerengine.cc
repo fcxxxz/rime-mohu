@@ -1769,6 +1769,11 @@ struct Engine {
   // 读音先验权重：把码表第 5 列推导的 log P(读音|字) 加进路径分，
   // 补上字符级模型「只认字频、不认读音」的盲区（万 mò 类罕用读音）。
   double reading_prior_weight = 1.0;
+  // 词边先验：>0 时允许静态多字词（非个人/非简词）作为长句句中内部边，
+  // 并给每条内部词边加该有界分——「词典里有这个词」在路径分中获得一次
+  // 投票，对应 librime/万象 entry_weight+Query 的加法融合结构（词频地板
+  // 垫在字符模型下）。0 = 关闭并逐字节保持旧行为。
+  double word_edge_weight = 0.0;
   // 跨候选调频：上屏历史尾部的 CJK 字作为解码左上文（字符级 trigram
   // 条件窗口恰为 2 字）。词级上下文（pw2/pw1）不参与播种，维持 <s>。
   bool has_decode_context = false;
@@ -2174,8 +2179,13 @@ struct Engine {
                                         cand.rank <= abbrev_edges_max_rank &&
                                         (!abbrev_strict || cand.abbrev_exact);
             const bool whole_input_edge = (pos == 0 && consumed_end == length);
+            // 词边先验：静态多字词可作句中内部边（词模式引擎除外——那边
+            // 所有边本就是词，加分会重复计权）。0 = 关闭，逐字节旧行为。
+            const bool word_prior_edge = word_edge_weight > 0.0 && !word_mode &&
+                                         cand.chars.size() > 1 &&
+                                         !cand.personal && !cand.abbrev;
             if (cand.chars.size() != 1 && !cand.personal && !abbrev_edge_ok &&
-                !whole_input_edge) continue;
+                !whole_input_edge && !word_prior_edge) continue;
             // 整段命中的静态多字词在输入继续增长后语义会失效（整段→内部），
             // 必须禁用增量复用；纯内部边（个人词、简词）无此问题。
             if (cand.chars.size() != 1 && !cand.personal && whole_input_edge)
@@ -2202,6 +2212,11 @@ struct Engine {
             }
             if (selected_rank == 0 && cand.rank > 1)
               score -= kRankPenalty * log(1.0 + (double)(cand.rank - 1));
+            // 词边先验：内部静态词条边加一次有界分（整段命中边维持原
+            // 语义不另加）；「支持」是词条而「只吃」只是字符拼装时，
+            // 这项就是两路径的固定差，用于压住跨词界粘连的反杀。
+            if (word_prior_edge && !whole_input_edge)
+              score += word_edge_weight;
             // 读音先验：字符级 LM 无读音概念，罕用读音的高频字（万 mò）
             // 会凭全局字频挤到候选前列；先验按贝叶斯项 P(码|字) 惩罚。
             if (reading_prior_weight != 0.0 && cand.reading_prior != 0.0)
@@ -2949,6 +2964,107 @@ int tiger_engine_set_reading_prior_weight(int handle, double weight) {
     return 1;
   } catch (...) {
     set_error("reading prior weight update failed");
+    return -1;
+  }
+}
+
+/* 词边先验权重：0 关闭（默认，静态多字词仅整段命中）；>0 打开并作为
+   每条内部词边的有界加分，范围 [0, 4]。 */
+int tiger_engine_set_word_edge_weight(int handle, double weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(weight >= 0.0 && weight <= 4.0)) {
+      set_error("word edge weight must be in [0, 4]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->word_edge_weight == weight) return 0;
+    e->word_edge_weight = weight;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("word edge weight update failed");
+    return -1;
+  }
+}
+
+/* 词证据分歧门：top1 候选在与 top2 的码点对齐公共前缀之后接的是不成词
+   拼装（2–4 字窗口无码表多字词），而 top2 接的是词典多字词——词证据
+   与菜单排序相抵触。作为 V5 top-2 z 分差门控的补充开门条件：
+   门本会关（引擎「自信」）而词证据说反话时仍放行语义重排。 */
+int tiger_engine_word_disagreement(int handle, const char* candidates,
+                                   int candidate_count, int* out_flag) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (!out_flag) return -1;
+    *out_flag = 0;
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!candidates || candidate_count < 2) return 0;
+    const Engine* e = g_engines[handle].get();
+    std::string joined(candidates);
+    std::vector<std::string> texts;
+    texts.reserve((size_t)candidate_count);
+    size_t start = 0;
+    for (size_t i = 0; i < joined.size(); ++i) {
+      if (joined[i] == '\n') {
+        texts.emplace_back(joined, start, i - start);
+        start = i + 1;
+      }
+    }
+    texts.emplace_back(joined, start, std::string::npos);
+    if ((int)texts.size() < 2) return 0;
+    const std::string& a = texts[0];
+    const std::string& b = texts[1];
+    size_t p = 0;
+    while (p < a.size() && p < b.size() && a[p] == b[p]) ++p;
+    while (p > 0 && ((unsigned char)a[p] & 0xC0) == 0x80) --p;  // 码点对齐
+    if (p >= a.size() || p >= b.size()) return 0;  // 无分歧段
+    auto word_covers_divergence = [&lex = e->lex](const std::string& text,
+                                                  size_t q) {
+      // 分歧码点可能落在词中部（暴利/暴力 的「暴」是公共前缀）：
+      // 从分歧点前一码点与分歧点本身各取 2–4 字窗口查码表。
+      // 退到分歧点前一码点的起点：先吞掉前一码点的全部字节再对齐。
+      size_t prev = q;
+      if (prev > 0) {
+        --prev;
+        while (prev > 0 && ((unsigned char)text[prev] & 0xC0) == 0x80) --prev;
+      }
+      for (size_t base : {prev, q}) {
+        size_t offsets[5];
+        int n = 0;
+        offsets[0] = base;
+        size_t pos = base;
+        while (n < 4 && pos < text.size()) {
+          const unsigned char lead = (unsigned char)text[pos];
+          size_t width = 1;
+          if ((lead & 0xE0) == 0xC0) width = 2;
+          else if ((lead & 0xF0) == 0xE0) width = 3;
+          else if ((lead & 0xF8) == 0xF0) width = 4;
+          if (pos + width > text.size()) break;
+          pos += width;
+          offsets[++n] = pos;
+        }
+        for (int len = 2; len <= n; ++len) {
+          if (lex.freq_rank.find(
+                  text.substr(base, offsets[len] - base)) != lex.freq_rank.end())
+            return true;
+        }
+      }
+      return false;
+    };
+    const bool w1 = word_covers_divergence(a, p);
+    const bool w2 = word_covers_divergence(b, p);
+    *out_flag = (!w1 && w2) ? 1 : 0;
+    return 0;
+  } catch (...) {
+    set_error("word disagreement check failed");
     return -1;
   }
 }

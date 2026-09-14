@@ -166,7 +166,10 @@ end
 assert(subject.is_user_created(phrase_memory, candidate("Made", "user_phrase"), "bb"))
 assert(subject.is_user_created(phrase_memory, candidate("AuxMade", "user_phrase"), "bbcc"))
 assert(not subject.is_user_created(phrase_memory, candidate("Built", "user_phrase"), "aa"))
-assert(not subject.is_user_created(phrase_memory, candidate("Made", "phrase"), "bb"))
+-- native/普通候选不再有 user_phrase 类型门：能按 (码, 词) 命中 userdb
+-- 自造词条即可（含输入侧带辅码的前缀匹配）。
+assert(subject.is_user_created(phrase_memory, candidate("Made", "mohu_zrm"), "bb"))
+assert(subject.is_user_created(phrase_memory, candidate("AuxMade", "mohu_zrm"), "bbccdd"))
 
 local fresh_user_phrase = candidate("Fresh", "user_phrase")
 fresh_user_phrase.entry = { text = "Fresh", custom_code = "c c" }
@@ -212,7 +215,7 @@ end
 
 local permanent_hidden_calls = {}
 local permanent_context, permanent_segment = deletion_context(candidate("Made", "user_phrase"))
-local permanent_result = subject.delete_or_restore(permanent_context, permanent_segment, "bb", {
+local permanent_env = {
     override_store = {
         query = function()
             return { Made = { hidden = true, rank = -1, tick = 1 } }
@@ -229,13 +232,93 @@ local permanent_result = subject.delete_or_restore(permanent_context, permanent_
     override_memory = phrase_memory,
     override_management_option = "candidate_override_management",
     override_max_candidates = 50,
-})
-assert(permanent_result == 1)
+}
+-- 第一按：清空学习权重（Made 提交计数 1），词条保留、不隐藏。
+local first_result = subject.delete_or_restore(permanent_context, permanent_segment, "bb", permanent_env)
+assert(first_result == 1)
+assert(permanent_context.delete_count == 0)
+assert(#permanent_hidden_calls == 0)
+assert(#phrase_memory.update_calls == 1)
+assert(phrase_memory.update_calls[1][1] == "Made" and phrase_memory.update_calls[1][3] == -1)
+assert(permanent_env.override_weight_cleared ~= nil)
+assert(permanent_env.override_weight_cleared.text == "Made")
+-- 两秒内第二按：永久删除（隐藏记录清理 + 删除标记 + userdb 扣减 + 候选移除）。
+local second_result = subject.delete_or_restore(permanent_context, permanent_segment, "bb", permanent_env)
+assert(second_result == 1)
 assert(permanent_context.delete_count == 1)
 assert(#permanent_hidden_calls == 2 and permanent_hidden_calls[1][3] == false)
 assert(permanent_hidden_calls[2][1] == "bb" and permanent_hidden_calls[2][3] == 1)
-assert(#phrase_memory.update_calls == 1)
-assert(phrase_memory.update_calls[1][1] == "Made" and phrase_memory.update_calls[1][3] == -1)
+assert(#phrase_memory.update_calls == 2)
+assert(phrase_memory.update_calls[2][1] == "Made" and phrase_memory.update_calls[2][3] == -1)
+assert(permanent_env.override_weight_cleared == nil)
+
+-- native 候选（类型 mohu_zrm，个人词层在引擎内）+ 带辅码的存储码：
+-- 两段式删除同样生效，这正是 budelc→不得聊 场景的回归线。
+local native_memory = {
+    user_entries = {
+        { text = "不得聊", custom_code = "bu;cb de;wf lc;qb", commit_count = 3 },
+    },
+    dict_entries = {},
+}
+function native_memory:user_lookup()
+    return true
+end
+function native_memory:iter_user()
+    local index = 0
+    return function()
+        index = index + 1
+        return self.user_entries[index]
+    end
+end
+function native_memory:dictiter_lookup(code)
+    local entries = self.dict_entries[code] or {}
+    return {
+        iter = function()
+            local index = 0
+            return function()
+                index = index + 1
+                return entries[index]
+            end
+        end,
+    }
+end
+native_memory.update_calls = {}
+function native_memory:update_userdict(entry, commits, prefix)
+    table.insert(self.update_calls, { entry.text, entry.custom_code, commits, prefix })
+    return true
+end
+local native_delete_calls = {}
+local native_context, native_segment = deletion_context(candidate("不得聊", "mohu_zrm"))
+local native_env = {
+    override_store = {
+        query = function()
+            return {}
+        end,
+        set_user_deleted = function(_, code, text, commit_count)
+            table.insert(native_delete_calls, { code, text, commit_count })
+            return true
+        end,
+        set_hidden = function()
+            return true
+        end,
+    },
+    override_memory = native_memory,
+    override_management_option = "candidate_override_management",
+    override_max_candidates = 50,
+}
+local native_first = subject.delete_or_restore(native_context, native_segment, "budelc", native_env)
+assert(native_first == 1)
+assert(native_context.delete_count == 0)
+assert(#native_memory.update_calls == 1 and native_memory.update_calls[1][3] == -3)
+assert(native_env.override_weight_cleared ~= nil)
+assert(native_env.override_weight_cleared.entry_code == "budelc")
+local native_second = subject.delete_or_restore(native_context, native_segment, "budelc", native_env)
+assert(native_second == 1)
+assert(native_context.delete_count == 1)
+assert(#native_delete_calls == 1 and native_delete_calls[1][1] == "budelc"
+    and native_delete_calls[1][3] == 3)
+assert(#native_memory.update_calls == 2 and native_memory.update_calls[2][3] == -1)
+assert(native_env.override_weight_cleared == nil)
 
 local builtin_hidden_calls = {}
 local builtin_context, builtin_segment = deletion_context(candidate("Built", "user_phrase"))

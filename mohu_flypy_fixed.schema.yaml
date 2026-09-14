@@ -86,79 +86,136 @@ engine:
     - uniquifier
 
 speller:
+  # 允许进入编码串的字符集合；不在这里的按键由其他组件处理。
   alphabet: 'abcdefghijklmnopqrstuvwxyz/=;'
+  # 音节分隔符；用于明确编码分段。
   delimiter: " '"
   max_code_length: 4
+  # 是否允许拼写器自动选择候选；还受下面的匹配条件约束。
   auto_select: true
+  # 只有编码匹配此正则时才允许自动选择，不是所有输入都自动上屏。
   auto_select_pattern: ^;(\w|;)+
   auto_clear: max_length # manual | auto | max_length
+  # 编码变换规则，引用的补丁按顺序组合生成拼写索引。
   algebra:
     __patch:
       - mohu:/algebra/user_force_top?
       - mohu:/algebra/user_force_bottom?
 
 translator:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_flypy_fixed
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: tabledb
+  # 是否启用码表翻译器内置字符集过滤；与后续 Lua 字符集过滤器独立。
   enable_charset_filter: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 100000
 
 fixed:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_flypy_fixed
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_flypy_fixed_tiger_prefix2
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: tabledb
+  # 是否启用码表翻译器内置字符集过滤；与后续 Lua 字符集过滤器独立。
   enable_charset_filter: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: true
+  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
   enable_encoder: true
+  # 是否利用上屏历史自动造词；依赖 enable_encoder，编码器关闭时仅设 true 不会生效。
   encode_commit_history: false   # 是否开启自动造词
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 1000
 
 fixed_legacy:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_flypy_fixed_legacy
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_flypy_fixed_tiger_prefix2
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: tabledb
+  # 是否启用码表翻译器内置字符集过滤；与后续 Lua 字符集过滤器独立。
   enable_charset_filter: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: true
+  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
   enable_encoder: true
+  # 是否利用上屏历史自动造词；依赖 enable_encoder，编码器关闭时仅设 true 不会生效。
   encode_commit_history: false
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 1000
 
 translator_legacy:
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_flypy_fixed_legacy
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: tabledb
+  # 是否启用码表翻译器内置字符集过滤；与后续 Lua 字符集过滤器独立。
   enable_charset_filter: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 100000
 
 custom_phrase: # 自定义短语
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: ""
+  # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_flypy_custom_phrases
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: stabledb
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 500000
 
 zkci:           # 造词
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: zkci
+  # 词典数据库类型：stabledb 用于稳定短语表，tabledb 用于码表用户词典。
   db_class: tabledb
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: mohu_flypy_fixed
+  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
+  # 是否启用码表翻译器内置字符集过滤；与后续 Lua 字符集过滤器独立。
   enable_charset_filter: false
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
+  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: true
+  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
   enable_encoder: false
+  # 码表自动造词的最大词长，不是编码长度或候选页大小。
   max_phrase_length: 4
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "'"
+  # 进入此功能时显示的提示文字。
   tips: 〔造词〕
+  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
   initial_quality: 10
 
 repeat:        # 重复上屏
@@ -188,19 +245,29 @@ recognizer:
 
 
 reverse_tiger:
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: reverse_tiger
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: tiger
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: true
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "ohm"
+  # 进入此功能时显示的提示文字。
   tips: 〔虎〕
   comment_format:
     - xform/(\w\w);(\w\w)/$1[$2]/
 
 reverse_tiger_backtick:
+  # 本翻译器响应的输入分段标签；需与分段器识别出的标签对应。
   tag: reverse_tiger_backtick
+  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
   dictionary: tiger
+  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: true
+  # 进入此反查或造词功能的引导字符；不是补全候选的匹配前缀。
   prefix: "`"
+  # 进入此功能时显示的提示文字。
   tips: 〔虎〕
   comment_format:
     - xform/(\w\w);(\w\w)/$1[$2]/

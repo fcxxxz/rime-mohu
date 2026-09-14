@@ -75,6 +75,10 @@ deploy:
     tests:
       - send: 'vsehmcey{space}'
         assert: eq(commit, '柊杪')
+      # 第一按清空学习权重：词条保留在候选里，只是不再被个人词层顶起。
+      - send: 'vsmc{Shift+Delete}'
+        assert: has_text(cand, '柊杪')
+      # 两秒内第二按：永久删除，词条从候选消失。
       - send: 'vsmc{Shift+Delete}'
         assert: not has_text(cand, '柊杪')
       - send: '{Escape}{Control+Shift+M}{space}'

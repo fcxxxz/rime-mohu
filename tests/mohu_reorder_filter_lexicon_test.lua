@@ -70,4 +70,37 @@ assert(two_char[1] and two_char[1].text == "杨娇",
 assert(#two_char == 2 and two_char[2].text == "样娇",
   "dictionary candidates keep flowing after the native pair")
 
+-- 置顶后 native 个人词副本不得再输出第二条同文候选（2026-09-15 回归）：
+-- pin 替换位输出的文本优先，native 侧（含 _personal 豁免路径）同文跳过。
+local pin_dup = run({
+  candidate("pinned", "李火旺", "lihowh", "📌"),
+  candidate("mohu_zrm_personal", "李火旺", "lihowh"),
+  candidate("sentence", "李火旺", "li ho wh"),
+  candidate("sentence", "离火网", "li ho wh"),
+})
+local pin_copies = 0
+for _, c in ipairs(pin_dup) do
+  if c.text == "李火旺" then pin_copies = pin_copies + 1 end
+end
+assert(pin_copies == 1,
+  "pinned text must not be duplicated by its native personal copy")
+assert(pin_dup[1].text == "李火旺" and pin_dup[1].comment == "📌",
+  "the pin-position copy keeps the pin indicator")
+assert(pin_dup[#pin_dup].text == "离火网",
+  "unrelated dictionary candidates keep flowing")
+
+-- pin 没有可替换的 smart 副本时（用户词库尚无该词），pin 本体直接输出，
+-- native 个人词副本同样不得重复。
+local pin_no_smart = run({
+  candidate("pinned", "李火旺", "lihowh", "📌"),
+  candidate("mohu_zrm_personal", "李火旺", "lihowh"),
+  candidate("sentence", "离火网", "li ho wh"),
+})
+local pin_no_smart_copies = 0
+for _, c in ipairs(pin_no_smart) do
+  if c.text == "李火旺" then pin_no_smart_copies = pin_no_smart_copies + 1 end
+end
+assert(pin_no_smart_copies == 1 and pin_no_smart[1].text == "李火旺",
+  "unmatched pinned candidate yields once and native personal copy is skipped")
+
 print("Mohu reorder lexicon-first tests passed")

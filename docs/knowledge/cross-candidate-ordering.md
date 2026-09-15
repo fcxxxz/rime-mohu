@@ -170,6 +170,16 @@ candidate_override 之前），配置 `tiger/sentence_visible_candidates`
 合并，造成 xnyska 双「信用卡」；flush 现在输出 native 时记录文本、
 smart 侧同文本跳过（详见
 [每键延迟报告](../reports/2026-09-14-perkey-latency.md) 傍晚第三轮）。
+**2026-09-15 修补**：该去重原是单向的（只防 smart 副本），置顶/简码
+替换位已输出的文本不进判重集合，而 `_personal` native 豁免词库门控
+无条件输出——置顶后 native 个人词副本仍以第二条出现（用户报
+「置顶了还是生成一样的候选」）。现以 `yielded_texts` 统一判重：先输出
+者代表该文本（pin/fixed 位 > native > smart），测试补置顶×personal
+双用例（tests/mohu_reorder_filter_lexicon_test.lua）。另：个人词边
+单次提交 boost=log1p(1)×5≈3.47（上限 12，约 10 次封顶），标定即
+「一次可见但小」——native 第一名随上下文分差波动是预期行为，稳定
+直出走置顶（注意 pin 按置顶时的完整输入串记账，带辅码置顶对裸双拼
+输入不命中）。
 **句形判定（类型无关）**：覆盖到输入末尾（与 word_order 的
 consumes_current_input 同型判定）＋ 达到门槛字数（`tiger/
 sentence_min_chars` 默认 3，两字词与辅码消歧不裁）＋ 字数不超过覆盖

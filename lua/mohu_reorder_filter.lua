@@ -1,10 +1,14 @@
 -- Mohu Reorder Filter
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.3.2
+-- Ver: 0.3.3
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.3.3: 同文去重扩展到全部输出位置：pin/fixed 替换位已输出的文本，
+--        native 侧（含 _personal 个人词）同文本跳过。修复置顶后 personal
+--        native 副本仍以第二条形式出现（0.3.2 只去重 smart 侧副本）。
 --
 -- 0.3.2: 两字 native 候选独立输出：两字终态只可能来自两音节带辅码的
 --        输入（用户已显式消歧），不再要求词库也存在同文本。
@@ -104,6 +108,8 @@ function Top.func(t_input, env)
         trailing_list = {},   -- fixed 匹配完成后暂存的其余候选（上界 trailing_limit）
         flushed_early = false, -- 尾部超限提前冲刷后置位：后续候选直通
         lexicon_texts = {},   -- 本轮非 native 候选的文本集合
+        yielded_texts = {},   -- 本轮已实际输出过的文本集合（pin/fixed 替换位、
+                              -- native 输出），同文去重的唯一判据
         threshold = env.reorder_threshold,
         pin_set = {},         -- 候选是否是 pinned
 
@@ -123,8 +129,7 @@ function Top.func(t_input, env)
                 -- 缓冲与去重集合都没有职责，直接流式输出。native 的
                 -- quality（50）在流序上先于 smart（5），首个 smart 出现时
                 -- native_list 已完备，该判断没有竞态。
-                if not (ctx.flushed_early and ctx.emitted_native_texts and
-                        ctx.emitted_native_texts[cand.text]) then
+                if not (ctx.flushed_early and ctx.yielded_texts[cand.text]) then
                     if not ctx.flushed_early then
                         Top.flush(env, ctx, true)  -- 先清残余 smart_list，保证顺序
                         ctx.flushed_early = true
@@ -215,6 +220,7 @@ function Top.handle_matching(env, ctx, cand)
         local fcand = ctx.fixed_list[ctx.fixed_next]
         if not Top.reorderable(fcand) then
             Top.yield_exact(env, fcand)
+            ctx.yielded_texts[fcand.text] = true
             ctx.fixed_next = ctx.fixed_next + 1
         else
             local si, scand = Top.find_matching_scand(ctx, fcand)
@@ -222,6 +228,7 @@ function Top.handle_matching(env, ctx, cand)
                 break
             end
             Top.yield_smart_in_place_of_fixed(env, scand, fcand)
+            ctx.yielded_texts[fcand.text] = true
             ctx.fixed_next = ctx.fixed_next + 1
             table.remove(ctx.smart_list, si)
         end
@@ -250,44 +257,46 @@ end
 function Top.flush(env, ctx, include_delay_slot)
     for i = ctx.fixed_next, #ctx.fixed_list do
         Top.yield_exact(env, ctx.fixed_list[i])
+        ctx.yielded_texts[ctx.fixed_list[i].text] = true
     end
-    -- native 与 smart 的同文本候选 text/comment 相同但 preedit 分段不同
-    -- （native 是引擎的词级分段如「xnys ka」＝信用|卡，smart 是音节分段
-    -- 「xn ys ka」），uniquifier 按 preedit 判不等、不会合并，造成同文
-    -- 双候选（如 xnyska 出现两个「信用卡」）。这里在 native 输出时记录
-    -- 文本，smart 侧同文本跳过——由 native 版本代表该文本（提交走
-    -- native 的个人词路径，与「模型负责排序」的设计一致）。
-    local emitted_native_texts = {}
+    -- 同文去重：native 与 smart 的同文本候选 text/comment 相同但 preedit
+    -- 分段不同（native 是引擎的词级分段如「xnys ka」＝信用|卡，smart 是
+    -- 音节分段「xn ys ka」），uniquifier 按 preedit 判不等、不会合并，造成
+    -- 同文双候选（如 xnyska 出现两个「信用卡」）。pin/fixed 替换位已输出
+    -- 的文本同理（置顶后其 native 个人词副本仍会穿透 _personal 豁免）。
+    -- 统一以 yielded_texts 判重：先输出者代表该文本——pin/fixed 位优先于
+    -- native（置顶意图必须保留），native 优先于 smart（提交走 native 的
+    -- 个人词路径，与「模型负责排序」的设计一致）。
     for _, c in ipairs(ctx.native_list) do
         local text_length = utf8.len(c.text) or 0
         local native_type = c:get_genuine().type
         local is_personal = native_type == "mohu_zrm_personal" or
             native_type == "mohu_flypy_personal"
         -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
-        if next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
+        if not ctx.yielded_texts[c.text]
+            and (next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
             or text_length >= native_independent_min_length
-            or text_length == 2 or is_personal then
+            or text_length == 2 or is_personal) then
             Top.yield_exact(env, c)
-            emitted_native_texts[c.text] = true
+            ctx.yielded_texts[c.text] = true
         end
     end
-    ctx.emitted_native_texts = emitted_native_texts
     if include_delay_slot then
         -- 只在完全匹配完毕后才清空延迟槽
         for _, c in ipairs(ctx.delay_slot) do
-            if not emitted_native_texts[c.text] then
+            if not ctx.yielded_texts[c.text] then
                 Top.yield_exact(env, c)
             end
         end
         ctx.delay_slot = {}
     end
     for _, c in ipairs(ctx.smart_list) do
-        if not emitted_native_texts[c.text] then
+        if not ctx.yielded_texts[c.text] then
             Top.yield_exact(env, c)
         end
     end
     for _, c in ipairs(ctx.trailing_list) do
-        if not emitted_native_texts[c.text] then
+        if not ctx.yielded_texts[c.text] then
             Top.yield_exact(env, c)
         end
     end

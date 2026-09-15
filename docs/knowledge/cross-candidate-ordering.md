@@ -180,6 +180,24 @@ smart 侧同文本跳过（详见
 「一次可见但小」——native 第一名随上下文分差波动是预期行为，稳定
 直出走置顶（注意 pin 按置顶时的完整输入串记账，带辅码置顶对裸双拼
 输入不命中）。
+**2026-09-15 学习词不可见修复（两层叠加）**：用户报 xspizi 学过「熊皮子」
+后仍只见一条候选。①引擎只给**个人词库**（userdb 扫描）的路径标 personal，
+用户调频层（ngram 快照）顶到第一名的学习词是普通 native 路径，被
+reorder 的词库门控（3–4 字、文本不在 smart 流）整条丢弃——学习闭环
+断裂：不可见→无法提交→永远进不了 userdb。修复：解码路径累计**用户层
+增益**（Σ[log 融合分−log 静态分]，`kUserGainPersonalThreshold=5.0`），
+达标路径按 personal 输出（实测单次学习 trigram 增益 >10 nats、常规
+边界 <1 nat，分隔干净；xspizi 仅熊罴子/熊皮子标 1，uhbjuf 全 0）。
+②sentence_visibility_filter 0.1.x 把超配额句形候选**直接删除**，
+0.2.0 改为押后到词组之后（可翻页到达），且 ≤4 字 `_personal` 不占
+句形配额（用户词库随 native 序输出）；反复输入的长句 personal 仍
+计入配额押后（09-09 洪水教训保留）。验证：xspizi 菜单
+[熊皮子, 熊罴子, 兄痞子(smart 句), 熊皮, 熊罴…]；uhbjuf 不变
+[上半身, 上班…]。同日用户另报「uhbjuf 有时上班第一、上半身次选」：
+当前状态（repo+用户 userdb/ngram 快照）fresh/8 组上文/语义开关各
+组合均无法复现，菜单稳定 [上半身, 上班…]；疑为 09-13/09-14 中间
+部署态，如复现需记录当时上文与部署文件版本。完整证据链见
+[学习词可见性报告](../reports/2026-09-15-personal-word-visibility.md)。
 **句形判定（类型无关）**：覆盖到输入末尾（与 word_order 的
 consumes_current_input 同型判定）＋ 达到门槛字数（`tiger/
 sentence_min_chars` 默认 3，两字词与辅码消歧不裁）＋ 字数不超过覆盖

@@ -1757,6 +1757,13 @@ inline double word_char_reward() {
 }
 const int kIsolationThreshold = 3000;
 const double kIsolationLambda = 2.0;
+// 用户层路径标记阈值：路径累计的「用户层融合增益」（Σ[log 融合分 −
+// log 静态分]）达到该值时，解码条目按 personal 输出。仅靠调频层顶到
+// 前列的学习词（码表没有的自造词，如 xspizi→熊皮子）由此获得 _personal
+// 类型，穿过 reorder filter 的词库门控并保持可选中；否则「用户层第一
+// 名」永远不可见、无法提交，学习闭环断裂（2026-09-15 xspizi 实测：
+// 单次学习的 trigram 增益 >10 nats，常规路径边界增益 <1 nat）。
+const double kUserGainPersonalThreshold = 5.0;
 const int kCandidateLimit = 20;
 const int kEarlyCandidateLimit = 20;
 const size_t kMaxRawLength = 128;
@@ -1764,6 +1771,9 @@ const size_t kMaxRawLength = 128;
 struct State {
   double score = 0;
   double mass_score = 0;
+  // 用户层融合增益累计（log 域）：该路径上每个 trigram 的
+  // log(融合分) − log(静态分) 之和。仅用户调频层显著抬升的路径为正。
+  double user_gain = 0;
   std::string text;
   std::string segmented;
   uint32_t prev2 = kBOS, prev1 = kBOS;
@@ -2125,6 +2135,9 @@ struct Engine {
   bool has_terminal_phrase_states = false;
 
   std::unordered_map<uint64_t, double> logp_cache;
+  // trigram -> 用户层融合增益（log 融合分 − log 静态分）。与 logp_cache
+  // 同生命周期（装载/失效处一并清理），仅在用户层参与融合时写入。
+  std::unordered_map<uint64_t, double> user_gain_cache;
 
   double word_logp(uint32_t a, uint32_t b, uint32_t c) {
     if (c == 0xFFFFFFFFu) {
@@ -2327,6 +2340,7 @@ struct Engine {
     if (it != logp_cache.end()) return it->second;
     double v = static_logp(a, b, c);
     if (user_weight < 1.0 && !user.empty()) {
+      const double base = v;  // 融合前的静态分（含 blend）
       double pu = user.logp(a, b, c);
       if (!std::isfinite(v) || !std::isfinite(pu))
         throw std::runtime_error("invalid n-gram probability");
@@ -2336,11 +2350,24 @@ struct Engine {
       if (!(mixed > 0.0) || !std::isfinite(mixed))
         throw std::runtime_error("invalid n-gram probability");
       v = std::log(mixed);
+      // 记录该 trigram 的用户层增益，供路径级 personal 判定累计。
+      user_gain_cache[key] = v - base;
     }
     if (!std::isfinite(v)) throw std::runtime_error("invalid n-gram probability");
-    if (logp_cache.size() > 65536) logp_cache.clear();
+    if (logp_cache.size() > 65536) {
+      logp_cache.clear();
+      user_gain_cache.clear();
+    }
     logp_cache[key] = v;
     return v;
+  }
+
+  // 读取 trigram 的用户层增益；仅在紧跟 logp(a,b,c) 之后调用才保证已缓存
+  //（与 logp_cache 同键写入）。未参与融合（无用户层/已关闭）时为 0。
+  double cached_user_gain(uint32_t a, uint32_t b, uint32_t c) {
+    if (user_weight >= 1.0 || user.empty()) return 0.0;
+    auto it = user_gain_cache.find(((uint64_t)a << 42) | ((uint64_t)b << 21) | c);
+    return it == user_gain_cache.end() ? 0.0 : it->second;
   }
 
   double isolation_penalty(const std::string& text) {
@@ -2473,6 +2500,7 @@ struct Engine {
             if (cand.chars.size() != 1 && !cand.personal && whole_input_edge)
               has_terminal_phrase_states = true;
             double score = item->score;
+            double user_gain = item->user_gain;
             uint32_t prev2 = item->prev2, prev1 = item->prev1;
             uint32_t pw2 = item->pw2, pw1 = item->pw1;
             if (word_mode) {
@@ -2488,6 +2516,7 @@ struct Engine {
               for (uint32_t cp : cand.chars) {
                 score += logp(prev2, prev1, cp);
                 score += kCharReward;
+                user_gain += cached_user_gain(prev2, prev1, cp);
                 prev2 = prev1;
                 prev1 = cp;
               }
@@ -2533,6 +2562,7 @@ struct Engine {
             s2->text_length = s2->text.size();
             s2->raw_length = consumed_end;
             s2->personal = item->personal || cand.personal;
+            s2->user_gain = user_gain;
             states[consumed_end]->add(s2);
           }
         }
@@ -2547,7 +2577,8 @@ struct Engine {
     out->confidence = s->mass_score + ending_adjustment;
     out->max_rank = std::max(1, s->max_rank);
     out->edges = s->edges;
-    out->personal = s->personal;
+    out->personal = s->personal ||
+        s->user_gain >= kUserGainPersonalThreshold;
   }
 
   void build_pathmap(State* s, OutItem* out) {
@@ -2828,6 +2859,7 @@ struct Engine {
     cache_valid = false;
     has_terminal_phrase_states = false;
     logp_cache.clear();
+    user_gain_cache.clear();
   }
 
   // A lazy page failure can occur halfway through beam expansion.  Never keep
@@ -2841,6 +2873,7 @@ struct Engine {
     cached_with_early = false;
     has_terminal_phrase_states = false;
     logp_cache.clear();
+    user_gain_cache.clear();
     scorer_logp_cache.clear();
     word_ctx_valid = false;
   }

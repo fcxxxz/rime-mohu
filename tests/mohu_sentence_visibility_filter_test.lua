@@ -1,11 +1,13 @@
 package.path = "./lua/?.lua;./tiger_sentence_native/?.lua;" .. package.path
 
--- 整句候选显示裁剪测试（lua/mohu_sentence_visibility_filter.lua）：
--- 默认仅显示第 1 条句形候选（搜狗式菜单）；0 恢复全部显示；句形判定
--- 不限类型（native/personal/express 全长词组同样计入配额）；稳定边界：
--- punct/pinned、⚡️/📌 标记、不足 5 字、声母简码（字数超过音节容量）、
--- 未覆盖到输入末尾的部分跨度候选一律不裁；重排池不受影响（本 filter
--- 只动显示层，上游 word_order 已看过全池）。
+-- 整句候选显示调整测试（lua/mohu_sentence_visibility_filter.lua）：
+-- 默认前 1 条句形候选在前，其余句形候选押后到全部词组之后（不删除，
+-- 可翻页到达）；0 恢复全部按原始顺序显示；句形判定不限类型
+-- （native/personal/express 全长词组同样计入配额；例外：≤4 字的
+-- _personal 是用户词库，不占配额）；稳定边界：punct/pinned、⚡️/📌
+-- 标记、不足 5 字、声母简码（字数超过音节容量）、未覆盖到输入末尾的
+-- 部分跨度候选一律不押后；重排池不受影响（本 filter 只动显示层，
+-- 上游 word_order 已看过全池）。
 
 local failures = 0
 local function check(name, ok, detail)
@@ -105,7 +107,7 @@ local sentences = {
   "进天天起怎么养",
 }
 
--- 1) 默认（1 条）：仅保留首条句形候选，词组候选照常通过。
+-- 1) 默认（1 条）：首条句形候选在前，其余句形押后到词组之后（不删除）。
 do
   local env = make_env(nil)
   filter.init(env)
@@ -115,11 +117,11 @@ do
     candidate("phrase", "今天"),
     candidate("mohu_zrm", sentences[3]),
   })
-  check("default keeps only the first sentence candidate",
-        same_texts(texts_of(out), { sentences[1], "今天" }))
+  check("default fronts the first sentence and defers the rest",
+        same_texts(texts_of(out), { sentences[1], "今天", sentences[2], sentences[3] }))
 end
 
--- 2) 类型不限：personal 与 express 全长词组同样计入配额。
+-- 2) 类型不限：长 personal 与 express 全长词组同样计入配额（押后）。
 do
   local env = make_env(nil)
   filter.init(env)
@@ -129,11 +131,12 @@ do
     candidate("phrase", "今天天气怎么样啊"),
     candidate("mohu_flypy", sentences[3]),
   })
-  check("personal and express full-span variants share the quota",
-        same_texts(texts_of(out), { sentences[1] }))
+  check("long personal and express variants share the quota",
+        same_texts(texts_of(out),
+                   { sentences[1], sentences[2], "今天天气怎么样啊", sentences[3] }))
 end
 
--- 3) N=3：保留前 3 条句形候选。
+-- 3) N=3：前 3 条句形候选在前，其余押后。
 do
   local env = make_env({ ["tiger/sentence_visible_candidates"] = 3 })
   filter.init(env)
@@ -145,9 +148,9 @@ do
     candidate("mohu_zrm", sentences[4]),
     candidate("phrase", "天气"),
   })
-  check("N=3 keeps the first three sentence candidates",
+  check("N=3 fronts three sentences and defers the fourth",
         same_texts(texts_of(out),
-                   { sentences[1], "今天", sentences[2], sentences[3], "天气" }))
+                   { sentences[1], "今天", sentences[2], sentences[3], "天气", sentences[4] }))
 end
 
 -- 4) 0 = 全部显示（旧行为）。
@@ -164,8 +167,9 @@ do
         same_texts(texts_of(out), texts_of(input)))
 end
 
--- 5) 不足门槛字数的候选（默认 3：两字词与辅码消歧输入）不裁；
--- 三字全跨候选计入配额（lirotk→李若桃 20 条同类变体刷屏问题）。
+-- 5) 不足门槛字数的候选（默认 3：两字词与辅码消歧输入）不押后；
+-- 三字全跨候选计入配额（lirotk→李若桃 20 条同类变体刷屏问题），
+-- 超配额的押后而非删除。
 do
   local env = make_env(nil)
   filter.init(env)
@@ -175,8 +179,25 @@ do
     candidate("mohu_zrm", "李若桃"),
     candidate("mohu_zrm", "厉若桃"),
   })
-  check("two-char candidates stay visible",
-        same_texts(texts_of(out), { "魔虎", "回家", "李若桃" }))
+  check("two-char candidates stay visible, third is deferred not dropped",
+        same_texts(texts_of(out), { "魔虎", "回家", "李若桃", "厉若桃" }))
+end
+
+-- 5c) ≤4 字 _personal（用户词库，含用户层增益标记的学习词）不占配额：
+-- xspizi→熊皮子/熊罴子 与默认整句、词组同时可见（2026-09-15 修复）。
+do
+  local env = make_env({ input = "xspizi" })
+  filter.init(env)
+  local out = run_filter(env, {
+    candidate("mohu_flypy_personal", "熊皮子"),
+    candidate("mohu_flypy_personal", "熊罴子"),
+    candidate("sentence", "兄痞子"),
+    candidate("phrase", "熊皮"),
+    candidate("phrase", "熊罴"),
+  })
+  check("short personal words bypass the sentence quota",
+        same_texts(texts_of(out),
+                   { "熊皮子", "熊罴子", "兄痞子", "熊皮", "熊罴" }))
 end
 
 -- 5b) tiger/sentence_min_chars 可调回更大的保护范围（如 5）。
@@ -219,7 +240,7 @@ do
     candidate("mohu_zrm", "今天天起怎么养", nil, { start = 0, finish = 17 }),
   })
   check("quick-code abbreviation candidates stay visible",
-        same_texts(texts_of(out), { "阿波罗登月计划", "今天天气怎么养" }))
+        same_texts(texts_of(out), { "阿波罗登月计划", "今天天气怎么养", "今天天起怎么养" }))
 end
 
 -- 8) 部分跨度候选（未覆盖到输入末尾）不裁——词组选词路径。
@@ -235,7 +256,7 @@ do
         same_texts(texts_of(out), { "我很", "想你", "想拟" }))
 end
 
--- 9) 全拼整句（字数=音节容量）仍正常裁剪。
+-- 9) 全拼整句（字数=音节容量）超配额押后到词组之后。
 do
   local env = make_env({ input = "wojntmhfxdni" })
   filter.init(env)
@@ -243,8 +264,8 @@ do
     candidate("mohu_zrm", "我今天很想你"),
     candidate("mohu_zrm", "我今天很像你"),
   })
-  check("full-pinyin sentence still trims to quota",
-        #out == 1 and out[1].text == "我今天很想你")
+  check("full-pinyin sentence still defers beyond quota",
+        #out == 2 and out[1].text == "我今天很想你" and out[2].text == "我今天很像你")
 end
 
 -- 10) 配置 clamp：负数与超界值（>50 → 50）落在合法区间，非法值回默认 1。

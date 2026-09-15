@@ -310,8 +310,10 @@ tiger:
   word_order_candidates: 20
   # 重排时对原有位置的惩罚权重；0 不加该项位置惩罚。
   word_order_rank_penalty: 1.0
-  # 整句候选的菜单显示条数（搜狗式：首条整句 + 词组）。重排仍用完整
-  # 候选池（word_order_candidates），本项只影响菜单可见条数；0 = 全部显示。
+  # 整句候选的菜单前排条数（搜狗式：首条整句 + 词组）。重排仍用完整
+  # 候选池（word_order_candidates）；超配额的句形候选押后到词组之后、
+  # 可翻页到达（不删除，2026-09-15 前 0.1.x 直接丢弃导致学习词不可选）；
+  # 0 = 全部按原始顺序显示。
   # sentence_min_chars：计入配额的最小候选字数（默认 3；两字词与辅码
   # 消歧输入不裁）。
   sentence_visible_candidates: 1

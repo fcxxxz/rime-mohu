@@ -1,7 +1,7 @@
 -- Mohu Sentence Visibility Filter
 -- Copyright (c) 2026 ksqsf
 --
--- Ver: 0.3.0
+-- Ver: 0.4.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
@@ -13,12 +13,21 @@
 -- 其余句形候选押后到全部词组候选之后，菜单观感与商业整句输入法一致
 -- （首条整句 + 词组）。
 --
+-- 0.4.0: 移除 ≤4 字 _personal 免配额豁免。引擎的 personal 标记是
+--        路径级继承（解码状态沿边传播），全码 3 字变体只要搭乘共享
+--        个人子边（qygfda 的 X跟打 全走「跟打」个人边）就整族带
+--        _personal，豁免把押后上限整个吞掉（2026-09-16 用户实测
+--        qygfda 仍刷屏）。押后不是删除（0.2.0 教训），学习词计入
+--        配额后仍可选可强化：排第一的学习词占前排配额位（个人词先验
+--        保证），同族兄弟进押后尾部（上限 N）；引擎评分池与学习层
+--        不受显示裁剪影响。
+--
 -- 0.3.0: 新增 tiger/sentence_deferred_candidates 押后尾部上限（-1=全部
 --        保留，默认，兼容未配置本键的 schema；≥0 只保留押后句形中排名
 --        最前 N 条）。动机：全码 3 字输入（qygfda→X跟打 20 条变体）没有
 --        词组候选可垫，押后尾部原样跟出等于没裁；深尾部变体实际选中
 --        都走辅码消歧，截断只动显示层，不碰引擎评分池与学习可见性
---        （≤4 字 _personal 本就不进押后队列）。
+--        （≤4 字 _personal 豁免当时保留，0.4.0 移除）。
 --
 -- 0.2.0: 超配额句形候选从「删除」改为「押后到词组之后」。0.1.x 的
 --        直接丢弃把学习词/个人词变成不可选（2026-09-15 用户报告：
@@ -30,9 +39,10 @@
 -- sentence_min_chars 字的候选（默认 3：两字词与辅码消歧输入）；声母
 -- 简码/缩写匹配（字数超过覆盖段音节容量＝字母数/2，词表有 6 千余条
 -- 如 abjh→阿波罗计划）；以及未覆盖到输入末尾的部分跨度候选（词组
--- 选词）。个人路径的长句变体（mohu_*_personal）与普通整句同样计入
--- 配额——用户模型会把反复输入的长句学成 personal 类型，豁免它等于
--- 豁免全部；押后（而非删除）保证它们始终可达。重排正确性不受影响：
+-- 选词）。个人路径变体（mohu_*_personal）与普通整句同样计入配额
+-- ——用户模型会把反复输入的长句学成 personal 类型，路径级继承又让
+-- 搭乘共享个人边的短变体整族带标记，豁免它等于豁免全部；押后（而非
+-- 删除）保证它们始终可达。重排正确性不受影响：
 -- word_order 在上游已看过完整候选池。
 --
 -- 挂接：mohu_*.schema.yaml filters 列表，mohu_word_order_filter 之后、
@@ -82,11 +92,11 @@ end
 
 -- 候选是否计入显示限额（true = 占用一个整句显示名额）。
 -- 句形判定不限类型：native 整句、express 全长词组、_personal 个人路径
--- 变体（用户模型会把长句变体学成 personal 类型，2026-09-09 实测全部
--- 以 mohu_zrm_personal 出现）同样挤占「整句观感」。例外：≤4 字的
--- _personal 是用户词库的一部分（含 2026-09-15 起引擎按用户层增益
--- 标记的学习词，如 xspizi→熊皮子/熊罴子），不占配额、按原序输出，
--- 保证学习词与默认首选同时可见可选；反复输入的长句仍计入配额押后。
+-- 变体（用户模型会把长句学成 personal 类型，路径级继承还会让搭乘共享
+-- 个人边的全码短变体整族带 _personal——qygfda 的 X跟打 实测）同样
+-- 挤占「整句观感」。0.4.0 起短 personal 不再豁免：排第一的学习词占
+-- 前排配额位（个人词先验保证），同族兄弟进押后尾部仍可选（xspizi 的
+-- 熊皮子/熊罴子学习闭环不断）。
 -- 句形 = 覆盖到输入末尾（与 word_order 的 consumes_current_input 同型
 -- 判定）＋ 达到 sentence_min_chars ＋ 字数不超过覆盖段音节容量
 -- （字母数/2；超过即声母简码/缩写匹配，如 abjh→阿波罗计划）。
@@ -98,9 +108,6 @@ local function quota_sentence(env, cand)
   if type(text) ~= "string" then return false end
   local len = utf8.len(text)
   if not len or len < env._sv_min_chars then return false end
-  if (t == "mohu_zrm_personal" or t == "mohu_flypy_personal") and len <= 4 then
-    return false
-  end
   local ctx = env.engine and env.engine.context
   local ctx_input = ctx and ctx.input
   if type(ctx_input) ~= "string" or #ctx_input == 0 then return false end

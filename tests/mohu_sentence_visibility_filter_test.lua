@@ -3,8 +3,8 @@ package.path = "./lua/?.lua;./tiger_sentence_native/?.lua;" .. package.path
 -- 整句候选显示调整测试（lua/mohu_sentence_visibility_filter.lua）：
 -- 默认前 1 条句形候选在前，其余句形候选押后到全部词组之后（不删除，
 -- 可翻页到达）；0 恢复全部按原始顺序显示；句形判定不限类型
--- （native/personal/express 全长词组同样计入配额；例外：≤4 字的
--- _personal 是用户词库，不占配额）；稳定边界：punct/pinned、⚡️/📌
+-- （native/personal/express 全长词组同样计入配额；0.4.0 起 ≤4 字的
+-- _personal 也不再豁免）；稳定边界：punct/pinned、⚡️/📌
 -- 标记、不足 5 字、声母简码（字数超过音节容量）、未覆盖到输入末尾的
 -- 部分跨度候选一律不押后；重排池不受影响（本 filter 只动显示层，
 -- 上游 word_order 已看过全池）。
@@ -183,10 +183,14 @@ do
         same_texts(texts_of(out), { "魔虎", "回家", "李若桃", "厉若桃" }))
 end
 
--- 5c) ≤4 字 _personal（用户词库，含用户层增益标记的学习词）不占配额：
--- xspizi→熊皮子/熊罴子 与默认整句、词组同时可见（2026-09-15 修复）。
+-- 5c) 0.4.0 起 ≤4 字 _personal 同样计入配额（路径级 personal 继承会让
+--     全码 3 字变体整族带 _personal，豁免等于不裁）。xspizi 学习闭环
+--     仍完整：排第一的学习词占前排位，熊罴子押后可达，词组照常输出。
 do
-  local env = make_env({ input = "xspizi" })
+  local env = make_env({
+    input = "xspizi",
+    ["tiger/sentence_deferred_candidates"] = 3,
+  })
   filter.init(env)
   local out = run_filter(env, {
     candidate("mohu_flypy_personal", "熊皮子"),
@@ -195,9 +199,9 @@ do
     candidate("phrase", "熊皮"),
     candidate("phrase", "熊罴"),
   })
-  check("short personal words bypass the sentence quota",
+  check("short personal words share the quota, siblings stay reachable",
         same_texts(texts_of(out),
-                   { "熊皮子", "熊罴子", "兄痞子", "熊皮", "熊罴" }))
+                   { "熊皮子", "熊皮", "熊罴", "熊罴子", "兄痞子" }))
 end
 
 -- 5b) tiger/sentence_min_chars 可调回更大的保护范围（如 5）。
@@ -313,19 +317,20 @@ do
         same_texts(texts_of(out), { sentences[1], "今天" }))
 end
 
--- 13) 全码 3 字场景（qygfda→X跟打）：无词组候选可垫时，菜单收敛为
---     免配额个人词 + 前排配额 1 条 + 押后上限 N 条。
+-- 13) 全码 3 字场景（qygfda→X跟打，线上真实分布：变体全部搭乘「跟打」
+--     共享个人边、整族 mohu_zrm_personal——0.3.0 的测试只建模 1 条
+--     personal 故未拦截豁免漏洞）：菜单收敛为前排配额 1 条 + 押后上限
+--     N 条，不再随 personal 标记无限放行。
 do
   local env = make_env({ input = "qygfda", ["tiger/sentence_deferred_candidates"] = 3 })
   filter.init(env)
-  local cands = { candidate("mohu_zrm_personal", "晴跟打") }
-  for _, text in ipairs({ "请跟打", "清跟打", "青跟打", "情跟打", "轻跟打", "庆跟打" }) do
-    cands[#cands + 1] = candidate("mohu_zrm", text)
+  local cands = {}
+  for _, text in ipairs({ "晴跟打", "请跟打", "清跟打", "青跟打", "情跟打", "轻跟打", "庆跟打" }) do
+    cands[#cands + 1] = candidate("mohu_zrm_personal", text)
   end
   local out = run_filter(env, cands)
-  check("three-char full-code variants trim to quota plus deferred cap",
-        same_texts(texts_of(out),
-                   { "晴跟打", "请跟打", "清跟打", "青跟打", "情跟打" }))
+  check("all-personal three-char variants trim to quota plus deferred cap",
+        same_texts(texts_of(out), { "晴跟打", "请跟打", "清跟打", "青跟打" }))
 end
 
 -- 14) 押后上限 clamp：>50 → 50；负数 → -1（全保留）；非法值 → -1。

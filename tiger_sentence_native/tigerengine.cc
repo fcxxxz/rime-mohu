@@ -3456,7 +3456,9 @@ int tiger_engine_set_word_edge_weight(int handle, double weight) {
 
 /* 文本词典先验权重：0 关闭（默认，整候选文本不因成词获得加分）；>0 时
    完整文本命中词表多字条目（任意码形）的候选在输出分与提前上屏置信度
-   上加该有界分，范围 [0, 4]。 */
+   上加该有界分，范围 [0, 16]。词长候选上词典证据应基本压住上下文搭配
+   杠杆（实测 祖国/和平+tsyige 时 P(统|ctx) 级搭配差可达 4.5 nats，
+   1.5 不够）。 */
 int tiger_engine_set_text_lexicon_weight(int handle, double weight) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
@@ -3464,8 +3466,8 @@ int tiger_engine_set_text_lexicon_weight(int handle, double weight) {
       set_error("invalid engine handle");
       return -1;
     }
-    if (!(weight >= 0.0 && weight <= 4.0)) {
-      set_error("text lexicon weight must be in [0, 4]");
+    if (!(weight >= 0.0 && weight <= 16.0)) {
+      set_error("text lexicon weight must be in [0, 16]");
       return -1;
     }
     Engine* e = g_engines[handle].get();

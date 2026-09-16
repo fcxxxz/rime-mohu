@@ -151,7 +151,7 @@ local word_edge_weight_default = 1.5
 -- 「同一个」挂简码 tyg）时在输出分上加该有界分。词边先验按编码内部
 -- 边投票，此项按「整候选是否成词」投票，压住组合路径对真词的薄差
 -- 反杀（实现+tsyige 时「统一个」反超「同一个」0.13 nats）。0 关闭。
-local text_lexicon_weight_default = 1.5
+local text_lexicon_weight_default = 6.5
 
 local function report_engine_error(message)
   engine_error = message
@@ -414,7 +414,7 @@ local function ensure_engine(env)
   -- 无该函数时静默保持引擎内建默认（0=旧行为）；非法值回退默认。
   local text_lexicon_weight = tonumber(conf("text_lexicon_weight"))
   if text_lexicon_weight == nil or not finite_number(text_lexicon_weight) or
-      text_lexicon_weight < 0 or text_lexicon_weight > 4 then
+      text_lexicon_weight < 0 or text_lexicon_weight > 16 then
     text_lexicon_weight = text_lexicon_weight_default
   end
   if type(tigerengine.set_text_lexicon_weight) == "function" then

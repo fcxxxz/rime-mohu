@@ -44,7 +44,7 @@ int tiger_engine_set_word_edge_weight(int handle, double weight);
  * exists only under the abbreviation tyg). This votes "the dictionary has
  * this word" at the whole-candidate level, complementing the per-edge word
  * prior, to stop composed paths from outranking real dictionary words on
- * thin LM margins. Range [0, 4]. */
+ * context-leveraged LM margins (observed up to ~4.5 nats). Range [0, 16]. */
 int tiger_engine_set_text_lexicon_weight(int handle, double weight);
 /* Word-evidence disagreement gate: given newline-joined candidate texts in
  * ranked order, returns out_flag=1 when the top candidate continues the

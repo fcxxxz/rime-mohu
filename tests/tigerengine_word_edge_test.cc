@@ -256,11 +256,11 @@ int main() {
     }
   }
 
-  // 非法权重拒绝：负数与 >4。
+  // 非法权重拒绝：负数与超界值（词边 >4、文本词典 >16）。
   if (tiger_engine_set_word_edge_weight(h, -0.5) != -1 ||
       tiger_engine_set_word_edge_weight(h, 4.5) != -1 ||
       tiger_engine_set_text_lexicon_weight(h, -0.5) != -1 ||
-      tiger_engine_set_text_lexicon_weight(h, 4.5) != -1) {
+      tiger_engine_set_text_lexicon_weight(h, 16.5) != -1) {
     printf("fail: out-of-range weights must be rejected\n");
     return 1;
   }

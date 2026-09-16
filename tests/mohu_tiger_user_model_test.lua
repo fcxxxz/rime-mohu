@@ -72,6 +72,7 @@ local function fresh(with_user_model, with_snapshot_io)
   if with_snapshot_io == nil then with_snapshot_io = with_user_model end
   local calls = {
     update = {}, weights = {}, exports = 0, imports = {}, reads = {}, writes = {},
+    forget = {}, forget_fail = false,
   }
   package.preload["mohu_tiger_reranker"] = function()
     return { init = function() end, fini = function() end, rerank = function() return nil end }
@@ -87,6 +88,12 @@ local function fresh(with_user_model, with_snapshot_io)
         module.update_user_model = function(handle, text)
           assert(handle == 7, "update must target the live engine handle")
           calls.update[#calls.update + 1] = text
+          return 1
+        end
+        module.forget_text = function(handle, text, times)
+          assert(handle == 7, "forget must target the live engine handle")
+          calls.forget[#calls.forget + 1] = { text, times }
+          if calls.forget_fail then return 0 end
           return 1
         end
         module.set_user_model_weight = function(handle, weight)
@@ -293,6 +300,39 @@ do
     "the fini retry must use the same native writer")
   assert(#runtime_commands == 0,
     "a missing parent directory must not trigger a shell fallback")
+end
+
+-- 7. 删除反学习 forget_user_model_text：按提交计数对冲扣减并立即落盘；
+--    非法计数与引擎 rc=0 拒绝且不触碰快照。
+do
+  local snapshot_path = root .. "/mohu/config/user-ngram.snapshot"
+  local env, _ = make_env({})
+  local native, calls = fresh(true)
+  native.translator.init(env)
+  assert(native.forget_user_model_text("统一个", 6) == true,
+    "a valid forget must apply")
+  assert(#calls.forget == 1 and calls.forget[1][1] == "统一个"
+    and calls.forget[1][2] == 6,
+    "forget must forward the exact text and commit count")
+  assert(calls.exports == 1 and #calls.writes == 1,
+    "forget must persist the cleaned snapshot immediately")
+  assert(read_file(snapshot_path) == "SNAPSHOT-BLOB-1",
+    "the cleaned snapshot must land on disk atomically")
+  assert(native.forget_user_model_text("统一个", 0) == false)
+  assert(native.forget_user_model_text("统一个", 1000001) == false)
+  assert(native.forget_user_model_text("", 3) == false)
+  assert(native.forget_user_model_text(nil, 3) == false)
+  assert(#calls.forget == 1 and calls.exports == 1,
+    "rejected forgets must not touch the engine or the snapshot")
+  calls.forget_fail = true
+  assert(native.forget_user_model_text("统一个", 2) == false,
+    "engine rc=0 (no change) must surface as failure")
+  assert(#calls.forget == 2 and calls.exports == 1,
+    "a no-change forget must not write the snapshot")
+  calls.forget_fail = false
+  native.translator.fini(env)
+  assert(calls.exports == 1,
+    "a persisted forget leaves nothing dirty for fini to rewrite")
 end
 
 os.execute = original_execute

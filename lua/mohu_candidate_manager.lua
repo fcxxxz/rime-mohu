@@ -286,6 +286,16 @@ local function perform_action(category, code, text, deps)
             if deps.override_store.set_user_deleted ~= nil then
                 deps.override_store:set_user_deleted(user_record.code, text, user_record.entry.commit_count)
             end
+            -- 同步 native 引擎个人词层（同 u 类路径）：userdb 扣减后内存
+            -- 个人边仍在，不刷新会在当前组合里顶回来。
+            if override.refresh_engine_personal ~= nil then
+                override.refresh_engine_personal(deps.memory)
+            end
+            -- 同步撤销 native 用户层的 trigram 学习，否则搭配上文下
+            -- 同码组合仍可凭 ngram 残留顶回第一。
+            if override.forget_engine_user_model ~= nil then
+                override.forget_engine_user_model(text, user_record.entry.commit_count)
+            end
             return true
         end
         return deps.override_store ~= nil and deps.override_store:set_hidden(code, text, false) or false
@@ -318,6 +328,10 @@ local function perform_action(category, code, text, deps)
                     -- 立刻被引擎内存中的个人边顶回来。
                     if override.refresh_engine_personal ~= nil then
                         override.refresh_engine_personal(deps.memory)
+                    end
+                    -- 同步撤销 native 用户层 trigram（同 override 删除路径）。
+                    if override.forget_engine_user_model ~= nil then
+                        override.forget_engine_user_model(text, record.entry.commit_count)
                     end
                 end
                 return ok and result ~= false

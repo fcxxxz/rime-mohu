@@ -25,6 +25,19 @@ int tiger_engine_personal_abort(int handle);
 /* Adaptive user trigram layer: feed committed text (UTF-8). Returns
  * 0 = no change, 1 = applied (decode cache invalidated), -1 = error. */
 int tiger_engine_update_user_model(int handle, const char* text);
+/* Un-learning for user-word deletion: subtract `times` worth of trigram
+ * counts along the same BOS/EOS windows update_user_model used to feed this
+ * exact text. Floors at zero; windows shared with other words are decremented
+ * too and rebuild naturally from later input. Range (0, 1000000].
+ *
+ * Approximation, not an exact inverse: update_user_model is fed the whole
+ * commit text (possibly a sentence, possibly with punctuation), while this
+ * replays windows over the word alone, so the two align window-for-window only
+ * when the word was committed standalone. If it was committed inside a longer
+ * sentence, the in-sentence context trigrams are not decremented. Counts are
+ * also approximate after decay_if_large() has scaled the layer (tri > 100000
+ * entries), where `times` = the raw commit count over-subtracts slightly. */
+int tiger_engine_forget_text(int handle, const char* text, int times);
 /* static_weight is the static model's share in (0, 1]; 1 disables the layer. */
 int tiger_engine_set_user_model_weight(int handle, double static_weight);
 /* Reading prior weight in [0, 4]: scales the per-entry log P(reading|char)

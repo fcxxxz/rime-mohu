@@ -217,6 +217,27 @@ int l_update_user_model(lua_State* L) {
   return 1;
 }
 
+int l_forget_text(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  const char* text = luaL_checkstring(L, 2);
+  lua_Integer times_value = luaL_checkinteger(L, 3);
+  luaL_argcheck(L, times_value >= 1 && times_value <= 1000000, 3,
+                "times must be in (0, 1000000]");
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_forget_text((int)handle_value, text, (int)times_value);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "user model forget failed");
+  lua_pushinteger(L, rc);  // 0 = 无变化，1 = 已应用
+  return 1;
+}
+
 int l_set_decode_context(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -627,6 +648,7 @@ int luaopen_tigerengine(lua_State* L) {
       {"personal_commit", l_personal_commit},
       {"personal_abort", l_personal_abort},
       {"update_user_model", l_update_user_model},
+      {"forget_text", l_forget_text},
       {"set_decode_context", l_set_decode_context},
       {"load_word_scorer", l_load_word_scorer},
       {"context_word_scores", l_context_word_scores},

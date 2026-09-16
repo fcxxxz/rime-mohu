@@ -149,7 +149,74 @@ int main() {
     return 1;
   }
 
+  // 反学习：按喂入次数对冲扣减（同文本同窗口的 update 逆操作）→
+  // 用户层翻案撤销，回到基线首选。删词即反学习，不需正确词再硬喂对冲。
+  if (tiger_engine_forget_text(h1, second.c_str(), 150) != 1) {
+    printf("fail: forget rc\n");
+    return 1;
+  }
+  const std::vector<std::string> forgotten = decode_candidates(h1, "ufqyhfmimh");
+  if (forgotten.empty() || forgotten[0] != first) {
+    printf("fail: forgetting the fed counts must restore the baseline ranking\n");
+    return 1;
+  }
+  // 非法参数拒绝：空 times 与超界。
+  if (tiger_engine_forget_text(h1, second.c_str(), 0) != -1 ||
+      tiger_engine_forget_text(h1, second.c_str(), 1000001) != -1) {
+    printf("fail: out-of-range forget times must be rejected\n");
+    return 1;
+  }
+
+  // 过度反学习：times 大于存量时地板 0，不得回绕成反向加成。两段式删词
+  // 若两按都扣，正是这条路径（现由 already_forgotten 挡掉，此处守住底线）。
+  if (tiger_engine_forget_text(h1, second.c_str(), 150) != 1) {
+    printf("fail: over-forget rc\n");
+    return 1;
+  }
+  const std::vector<std::string> over = decode_candidates(h1, "ufqyhfmimh");
+  if (over.empty() || over[0] != first) {
+    printf("fail: over-forgetting must floor at zero, not invert the ranking\n");
+    return 1;
+  }
+
+  // 从未喂过的文本：窗口不存在，扣减应为空操作，排序不变。
+  if (tiger_engine_forget_text(h1, "翾鬻齾", 10) != 1) {
+    printf("fail: forget unfed text rc\n");
+    return 1;
+  }
+  const std::vector<std::string> unfed = decode_candidates(h1, "ufqyhfmimh");
+  if (unfed.empty() || unfed[0] != first) {
+    printf("fail: forgetting unfed text must not change the ranking\n");
+    return 1;
+  }
+
+  // 反学习后快照回环：新引擎导入反学习后的快照仍停在基线，即重启不会
+  // 从旧快照复活（只改内存不落盘的话这里会翻回 second）。
+  size_t forgotten_size = 0;
+  char* forgotten_blob = tiger_engine_user_model_export(h1, &forgotten_size);
+  if (!forgotten_blob || forgotten_size == 0) {
+    printf("fail: export after forget\n");
+    return 1;
+  }
+  const int h3 = tiger_engine_create(model.c_str(), lexicon.c_str(), 200, 1,
+                                     error, sizeof(error));
+  if (h3 < 0) {
+    printf("fail: third engine create: %s\n", error);
+    return 1;
+  }
+  if (tiger_engine_user_model_import(h3, forgotten_blob, forgotten_size) != 1) {
+    printf("fail: import after forget\n");
+    return 1;
+  }
+  const std::vector<std::string> reforgotten = decode_candidates(h3, "ufqyhfmimh");
+  if (reforgotten.empty() || reforgotten[0] != first) {
+    printf("fail: forgetting must survive an export/import round trip\n");
+    return 1;
+  }
+
   free(blob);
+  free(forgotten_blob);
+  tiger_engine_free(h3);
   tiger_engine_free(h1);
   tiger_engine_free(h2);
   printf("tigerengine user model tests passed (flip: %s <- %s)\n",

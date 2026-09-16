@@ -320,6 +320,79 @@ assert(#native_delete_calls == 1 and native_delete_calls[1][1] == "budelc"
 assert(#native_memory.update_calls == 2 and native_memory.update_calls[2][3] == -1)
 assert(native_env.override_weight_cleared == nil)
 
+-- 反学习恰好一次：第一按按提交计数扣减用户层 trigram 并刷新个人词层，
+-- armed 第二按不得重复扣减（修复前两按各扣一次，2× 过度扣减）。
+local forget_calls = {}
+local personal_refreshes = 0
+package.loaded["mohu_tiger_sentence"] = {
+    forget_user_model_text = function(text, count)
+        if type(text) == "string" and type(count) == "number" and count >= 1 then
+            forget_calls[#forget_calls + 1] = { text, count }
+        end
+        return true
+    end,
+    refresh_personal_now = function()
+        personal_refreshes = personal_refreshes + 1
+    end,
+}
+local once_memory = {
+    user_entries = {
+        { text = "统一个", custom_code = "ts yi ge", commit_count = 6 },
+    },
+    dict_entries = {},
+}
+function once_memory:user_lookup()
+    return true
+end
+function once_memory:iter_user()
+    local index = 0
+    return function()
+        index = index + 1
+        return self.user_entries[index]
+    end
+end
+function once_memory:dictiter_lookup(code)
+    local entries = self.dict_entries[code] or {}
+    return {
+        iter = function()
+            local index = 0
+            return function()
+                index = index + 1
+                return entries[index]
+            end
+        end,
+    }
+end
+function once_memory:update_userdict()
+    return true
+end
+local once_context, once_segment = deletion_context(candidate("统一个", "mohu_zrm"))
+local once_env = {
+    override_store = {
+        query = function()
+            return {}
+        end,
+        set_user_deleted = function()
+            return true
+        end,
+        set_hidden = function()
+            return true
+        end,
+    },
+    override_memory = once_memory,
+    override_management_option = "candidate_override_management",
+    override_max_candidates = 50,
+}
+assert(subject.delete_or_restore(once_context, once_segment, "tsyige", once_env) == 1)
+assert(#forget_calls == 1 and forget_calls[1][1] == "统一个" and forget_calls[1][2] == 6,
+    "the first press must reverse-learn exactly once at the commit count")
+assert(subject.delete_or_restore(once_context, once_segment, "tsyige", once_env) == 1)
+assert(#forget_calls == 1,
+    "the armed second press must not subtract the trigram counts again")
+assert(personal_refreshes >= 2,
+    "both presses must refresh the native personal layer")
+package.loaded["mohu_tiger_sentence"] = nil
+
 local builtin_hidden_calls = {}
 local builtin_context, builtin_segment = deletion_context(candidate("Built", "user_phrase"))
 local builtin_result = subject.delete_or_restore(builtin_context, builtin_segment, "aa", {

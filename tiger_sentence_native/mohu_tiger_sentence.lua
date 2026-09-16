@@ -759,6 +759,10 @@ local function user_model_available()
     type(tigerengine.set_user_model_weight) == "function"
 end
 
+-- 当前持有引擎句柄的 translator env：反学习后立即写快照需要它的路径与
+-- 开关状态。引擎句柄本就是模块级共享，这里跟随同一单活实例假设。
+local user_model_primary_env = nil
+
 local function native_snapshot_io_available()
   return tigerengine ~= nil and
     type(tigerengine.read_snapshot_file) == "function" and
@@ -810,6 +814,7 @@ end
 
 local function init_user_model(env)
   if not env or not env.engine then return end
+  user_model_primary_env = env
   local cfg = env.engine.schema and env.engine.schema.config
   env._tiger_user_model_path = resolve_runtime_path(
     config_string(cfg, "tiger/user_model_snapshot") or
@@ -874,6 +879,11 @@ end
 
 local function fini_user_model(env)
   if not env then return end
+  -- 卸载时清反学习入口持有的模块级引用：悬挂 env 的 _tiger_user_model_on
+  -- 已被置 nil，后续 forget 落盘会静默变 no-op，反学习只改内存不持久。
+  if user_model_primary_env == env then
+    user_model_primary_env = nil
+  end
   if env._tiger_user_model_commit_notifier ~= nil then
     pcall(function() env._tiger_user_model_commit_notifier:disconnect() end)
     env._tiger_user_model_commit_notifier = nil
@@ -1329,6 +1339,35 @@ function M.refresh_personal_now(memory)
   if not ok_set then
     log_error("mohu_sentence: manual personal refresh failed: " .. tostring(err))
     return false
+  end
+  return true
+end
+
+-- 删除用户词时的反学习入口：对该词文本按提交计数扣减用户层 trigram，
+-- 并立即把快照落盘——只改内存不落盘的话，重启会从旧快照复活。
+-- 注意是「近似」逆操作，不是精确对冲：update_user_model 喂的是整次提交
+-- 文本（ctx:get_commit_text()，可能是一整句、还可能带标点），这里只按
+-- 单词文本重放 BOS…EOS 窗口，仅当该词被单独上屏时才逐窗口对齐；若在长
+-- 句里上屏，句内上文那几个 trigram（如「祖国统一个」的 (祖,国,统)、
+-- (国,统,一)）扣不到，强搭配上下文下仍可能冒头。tri 超过 100000 条触发
+-- 过 decay_if_large 后，存量已被 ×0.9 缩放，此时会略微多扣。
+-- 旧 ABI dylib 无该函数时静默返回 false。times 通常取删除前的 userdb
+-- 提交计数。
+function M.forget_user_model_text(text, times)
+  if tigerengine == nil or engine_handle == nil or
+      type(tigerengine.forget_text) ~= "function" then
+    return false
+  end
+  if type(text) ~= "string" or text == "" then return false end
+  local count = math.floor(tonumber(times) or 0)
+  if count < 1 or count > 1000000 then return false end
+  local ok, applied = pcall(tigerengine.forget_text, engine_handle, text, count)
+  if not ok or applied ~= 1 then return false end
+  if user_model_primary_env ~= nil then
+    -- 先置脏再写：写失败时 fini 会再补写一次，否则这次反学习在
+    -- 重启后被旧快照覆盖，静默丢失。update 路径同样先置脏（:871）。
+    user_model_primary_env._tiger_user_model_dirty = true
+    user_model_write_snapshot(user_model_primary_env)
   end
   return true
 end

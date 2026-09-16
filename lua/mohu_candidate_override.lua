@@ -1047,10 +1047,24 @@ local function refresh_engine_personal(memory)
     end
 end
 
+-- userdb 词条删除后同步反学习 native 用户调频层：对该词文本按提交计数
+-- 对冲扣减 trigram 并即时落盘快照。个人词刷新只撤词边，ngram 残留仍可
+-- 在搭配上文下把同码组合顶回第一（2026-09-16 tsyige「统一个」案例：
+-- 删词后仍需七次正确提交才翻回）。懒加载，引擎/旧 ABI 缺函数时静默。
+local function forget_engine_user_model(text, count)
+    local ok, sentence = pcall(require, "mohu_tiger_sentence")
+    if ok and sentence ~= nil and type(sentence.forget_user_model_text) == "function" then
+        pcall(sentence.forget_user_model_text, text, count)
+    end
+end
+
 -- 永久删除用户自造词：override 标记 + userdb 扣减 + 当前候选移除 +
 -- native 引擎个人词层同步刷新。count 为删除前的提交计数（清权重后
 -- userdb 里可能已寻不回条目，armed 路径依赖它补写标记）。
-local function finish_permanent_delete(context, env, selected, text, stored_code, count, code)
+-- already_forgotten：armed 第二按时为 true —— 第一按已经按同一个 count
+-- 做过一次 trigram 反学习，这里再扣就是 2×count 的过度扣减。
+local function finish_permanent_delete(context, env, selected, text, stored_code, count, code,
+                                      already_forgotten)
     local records = env.override_store:query(code)
     local record = records ~= nil and records[text] or nil
     local was_hidden = record ~= nil and record.hidden
@@ -1093,6 +1107,9 @@ local function finish_permanent_delete(context, env, selected, text, stored_code
     end
     env.override_weight_cleared = nil
     refresh_engine_personal(env.override_memory)
+    if not already_forgotten then
+        forget_engine_user_model(text, count)
+    end
     refresh_override_memory(env)
     refresh(context)
     set_prompt(context, "〔已永久删除「" .. text .. "」〕")
@@ -1119,7 +1136,7 @@ local function delete_or_restore(context, segment, code, env)
     if armed ~= nil and armed.text == text and armed.seg == seg_norm
         and (os.clock() - armed.time) <= 2.0 then
         return finish_permanent_delete(context, env, selected, text,
-            armed.entry_code, armed.count, code)
+            armed.entry_code, armed.count, code, true)
     end
     env.override_weight_cleared = nil
 
@@ -1142,11 +1159,14 @@ local function delete_or_restore(context, segment, code, env)
                 time = os.clock(),
             }
             refresh_engine_personal(env.override_memory)
+            -- 用户层 trigram 反学习的唯一点：armed 第二按复用同一个 count，
+            -- 那里不再扣（见 finish_permanent_delete 的 already_forgotten）。
+            forget_engine_user_model(text, count)
             set_prompt(context, "〔已清空「" .. text .. "」的学习权重；两秒内再按一次永久删除〕")
             return kAccepted
         end
         return finish_permanent_delete(context, env, selected, text,
-            normalize_code(entry_code(created_entry)), count, code)
+            normalize_code(entry_code(created_entry)), count, code, false)
     end
 
     if management and record ~= nil and record.hidden then
@@ -1372,6 +1392,7 @@ M.is_user_deleted = is_user_deleted
 M.mark_context_user_deleted = mark_context_user_deleted
 M.mark_user_deleted = mark_user_deleted
 M.refresh_engine_personal = refresh_engine_personal
+M.forget_engine_user_model = forget_engine_user_model
 M._test = {
     acquire_store = acquire_store,
     delete_or_restore = delete_or_restore,

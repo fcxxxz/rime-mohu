@@ -73,6 +73,17 @@
   （qy;oa gf;**pg** / qy;oa gf;**pi**），快照扫描旧「先见者赢」去重只保留旧行
   计数、刷新还会重置 `adjust_personal` 内存累计，学习被冻结在旧行值；现
   `mohu_personal_lexicon.lua` 两条扫描路径对归一 (code,text) 合并求和。
+- **删除即反学习（2026-09-16 第三处修复）**：删用户词只清 userdb/个人边
+  不够——用户调频层 trigram 残留会在搭配上文下把同码组合顶回第一（tsyige
+  删「统一个」后仍需七次正确提交才翻回）。现两段式 Shift+Delete 第一按
+  （清权重）与管理器 h/u 删除都调用 `forget_user_model_text(text, commits)`：
+  引擎 `UserNgram::forget` 沿 observe 的同一 BOS/EOS 窗口按提交计数对冲
+  扣减（地板 0，与其他词共享的窗口一并扣减，由后续输入重建），并立即原子
+  落盘快照（先置脏再写，写失败 fini 兜底）；armed 第二按传
+  `already_forgotten` 不重复扣。两处已知近似：observe 喂的是整次提交文本
+  而忘记只重放单词窗口；decay 缩放过存量后 times 会略微多扣。ABI 为
+  `tiger_engine_forget_text(handle, text, times∈(0,1e6])`，Lua 侧
+  `tigerengine.forget_text`。
 - **当前基准口径（2026-09-03）**：从频表前 30,000 行筛选 1,000 个严格同音二字目标词，每词 20 个真实非句首前缀，共 20,000 case；五方案共享 target/context universe，分别使用自身原生双拼和末辅编码。只测试一位末辅、两位末辅；魔虎与魔然额外测试两位末辅 `o`、`/`。全部 case 保留，第一候选忽略单字候选，候选 Top-5 可见性只作诊断；报告同时给出 case 加权、目标词等权、共同前缀子集、辅码补救与完整排名。V5 训练混合语料已完成规范化精确句级去重审计。
 - **历史 32,976 条审计**：`2026-09-02-cross-candidate-ordering-audit.md` 保留旧状态表，但其 Moran 动态 `moran.extended` 依赖未完整编译，不能参与当前排名。
 

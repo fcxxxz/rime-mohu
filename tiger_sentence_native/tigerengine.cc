@@ -1978,6 +1978,49 @@ struct UserNgram {
     return true;
   }
 
+  // 反学习：沿 observe 的同一 BOS/EOS 窗口逐项扣减（每次提交计 1 份，
+  // times 取删除前的提交计数），地板 0 并剔除零项。与他词共享的窗口会被
+  // 一并扣减——删除语义优先于精确归因，计数由后续输入自然重建。
+  // 两处近似（详见 tigerengine.h 的 forget_text 说明）：observe 喂的是整
+  // 次提交文本（可能整句、带标点），这里只按单词文本重放窗口，仅单词单独
+  // 上屏时才逐窗口对齐；decay_if_large 缩放过存量后 times 会略微多扣。
+  bool forget(const std::string& text, uint32_t times) {
+    if (text.empty() || times == 0) return false;
+    auto drop_key = [times](std::unordered_map<uint64_t, uint32_t>& m, uint64_t key) {
+      auto it = m.find(key);
+      if (it == m.end()) return;
+      if (it->second > times) it->second -= times;
+      else m.erase(it);
+    };
+    auto drop_uni = [times](std::unordered_map<uint32_t, uint32_t>& m, uint32_t key) {
+      auto it = m.find(key);
+      if (it == m.end()) return;
+      if (it->second > times) it->second -= times;
+      else m.erase(it);
+    };
+    uint32_t p2 = kBOS, p1 = kBOS;
+    size_t i = 0;
+    while (i < text.size()) {
+      uint32_t cp; size_t n;
+      utf8_next(text.data(), text.size(), i, &cp, &n);
+      if (n == 0) break;
+      drop_key(tri, tri_key(p2, p1, cp));
+      drop_key(bi, bi_key(p2, p1));
+      drop_uni(uni, p1);
+      drop_uni(uni, cp);
+      if (total > times) total -= times; else total = 0;
+      p2 = p1;
+      p1 = cp;
+      i += n;
+    }
+    drop_key(tri, tri_key(p2, p1, kEOS));
+    drop_key(bi, bi_key(p2, p1));
+    drop_uni(uni, p1);
+    drop_uni(uni, kEOS);
+    if (total > times) total -= times; else total = 0;
+    return true;
+  }
+
   // 超过容量后全表衰减 ×0.9 并剔除零计数，保持近期输入的相对优势。
   void decay_if_large() {
     if (tri.size() <= max_tri_entries) return;
@@ -3414,6 +3457,34 @@ int tiger_engine_update_user_model(int handle, const char* text) {
     return -1;
   } catch (...) {
     set_error("user model update failed");
+    return -1;
+  }
+}
+
+/* 删除用户词时的反学习：沿该文本提交时的同一三元窗口扣减用户层计数。
+   times 通常取删除前的提交计数，精确对冲等量 update_user_model；共享
+   同尾窗口的其他词计数会被一并扣减（地板 0），由后续输入重建。 */
+int tiger_engine_forget_text(int handle, const char* text, int times) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!text) {
+      set_error("forget requires text");
+      return -1;
+    }
+    if (times <= 0 || times > 1000000) {
+      set_error("forget times must be in (0, 1000000]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (!e->user.forget(text, (uint32_t)times)) return 0;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("user model forget failed");
     return -1;
   }
 }

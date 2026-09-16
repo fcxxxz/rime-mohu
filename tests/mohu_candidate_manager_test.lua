@@ -97,6 +97,22 @@ assert(subject.find_user_created_record(memory, "dd", "Deleted") == nil)
 assert(subject.record_comment("h", { code = "bb", user_created = true })
     == "bb · 用户自造词 · Shift+Delete 永久删除")
 
+-- 反学习/个人词刷新经由懒加载 mohu_tiger_sentence：注入桩记录调用，
+-- 验证 h/u 两类删除各恰扣一次 trigram 且即时刷新个人词层。
+local manager_forget_calls = {}
+local manager_personal_refreshes = 0
+package.loaded["mohu_tiger_sentence"] = {
+    forget_user_model_text = function(text, count)
+        if type(text) == "string" and type(count) == "number" and count >= 1 then
+            manager_forget_calls[#manager_forget_calls + 1] = { text, count }
+        end
+        return true
+    end,
+    refresh_personal_now = function()
+        manager_personal_refreshes = manager_personal_refreshes + 1
+    end,
+}
+
 local calls = {}
 local deps = {
     override_store = {
@@ -150,6 +166,15 @@ end
 assert(subject.perform_action("h", "cc", "Another", permanent_deps) == true)
 assert(permanent_calls[1][1] == "hidden" and permanent_calls[1][4] == false)
 assert(permanent_calls[2][1] == "user" and permanent_calls[2][4] == -1)
+assert(#manager_forget_calls == 2,
+    "h and u deletions must each reverse-learn exactly once")
+assert(manager_forget_calls[1][1] == "Made" and manager_forget_calls[1][2] == 2,
+    "the u deletion must reverse-learn at the entry commit count")
+assert(manager_forget_calls[2][1] == "Another" and manager_forget_calls[2][2] == 1,
+    "the h deletion of a user-created word must reverse-learn too")
+assert(manager_personal_refreshes == 2,
+    "both user-word deletion paths must refresh the native personal layer")
+package.loaded["mohu_tiger_sentence"] = nil
 
 local counts = subject.category_counts(overrides, pins, users)
 assert(counts.h == 2 and counts.o == 2)

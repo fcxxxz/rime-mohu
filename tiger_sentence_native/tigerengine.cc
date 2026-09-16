@@ -2526,7 +2526,14 @@ struct Engine {
             // 词边先验：内部静态词条边加一次有界分（整段命中边维持原
             // 语义不另加）；「支持」是词条而「只吃」只是字符拼装时，
             // 这项就是两路径的固定差，用于压住跨词界粘连的反杀。
-            if (word_prior_edge && !whole_input_edge)
+            // 个人词整段命中同样加一次：组合路径可经由共享个人子边
+            // （如 qygfda 的 请+跟打 搭乘「跟打」的提交 boost）同步涨分，
+            // 个人整词边没有先验时封顶 12 也压不过同尾组合。内部个人
+            // 词边维持不加，防止先验同样被组合路径搭乘而互相抵消。
+            const bool personal_whole_prior = word_edge_weight > 0.0 && !word_mode &&
+                                              cand.personal &&
+                                              cand.chars.size() > 1 && whole_input_edge;
+            if ((word_prior_edge && !whole_input_edge) || personal_whole_prior)
               score += word_edge_weight;
             // 读音先验：字符级 LM 无读音概念，罕用读音的高频字（万 mò）
             // 会凭全局字频挤到候选前列；先验按贝叶斯项 P(码|字) 惩罚。

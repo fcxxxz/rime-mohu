@@ -53,6 +53,56 @@ std::vector<std::string> decode_candidates(int handle, const char* raw,
   return texts;
 }
 
+// 与 decode_candidates 同游标，但保留整行（text\tsegmented\tscore\t…）。
+std::vector<std::string> decode_lines(int handle, const char* raw,
+                                      size_t limit = 10) {
+  static char out[1 << 22];
+  const int rc = tiger_decode(handle, raw, 0, out, sizeof(out), nullptr);
+  if (rc <= 0) return {};
+  std::vector<std::string> lines;
+  const char* p = out;
+  const char* line_end = strchr(p, '\n');
+  if (!line_end) return {};
+  p = line_end + 1;
+  while (*p && lines.size() < limit) {
+    line_end = strchr(p, '\n');
+    if (!line_end) line_end = p + strlen(p);
+    lines.emplace_back(p, line_end - p);
+    if (!*line_end) break;
+    p = line_end + 1;
+  }
+  return lines;
+}
+
+// 取候选行第三列（score）；未命中返回 -1e9 哨兵。
+double score_of(const std::vector<std::string>& lines, const std::string& text) {
+  for (const std::string& line : lines) {
+    if (line.compare(0, text.size(), text) != 0) continue;
+    if (line.size() <= text.size() || line[text.size()] != '\t') continue;
+    const char* segmented = line.c_str() + text.size() + 1;
+    const char* tab = strchr(segmented, '\t');
+    if (!tab) break;
+    return strtod(tab + 1, nullptr);
+  }
+  return -1e9;
+}
+
+// pathmap 恰好一条边（root+终点两个边界、一个逗号）判定整段命中边。
+bool has_single_edge(const std::vector<std::string>& lines, const std::string& text) {
+  for (const std::string& line : lines) {
+    if (line.compare(0, text.size(), text) != 0) continue;
+    if (line.size() <= text.size() || line[text.size()] != '\t') continue;
+    const size_t last = line.rfind('\t');
+    if (last == std::string::npos) break;
+    const size_t prev = line.rfind('\t', last - 1);
+    if (prev == std::string::npos) break;
+    const std::string map = line.substr(prev + 1, last - prev - 1);
+    return map.find(',') != std::string::npos &&
+           map.find(',', map.find(',') + 1) == std::string::npos;
+  }
+  return false;
+}
+
 }  // namespace
 
 int main() {
@@ -119,6 +169,42 @@ int main() {
   std::vector<std::string> restored = decode_candidates(h, kRaw, 5);
   if (restored != baseline) {
     printf("fail: weight 0 must restore the old ranking\n");
+    return 1;
+  }
+
+  // 个人词整段命中先验回归：用户词整段命中边获得与静态词边同权的先验，
+  // 经由共享个人子边（请+跟打 搭乘「跟打」提交 boost）的组合路径不享受
+  // 先验——否则先验同样被组合搭乘、两边抵消。线上场景（qygfda，晴跟打
+  // c=6 vs 跟打 c=9）旧逻辑 boost 封顶 12 也压不过组合；这里断言机制
+  // 本身：整词个人边恰好 +weight、组合分数逐字节不动，不依赖边缘名次。
+  const std::string kTaught = "晴跟打";
+  const std::string kFreeRide = "请跟打";
+  const char* kPersonalRows = "qygfda\t晴跟打\t12\ngfda\t跟打\t9\n";
+  if (tiger_engine_set_personal_lexicon(h, kPersonalRows) != 0) {
+    printf("fail: apply personal rows\n");
+    return 1;
+  }
+  std::vector<std::string> taught_off = decode_lines(h, "qygfda", 8);
+  double taught_score_off = score_of(taught_off, kTaught);
+  double ride_score_off = score_of(taught_off, kFreeRide);
+  if (taught_score_off <= -1e8 || ride_score_off <= -1e8 ||
+      !has_single_edge(taught_off, kTaught)) {
+    printf("fail: whole-input personal candidate missing at weight 0\n");
+    return 1;
+  }
+  if (tiger_engine_set_word_edge_weight(h, 1.5) != 1) {
+    printf("fail: enable prior for personal regression\n");
+    return 1;
+  }
+  std::vector<std::string> taught_on = decode_lines(h, "qygfda", 8);
+  double taught_score_on = score_of(taught_on, kTaught);
+  double ride_score_on = score_of(taught_on, kFreeRide);
+  if (fabs((taught_score_on - taught_score_off) - 1.5) > 1e-4) {
+    printf("fail: whole-input personal edge must gain exactly the prior\n");
+    return 1;
+  }
+  if (fabs(ride_score_on - ride_score_off) > 1e-9) {
+    printf("fail: free-riding composition must not gain the prior\n");
     return 1;
   }
 

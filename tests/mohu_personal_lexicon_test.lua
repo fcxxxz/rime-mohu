@@ -10,6 +10,10 @@ assert(not subject.valid_utf8("bad\nword"))
 local memory = {
   user_entries = {
     { text = "晴跟打", custom_code = "qy gf da", commit_count = 8 },
+    -- 同码同词的辅码变体行：不同输入形态提交会拆成多条 userdb 行，
+    -- 快照必须合并求和而不是先见者赢（否则学习被冻结在旧行上）。
+    { text = "晴跟打", custom_code = "qy;oa gf;pg da;ua", commit_count = 6 },
+    { text = "晴跟打", custom_code = "qy;oa gf;pi da;ua", commit_count = 2 },
     { text = "比亚迪", custom_code = "bi ya di", commit_count = 3 },
     { text = "内置", custom_code = "ne iz", commit_count = 99 },
     { text = "零频", custom_code = "lg py", commit_count = 0 },
@@ -38,11 +42,13 @@ end
 local rows = require("mohu_personal_lexicon").collect(memory)
 assert(#rows == 3, #rows)
 assert(rows[1].text == "内置" and rows[1].commits == 99)
-assert(rows[2].text == "晴跟打")
+assert(rows[2].text == "晴跟打" and rows[2].commits == 16,
+  "aux-variant rows must merge by summing commits")
 assert(rows[3].text == "比亚迪")
 local payload, count = require("mohu_personal_lexicon").serialize(rows)
 assert(count == 3)
 assert(payload:find("neiz\t内置\t99\n", 1, true))
+assert(payload:find("qygfda\t晴跟打\t16\n", 1, true))
 local large_rows = {}
 for index = 1, 6000 do
   large_rows[index] = { code = "abcd", text = string.rep("甲", 64), commits = index }

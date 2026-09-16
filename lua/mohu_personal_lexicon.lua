@@ -45,7 +45,11 @@ end
 
 -- 条目验收谓词链：整体扫描与分片扫描共用，保证两条路径结果一致。
 -- 返回 code, text, commits（已归一），不满足条件返回 nil。
-local function accept_entry(memory, seen, text, raw_code, commits)
+-- 不在此处做同码同词去重：同一教授映射会因提交时的输入形态（辅码档位、
+-- 码形选择）拆成多条 userdb 行（如 qy;oa gf;pg / qy;oa gf;pi），先见者赢
+-- 会丢弃其余行的提交计数，学习被冻结在旧行上；两条路径对 (code,text)
+-- 合并求和。
+local function accept_entry(memory, text, raw_code, commits)
     if type(text) ~= "string" or type(raw_code) ~= "string" then return nil end
     commits = tonumber(commits)
     if not commits or commits <= 0 then return nil end
@@ -57,10 +61,20 @@ local function accept_entry(memory, seen, text, raw_code, commits)
     end
     local code = pure_double_pinyin(raw_code)
     if not code or #code < 4 or #code > MAX_CODE_BYTES then return nil end
-    local key = code .. "\t" .. text
-    if seen[key] then return nil end
-    seen[key] = true
     return code, text, commits
+end
+
+-- 同码同词的辅码变体行合并求和；合并后的计数沿用单行上限。
+local function merged_add(acc, order, code, text, commits)
+    local key = code .. "\t" .. text
+    local row = acc[key]
+    if row then
+        row.commits = math.min(1000000, row.commits + commits)
+        return
+    end
+    row = { code = code, text = text, commits = commits }
+    acc[key] = row
+    order[#order + 1] = row
 end
 
 function M.collect(memory, options)
@@ -69,19 +83,22 @@ function M.collect(memory, options)
     if limit ~= nil then
         limit = math.max(0, math.floor(limit))
     end
-    local result, seen = {}, {}
+    local result, acc, order = {}, {}, {}
     if memory == nil or type(memory.user_lookup) ~= "function" then return result end
 
     local ok, found = pcall(memory.user_lookup, memory, "", true)
     if not ok or not found or type(memory.iter_user) ~= "function" then return result end
     pcall(function()
         for entry in memory:iter_user() do
-            local code, text, commits = accept_entry(memory, seen, entry_fields(entry))
+            local code, text, commits = accept_entry(memory, entry_fields(entry))
             if code then
-                result[#result + 1] = { code = code, text = text, commits = commits }
+                merged_add(acc, order, code, text, commits)
             end
         end
     end)
+    for _, row in ipairs(order) do
+        result[#result + 1] = row
+    end
     table.sort(result, function(a, b)
         if a.commits ~= b.commits then return a.commits > b.commits end
         if a.code ~= b.code then return a.code < b.code end
@@ -143,8 +160,8 @@ function M.scan_begin(memory)
     return {
         memory = memory,
         iterator = iterator,
-        seen = {},
-        parts = {},
+        acc = {},
+        order = {},
         count = 0,
     }
 end
@@ -168,10 +185,10 @@ function M.scan_step(state, budget)
                 return
             end
             local code, text, commits =
-                accept_entry(state.memory, state.seen, entry_fields(entry))
+                accept_entry(state.memory, entry_fields(entry))
             if code then
+                merged_add(state.acc, state.order, code, text, commits)
                 state.count = state.count + 1
-                state.parts[#state.parts + 1] = code .. "\t" .. text .. "\t" .. commits .. "\n"
             end
             processed = processed + 1
             if processed >= SLICE_ENTRY_CAP then return end
@@ -186,9 +203,14 @@ function M.scan_step(state, budget)
     return finished
 end
 
--- 结束扫描并产出负载。payload 与整体路径格式一致；count 为行数。
+-- 结束扫描并产出负载。行集合与整体路径一致（同码同词已合并求和，
+-- 顺序按首次出现的库键序）；count 为合并后的行数。
 function M.scan_finish(state)
-    return table.concat(state.parts), state.count
+    local parts = {}
+    for _, row in ipairs(state.order) do
+        parts[#parts + 1] = row.code .. "\t" .. row.text .. "\t" .. row.commits .. "\n"
+    end
+    return table.concat(parts), #state.order
 end
 
 M._test = {

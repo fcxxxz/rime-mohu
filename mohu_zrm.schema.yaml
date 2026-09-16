@@ -318,6 +318,11 @@ tiger:
   # 消歧输入不裁）。
   sentence_visible_candidates: 1
   sentence_min_chars: 3
+  # 押后句形候选的显示上限：全码 3 字输入（qygfda→X跟打 20 条变体）
+  # 没有词组候选可垫，押后尾部原样跟出等于没裁；只保留押后队列中排名
+  # 最前的 N 条。-1 = 全部保留（默认），0 = 押后句形全部不显示。
+  # 只裁显示层：引擎评分池、重排、≤4 字个人词可见性均不受影响。
+  sentence_deferred_candidates: 3
 
 chaifen:
   option_name: chaifen

@@ -1,7 +1,7 @@
 -- Mohu Sentence Visibility Filter
 -- Copyright (c) 2026 ksqsf
 --
--- Ver: 0.2.0
+-- Ver: 0.3.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
@@ -10,8 +10,15 @@
 -- 显示前的过滤器流上完整参与竞争——word_order 跨候选调频与神经重排
 -- 都不依赖显示——本 filter 只调显示层：长句输入时菜单前 N 条是句形
 -- 候选（类型不限，覆盖全输入、≥sentence_min_chars 字、非缩写），
--- 其余句形候选押后到全部词组候选之后（可翻页到达），菜单观感与商业
--- 整句输入法一致（首条整句 + 词组）。设 0 恢复全部按原始顺序显示。
+-- 其余句形候选押后到全部词组候选之后，菜单观感与商业整句输入法一致
+-- （首条整句 + 词组）。
+--
+-- 0.3.0: 新增 tiger/sentence_deferred_candidates 押后尾部上限（-1=全部
+--        保留，默认，兼容未配置本键的 schema；≥0 只保留押后句形中排名
+--        最前 N 条）。动机：全码 3 字输入（qygfda→X跟打 20 条变体）没有
+--        词组候选可垫，押后尾部原样跟出等于没裁；深尾部变体实际选中
+--        都走辅码消歧，截断只动显示层，不碰引擎评分池与学习可见性
+--        （≤4 字 _personal 本就不进押后队列）。
 --
 -- 0.2.0: 超配额句形候选从「删除」改为「押后到词组之后」。0.1.x 的
 --        直接丢弃把学习词/个人词变成不可选（2026-09-15 用户报告：
@@ -30,8 +37,10 @@
 --
 -- 挂接：mohu_*.schema.yaml filters 列表，mohu_word_order_filter 之后、
 -- candidate_override 之前（模型重排先看全池，用户显式覆盖后置不被裁）。
--- 配置：tiger/sentence_visible_candidates（默认 1，clamp 0–50）、
--- tiger/sentence_min_chars（默认 3，clamp 2–20）。
+-- 配置：tiger/sentence_visible_candidates（默认 1，clamp 0–50；
+-- 0 = 全部按原始顺序显示，押后上限随之失效）、tiger/sentence_min_chars
+-- （默认 3，clamp 2–20）、tiger/sentence_deferred_candidates（默认 -1
+-- 全保留，clamp -1–50；0 = 押后句形全部不再显示）。
 
 local F = {}
 
@@ -57,6 +66,9 @@ function F.init(env)
   env._sv_visible = math.floor(config_number(cfg, "tiger/sentence_visible_candidates", 1, 0, 50))
   env._sv_min_chars = math.floor(config_number(cfg, "tiger/sentence_min_chars",
     default_sentence_min_chars, 2, 20))
+  -- 押后尾部上限：-1 = 全部保留（默认，未配置本键的 schema 行为不变）；
+  -- ≥0 = 押后的句形候选只保留排名最前 N 条，其余不再显示。
+  env._sv_deferred = math.floor(config_number(cfg, "tiger/sentence_deferred_candidates", -1, -1, 50))
   env._sv_quick = ""
   env._sv_pin = ""
   pcall(function()
@@ -116,7 +128,7 @@ function F.func(input, env)
     return
   end
   local emitted = 0
-  local deferred = {}  -- 超配额句形候选：押后到词组之后，不删除
+  local deferred = {}  -- 超配额句形候选：押后到词组之后；超出尾部上限的丢弃
   for cand in input:iter() do
     if quota_sentence(env, cand) then
       emitted = emitted + 1
@@ -129,7 +141,9 @@ function F.func(input, env)
       yield(cand)
     end
   end
-  for i = 1, #deferred do yield(deferred[i]) end
+  local keep = env._sv_deferred < 0 and #deferred
+      or math.min(env._sv_deferred, #deferred)
+  for i = 1, keep do yield(deferred[i]) end
 end
 
 return F

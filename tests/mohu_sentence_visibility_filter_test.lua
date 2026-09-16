@@ -283,6 +283,66 @@ do
   check("invalid config falls back to default 1", env._sv_visible == 1)
 end
 
+-- 11) tiger/sentence_deferred_candidates：押后尾部上限——只保留押后队列
+--     中排名最前 N 条句形候选，其余不再显示；默认（未配置 = -1）全部
+--     保留（测试 1 覆盖）。
+do
+  local env = make_env({ ["tiger/sentence_deferred_candidates"] = 2 })
+  filter.init(env)
+  local out = run_filter(env, {
+    candidate("mohu_zrm", sentences[1]),
+    candidate("mohu_zrm", sentences[2]),
+    candidate("phrase", "今天"),
+    candidate("mohu_zrm", sentences[3]),
+    candidate("mohu_zrm", sentences[4]),
+  })
+  check("deferred cap keeps only the first two deferred sentences",
+        same_texts(texts_of(out), { sentences[1], "今天", sentences[2], sentences[3] }))
+end
+
+-- 12) 押后上限 0 = 超配额句形全部不显示（前排配额与词组不受影响）。
+do
+  local env = make_env({ ["tiger/sentence_deferred_candidates"] = 0 })
+  filter.init(env)
+  local out = run_filter(env, {
+    candidate("mohu_zrm", sentences[1]),
+    candidate("phrase", "今天"),
+    candidate("mohu_zrm", sentences[2]),
+  })
+  check("deferred 0 hides all over-quota sentences",
+        same_texts(texts_of(out), { sentences[1], "今天" }))
+end
+
+-- 13) 全码 3 字场景（qygfda→X跟打）：无词组候选可垫时，菜单收敛为
+--     免配额个人词 + 前排配额 1 条 + 押后上限 N 条。
+do
+  local env = make_env({ input = "qygfda", ["tiger/sentence_deferred_candidates"] = 3 })
+  filter.init(env)
+  local cands = { candidate("mohu_zrm_personal", "晴跟打") }
+  for _, text in ipairs({ "请跟打", "清跟打", "青跟打", "情跟打", "轻跟打", "庆跟打" }) do
+    cands[#cands + 1] = candidate("mohu_zrm", text)
+  end
+  local out = run_filter(env, cands)
+  check("three-char full-code variants trim to quota plus deferred cap",
+        same_texts(texts_of(out),
+                   { "晴跟打", "请跟打", "清跟打", "青跟打", "情跟打" }))
+end
+
+-- 14) 押后上限 clamp：>50 → 50；负数 → -1（全保留）；非法值 → -1。
+do
+  local env = make_env({ ["tiger/sentence_deferred_candidates"] = 999 })
+  filter.init(env)
+  check("deferred cap clamps to 50", env._sv_deferred == 50)
+
+  env = make_env({ ["tiger/sentence_deferred_candidates"] = -7 })
+  filter.init(env)
+  check("deferred cap clamps negative to -1 (keep all)", env._sv_deferred == -1)
+
+  env = make_env({ ["tiger/sentence_deferred_candidates"] = "not-a-number" })
+  filter.init(env)
+  check("deferred cap invalid falls back to -1", env._sv_deferred == -1)
+end
+
 if failures > 0 then
   print(string.format("%d failure(s)", failures))
   os.exit(1)

@@ -167,7 +167,12 @@ tigress_ci 诗词词库）。native 词表也没有这两句。待观察项：�
 **2026-09-09 整句菜单显示裁剪（不改排序）**：新增
 `lua/mohu_sentence_visibility_filter.lua`（挂 word_order 之后、
 candidate_override 之前），配置 `tiger/sentence_visible_candidates`
-（默认 1，clamp 0–50；0 = 全部显示恢复旧行为）。重排链看的候选池
+（默认 1，clamp 0–50；0 = 全部显示恢复旧行为）。**2026-09-16 补
+`tiger/sentence_deferred_candidates`（默认 -1 全保留，两主方案设 3，
+clamp -1–50）**：全码 3 字输入（qygfda→X跟打 20 条变体）没有词组候选
+可垫，「押后到词组之后」等于原样跟出；该键只保留押后队列中排名最前
+N 条，深尾部不再显示（0.3.0）。只裁显示层——引擎评分池、重排、≤4 字
+个人词可见性不受影响；辅码消歧是深尾部变体的正规选择路径。重排链看的候选池
 不变——翻译器仍产 20 条（`mohu_tiger_sentence.lua` 的
 `candidate_limit`）、word_order 仍按 `word_order_candidates=20` 批量
 评分——本 filter 只裁显示层。**2026-09-14 重新接线**：09-09 的三轮

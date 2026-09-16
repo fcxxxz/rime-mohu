@@ -208,14 +208,65 @@ int main() {
     return 1;
   }
 
+  // 文本词典先验回归：tsyige 的「同一个」（ts+一个，词表只有其简码
+  // tyg 条目）对阵「统一个」（统一+个，不成词组合）。特定上文（实现）
+  // 下字符三元让「统一个」以 ~0.13 nats 反超——硬币差；词典文本证据
+  // 一票翻回。机制断言（成词候选恰好 +weight、不成词候选不动）不依赖
+  // 边缘名次，翻转断言在基线未翻转的环境自动跳过。
+  {
+    const std::string kReal = "同一个";
+    const std::string kGlue = "统一个";
+    if (tiger_engine_set_decode_context(h, "实现", 2) != 1) {
+      printf("fail: set decode context for text lexicon regression\n");
+      return 1;
+    }
+    std::vector<std::string> lex_off = decode_lines(h, "tsyige", 8);
+    double real_off = score_of(lex_off, kReal);
+    double glue_off = score_of(lex_off, kGlue);
+    if (real_off <= -1e8 || glue_off <= -1e8) {
+      printf("skip: tsyige candidate pair missing\n");
+    } else {
+      if (tiger_engine_set_text_lexicon_weight(h, 1.5) != 1) {
+        printf("fail: enable text lexicon prior\n");
+        return 1;
+      }
+      std::vector<std::string> lex_on = decode_lines(h, "tsyige", 8);
+      double real_on = score_of(lex_on, kReal);
+      double glue_on = score_of(lex_on, kGlue);
+      if (fabs((real_on - real_off) - 1.5) > 1e-4) {
+        printf("fail: dictionary-text candidate must gain exactly the prior\n");
+        return 1;
+      }
+      if (fabs(glue_on - glue_off) > 1e-9) {
+        printf("fail: non-word composition must not gain the prior\n");
+        return 1;
+      }
+      if (glue_off > real_off && real_on <= glue_on) {
+        printf("fail: text lexicon prior must flip 同一个 over 统一个\n");
+        return 1;
+      }
+      if (tiger_engine_set_text_lexicon_weight(h, 0.0) != 1) {
+        printf("fail: disable text lexicon prior\n");
+        return 1;
+      }
+    }
+    if (tiger_engine_set_decode_context(h, "", 2) < 0) {
+      printf("fail: clear decode context\n");
+      return 1;
+    }
+  }
+
   // 非法权重拒绝：负数与 >4。
   if (tiger_engine_set_word_edge_weight(h, -0.5) != -1 ||
-      tiger_engine_set_word_edge_weight(h, 4.5) != -1) {
+      tiger_engine_set_word_edge_weight(h, 4.5) != -1 ||
+      tiger_engine_set_text_lexicon_weight(h, -0.5) != -1 ||
+      tiger_engine_set_text_lexicon_weight(h, 4.5) != -1) {
     printf("fail: out-of-range weights must be rejected\n");
     return 1;
   }
 
   tiger_engine_free(h);
   printf("ok: word edge prior flips 支持 over 只吃 and stays reversible\n");
+  printf("ok: text lexicon prior votes 同一个 over 统一个\n");
   return 0;
 }

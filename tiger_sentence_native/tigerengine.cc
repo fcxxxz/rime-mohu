@@ -2058,6 +2058,14 @@ struct Engine {
   // 投票，对应 librime/万象 entry_weight+Query 的加法融合结构（词频地板
   // 垫在字符模型下）。0 = 关闭并逐字节保持旧行为。
   double word_edge_weight = 0.0;
+  // 文本词典先验：>0 时，完整文本命中词表多字条目（任意码形——如
+  // 「同一个」挂在简码 tyg 下）的候选在输出分上加该有界分。词边先验
+  // 按「编码内部边」投票，此项按「整候选文本是否成词」投票，压住组合
+  // 路径对真词的反杀（实现+tsyige 时「统一个」以 0.13 nats 反超
+  // 「同一个」的硬币差；词边先验管不到——两条路径共享「一个」边）。
+  // 0 = 关闭并保持旧行为。仅作用于输出层（to_out/提前上屏置信度），
+  // 不进入 beam 展开分——同文本路径加分恒定，beam 去重与裁剪不变。
+  double text_lexicon_weight = 0.0;
   // 跨候选调频：上屏历史尾部的 CJK 字作为解码左上文（字符级 trigram
   // 条件窗口恰为 2 字）。词级上下文（pw2/pw1）不参与播种，维持 <s>。
   bool has_decode_context = false;
@@ -2577,11 +2585,29 @@ struct Engine {
     }
   }
 
+  // 文本词典先验分：文本是词表多字条目（任意码形）时返回权重，否则 0。
+  double text_lexicon_bonus(const std::string& text) const {
+    if (text_lexicon_weight <= 0.0 || text.size() < 4) return 0.0;
+    if (lex.freq_rank.find(text) == lex.freq_rank.end()) return 0.0;
+    size_t chars = 0;
+    for (size_t i = 0; i < text.size() && chars <= 1;) {
+      uint32_t cp = 0;
+      size_t n = 0;
+      utf8_next(text.data(), text.size(), i, &cp, &n);
+      if (n == 0) return 0.0;
+      i += n;
+      ++chars;
+    }
+    if (chars <= 1) return 0.0;
+    return text_lexicon_weight;
+  }
+
   void to_out(State* s, double ending_adjustment, OutItem* out) {
     out->text = s->text;
     out->segmented = s->segmented;
-    out->score = s->score + ending_adjustment;
-    out->confidence = s->mass_score + ending_adjustment;
+    const double text_bonus = text_lexicon_bonus(s->text);
+    out->score = s->score + ending_adjustment + text_bonus;
+    out->confidence = s->mass_score + ending_adjustment + text_bonus;
     out->max_rank = std::max(1, s->max_rank);
     out->edges = s->edges;
     out->personal = s->personal ||
@@ -2781,7 +2807,7 @@ struct Engine {
         double ending = (word_mode ? word_logp(s->pw2, s->pw1, 1 /*</s>*/)
                                  : logp(s->prev2, s->prev1, kEOS)) -
                       (word_mode ? 0.0 : isolation_penalty(s->text));
-        double confidence = s->mass_score + ending;
+        double confidence = s->mass_score + ending + text_lexicon_bonus(s->text);
         auto it = mass_by_text.find(s->text);
         if (it == mass_by_text.end()) mass_by_text[s->text] = confidence;
         else it->second = logsumexp(it->second, confidence);
@@ -3424,6 +3450,31 @@ int tiger_engine_set_word_edge_weight(int handle, double weight) {
     return 1;
   } catch (...) {
     set_error("word edge weight update failed");
+    return -1;
+  }
+}
+
+/* 文本词典先验权重：0 关闭（默认，整候选文本不因成词获得加分）；>0 时
+   完整文本命中词表多字条目（任意码形）的候选在输出分与提前上屏置信度
+   上加该有界分，范围 [0, 4]。 */
+int tiger_engine_set_text_lexicon_weight(int handle, double weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(weight >= 0.0 && weight <= 4.0)) {
+      set_error("text lexicon weight must be in [0, 4]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->text_lexicon_weight == weight) return 0;
+    e->text_lexicon_weight = weight;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("text lexicon weight update failed");
     return -1;
   }
 }

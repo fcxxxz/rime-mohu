@@ -38,6 +38,14 @@ int tiger_engine_set_reading_prior_weight(int handle, double weight);
  * word edge, mirroring librime's entry_weight + grammar additive fusion.
  * Range [0, 4]. */
 int tiger_engine_set_word_edge_weight(int handle, double weight);
+/* Text-lexicon prior: 0 disables (default); >0 adds this bounded bonus to
+ * the output score (and early-commit confidence) of candidates whose full
+ * text is a multi-character lexicon entry under ANY code form (e.g. 同一个
+ * exists only under the abbreviation tyg). This votes "the dictionary has
+ * this word" at the whole-candidate level, complementing the per-edge word
+ * prior, to stop composed paths from outranking real dictionary words on
+ * thin LM margins. Range [0, 4]. */
+int tiger_engine_set_text_lexicon_weight(int handle, double weight);
 /* Word-evidence disagreement gate: given newline-joined candidate texts in
  * ranked order, returns out_flag=1 when the top candidate continues the
  * common (codepoint-aligned) prefix with a non-word glued segment while the

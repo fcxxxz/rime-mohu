@@ -147,6 +147,12 @@ local reading_prior_weight_default = 1.0
 -- docs/reports/2026-09-13-word-edge-prior.md）。0 关闭并逐字节保持旧行为。
 local word_edge_weight_default = 1.5
 
+-- 文本词典先验默认权重：整候选文本命中词表多字条目（任意码形，如
+-- 「同一个」挂简码 tyg）时在输出分上加该有界分。词边先验按编码内部
+-- 边投票，此项按「整候选是否成词」投票，压住组合路径对真词的薄差
+-- 反杀（实现+tsyige 时「统一个」反超「同一个」0.13 nats）。0 关闭。
+local text_lexicon_weight_default = 1.5
+
 local function report_engine_error(message)
   engine_error = message
   if not engine_error_logged then
@@ -403,6 +409,16 @@ local function ensure_engine(env)
   end
   if type(tigerengine.set_word_edge_weight) == "function" then
     pcall(tigerengine.set_word_edge_weight, h, word_edge_weight)
+  end
+  -- 文本词典先验权重：tiger/text_lexicon_weight（0 关闭）。旧 ABI dylib
+  -- 无该函数时静默保持引擎内建默认（0=旧行为）；非法值回退默认。
+  local text_lexicon_weight = tonumber(conf("text_lexicon_weight"))
+  if text_lexicon_weight == nil or not finite_number(text_lexicon_weight) or
+      text_lexicon_weight < 0 or text_lexicon_weight > 4 then
+    text_lexicon_weight = text_lexicon_weight_default
+  end
+  if type(tigerengine.set_text_lexicon_weight) == "function" then
+    pcall(tigerengine.set_text_lexicon_weight, h, text_lexicon_weight)
   end
   engine_handle = h
   engine_signature = signature

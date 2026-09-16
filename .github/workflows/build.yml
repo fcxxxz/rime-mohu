@@ -314,7 +314,7 @@ jobs:
             '' \
             '- 自然码：下载 `rime-mohu-zrm-latest.zip`，解压到 Rime 用户目录后重新部署。' \
             '- 小鹤：下载 `rime-mohu-flypy-latest.zip`，解压到 Rime 用户目录后重新部署。' \
-            '- 模型：下载 `mohu-sentence-ngram-v5.bin`，放入 `Rime/mohu/model/`；存在多个 `vN` 文件时自动使用数字版本最高者。' \
+            '- 模型：下载 `mohu-sentence-ngram-v5.bin`，放入 `Rime/mohu/model/`（运行时固定读取该文件名）。自 2026-09-16 起发布内容为 f16 量化格式 TCSKNM03（450.8MB，较原 f32 版 −21.4%，质量持平）；需配合本日期后构建的方案包，旧引擎会报 `unknown model format` 并退回普通候选。' \
             '' \
             '方案包不包含模型文件，适用于空的或专门准备的 Rime 用户目录。' \
             '' \

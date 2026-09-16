@@ -164,3 +164,4 @@ nul
 !/research/semantic_student/archive/gpu-box/sweep/sweep-d50-384-probe.json
 /mohu/config/user-ngram.snapshot
 /mohu/config/user-ngram.snapshot.tmp-*
+/tiger_sentence_native/*.bin

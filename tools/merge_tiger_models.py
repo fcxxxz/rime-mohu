@@ -41,7 +41,7 @@ HEADER = struct.Struct("<8sIIQIIQQQQ")  # magic, ver, hsize, fsize, flags, rsv, 
 FLAG_CHAR = 1
 FLAG_WORD = 2
 CHUNK = 8 * 1024 * 1024  # stream in 8 MB blocks
-CHAR_MAGICS = (b"TCSKNM01", b"TCSKNM02")
+CHAR_MAGICS = (b"TCSKNM01", b"TCSKNM02", b"TCSKNM03")
 WORD_MAGIC = b"MHKNM01"
 
 
@@ -71,7 +71,7 @@ def human(size: int) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--char", type=Path, required=True,
-                        help="character-level model (TCSKNM01/TCSKNM02)")
+                        help="character-level model (TCSKNM01/02/03)")
     parser.add_argument("--word", type=Path,
                         help="word-level scorer (MHKNM01); omit for a char-only container")
     parser.add_argument("--out", type=Path, required=True,
@@ -80,7 +80,7 @@ def main() -> int:
 
     magic = read_magic(args.char)
     if magic not in CHAR_MAGICS:
-        print(f"error: char model {args.char}: magic {magic!r} is not TCSKNM01/TCSKNM02",
+        print(f"error: char model {args.char}: magic {magic!r} is not TCSKNM01/02/03",
               file=sys.stderr)
         return 1
     if args.word is not None:

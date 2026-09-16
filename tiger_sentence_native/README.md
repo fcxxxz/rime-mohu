@@ -28,7 +28,26 @@
 `mohu-sentence-ngram-v5.bin` 是原生整句候选模型。放到
 `~/Library/Rime/mohu/model/`；运行时固定读取该文件名。模型缺失或加载失败时记录一次错误并回退普通候选，模型目录不在输入热路径扫描。
 
-### TCSKNM02 页校验与损坏模型回退
+### 模型格式：TCSKNM03（f16 后继概率，体积 -21%）
+
+2026-09-16 起，`mohu-sentence-ngram-v5.bin` 的发布内容为 **f16 量化版**
+（TCSKNM03 格式：后继概率以 IEEE 754 half 存储，每条 8→6 字节，
+450.8MB，较原 f32 版 573.1MB −21.4%）。概率值域内量化无损——全量基准
+两码 89.40%、最优码 99.56%，与 f32 版逐位持平（两码 top1 净差 +1 例 /
+49,794），四模式 ±0.01pp；mmap 驻留内存与磁盘体积同比例下降（同负载实测
+峰值 RSS 744MB→623MB，−121MB）；逐键延迟经交替隔离基准验证不变
+（8 档输入长度 Δ −1.6%~+1.4%，无方向性）。完整论证与剪枝扫描见
+`docs/reports/2026-09-16-v5-f16-quantize.md`。
+
+安装方式不变：文件放入 `~/Library/Rime/mohu/model/` 即可（运行时固定读取
+`mohu-sentence-ngram-v5.bin` 文件名）。**TCSKNM03 需要 2026-09-16 起构建
+的 `libtigerengine`**（方案包内 `mohu/runtime/`）：旧引擎读 03 文件报
+`unknown model format` 并按既有回退逻辑退回普通候选，升级模型请同步更新
+方案包。旧 f32 版模型保留备份的话可直接改回原名回滚（02 格式新引擎同样
+支持）。`tools/prune_tiger_ngram.cc` 可从任一 02 模型再生成 03 文件，并
+支持阈值剪枝（tau/ratio/topk/floor/ctx-mass 旋钮的体积-精度权衡见报告）。
+
+### TCSKNM02/03 页校验与损坏模型回退
 
 TCSKNM02 默认只在启动时校验文件头、分区算术、索引计数/键序和页起始范围；
 不会顺序读取所有上下文页。实际解码首次触及某页时才校验该页的记录和后继表。
@@ -180,6 +199,45 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
   正常使用中仅在清库/异常导入时出现。
 - `perf_log`：设为 `true` 时按候选轮次输出 `mohu_sentence perf len=… native=…ms lua=…ms phase=…` 日志，用于长句延迟归因（默认关闭）
 - `make tigerengine-bench TIGER_NGRAM=<模型路径>`：native 解码延迟基准，输出各输入长度 P50/P95/P99 与逐键增量打字延迟；`TIGER_BENCH_ARGS` 传 `beam all_ranks iterations personal_rows`
+
+## 用户层反学习：删词即反学习（forget_text）
+
+一次上屏会同时给两个通道充值，而「删除」默认只撤其中一个：
+
+| 通道 | 充值方式 | 删除时 |
+|---|---|---|
+| 个人词边（`adjust_personal`） | 该词提交计数 c 累加 | `refresh_personal_now` 整体快照后即时撤销 |
+| 用户三元层（`update_user_model`） | 提交文本的 trigram 计数 +1 | **不会自动撤销**，只能靠正确词硬喂对冲 |
+
+不反学习的后果：三元计数是搭配上文级别的，个人词边撤掉后 `(统,一,个)` 这类字符
+三元仍可在合适上文下把同码组合顶回第一，表现为「删了还活、要连打七八次正确词才
+翻回来」（2026-09-16「统一个」案例）。
+
+引擎 ABI：
+
+```c
+int tiger_engine_forget_text(int handle, const char* text, int times);
+```
+
+- `text`：要反学习的词文本（UTF-8）。
+- `times`：扣减份数，通常取删除前该词在 userdb 里的 `commit_count`；范围 `(0, 1000000]`。
+- 返回 `1` 已应用（解码缓存已失效）、`0` 无变化、`-1` 参数或句柄错误。
+- Lua 入口 `mohu_tiger_sentence.forget_user_model_text(text, times)`：扣减后会
+  **立即写快照**，否则重启会从旧快照复活。旧 ABI dylib 无 `forget_text` 时静默返回 false。
+
+候选管理侧已接进 `Shift+Delete` 两段式删除：**只在第一按（清空学习权重）扣一次**，
+第二按的永久删除以 `already_forgotten` 跳过——两按复用同一个 `count`，扣两次就是
+2×count 的过度扣减。
+
+已知近似，不是精确逆操作：
+
+- `update_user_model` 喂的是**整次提交文本**（`ctx:get_commit_text()`，可能是一整句、
+  还可能带标点），forget 只按单词文本重放 `BOS…EOS` 窗口。仅当该词被单独上屏时才
+  逐窗口对齐；若在长句里上屏，句内上文那几个 trigram（如「祖国统一个」的
+  `(祖,国,统)`、`(国,统,一)`）扣不到，强搭配上下文下仍可能冒头。
+- trigram 条数超过 100000 触发过 `decay_if_large()`（全表 ×0.9）后存量已被缩放，
+  此时按原始 `commit_count` 扣会略微多扣。
+- 与他词共享的窗口会被一并扣减（地板 0）：删除语义优先于精确归因，计数由后续输入重建。
 
 ## 合并行为
 

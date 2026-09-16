@@ -10,6 +10,20 @@
 
 ## 1. 一页纸现状
 
+- **2026-09-16 V5 模型 f16 替换发布（TCSKNM03）**：V5（573MB）的后验剪枝
+  存在均匀损失墙（两码/纯双拼口径约 −1pp/45MB，tau/ratio/topk/floor 同
+  斜率），不可作为缩体积手段；f16 概率量化实测无损（精度逐位持平、
+  逐键延迟隔离基准 −1.6%~+1.4% 无方向、驻留内存随体积同降 121MB）。据此
+  新增 TCSKNM03 格式（后继 8→6 字节，magic 区分，`succ_entry_bytes`
+  参数化，旧引擎干净拒绝并回退），**`mohu-sentence-ngram-v5.bin` 的发布
+  内容已直接替换为 f16 版（450.8MB，−21.4%）**，不设并行文件名；升级需
+  同步 2026-09-16 起构建的方案包（dylib/DLL）。剪枝/量化工具
+  `tools/prune_tiger_ngram.cc`；评测
+  `research/tiger2code_bench/eval_model.py|eval_cases.py`；V5 的 λ 是插值
+  权重**不是** 1−Σp（剪枝必须保 λ 原值、只加回剪除质量，no-addback 实测
+  −2pp）。完整扫描表、延迟/内存对照与部署记录见
+  [V5 f16 量化报告](../reports/2026-09-16-v5-f16-quantize.md)。
+
 - **2026-09-08 独立神经开关**：两主方案的 `neural_rerank`（大模型关／开）
   默认关闭，与 V5 `contextual_order` 独立。`option_sync` 保存并跨应用同步，
   不设置 schema `reset`，避免覆盖重启恢复值。**2026-09-14 起单一来源化**：

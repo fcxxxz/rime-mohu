@@ -2,7 +2,8 @@
 // 从 TigerClaw 虎整句 Rime 版 Lua 引擎（tiger_sentence.lua / tiger_sentence_kn.lua）
 // 直译为纯 C ABI 动态库，供 librime-lua 通过 package.loadlib 调用。
 //
-// 模型：TCSKNM01（整表）/ TCSKNM02（分页），mmap 直读，页缓存交给 OS。
+// 模型：TCSKNM01（整表）/ TCSKNM02（分页）/ TCSKNM03（分页 + 后继概率 f16），
+// mmap 直读，页缓存交给 OS。
 // 码表（外挂 txt，UTF-8，每行）：
 //   code <TAB> text <TAB> rank <TAB> freq_rank [<TAB> reading_freq]
 //   code：小写字母与 /；text：单字；rank：选重档位（1 起）；freq_rank：字频名次（1 起）；
@@ -179,6 +180,26 @@ inline uint32_t rd_u32(const uint8_t* p) { uint32_t v; memcpy(&v, p, 4); return 
 inline int32_t rd_i32(const uint8_t* p) { int32_t v; memcpy(&v, p, 4); return v; }
 inline uint64_t rd_u64(const uint8_t* p) { uint64_t v; memcpy(&v, p, 8); return v; }
 inline float rd_f32(const uint8_t* p) { float v; memcpy(&v, p, 4); return v; }
+
+// TCSKNM03 后继概率以 IEEE 754 half（LE）存储；概率值域 [0,1]，仅覆盖
+// 正常数与次正规数即可，inf/NaN 分支为完整性保留。
+inline double rd_f16(const uint8_t* p) {
+  uint16_t h;
+  memcpy(&h, p, 2);
+  const uint32_t exp = (h >> 10) & 0x1F;
+  const uint32_t frac = h & 0x3FF;
+  double value;
+  if (exp == 0) {
+    value = std::ldexp(static_cast<double>(frac), -24);  // 次正规（含 0）
+  } else if (exp == 31) {
+    value = frac ? std::numeric_limits<double>::quiet_NaN()
+                 : std::numeric_limits<double>::infinity();
+  } else {
+    value = std::ldexp(1024.0 + static_cast<double>(frac),
+                       static_cast<int>(exp) - 25);
+  }
+  return (h & 0x8000) ? -value : value;
+}
 
 inline void utf8_next(const char* s, size_t len, size_t i, uint32_t* cp, size_t* n) {
   unsigned char c = (unsigned char)s[i];
@@ -393,8 +414,9 @@ struct KnModel {
   uint64_t tri_count = 0;
   uint64_t tri_ctx_count = 0;
 
-  // TCSKNM02
+  // TCSKNM02/03
   int64_t index_stride = 64;
+  int succ_entry_bytes = 8;  // 02: u32+f32=8；03: u32+f16=6
   const uint8_t *bi_index = nullptr, *tri_index = nullptr;
   int64_t bi_index_count = 0, tri_index_count = 0;
   uint64_t bi_section_end = 0, tri_section_end = 0;
@@ -453,7 +475,8 @@ struct KnModel {
 
   bool load_common(const char* p) {
     if (file.size < 32) { set_error("empty n-gram: %s", p); return false; }
-    if (memcmp(file.data, "TCSKNM02", 8) == 0) return load_mobile();
+    if (memcmp(file.data, "TCSKNM02", 8) == 0) return load_mobile(8);
+    if (memcmp(file.data, "TCSKNM03", 8) == 0) return load_mobile(6);
     if (memcmp(file.data, "TCSKNM01", 8) == 0) return load_legacy();
     set_error("not a TCSKNM model: %s", p);
     return false;
@@ -496,9 +519,10 @@ struct KnModel {
     return true;
   }
 
-  bool load_mobile() {
+  bool load_mobile(int succ_entry_size) {
     const uint8_t* d = file.data;
     mobile = true;
+    succ_entry_bytes = succ_entry_size;
     if (file.size < 104) {
       set_error("truncated mobile n-gram");
       return false;
@@ -604,9 +628,12 @@ struct KnModel {
         for (uint64_t record = 0; record < records; ++record) {
           if (position > section_end || 16 > section_end - position) return false;
           const int32_t successors = rd_i32(d + position + 12);
-          if (successors < 0 || static_cast<uint64_t>(successors) > UINT64_MAX / 8) return false;
+          if (successors < 0 ||
+              static_cast<uint64_t>(successors) > UINT64_MAX / (uint64_t)succ_entry_bytes)
+            return false;
           position += 16;
-          const uint64_t successor_bytes = static_cast<uint64_t>(successors) * 8;
+          const uint64_t successor_bytes =
+              static_cast<uint64_t>(successors) * (uint64_t)succ_entry_bytes;
           if (successor_bytes > section_end - position) return false;
           position += successor_bytes;
         }
@@ -719,23 +746,27 @@ struct KnModel {
   CtxResult scan_successors(const uint8_t* data, size_t position, int64_t count,
                             double lambda_, uint32_t target, uint64_t section_end) const {
     if (!data || data < file.data || data > file.data + file.size || count < 0 ||
-        section_end > file.size || static_cast<uint64_t>(count) > UINT64_MAX / 8) {
+        section_end > file.size ||
+        static_cast<uint64_t>(count) > UINT64_MAX / (uint64_t)succ_entry_bytes) {
       return {lambda_, 0.0, false, true};
     }
     const uint64_t data_offset = static_cast<uint64_t>(data - file.data);
-    if (data_offset > section_end || static_cast<uint64_t>(position) > section_end - data_offset ||
-        static_cast<uint64_t>(count) * 8 >
+    if (data_offset > section_end ||
+        static_cast<uint64_t>(position) > section_end - data_offset ||
+        static_cast<uint64_t>(count) * (uint64_t)succ_entry_bytes >
             section_end - data_offset - static_cast<uint64_t>(position))
       return {lambda_, 0.0, false, true};
+    const uint64_t entry = static_cast<uint64_t>(succ_entry_bytes);
     int64_t lo = 0, hi = count;
     while (lo < hi) {
       int64_t mid = lo + (hi - lo) / 2;
-      if (rd_u32(data + position + mid * 8) < target) lo = mid + 1; else hi = mid;
+      if (rd_u32(data + position + mid * entry) < target) lo = mid + 1; else hi = mid;
     }
     if (lo < count) {
-      const uint8_t* at = data + position + lo * 8;
+      const uint8_t* at = data + position + lo * entry;
       if (rd_u32(at) == target) {
-        const double probability = rd_f32(at + 4);
+        const double probability =
+            succ_entry_bytes == 6 ? rd_f16(at + 4) : rd_f32(at + 4);
         if (!std::isfinite(probability) || probability < 0.0)
           return {lambda_, 0.0, false, true};
         return {lambda_, probability, true, false};
@@ -831,8 +862,8 @@ struct KnModel {
       int32_t succ = rd_i32(data + position + 12);
       if ((have_previous_context && context_key < previous_context_key) ||
           !std::isfinite(lambda_) || lambda_ < 0.0 || succ < 0 ||
-          static_cast<uint64_t>(succ) > UINT64_MAX / 8 ||
-          static_cast<uint64_t>(succ) * 8 >
+          static_cast<uint64_t>(succ) > UINT64_MAX / (uint64_t)succ_entry_bytes ||
+          static_cast<uint64_t>(succ) * (uint64_t)succ_entry_bytes >
               section_end - data_offset - position_u - 16) {
         invalid_pages.insert(page);
         cache.remember(key, {false, page, 1.0, 0, 0, true});
@@ -852,7 +883,7 @@ struct KnModel {
         return result;
       }
       if (context_key > key) break;
-      position += (size_t)succ * 8;
+      position += (size_t)succ * (size_t)succ_entry_bytes;
     }
     cache.remember(key, {true, -1, 1.0, 0, 0});
     return missing();
@@ -3205,7 +3236,8 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
         e->packed_word_scorer = true;
       }
     } else if (memcmp(primary, "TCSKNM01", 8) == 0 ||
-               memcmp(primary, "TCSKNM02", 8) == 0) {
+               memcmp(primary, "TCSKNM02", 8) == 0 ||
+               memcmp(primary, "TCSKNM03", 8) == 0) {
       if (!e->model.load_mapped(std::move(e->container), model_path)) {
         copy_last_error(err, errcap);
         return -1;
@@ -4056,7 +4088,9 @@ int tiger_status(int handle, char* out, int outcap) {
                            : e->packed_word_scorer ? "packed" : "off";
     const std::string& primary_path = e->word_mode ? e->wm.path : e->model.path;
     const char* primary_format = e->word_mode ? "MHKNM01"
-                              : e->model.mobile ? "TCSKNM02" : "TCSKNM01";
+                              : !e->model.mobile ? "TCSKNM01"
+                              : (memcmp(e->model.file.data, "TCSKNM03", 8) == 0)
+                                  ? "TCSKNM03" : "TCSKNM02";
     const size_t primary_size = e->word_mode ? e->wm.file.size : e->model.file.size;
     char buf[1024];
     const int written = snprintf(buf, sizeof(buf), "path=%s\tformat=%s\tbytes=%llu\tcodes=%zu\tbeam=%d\tuser_tri=%zu\tuser_weight=%.3f\tword_scorer=%s\tword_vocab=%zu", primary_path.c_str(), primary_format, (unsigned long long)primary_size, e->lex.codes.size(), e->beam, e->user.tri.size(), e->user_weight, ws_state, ws ? ws->vocab.size() : (size_t)0);

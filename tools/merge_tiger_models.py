@@ -41,7 +41,7 @@ HEADER = struct.Struct("<8sIIQIIQQQQ")  # magic, ver, hsize, fsize, flags, rsv, 
 FLAG_CHAR = 1
 FLAG_WORD = 2
 CHUNK = 8 * 1024 * 1024  # stream in 8 MB blocks
-CHAR_MAGICS = (b"TCSKNM01", b"TCSKNM02", b"TCSKNM03")
+CHAR_MAGICS = (b"TCSKNM01", b"TCSKNM02", b"TCSKNM03", b"TCSKNM04")
 WORD_MAGIC = b"MHKNM01"
 
 

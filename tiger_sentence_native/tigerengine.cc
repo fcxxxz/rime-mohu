@@ -2,8 +2,8 @@
 // 从 TigerClaw 虎整句 Rime 版 Lua 引擎（tiger_sentence.lua / tiger_sentence_kn.lua）
 // 直译为纯 C ABI 动态库，供 librime-lua 通过 package.loadlib 调用。
 //
-// 模型：TCSKNM01（整表）/ TCSKNM02（分页）/ TCSKNM03（分页 + 后继概率 f16），
-// mmap 直读，页缓存交给 OS。
+// 模型：TCSKNM01（整表）/ TCSKNM02（分页）/ TCSKNM03（分页 + 后继概率 f16）/
+// TCSKNM04（分页 + 后继概率 u8 对数码），mmap 直读，页缓存交给 OS。
 // 码表（外挂 txt，UTF-8，每行）：
 //   code <TAB> text <TAB> rank <TAB> freq_rank [<TAB> reading_freq]
 //   code：小写字母与 /；text：单字；rank：选重档位（1 起）；freq_rank：字频名次（1 起）；
@@ -414,9 +414,12 @@ struct KnModel {
   uint64_t tri_count = 0;
   uint64_t tri_ctx_count = 0;
 
-  // TCSKNM02/03
+  // TCSKNM02/03/04
   int64_t index_stride = 64;
-  int succ_entry_bytes = 8;  // 02: u32+f32=8；03: u32+f16=6
+  int succ_entry_bytes = 8;  // 02: u32+f32=8；03: u32+f16=6；04: u32+u8=5
+  // 04 的 u8 概率码 → 概率查找表（装载期构建；码值定义：
+  // p = exp(-14 + k×14/255)，先经 f32 舍入与剪枝器量化路径逐位一致）
+  double succ_prob_table[256] = {0};
   const uint8_t *bi_index = nullptr, *tri_index = nullptr;
   int64_t bi_index_count = 0, tri_index_count = 0;
   uint64_t bi_section_end = 0, tri_section_end = 0;
@@ -477,6 +480,7 @@ struct KnModel {
     if (file.size < 32) { set_error("empty n-gram: %s", p); return false; }
     if (memcmp(file.data, "TCSKNM02", 8) == 0) return load_mobile(8);
     if (memcmp(file.data, "TCSKNM03", 8) == 0) return load_mobile(6);
+    if (memcmp(file.data, "TCSKNM04", 8) == 0) return load_mobile(5);
     if (memcmp(file.data, "TCSKNM01", 8) == 0) return load_legacy();
     set_error("not a TCSKNM model: %s", p);
     return false;
@@ -523,6 +527,14 @@ struct KnModel {
     const uint8_t* d = file.data;
     mobile = true;
     succ_entry_bytes = succ_entry_size;
+    if (succ_entry_size == 5) {
+      const double lo = -14.0;
+      const double q = 14.0 / 255.0;
+      for (int k = 0; k < 256; ++k) {
+        succ_prob_table[k] =
+            static_cast<double>(static_cast<float>(std::exp(lo + k * q)));
+      }
+    }
     if (file.size < 104) {
       set_error("truncated mobile n-gram");
       return false;
@@ -766,7 +778,9 @@ struct KnModel {
       const uint8_t* at = data + position + lo * entry;
       if (rd_u32(at) == target) {
         const double probability =
-            succ_entry_bytes == 6 ? rd_f16(at + 4) : rd_f32(at + 4);
+            succ_entry_bytes == 5 ? succ_prob_table[at[4]]
+            : succ_entry_bytes == 6 ? rd_f16(at + 4)
+            : rd_f32(at + 4);
         if (!std::isfinite(probability) || probability < 0.0)
           return {lambda_, 0.0, false, true};
         return {lambda_, probability, true, false};
@@ -3280,7 +3294,8 @@ int tiger_engine_create(const char* model_path, const char* lexicon_path,
       }
     } else if (memcmp(primary, "TCSKNM01", 8) == 0 ||
                memcmp(primary, "TCSKNM02", 8) == 0 ||
-               memcmp(primary, "TCSKNM03", 8) == 0) {
+               memcmp(primary, "TCSKNM03", 8) == 0 ||
+               memcmp(primary, "TCSKNM04", 8) == 0) {
       if (!e->model.load_mapped(std::move(e->container), model_path)) {
         copy_last_error(err, errcap);
         return -1;
@@ -4160,6 +4175,8 @@ int tiger_status(int handle, char* out, int outcap) {
     const std::string& primary_path = e->word_mode ? e->wm.path : e->model.path;
     const char* primary_format = e->word_mode ? "MHKNM01"
                               : !e->model.mobile ? "TCSKNM01"
+                              : (memcmp(e->model.file.data, "TCSKNM04", 8) == 0)
+                                  ? "TCSKNM04"
                               : (memcmp(e->model.file.data, "TCSKNM03", 8) == 0)
                                   ? "TCSKNM03" : "TCSKNM02";
     const size_t primary_size = e->word_mode ? e->wm.file.size : e->model.file.size;

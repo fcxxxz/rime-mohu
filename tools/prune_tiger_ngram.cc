@@ -28,6 +28,10 @@
 //   1 字节对数存储的精度影响（体积不变）；
 //   --format f16：输出 TCSKNM03（后继概率以 f16 存储，6B/条，体积 -25%；
 //   unigram/λ 仍为 f32；需要 2026-09-16 起 libtigerengine 支持 03 的版本）；
+//   --format u8：输出 TCSKNM04（后继概率以 u8 对数码存储，5B/条，体积
+//   -37.5%；p = exp(-14 + k×14/255)，均匀 ±2.8% 相对误差，模拟与全量
+//   验证结论见 docs/reports/2026-09-16-v5-f16-quantize.md §7；unigram/λ
+//   仍为 f32；需要支持 04 的引擎）；
 //   --no-addback：被剪质量直接丢弃、λ 原样保留（对照实验用）。
 
 #include <algorithm>
@@ -76,6 +80,7 @@ void append_u32(std::vector<uint8_t>& out, uint32_t v) {
 void append_u16(std::vector<uint8_t>& out, uint16_t v) {
   for (int i = 0; i < 2; ++i) out.push_back((v >> (8 * i)) & 0xFF);
 }
+void append_u8(std::vector<uint8_t>& out, uint8_t v) { out.push_back(v); }
 void append_u64(std::vector<uint8_t>& out, uint64_t v) {
   for (int i = 0; i < 8; ++i) out.push_back((v >> (8 * i)) & 0xFF);
 }
@@ -147,6 +152,20 @@ inline uint16_t f16_bits(float v) {
 #endif
 }
 
+// TCSKNM04 的概率码：p = exp(-14 + k×14/255)（与引擎 succ_prob_table 及
+// quant_log8(v, -14) 的取值路径逐位一致——都经 f32 舍入）。
+inline uint8_t log8_code(float v) {
+  const double x = static_cast<double>(v);
+  const double lo = -14.0;
+  const double q = 14.0 / 255.0;
+  double lv = std::log(x > 0 ? x : std::exp(lo));
+  if (lv < lo) lv = lo;
+  long k = std::lround((lv - lo) / q);
+  if (k < 0) k = 0;
+  if (k > 255) k = 255;
+  return static_cast<uint8_t>(k);
+}
+
 struct Succ {
   uint32_t target;
   float prob;
@@ -163,6 +182,7 @@ struct Options {
   bool addback = true;  // 剪掉的质量是否加回 λ（--no-addback 关闭）
   bool quantize_f16 = false;  // 概率舍入到 f16 精度（仍按 f32 存储，量化实验用）
   bool format_f16 = false;    // 输出 TCSKNM03（后继概率 f16，6B/条，-25%）
+  bool format_u8 = false;     // 输出 TCSKNM04（后继概率 u8 对数码，5B/条，-37.5%）
   int succ_quant_mant = 0;    // >0：后继概率舍入到 f16 尾数保留 bits 位（模拟更低精度）
   double succ_quant_log8_lo = 0;  // <0：后继概率按 [lo,0] ln 网格 256 级舍入（模拟 1 字节）
   double bi_tau = 0, tri_tau = 0;
@@ -396,6 +416,10 @@ int main(int argc, char** argv) {
                std::string(argv[i + 1]) == "f16") {
       opt.format_f16 = true;
       ++i;
+    } else if (a == "--format" && i + 1 < argc &&
+               std::string(argv[i + 1]) == "u8") {
+      opt.format_u8 = true;
+      ++i;
     } else if (a == "--bi-tau" && next_double(&v)) {
       opt.bi_tau = v;
     } else if (a == "--bi-ratio" && next_double(&v)) {
@@ -608,6 +632,8 @@ int main(int argc, char** argv) {
           append_u32(blocks, s.target);
           if (opt.format_f16) {
             append_u16(blocks, f16_bits(s.prob));
+          } else if (opt.format_u8) {
+            append_u8(blocks, log8_code(s.prob));
           } else {
             append_f32(blocks, s.prob);
           }
@@ -648,7 +674,9 @@ int main(int argc, char** argv) {
   out.reserve(file_size);
   const char magic02[8] = {'T', 'C', 'S', 'K', 'N', 'M', '0', '2'};
   const char magic03[8] = {'T', 'C', 'S', 'K', 'N', 'M', '0', '3'};
-  const char* magic = opt.format_f16 ? magic03 : magic02;
+  const char magic04[8] = {'T', 'C', 'S', 'K', 'N', 'M', '0', '4'};
+  const char* magic = opt.format_u8 ? magic04
+                     : opt.format_f16 ? magic03 : magic02;
   out.insert(out.end(), magic, magic + 8);
   append_u32(out, 1);  // version
   append_u32(out, static_cast<uint32_t>(header_size));

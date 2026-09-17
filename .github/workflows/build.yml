@@ -83,6 +83,7 @@ jobs:
         shell: msys2 {0}
         env:
           ORT_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
+          GH_TOKEN: ${{ github.token }}
         run: |
           g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
             -D_stdcall=__stdcall \
@@ -92,10 +93,13 @@ jobs:
             lua-5.4.8/src/lua54.dll -lonnxruntime -o libtigerengine.dll
           objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
           cp "$ORT_HOME/lib/onnxruntime.dll" ./
-          curl --fail --location \
-            --retry 3 --retry-all-errors \
-            --output mohu-sentence-ngram-v5.bin \
-            "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/mohu-sentence-ngram-v5.bin"
+          # 模型资产自 603f65a 起以 zip 形式发布（裸 bin 直链已不存在）；
+          # 与 ort 同理走 gh api 下载，解压后取裸 bin。
+          gh release download latest \
+            --pattern 'mohu-sentence-ngram-v5.bin.zip' \
+            --output model.zip --clobber
+          python -m zipfile -e model.zip .
+          test -s mohu-sentence-ngram-v5.bin
           g++ -O2 -std=c++17 -D_stdcall=__stdcall \
             -I tiger_sentence_native -I "$ORT_HOME/include" \
             tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc \

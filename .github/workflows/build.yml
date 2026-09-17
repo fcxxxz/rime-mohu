@@ -58,9 +58,19 @@ jobs:
           # tigerengine.cc 内建魔虎语义进程内推理（semantic_infer.h），
           # 编译与运行都需要 onnxruntime。官方 win-x64 zip：lib/ 内含
           # onnxruntime.lib 与 onnxruntime.dll，include/ 含 C++ API 头。
-          curl --fail --location --retry 3 --retry-all-errors \
-            --output ort.zip \
-            "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-1.20.1.zip"
+          # 2026-09-17 起 GitHub runner 拉取 microsoft/onnxruntime release
+          # 资产稳定 404（本地可达），因此优先使用本仓库 ort-deps Release
+          # 的同内容转存，官方源仅作后备，均以官方 sha256 校验。
+          ORT_ZIP=onnxruntime-win-x64-1.20.1.zip
+          ORT_SHA256=78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
+          fetch() { curl --fail --location --retry 3 --retry-all-errors --output ort.zip "$1"; }
+          if ! fetch "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases/downloads/ort-deps/${ORT_ZIP}" \
+            && ! fetch "https://github.com/${GITHUB_REPOSITORY}/releases/download/ort-deps/${ORT_ZIP}" \
+            && ! fetch "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/${ORT_ZIP}"; then
+            echo "all onnxruntime sources failed" >&2
+            exit 1
+          fi
+          echo "${ORT_SHA256}  ort.zip" | sha256sum -c -
           python -m zipfile -e ort.zip .
 
       - name: Build and smoke-test the Windows engine

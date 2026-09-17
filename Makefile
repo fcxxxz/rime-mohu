@@ -136,10 +136,22 @@ clean:
 
 # Native Tiger sentence assets are kept separate from the generated source
 # dictionaries and are copied into the flat scheme package by its builder.
+# 重编引擎依赖 macOS 工具链（zsh + codesign + Accelerate）；Linux CI（万象
+# 同步的 dist 校验）只消费仓库里已提交的 dylib，不重编。dylib 缺失时在
+# 非 Darwin 上直接报错而不是调用不存在的工具链（2026-09-04 起的每夜
+# wanxiang-sync 失败即源于此）。
+UNAME_S := $(shell uname -s)
+
 tigerengine-native: tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc tiger_sentence_native/tigerengine.h tiger_sentence_native/semantic_infer.h tiger_sentence_native/libonnxruntime.1.dylib
+ifeq ($(UNAME_S),Darwin)
 	@test -f tiger_sentence_native/lua-5.4.6/src/lua.hpp || \
 		(echo "Lua 5.4 headers are required; see tiger_sentence_native/README.md" >&2; exit 1)
 	zsh tiger_sentence_native/build.sh
+else
+	@test -f tiger_sentence_native/libtigerengine.dylib || \
+		(echo "Error: engine rebuild is macOS-only; commit libtigerengine.dylib or build on macOS" >&2; exit 1)
+	@echo "tigerengine-native: non-macOS host, using committed libtigerengine.dylib"
+endif
 
 tigerengine-safety:
 	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_safety_test.cc tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_safety_test

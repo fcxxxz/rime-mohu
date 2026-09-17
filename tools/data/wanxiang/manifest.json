@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "5878461b804b5930fb7e466a8411f513cfc741d6",
+  "revision": "a2edbec6ae6ea022855d55e7fcc8ff6adaf44471",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,7 +9,7 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "aab2e1a30b741b1d40e28272c351d4060f9acdb538620078b7ffe991fcd78516"
+      "sha256": "a6b773ef2e693b777471639096eca5f619739c6b446f34713355970758dc7e99"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
@@ -49,12 +49,12 @@
     "yaopin": {
       "path": "dicts/yaopin.dict.yaml",
       "raw_path": "raw/yaopin.dict.yaml",
-      "sha256": "2a2a1205c15b985967c48751c9622bcde0684a0a74c32d8d0d4fc893fd228c6c"
+      "sha256": "9078ecbca11e44843bb272b8f1673e5892e93afa463f45f90b93da487ad097d8"
     },
     "mingren": {
       "path": "dicts/mingren.dict.yaml",
       "raw_path": "raw/mingren.dict.yaml",
-      "sha256": "ae8783fefa522630eea4b912f62c402fea021022a55c5a85038397341d246606"
+      "sha256": "a249a14e2bb8e9d2dbbd8ef07ce4a36bd74a2e51bd52a043641724ba85a88f2f"
     },
     "yiren": {
       "path": "dicts/yiren.dict.yaml",

@@ -1,11 +1,11 @@
 # 万象同步报告
 
-- upstream revision: `5878461b804b5930fb7e466a8411f513cfc741d6`
-- selected entries: 1214470
-- added: 188
-- removed: 159
-- pronunciation changed: 1214282
-- duplicate existing words: 934035
+- upstream revision: `a2edbec6ae6ea022855d55e7fcc8ff6adaf44471`
+- selected entries: 1214484
+- added: 18
+- removed: 4
+- pronunciation changed: 1214466
+- duplicate existing words: 934033
 - pronunciation conflicts: 1699
 - rejected source rows: 419
 - dropped for missing auxiliary: 5

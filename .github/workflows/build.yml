@@ -244,6 +244,42 @@ jobs:
           test ! -e dist-zrm/mohu/model/mohu-sentence-ngram-v5.bin
           test ! -e dist-flypy/mohu/model/mohu-sentence-ngram-v5.bin
 
+      - name: Build mobile lite packages
+        run: make dist-mobile-zrm dist-mobile-flypy
+
+      - name: Validate mobile lite packages
+        run: |
+          test -f dist-mobile-zrm/安装说明-手机版.md
+          test -f dist-mobile-flypy/安装说明-手机版.md
+          test -f dist-mobile-zrm/lua/mohu_tiger_sentence.lua
+          test -f dist-mobile-zrm/mohu/data/zrm/mohu_zrm.lexicon.txt
+          test -f dist-mobile-flypy/mohu/data/flypy/mohu_flypy.lexicon.txt
+          test -f rime-mohu-mobile-zrm-lite.zip
+          test -f rime-mohu-mobile-flypy-lite.zip
+          for archive in rime-mohu-mobile-zrm-lite.zip rime-mohu-mobile-flypy-lite.zip; do
+            unzip -t "$archive" >/dev/null
+            # 精简包红线：不携带模型与任何 native 二进制。
+            test -z "$(unzip -Z1 "$archive" | grep -E '\.(bin|onnx|dylib|dll|so)$' || true)"
+          done
+
+      - name: Upload mobile lite zrm package
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-mobile-zrm-lite-${{ github.run_number }}-${{ github.run_attempt }}
+          path: rime-mohu-mobile-zrm-lite.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload mobile lite flypy package
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-mobile-flypy-lite-${{ github.run_number }}-${{ github.run_attempt }}
+          path: rime-mohu-mobile-flypy-lite.zip
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Natural Code distribution
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
@@ -310,6 +346,28 @@ jobs:
           name: mohu-sentence-ngram-v5-${{ github.run_number }}-${{ github.run_attempt }}
           path: model-asset
 
+      - name: Download mobile lite packages
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-mobile-zrm-lite-${{ github.run_number }}-${{ github.run_attempt }}
+          path: mobile-lite
+
+      - name: Download mobile lite flypy package
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-mobile-flypy-lite-${{ github.run_number }}-${{ github.run_attempt }}
+          path: mobile-lite-flypy
+
+      - name: Stage mobile lite packages
+        run: |
+          mv mobile-lite/rime-mohu-mobile-zrm-lite.zip .
+          mv mobile-lite-flypy/rime-mohu-mobile-flypy-lite.zip .
+          for archive in rime-mohu-mobile-zrm-lite.zip rime-mohu-mobile-flypy-lite.zip; do
+            unzip -t "$archive" >/dev/null
+            # 精简包红线：不携带模型与任何 native 二进制。
+            test -z "$(unzip -Z1 "$archive" | grep -E '\.(bin|onnx|dylib|dll|so)$' || true)"
+          done
+
       - name: Package flat distributions
         run: |
           # GitHub artifact transfer does not preserve executable bits.
@@ -343,8 +401,9 @@ jobs:
             '- 自然码：下载 `rime-mohu-zrm-latest.zip`，解压到 Rime 用户目录后重新部署。' \
             '- 小鹤：下载 `rime-mohu-flypy-latest.zip`，解压到 Rime 用户目录后重新部署。' \
             '- 模型：下载 `mohu-sentence-ngram-v5.bin`，放入 `Rime/mohu/model/`（运行时固定读取该文件名）。自 2026-09-16 起发布内容为 u8 量化格式 TCSKNM04（389.7MB，较原 f32 版 −32%，质量持平）；需配合本日期后构建的方案包，旧引擎会报 `unknown model format` 并退回普通候选。' \
+            '- 手机精简版（Android Trime / iOS 仓输入法）：`rime-mohu-mobile-zrm-lite.zip` / `rime-mohu-mobile-flypy-lite.zip`，无模型无 native；想要整句自行导入模型并配合定制版前端，日常输入与用户词记忆开箱即用。' \
             '' \
-            '方案包不包含模型文件，适用于空的或专门准备的 Rime 用户目录。' \
+            '桌面方案包不包含模型文件，适用于空的或专门准备的 Rime 用户目录。' \
             '' \
             '本次构建提交：'"${GITHUB_SHA::7}" > "$notes_file"
           if gh release view latest >/dev/null 2>&1; then
@@ -358,6 +417,8 @@ jobs:
           gh release upload latest \
             rime-mohu-zrm-latest.zip \
             rime-mohu-flypy-latest.zip \
+            rime-mohu-mobile-zrm-lite.zip \
+            rime-mohu-mobile-flypy-lite.zip \
             model-asset/mohu-sentence-ngram-v5.bin \
             --clobber
           gh release edit latest --title 'Latest build' --notes-file "$notes_file" --latest

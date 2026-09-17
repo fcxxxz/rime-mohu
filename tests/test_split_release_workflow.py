@@ -69,20 +69,21 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             'unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md"', workflow
         )
 
-    def test_windows_smoke_test_downloads_model_without_github_cli(self) -> None:
+    def test_windows_smoke_test_fetches_model_zip_via_gh_api(self) -> None:
+        # 2026-09-17 起 runner 直连 release CDN 全线 404，且 latest 上的模型
+        # 资产已改为 zip 形态：冒烟模型经 gh api 下载 zip 并解压出裸 bin，
+        # curl 官方直链仅作为 ort 的后备路径。
         workflow = WORKFLOW.read_text(encoding="utf-8")
         windows_job = workflow.split("  windows-runtime:", 1)[1].split(
             "\n  build:", 1
         )[0]
 
-        self.assertIn("curl --fail --location", windows_job)
-        self.assertIn("--retry 3 --retry-all-errors", windows_job)
-        self.assertIn(
-            "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/"
-            "mohu-sentence-ngram-v5.bin",
-            windows_job,
-        )
-        self.assertNotIn("gh release download", windows_job)
+        self.assertIn('"$GH_BIN" release download latest', windows_job)
+        self.assertIn("--pattern 'mohu-sentence-ngram-v5.bin.zip'", windows_job)
+        self.assertIn("python -m zipfile -e model.zip .", windows_job)
+        self.assertIn("test -s mohu-sentence-ngram-v5.bin", windows_job)
+        # gh 在 msys2 里用绝对路径兜底（不继承 Windows PATH）。
+        self.assertIn("GH_BIN=\"$(command -v gh || echo", windows_job)
 
     def test_windows_runtime_collection_uses_msys2_tools_from_path(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")

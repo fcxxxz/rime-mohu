@@ -15,7 +15,176 @@ permissions:
   pull-requests: write
 
 jobs:
+  # nightly 与 latest 内容对齐（用户要求：唯一差异是词库新旧）：在同步
+  # workflow 内以同一套流程构建 Windows 运行时闭包，供打包 dist 时注入。
+  windows-runtime:
+    timeout-minutes: 40
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Sync Python environment
+        run: uv sync --locked
+
+      - name: Install MinGW toolchain and Python
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            make
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-python
+
+      - name: Build Lua 5.4.8 host and runtime
+        shell: msys2 {0}
+        env:
+          LUA548_SHA256: 4f18ddae154e793e46eeab727c59ef1c0c0c2b744e7b94219710d76f530629ae
+        run: |
+          # Tiger Weasel embeds Lua 5.4.8. macOS Squirrel intentionally uses
+          # its separate 5.4.6 dylib build; these runtimes cannot be mixed.
+          curl -sL -o lua548.tar.gz https://www.lua.org/ftp/lua-5.4.8.tar.gz
+          printf '%s  %s\n' "$LUA548_SHA256" lua548.tar.gz | sha256sum -c -
+          tar xzf lua548.tar.gz
+          cd lua-5.4.8/src
+          core="lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c"
+          lib="lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c"
+          gcc -O2 -shared -DLUA_BUILD_AS_DLL $core $lib -o lua54.dll
+          gcc -O2 -DLUA_BUILD_AS_DLL lua.c -o lua.exe lua54.dll
+
+      - name: Fetch onnxruntime for Windows
+        shell: msys2 {0}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # tigerengine.cc 内建魔虎语义进程内推理（semantic_infer.h），
+          # 编译与运行都需要 onnxruntime。官方 win-x64 zip：lib/ 内含
+          # onnxruntime.lib 与 onnxruntime.dll，include/ 含 C++ API 头。
+          # 2026-09-17 起 runner 上 curl 直连 github release 下载（含本仓
+          # 资产与官方源）稳定 404，objects CDN 链路异常；改用 gh CLI 走
+          # api.github.com 拉取本仓 ort-deps Release 的同内容转存，官方
+          # 源 curl 仅作后备，统一以官方 sha256 校验。
+          ORT_ZIP=onnxruntime-win-x64-1.20.1.zip
+          ORT_SHA256=78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
+          # msys2 shell 不继承 Windows PATH，gh 用绝对路径兜底。
+          GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
+          if "$GH_BIN" release download ort-deps --pattern "${ORT_ZIP}" --output ort.zip --clobber \
+            && [ -s ort.zip ]; then
+            echo "fetched from repo mirror via gh api"
+          elif curl --fail --location --retry 3 --retry-all-errors --output ort.zip \
+            "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/${ORT_ZIP}"; then
+            echo "fetched from upstream mirror"
+          else
+            echo "all onnxruntime sources failed" >&2
+            exit 1
+          fi
+          echo "${ORT_SHA256}  ort.zip" | sha256sum -c -
+          python -m zipfile -e ort.zip .
+
+      - name: Build and smoke-test the Windows engine
+        shell: msys2 {0}
+        env:
+          ORT_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
+            -D_stdcall=__stdcall \
+            -I tiger_sentence_native -I lua-5.4.8/src \
+            -I "$ORT_HOME/include" -L "$ORT_HOME/lib" \
+            tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
+            lua-5.4.8/src/lua54.dll -lonnxruntime -o libtigerengine.dll
+          objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
+          cp "$ORT_HOME/lib/onnxruntime.dll" ./
+          # 模型资产自 603f65a 起以 zip 形式发布（裸 bin 直链已不存在）；
+          # 与 ort 同理走 gh api 下载，解压后取裸 bin。
+          GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
+          "$GH_BIN" release download latest \
+            --pattern 'mohu-sentence-ngram-v5.bin.zip' \
+            --output model.zip --clobber
+          python -m zipfile -e model.zip .
+          test -s mohu-sentence-ngram-v5.bin
+          g++ -O2 -std=c++17 -D_stdcall=__stdcall \
+            -I tiger_sentence_native -I "$ORT_HOME/include" \
+            tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc \
+            -L "$ORT_HOME/lib" -lonnxruntime -o nativetest.exe
+          printf '1\tufqyhfmimh\n' > keys.txt
+          ./nativetest.exe mohu-sentence-ngram-v5.bin \
+            tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt keys.txt out.txt
+          grep -q '迷茫' out.txt
+          cp lua-5.4.8/src/lua54.dll ./
+          cat > smoke.lua <<'LUA'
+          local dll, model, lexicon = ...
+          local engine = assert(package.loadlib(dll, "luaopen_tigerengine"))()
+          local snapshot = "用户快照.bin"
+          local expected = "new\0snapshot"
+          assert(engine.atomic_write_snapshot_file(snapshot, "old"))
+          assert(engine.atomic_write_snapshot_file(snapshot, expected))
+          assert(engine.read_snapshot_file(snapshot) == expected)
+          local missing, read_error = engine.read_snapshot_file("missing/snapshot.bin")
+          assert(missing == nil and type(read_error) == "string")
+          local wrote, write_error = engine.atomic_write_snapshot_file("missing/snapshot.bin", "x")
+          assert(wrote == false and type(write_error) == "string")
+          local handle = assert(engine.create(model, lexicon, 200, 1))
+          local output = assert(engine.decode(handle, "ufqyhfmimh", false))
+          assert(output:find("迷茫", 1, true), output)
+          engine.free(handle)
+          LUA
+          ./lua-5.4.8/src/lua.exe smoke.lua "$PWD/libtigerengine.dll" \
+            "$PWD/mohu-sentence-ngram-v5.bin" \
+            "$PWD/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt"
+
+      - name: Probe primary model mapping on Windows
+        shell: msys2 {0}
+        env:
+          TIGER_ENGINE_DLL: ${{ github.workspace }}/libtigerengine.dll
+          TIGER_NGRAM: ${{ github.workspace }}/mohu-sentence-ngram-v5.bin
+          TIGER_LEXICON: ${{ github.workspace }}/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
+          ONNXRUNTIME_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
+        run: |
+          make tigerengine-snapshot-io tigerengine-mobile tigerengine-mapping
+          cp "$ONNXRUNTIME_HOME/lib/onnxruntime.dll" .tmp/native-tests/
+          make tigerengine-windows-memory \
+            TIGER_MEMORY_OUTPUT=.tmp/native-tests/tigerengine-windows-mapping.json
+
+      - name: Upload Windows mapping probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: tigerengine-windows-mapping
+          path: .tmp/native-tests/tigerengine-windows-mapping.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Collect Windows runtime closure
+        shell: msys2 {0}
+        run: >-
+          python tools/collect_windows_runtime.py
+          --entry libtigerengine.dll
+          --search-dir .
+          --search-dir lua-5.4.8/src
+          --search-dir onnxruntime-win-x64-1.20.1/lib
+          --search-dir /mingw64/bin
+          --objdump objdump
+          --output windows-runtime
+
+      - name: Upload Windows runtime closure
+        uses: actions/upload-artifact@v4
+        with:
+          name: mohu-windows-runtime-closure
+          path: windows-runtime/
+          if-no-files-found: error
+          retention-days: 14
+
   sync:
+    # 依赖本 workflow 内构建的 Windows 运行时闭包；串行启动避免 recovery
+    # 快速路径上 download-artifact 早于闭包上传。
+    needs: windows-runtime
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -68,15 +237,21 @@ jobs:
             nightly_complete="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- publish-status: \(complete\) -->$/\1/p' | head -n 1)"
             nightly_zrm_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- zrm-sha256: \([0-9a-f]\{64\}\) -->$/\1/p' | head -n 1)"
             nightly_flypy_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- flypy-sha256: \([0-9a-f]\{64\}\) -->$/\1/p' | head -n 1)"
+            nightly_mobile_zrm_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- mobile-zrm-sha256: \([0-9a-f]\{64\}\) -->$/\1/p' | head -n 1)"
+            nightly_mobile_flypy_sha="$(printf '%s\n' "$nightly_body" | sed -n 's/^<!-- mobile-flypy-sha256: \([0-9a-f]\{64\}\) -->$/\1/p' | head -n 1)"
             nightly_release_id="$(jq -r '.id // empty' <<< "$nightly_release")"
             nightly_assets="$(gh api --paginate --slurp \
               "repos/$GITHUB_REPOSITORY/releases/$nightly_release_id/assets?per_page=100" | jq 'add')"
             nightly_total_assets="$(jq 'length' <<< "$nightly_assets")"
-            nightly_asset_count="$(jq '[.[] | select(.name == "rime-mohu-zrm-nightly.zip" or .name == "rime-mohu-flypy-nightly.zip")] | length' <<< "$nightly_assets")"
+            nightly_asset_count="$(jq '[.[] | select(.name == "rime-mohu-zrm-nightly.zip" or .name == "rime-mohu-flypy-nightly.zip" or .name == "rime-mohu-mobile-zrm-lite-nightly.zip" or .name == "rime-mohu-mobile-flypy-lite-nightly.zip")] | length' <<< "$nightly_assets")"
             nightly_zrm_digest="$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].digest // empty' <<< "$nightly_assets")"
             nightly_flypy_digest="$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$nightly_assets")"
+            nightly_mobile_zrm_digest="$(jq -r '[.[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].digest // empty' <<< "$nightly_assets")"
+            nightly_mobile_flypy_digest="$(jq -r '[.[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].digest // empty' <<< "$nightly_assets")"
             nightly_zrm_state="$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].state // empty' <<< "$nightly_assets")"
             nightly_flypy_state="$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].state // empty' <<< "$nightly_assets")"
+            nightly_mobile_zrm_state="$(jq -r '[.[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].state // empty' <<< "$nightly_assets")"
+            nightly_mobile_flypy_state="$(jq -r '[.[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].state // empty' <<< "$nightly_assets")"
             nightly_tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/nightly" --jq .object.sha 2>/dev/null || true)"
             if [[ "$nightly_draft" == false \
               && "$nightly_prerelease" == true \
@@ -84,12 +259,16 @@ jobs:
               && "$nightly_revision" == "$current_revision" \
               && "$nightly_merge_sha" == "$current_main_sha" \
               && "$nightly_tag_sha" == "$current_main_sha" \
-              && "$nightly_asset_count" == 2 \
-              && "$nightly_total_assets" == 2 \
+              && "$nightly_asset_count" == 4 \
+              && "$nightly_total_assets" == 4 \
               && "$nightly_zrm_state" == uploaded \
               && "$nightly_flypy_state" == uploaded \
+              && "$nightly_mobile_zrm_state" == uploaded \
+              && "$nightly_mobile_flypy_state" == uploaded \
               && "$nightly_zrm_digest" == "sha256:$nightly_zrm_sha" \
-              && "$nightly_flypy_digest" == "sha256:$nightly_flypy_sha" ]]; then
+              && "$nightly_flypy_digest" == "sha256:$nightly_flypy_sha" \
+              && "$nightly_mobile_zrm_digest" == "sha256:$nightly_mobile_zrm_sha" \
+              && "$nightly_mobile_flypy_digest" == "sha256:$nightly_mobile_flypy_sha" ]]; then
               nightly_ready=true
             fi
           fi
@@ -259,6 +438,13 @@ jobs:
           fi
           echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
 
+      - name: Download Windows runtime closure
+        if: steps.changes.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: mohu-windows-runtime-closure
+          path: windows-runtime
+
       - name: Build nightly distributions from main
         if: steps.changes.outputs.publish == 'true'
         env:
@@ -279,7 +465,10 @@ jobs:
           make quick
           git diff --check
           git diff --exit-code
-          make dist-zrm dist-flypy
+          # 与 latest 同源同质：注入同一条流水线产出的 Windows 运行时闭包，
+          # nightly 包内容与 release 包一致，差异只在词库新旧。
+          make dist-zrm dist-flypy TIGER_WINDOWS_RUNTIME="$PWD/windows-runtime"
+          make dist-mobile-zrm dist-mobile-flypy
           git diff --check
           git diff --exit-code
           test -f dist-zrm/mohu_zrm.schema.yaml
@@ -290,10 +479,24 @@ jobs:
           chmod +x dist-flypy/Rime皮肤编辑器/启动.command
           (cd dist-zrm && zip -qr ../rime-mohu-zrm-nightly.zip .)
           (cd dist-flypy && zip -qr ../rime-mohu-flypy-nightly.zip .)
-          for archive in rime-mohu-zrm-nightly.zip rime-mohu-flypy-nightly.zip; do
+          mv rime-mohu-mobile-zrm-lite.zip rime-mohu-mobile-zrm-lite-nightly.zip
+          mv rime-mohu-mobile-flypy-lite.zip rime-mohu-mobile-flypy-lite-nightly.zip
+          for archive in rime-mohu-zrm-nightly.zip rime-mohu-flypy-nightly.zip \
+            rime-mohu-mobile-zrm-lite-nightly.zip rime-mohu-mobile-flypy-lite-nightly.zip; do
             unzip -t "$archive" >/dev/null
-            unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md" >/dev/null
             test -z "$(unzip -Z1 "$archive" | awk '/^\// || /(^|\/)\.\.($|\/)/ { print; exit }')"
+          done
+          for archive in rime-mohu-zrm-nightly.zip rime-mohu-flypy-nightly.zip; do
+            unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md" >/dev/null
+            # 桌面包必须同时携带双平台运行时（与 latest 一致）。
+            unzip -Z1 "$archive" | grep -Fx "mohu/runtime/libtigerengine.dll" >/dev/null
+            unzip -Z1 "$archive" | grep -Fx "mohu/runtime/libtigerengine.dylib" >/dev/null
+            unzip -Z1 "$archive" | grep -Fx "mohu/runtime/runtime-manifest.json" >/dev/null
+          done
+          for archive in rime-mohu-mobile-zrm-lite-nightly.zip rime-mohu-mobile-flypy-lite-nightly.zip; do
+            unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md" >/dev/null
+            # 精简包红线：不携带模型与任何 native 二进制。
+            test -z "$(unzip -Z1 "$archive" | grep -E '\.(bin|onnx|dylib|dll|so)$' || true)"
           done
 
       - name: Publish rolling nightly release
@@ -306,16 +509,26 @@ jobs:
           set -euo pipefail
           zrm_archive='rime-mohu-zrm-nightly.zip'
           flypy_archive='rime-mohu-flypy-nightly.zip'
+          mobile_zrm_archive='rime-mohu-mobile-zrm-lite-nightly.zip'
+          mobile_flypy_archive='rime-mohu-mobile-flypy-lite-nightly.zip'
           zrm_sha="$(sha256sum "$zrm_archive" | cut -d' ' -f1)"
           flypy_sha="$(sha256sum "$flypy_archive" | cut -d' ' -f1)"
+          mobile_zrm_sha="$(sha256sum "$mobile_zrm_archive" | cut -d' ' -f1)"
+          mobile_flypy_sha="$(sha256sum "$mobile_flypy_archive" | cut -d' ' -f1)"
           zrm_size="$(stat -c '%s' "$zrm_archive")"
           flypy_size="$(stat -c '%s' "$flypy_archive")"
+          mobile_zrm_size="$(stat -c '%s' "$mobile_zrm_archive")"
+          mobile_flypy_size="$(stat -c '%s' "$mobile_flypy_archive")"
           stage_suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           stage_zrm="rime-mohu-zrm-nightly-staging-${stage_suffix}.zip"
           stage_flypy="rime-mohu-flypy-nightly-staging-${stage_suffix}.zip"
+          stage_mobile_zrm="rime-mohu-mobile-zrm-lite-nightly-staging-${stage_suffix}.zip"
+          stage_mobile_flypy="rime-mohu-mobile-flypy-lite-nightly-staging-${stage_suffix}.zip"
           stage_tag="nightly-staging-${stage_suffix}"
           cp "$zrm_archive" "$stage_zrm"
           cp "$flypy_archive" "$stage_flypy"
+          cp "$mobile_zrm_archive" "$stage_mobile_zrm"
+          cp "$mobile_flypy_archive" "$stage_mobile_flypy"
 
           revision="$(python3 -c 'import json; print(json.load(open("tools/data/wanxiang/manifest.json"))["revision"])')"
           revision_short="${revision:0:12}"
@@ -330,15 +543,19 @@ jobs:
             printf '%s\n' "<!-- upstream-revision: $revision -->"
             printf '%s\n' "<!-- zrm-sha256: $zrm_sha -->"
             printf '%s\n' "<!-- flypy-sha256: $flypy_sha -->"
+            printf '%s\n' "<!-- mobile-zrm-sha256: $mobile_zrm_sha -->"
+            printf '%s\n' "<!-- mobile-flypy-sha256: $mobile_flypy_sha -->"
             printf '%s\n\n' '## 魔虎万象 nightly'
             printf '%s\n' "- 主分支提交: [$MERGE_SHA]($commit_url)"
             printf '%s\n' "- 万象上游 revision: [$revision_short]($upstream_url)"
             printf '%s\n' "- 自然码 SHA-256: \`$zrm_sha\`"
             printf '%s\n' "- 小鹤 SHA-256: \`$flypy_sha\`"
+            printf '%s\n' "- 手机精简版（自然码）SHA-256: \`$mobile_zrm_sha\`"
+            printf '%s\n' "- 手机精简版（小鹤）SHA-256: \`$mobile_flypy_sha\`"
             printf '%s\n\n' '- 许可: CC BY 4.0；改编与署名说明见 `tools/data/wanxiang/SOURCE.md`。'
             cat tools/data/wanxiang/sync_report.md
-            printf '%s\n\n' '本 Release 仅包含本次同步验证过的标准自然码和小鹤发行包；这是滚动 nightly 版本，不替代稳定版 `latest`。'
-            printf '%s\n' '下载：`rime-mohu-zrm-nightly.zip` 或 `rime-mohu-flypy-nightly.zip`。'
+            printf '%s\n\n' '本 Release 的桌面包与稳定版 `latest` 同源同质（含双平台运行时闭包），差异仅在词库为最新同步；另附手机精简版（无模型/无 native，模型自行导入）。'
+            printf '%s\n' '下载：桌面 `rime-mohu-zrm-nightly.zip` / `rime-mohu-flypy-nightly.zip`；手机 `rime-mohu-mobile-zrm-lite-nightly.zip` / `rime-mohu-mobile-flypy-lite-nightly.zip`。'
           } > "$notes_file"
 
           releases="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" | jq 'add')"
@@ -395,15 +612,30 @@ jobs:
           flypy_asset="$(gh api --method POST \
             "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$release_id/assets?name=$stage_flypy" \
             -H 'Content-Type: application/zip' --input "$stage_flypy")"
+          mobile_zrm_asset="$(gh api --method POST \
+            "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$release_id/assets?name=$stage_mobile_zrm" \
+            -H 'Content-Type: application/zip' --input "$stage_mobile_zrm")"
+          mobile_flypy_asset="$(gh api --method POST \
+            "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$release_id/assets?name=$stage_mobile_flypy" \
+            -H 'Content-Type: application/zip' --input "$stage_mobile_flypy")"
           zrm_stage_id="$(jq -r .id <<< "$zrm_asset")"
           flypy_stage_id="$(jq -r .id <<< "$flypy_asset")"
+          mobile_zrm_stage_id="$(jq -r .id <<< "$mobile_zrm_asset")"
+          mobile_flypy_stage_id="$(jq -r .id <<< "$mobile_flypy_asset")"
           if [[ "$zrm_stage_id" == null || "$flypy_stage_id" == null \
+            || "$mobile_zrm_stage_id" == null || "$mobile_flypy_stage_id" == null \
             || "$(jq -r .state <<< "$zrm_asset")" != uploaded \
             || "$(jq -r '.digest // empty' <<< "$zrm_asset")" != "sha256:$zrm_sha" \
             || "$(jq -r .size <<< "$zrm_asset")" != "$zrm_size" \
             || "$(jq -r .state <<< "$flypy_asset")" != uploaded \
             || "$(jq -r '.digest // empty' <<< "$flypy_asset")" != "sha256:$flypy_sha" \
-            || "$(jq -r .size <<< "$flypy_asset")" != "$flypy_size" ]]; then
+            || "$(jq -r .size <<< "$flypy_asset")" != "$flypy_size" \
+            || "$(jq -r .state <<< "$mobile_zrm_asset")" != uploaded \
+            || "$(jq -r '.digest // empty' <<< "$mobile_zrm_asset")" != "sha256:$mobile_zrm_sha" \
+            || "$(jq -r .size <<< "$mobile_zrm_asset")" != "$mobile_zrm_size" \
+            || "$(jq -r .state <<< "$mobile_flypy_asset")" != uploaded \
+            || "$(jq -r '.digest // empty' <<< "$mobile_flypy_asset")" != "sha256:$mobile_flypy_sha" \
+            || "$(jq -r .size <<< "$mobile_flypy_asset")" != "$mobile_flypy_size" ]]; then
             echo 'uploaded staging assets failed digest, size, or state validation' >&2
             exit 1
           fi
@@ -413,20 +645,31 @@ jobs:
             [[ -z "$asset_id" ]] || gh api --method DELETE \
               "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"
           done < <(jq -r --arg zrm "$zrm_stage_id" --arg flypy "$flypy_stage_id" \
-            '.[] | select((.id | tostring) != $zrm and (.id | tostring) != $flypy) | .id' <<< "$assets")
+            --arg mzrm "$mobile_zrm_stage_id" --arg mflypy "$mobile_flypy_stage_id" \
+            '.[] | select((.id | tostring) != $zrm and (.id | tostring) != $flypy and (.id | tostring) != $mzrm and (.id | tostring) != $mflypy) | .id' <<< "$assets")
           gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$zrm_stage_id" \
             -f name="$zrm_archive" >/dev/null
           gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$flypy_stage_id" \
             -f name="$flypy_archive" >/dev/null
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$mobile_zrm_stage_id" \
+            -f name="$mobile_zrm_archive" >/dev/null
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$mobile_flypy_stage_id" \
+            -f name="$mobile_flypy_archive" >/dev/null
 
           assets="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" | jq 'add')"
-          if [[ "$(jq 'length' <<< "$assets")" != 2 \
+          if [[ "$(jq 'length' <<< "$assets")" != 4 \
             || "$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].state // empty' <<< "$assets")" != uploaded \
             || "$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].size // empty' <<< "$assets")" != "$zrm_size" \
             || "$(jq -r '[.[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$zrm_sha" \
             || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].state // empty' <<< "$assets")" != uploaded \
             || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].size // empty' <<< "$assets")" != "$flypy_size" \
-            || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$flypy_sha" ]]; then
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$flypy_sha" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].state // empty' <<< "$assets")" != uploaded \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].size // empty' <<< "$assets")" != "$mobile_zrm_size" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$mobile_zrm_sha" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].state // empty' <<< "$assets")" != uploaded \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].size // empty' <<< "$assets")" != "$mobile_flypy_size" \
+            || "$(jq -r '[.[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].digest // empty' <<< "$assets")" != "sha256:$mobile_flypy_sha" ]]; then
             echo 'final nightly assets failed validation' >&2
             exit 1
           fi
@@ -462,13 +705,19 @@ jobs:
           if [[ "$(jq -r .draft <<< "$release")" != false \
             || "$(jq -r .prerelease <<< "$release")" != true \
             || "$tag_sha" != "$MERGE_SHA" \
-            || "$(jq -r '.assets | length' <<< "$release")" != 2 \
+            || "$(jq -r '.assets | length' <<< "$release")" != 4 \
             || "$(jq -r '[.assets[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].state // empty' <<< "$release")" != uploaded \
             || "$(jq -r '[.assets[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].size // empty' <<< "$release")" != "$zrm_size" \
             || "$(jq -r '[.assets[] | select(.name == "rime-mohu-zrm-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$zrm_sha" \
             || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].state // empty' <<< "$release")" != uploaded \
             || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].size // empty' <<< "$release")" != "$flypy_size" \
-            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$flypy_sha" ]]; then
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-flypy-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$flypy_sha" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].state // empty' <<< "$release")" != uploaded \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].size // empty' <<< "$release")" != "$mobile_zrm_size" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-mobile-zrm-lite-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$mobile_zrm_sha" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].state // empty' <<< "$release")" != uploaded \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].size // empty' <<< "$release")" != "$mobile_flypy_size" \
+            || "$(jq -r '[.assets[] | select(.name == "rime-mohu-mobile-flypy-lite-nightly.zip")][0].digest // empty' <<< "$release")" != "sha256:$mobile_flypy_sha" ]]; then
             echo 'published nightly release failed final validation' >&2
             exit 1
           fi

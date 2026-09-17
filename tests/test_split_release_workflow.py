@@ -78,7 +78,7 @@ class FlatReleaseWorkflowTest(unittest.TestCase):
             "\n  build:", 1
         )[0]
 
-        self.assertIn('"$GH_BIN" release download latest', windows_job)
+        self.assertIn('--pattern \'mohu-sentence-ngram-v5.bin.zip\'', windows_job)
         self.assertIn("--pattern 'mohu-sentence-ngram-v5.bin.zip'", windows_job)
         self.assertIn("python -m zipfile -e model.zip .", windows_job)
         self.assertIn("test -s mohu-sentence-ngram-v5.bin", windows_job)

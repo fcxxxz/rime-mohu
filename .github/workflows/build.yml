@@ -67,18 +67,19 @@ jobs:
           ORT_ZIP=onnxruntime-win-x64-1.20.1.zip
           ORT_SHA256=78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
           # msys2 shell 不继承 Windows PATH，gh 用绝对路径兜底。
-          # gh 运行需要 PATH 里有 git：注入 runner 预装的 Git for Windows。
-          export PATH="/c/Program Files/Git/cmd:$PATH"
-          GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
-          if "$GH_BIN" release download ort-deps --pattern "${ORT_ZIP}" --output ort.zip --clobber \
-            && [ -s ort.zip ]; then
-            echo "fetched from repo mirror via gh api"
-          elif curl --fail --location --retry 3 --retry-all-errors --output ort.zip \
+          # 官方直连优先；2026-09-17 05:00-06:30 UTC 期间 runner 到
+          # objects CDN 的直链出现过临时 404（本地同时刻正常），因此保留
+          # 本仓 ort-deps 镜像作后备，两者均以官方 sha256 校验。
+          if curl --fail --location --retry 3 --retry-all-errors --output ort.zip \
             "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/${ORT_ZIP}"; then
-            echo "fetched from upstream mirror"
+            echo "fetched from upstream"
           else
-            echo "all onnxruntime sources failed" >&2
-            exit 1
+            # gh 运行需要 PATH 里有 git：注入 runner 预装的 Git for Windows。
+            export PATH="/c/Program Files/Git/cmd:$PATH"
+            GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
+            "$GH_BIN" release download ort-deps --pattern "${ORT_ZIP}" --output ort.zip --clobber
+            test -s ort.zip
+            echo "fetched from repo mirror via gh api"
           fi
           echo "${ORT_SHA256}  ort.zip" | sha256sum -c -
           python -m zipfile -e ort.zip .

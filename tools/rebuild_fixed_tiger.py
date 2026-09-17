@@ -45,6 +45,7 @@ COMPATIBILITY_PROFILE_PATH = ROOT / "tools/data/tiger_race_profile.tsv"
 FIXED_CHAR_CODE_OVERRIDES_PATH = (
     ROOT / "tools/data/mohu_fixed_char_code_overrides.tsv"
 )
+CODE_CLAIMS_PATH = ROOT / "tools/data/mohu_fixed_code_claims.tsv"
 SECONDARY_SHORT_CODES_PATH = ROOT / "tools/data/mohu_fixed_secondary_codes.tsv"
 EXPECTED_SIMPLIFIED_READING_CATEGORIES = {
     "all-modern": 8129,
@@ -221,6 +222,8 @@ def render_parent_with_characters(
     )
 
 
+# 仅用于 zrm 母表（mohu_zrm_fixed/_legacy）的单字飞键行重生成；
+# 小鹤母表不经此处——其飞键区块由 build_flypy_assets 转换时只保留 xq→xo。
 FLY_SUBSTITUTIONS = {"wz": "wk", "xq": "xo", "qx": "qo"}
 
 
@@ -470,6 +473,30 @@ def validate_unique_short_codes(rows: list[TableEntry]) -> None:
             raise ValueError(f"duplicate short code {code}: {' '.join(characters)}")
 
 
+def validate_code_claims(
+    claims: list[SourceEntry],
+    full_codes: dict[str, list[str]],
+    allowed: set[str],
+    fixed_codes: dict[str, str],
+) -> None:
+    for entry in claims:
+        if entry.text not in allowed:
+            raise ValueError(f"code claim is outside Tiger order: {entry.text}")
+        if entry.code in fixed_codes.values():
+            raise ValueError(
+                "code claim collides with a fixed character override: "
+                f"{entry.text} {entry.code}"
+            )
+        if not any(
+            full_code.startswith(entry.code)
+            for full_code in full_codes.get(entry.text, [])
+        ):
+            raise ValueError(
+                f"code claim does not prefix a current full code: "
+                f"{entry.text} {entry.code}"
+            )
+
+
 def allocate_reading_ordered_codes(
     entries: list[SourceEntry],
     tiger_order: list[str],
@@ -608,6 +635,45 @@ def load_secondary_short_codes(path: Path) -> list[tuple[str, str]]:
     return records
 
 
+def load_code_claims(path: Path) -> list[tuple[str, str]]:
+    """Load hand-curated cross-table three-code claims (natural-code).
+
+    A claim hands its character the fixed three-code slot in both the
+    unique and the multi (legacy) tables, displacing the reading-weight
+    cascade winner to its four-code full code. Codes are natural-code
+    (zrm); Flypy tables are converted downstream.
+    """
+    records: list[tuple[str, str]] = []
+    owners: dict[str, str] = {}
+    for line_number, raw_line in enumerate(
+        path.read_text(encoding="utf-8-sig").splitlines(),
+        1,
+    ):
+        if not raw_line.strip() or raw_line.startswith("#"):
+            continue
+        fields = [field.strip() for field in raw_line.split("\t")]
+        if (
+            len(fields) != 2
+            or len(fields[0]) != 1
+            or re.fullmatch(r"[a-z]{3}", fields[1]) is None
+        ):
+            raise ValueError(
+                f"invalid code claim at {path}:{line_number}: "
+                "expected a character and a three-letter lowercase code"
+            )
+        text, code = fields
+        if any(text == claimed_text for claimed_text, _ in records):
+            raise ValueError(f"duplicate claim character at {path}:{line_number}: {text}")
+        if code in owners:
+            raise ValueError(
+                f"duplicate claim code at {path}:{line_number}: {code} "
+                f"({owners[code]} and {text})"
+            )
+        owners[code] = text
+        records.append((text, code))
+    return records
+
+
 def allocate_legacy_codes(
     cascade_entries: list[SourceEntry] | list[TableEntry],
     tiger_order: list[str],
@@ -617,6 +683,7 @@ def allocate_legacy_codes(
     *,
     fixed_codes: dict[str, str] | None = None,
     secondary_codes: list[tuple[str, str]] | None = None,
+    claim_codes: dict[str, str] | None = None,
 ) -> list[TableEntry]:
     """Keep legacy collisions, then cascade three- and four-key rows.
 
@@ -626,9 +693,12 @@ def allocate_legacy_codes(
     Secondary short codes are registered as coverage first (suppressing the
     character's prefix-matched fallback/cascade codes) and emitted last so
     they render after existing rows sharing the same code.
+    ``claim_codes`` maps a three-letter prefix to its claimed character; the
+    claimant wins the prefix ahead of the reading-weight order.
     """
     fixed_codes = fixed_codes or {}
     blocked_codes = {code[:2] for code in fixed_codes.values()}
+    claim_codes = claim_codes or {}
     allowed = set(tiger_order)
     tiger_rank = {char: rank for rank, char in enumerate(tiger_order)}
     current_full_codes: dict[str, list[str]] = defaultdict(list)
@@ -745,8 +815,13 @@ def allocate_legacy_codes(
         for prefix in sorted(candidates):
             if prefix in fixed_codes.values():
                 continue
+            claimant = claim_codes.get(prefix)
+            ordered = sorted(
+                candidates[prefix],
+                key=lambda item: (item[3] != claimant, item),
+            )
             checked: set[str] = set()
-            for negative_weight, _, source_order, text in sorted(candidates[prefix]):
+            for negative_weight, _, source_order, text in ordered:
                 if text in checked:
                     continue
                 checked.add(text)
@@ -1069,6 +1144,7 @@ def build_full_character_allocation(
     double_pinyin: DoublePinyin = "zrm",
     fixed_codes: dict[str, str] | None = None,
     secondary_codes: list[tuple[str, str]] | None = None,
+    code_claims: list[tuple[str, str]] | None = None,
     compatibility_auxiliary_codes: dict[str, list[str]] | None = None,
     compatibility_order: list[str] | None = None,
     compatibility_targets_out: list[str] | None = None,
@@ -1128,10 +1204,22 @@ def build_full_character_allocation(
         else []
     )
     legacy_entries = convert_legacy_entries(legacy_entries, double_pinyin)
+    # 简码指定：唯一表并入历史行通道预约，多重表按前缀归属递补。
+    claim_rows = convert_legacy_entries(
+        [
+            SourceEntry(text, code, 0.0, "original")
+            for text, code in code_claims or []
+        ],
+        double_pinyin,
+    )
+    full_code_index: dict[str, list[str]] = defaultdict(list)
+    for entry in source_entries:
+        full_code_index[entry.text].append(entry.code.strip().lower())
+    validate_code_claims(claim_rows, full_code_index, tiger_chars, fixed_codes or {})
     short_rows = allocate_reading_ordered_codes(
         shortcut_source_entries,
         tiger_order,
-        legacy_entries,
+        [*legacy_entries, *claim_rows],
         fixed_codes=fixed_codes,
     )
     multi_rows = allocate_legacy_codes(
@@ -1142,6 +1230,7 @@ def build_full_character_allocation(
         fallback_rows=short_rows,
         fixed_codes=fixed_codes,
         secondary_codes=secondary_codes,
+        claim_codes={entry.code: entry.text for entry in claim_rows},
     )
     if (compatibility_auxiliary_codes is None) != (compatibility_order is None):
         raise ValueError(
@@ -1352,6 +1441,7 @@ def main() -> int:
         FIXED_CHAR_CODE_OVERRIDES_PATH,
         "flypy",
     )
+    code_claims = load_code_claims(CODE_CLAIMS_PATH)
     compatibility_targets: list[str] = []
     zrm_secondary_codes = load_secondary_short_codes(SECONDARY_SHORT_CODES_PATH)
     flypy_secondary_codes = [
@@ -1368,6 +1458,7 @@ def main() -> int:
             double_pinyin="zrm",
             fixed_codes=zrm_fixed_codes,
             secondary_codes=zrm_secondary_codes,
+            code_claims=code_claims,
             compatibility_auxiliary_codes=compatibility_auxiliary_codes,
             compatibility_order=compatibility_order,
             compatibility_targets_out=compatibility_targets,
@@ -1383,6 +1474,7 @@ def main() -> int:
             double_pinyin="flypy",
             fixed_codes=flypy_fixed_codes,
             secondary_codes=flypy_secondary_codes,
+            code_claims=code_claims,
         )
     )
     if flypy_order != tiger_order or flypy_weights != weights:

@@ -776,7 +776,8 @@ class FixedDictionaryTest(unittest.TestCase):
             },
             {1500: (0, 0), 3500: (6, 6), 6000: (27, 27), 8105: (45, 47)},
         )
-        self.assertEqual(after[8105].codeable_count, 3285)
+        # af85534 回退 s 一简重分配后锶 sizq 回到四码，可编码数 +1。
+        self.assertEqual(after[8105].codeable_count, 3286)
         # 2026-09-10 辅码兼容位只用大码后，小码救援位（≤3 根字的 14 位、
         # ≤2 根字的 13 位）全部退出，未救援组从 8 组升到 45 组。
         self.assertEqual(
@@ -915,6 +916,48 @@ class FixedDictionaryTest(unittest.TestCase):
         # 婢 的正常辅码是 bu：弼 的 13 位兼容打法排在其后。
         self.assertEqual(chars_weights[("婢", "bi;bu")], "24051")
 
+    def test_code_claims_swap_three_code_across_generated_tables(self):
+        claims = rebuild_fixed_tiger.load_code_claims(
+            rebuild_fixed_tiger.CODE_CLAIMS_PATH
+        )
+        self.assertIn(("喂", "wzd"), claims)
+
+        unique_pairs = {
+            (fields[0], fields[1])
+            for fields in self.dictionary_rows(
+                self.root / "mohu_zrm_tiger_fixed.dict.yaml"
+            )
+        }
+        legacy_pairs = {
+            (fields[0], fields[1])
+            for fields in self.dictionary_rows(
+                self.root / "mohu_zrm_tiger_fixed_legacy.dict.yaml"
+            )
+        }
+        flypy_unique_pairs = {
+            (fields[0], fields[1])
+            for fields in self.dictionary_rows(
+                self.root / "mohu_flypy_tiger_fixed.dict.yaml"
+            )
+        }
+        flypy_legacy_pairs = {
+            (fields[0], fields[1])
+            for fields in self.dictionary_rows(
+                self.root / "mohu_flypy_tiger_fixed_legacy.dict.yaml"
+            )
+        }
+        # 指定字固顶三码，被顶替的字落到四码完整码。
+        self.assertIn(("喂", "wzd"), unique_pairs)
+        self.assertIn(("喂", "wzd"), legacy_pairs)
+        self.assertIn(("味", "wzda"), legacy_pairs)
+        self.assertNotIn(("味", "wzd"), unique_pairs)
+        self.assertNotIn(("味", "wzd"), legacy_pairs)
+        # 小鹤按双拼自动换算（ww + d）。
+        self.assertIn(("喂", "wwd"), flypy_unique_pairs)
+        self.assertIn(("喂", "wwd"), flypy_legacy_pairs)
+        self.assertIn(("味", "wwda"), flypy_legacy_pairs)
+        self.assertNotIn(("味", "wwd"), flypy_legacy_pairs)
+
     def test_flypy_character_build_keeps_compatibility_plays(self):
         from tools import build_flypy_assets
 
@@ -1004,6 +1047,44 @@ class FixedDictionaryTest(unittest.TestCase):
             [(row.text, row.code) for row in rows],
             [("甲", "ab"), ("乙", "abc"), ("丙", "abcd")],
         )
+
+    def test_code_claim_swaps_three_code_across_unique_and_multi(self):
+        # 甲=味（权重高、完整码 abcd）、乙=喂（权重低、完整码 abce）、
+        # 丙/丁占住 ab/a 两个更短前缀（对应真实数据里的「为 wz」「我 w」）。
+        entries = [
+            rebuild_fixed_tiger.SourceEntry("丁", "axz", 5),
+            rebuild_fixed_tiger.SourceEntry("丙", "abz", 10),
+            rebuild_fixed_tiger.SourceEntry("甲", "abcd", 40),
+            rebuild_fixed_tiger.SourceEntry("乙", "abce", 30),
+        ]
+        legacy = [
+            rebuild_fixed_tiger.SourceEntry("丁", "a", 0, "original"),
+            rebuild_fixed_tiger.SourceEntry("丙", "ab", 0, "original"),
+        ]
+        claim = [rebuild_fixed_tiger.SourceEntry("乙", "abc", 0, "original")]
+        order = ["丁", "丙", "甲", "乙"]
+
+        unique_rows = rebuild_fixed_tiger.allocate_reading_ordered_codes(
+            entries, order, [*legacy, *claim]
+        )
+        unique_pairs = {(row.text, row.code) for row in unique_rows}
+        self.assertIn(("乙", "abc"), unique_pairs)
+        self.assertFalse(
+            any(row.text == "甲" and row.code == "abc" for row in unique_rows)
+        )
+
+        multi_rows = rebuild_fixed_tiger.allocate_legacy_codes(
+            entries,
+            order,
+            legacy,
+            fallback_rows=unique_rows,
+            claim_codes={"abc": "乙"},
+        )
+        multi_pairs = {(row.text, row.code) for row in multi_rows}
+        self.assertIn(("乙", "abc"), multi_pairs)
+        # 被顶替的高频字落到四码完整码，不再占据三码。
+        self.assertIn(("甲", "abcd"), multi_pairs)
+        self.assertNotIn(("甲", "abc"), multi_pairs)
 
     def test_multi_allocation_preserves_one_and_two_key_collisions(self):
         entries = [
@@ -1178,6 +1259,31 @@ class FixedDictionaryTest(unittest.TestCase):
                     path.write_text(content, encoding="utf-8")
                     with self.assertRaisesRegex(ValueError, message):
                         loader(path, "zrm")
+
+    def test_loads_and_validates_code_claims(self):
+        loader = getattr(rebuild_fixed_tiger, "load_code_claims", None)
+        self.assertIsNotNone(loader)
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "claims.tsv"
+            path.write_text(
+                "# character\tcode\n甲\tabc\n乙\tdef\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual([("甲", "abc"), ("乙", "def")], loader(path))
+
+            invalid_cases = (
+                ("甲\tab\n", "three-letter lowercase"),
+                ("甲\tabcd\n", "three-letter lowercase"),
+                ("甲乙\tabc\n", "three-letter lowercase"),
+                ("甲\tabc\n甲\tdef\n", "duplicate claim character"),
+                ("甲\tabc\n乙\tabc\n", "duplicate claim code"),
+            )
+            for content, message in invalid_cases:
+                with self.subTest(content=content):
+                    path.write_text(content, encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, message):
+                        loader(path)
 
     def test_manual_three_key_override_reserves_its_two_key_prefix(self):
         self.assertIn(
@@ -1636,9 +1742,12 @@ class FixedDictionaryTest(unittest.TestCase):
         # 计数不变）。
         # 2026-09-11 班登记次级简码 bjn（借斑的码位，bjp 保留），
         # zrm/flypy 3 键各 +1：4567 -> 4568。
+        # 2026-09-14 af85534 回退 s 一简重分配（三 s、散 sj、斯 siz、
+        # 锶 sizq）：3 键 -1、zrm 4 键 +2、flypy 4 键 +1。
+        # 2026-09-17 简码指定（喂 wzd 换味 wzd/wzdq）码长计数不变。
         expected_lengths = {
-            "zrm": {1: 42, 2: 434, 3: 4568, 4: 3887},
-            "flypy": {1: 42, 2: 434, 3: 4568, 4: 3433},
+            "zrm": {1: 42, 2: 434, 3: 4567, 4: 3889},
+            "flypy": {1: 42, 2: 434, 3: 4567, 4: 3434},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1665,14 +1774,14 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertIn(("件", "jm"), pairs)
                 self.assertIn(("减", "jmw"), pairs)
                 self.assertNotIn(("减", "jm"), pairs)
-                # mohu 侧把 s 的首选让给置顶词「什么」：「三」移到 sj、
-                # 「散」移到 sjl；空出的 s 由「斯」按最短空闲前缀规则
-                # 顶上，「锶」落到 siz。
-                self.assertIn(("三", "sj"), pairs)
-                self.assertIn(("散", "sjl"), pairs)
-                self.assertNotIn(("三", "s"), pairs)
-                self.assertNotIn(("散", "sj"), pairs)
-                self.assertIn(("斯", "s"), pairs)
+                # af85534 回退 s 一简重分配后的现状：三 s、散 sj、
+                # 斯 siz、锶 sizq（置顶词不再占用 s，什么仍可用 sm）。
+                self.assertIn(("三", "s"), pairs)
+                self.assertIn(("散", "sj"), pairs)
+                self.assertNotIn(("三", "sj"), pairs)
+                self.assertNotIn(("散", "sjl"), pairs)
+                self.assertIn(("斯", "siz"), pairs)
+                self.assertNotIn(("斯", "s"), pairs)
 
                 owners = defaultdict(set)
                 for char, code in pairs:

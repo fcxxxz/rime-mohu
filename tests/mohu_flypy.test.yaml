@@ -139,6 +139,17 @@ deploy:
         assert: cand[1].text == '件'
       - send: yjhx
         assert: cand[1].text == '演化' and text_index(cand, '恹') > 1
+      # 飞键：小鹤 xq→xo(xiu)、qx→qo(qia)；qie(qp)/wei(ww) 不设飞键
+      - send: hdxo
+        assert: has_text(cand, '害羞')
+      - send: wwxo
+        assert: has_text(cand, '维修')
+      - send: xoxi
+        assert: has_text(cand, '休息')
+      - send: qohc
+        assert: has_text(cand, '恰好')
+      - send: qo
+        assert: has_text(cand, '恰')
 
   four_code_word_first:
     patch:

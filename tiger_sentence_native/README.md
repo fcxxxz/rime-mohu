@@ -94,6 +94,11 @@ log P(读音|字) 先验并入路径分，压制字符级模型「只认字频�
 `uv run tools/fix_tiger_lexicon_fly.py` 在生成后的码表上补齐；
 `tests/test_tiger_lexicon_fly.py` 会校验覆盖完整（裸码与飞键码
 条目数、rank 一一对应），缺失时按提示重跑补齐脚本即可。
+注意本源码表是自然码形态；`tools/build_mohu_lexicons.py` 生成
+`data/` 下两个方案产物时按方案取飞键闭包：自然码三条如上，小鹤为
+`xq→xo`（xiu）与 `qx→qo`（注意 qx 在小鹤是 qia 而非自然码的 qie；
+qie=qp、wei=ww 不设飞键），源表中的自然码飞键变体行在小鹤侧还原为
+基础码再转换，不透传死码。
 
 ## 配置（schema 的 tiger/ 节）
 

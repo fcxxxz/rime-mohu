@@ -62,6 +62,16 @@ fly:
     __append:
       - derive/wz;/wk;/
 
+# 小鶴飛鍵（xq=xiu、qx=qia，均爲小鶴自身音系下的別手組合；
+# 注意 qx 在小鶴是 qia 而非自然碼的 qie——qie(qp)、wei(ww) 不設飛鍵。）
+fly_flypy:
+  qx_qo:
+    __append:
+      - derive/qx;/qo;/
+  xq_xo:
+    __append:
+      - derive/xq;/xo;/
+
 # 小寫可匹配大寫編碼（用於英語混輸）
 casefold:
   __append:

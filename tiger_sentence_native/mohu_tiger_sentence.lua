@@ -322,7 +322,16 @@ local function ensure_engine(env)
   if lib:sub(-4):lower() == ".dll" then
     preload_windows_runtime(paths, lib)
   end
-  local load_ok, loader, err = pcall(package.loadlib, lib, "luaopen_tigerengine")
+  -- iOS 嵌入构建：引擎静态链接进宿主（Hamster 定制版），由 librime-lua
+  -- 的 pmain 注册进 package.preload。iOS 禁止 loadlib 加载 app 容器外的
+  -- 代码，preload 是唯一入口；桌面路径无 preload 时行为不变。
+  local preload = package and package.preload and package.preload["tigerengine"]
+  local load_ok, loader, err
+  if type(preload) == "function" then
+    load_ok, loader, err = true, preload, nil
+  else
+    load_ok, loader, err = pcall(package.loadlib, lib, "luaopen_tigerengine")
+  end
   if not load_ok then
     report_engine_error("loadlib failed: " .. tostring(loader))
     return nil

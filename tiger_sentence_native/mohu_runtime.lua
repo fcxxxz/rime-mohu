@@ -29,11 +29,52 @@ function M.resolve_model(options)
   return join(model_dir, FIXED_MODEL_NAME)
 end
 
+-- Android（Trime 定制版）：引擎 .so 随 APK 分发在 nativeLibraryDir，
+-- 应用可写目录（含 mohu/runtime/）自 Android 10 起禁止 dlopen。从
+-- /proc/self/maps 找宿主 so 所在目录推导；失败时回退用户目录（供
+-- debuggable 构建或未来前端放开限制时使用）。
+-- 探测：ANDROID_ROOT 环境变量在 Android 上恒为 /system（bionic 注入），
+-- 桌面平台为 nil；Android 13 起 untrusted_app 读不了 /system/build.prop，
+-- 文件探测只作次级手段。
+local function is_android()
+  if os.getenv and os.getenv("ANDROID_ROOT") then
+    return true
+  end
+  local probe = io.open("/system/build.prop", "r")
+  if probe then
+    probe:close()
+    return true
+  end
+  return false
+end
+
+local function android_engine_path(runtime)
+  local maps = io.open("/proc/self/maps", "r")
+  if maps then
+    local dir
+    for line in maps:lines() do
+      local lib = line:match("(/data/app/[^%s]-/lib/arm64/[^%s]-)%.so")
+      if lib then
+        dir = lib:match("^(.*)/")
+        break
+      end
+    end
+    maps:close()
+    if dir then
+      return dir .. "/libtigerengine.so"
+    end
+  end
+  return join(runtime, "libtigerengine.so")
+end
+
 -- Cross-platform packages contain both engines.  Select by host platform;
 -- probing by file existence would make macOS try the bundled Windows DLL.
 local function engine_library(runtime)
   if package.config:sub(1, 1) == "\\" then
     return join(runtime, "libtigerengine.dll")
+  end
+  if is_android() then
+    return android_engine_path(runtime)
   end
   return join(runtime, "libtigerengine.dylib")
 end

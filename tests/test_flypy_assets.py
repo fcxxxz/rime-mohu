@@ -131,5 +131,98 @@ class FlypyAssetConversionTest(unittest.TestCase):
         self.assertIn("𦰡\tnal\t\t0", converted[generated:words])
 
 
+    def test_fixed_dictionary_keeps_only_xq_xo_fly_block(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "mohu_zrm_fixed.dict.yaml").write_text(
+                "---\n"
+                "name: mohu_zrm_fixed\n"
+                'version: "1"\n'
+                "sort: original\n"
+                "...\n"
+                "\n"
+                "#----------词库----------#\n"
+                "罢休\tbaxq\n"
+                "# 开始飞键 xq -> xo\n"
+                "罢休\tbaxo\n"
+                "秀\txo\n"
+                "# 结束飞键\n"
+                "# 开始飞键 qx -> qo\n"
+                "并且\tbkqo\n"
+                "# 结束飞键\n"
+                "# 开始飞键 wz -> wk\n"
+                "本位\tbfwk\n"
+                "# 结束飞键\n"
+                "哪里\tnali\n",
+                encoding="utf-8",
+            )
+            (root / "mohu_flypy_tiger_fixed.dict.yaml").write_text(
+                "# Generated\n"
+                "---\n"
+                "name: mohu_flypy_tiger_fixed\n"
+                'version: "1"\n'
+                "sort: by_weight\n"
+                "columns:\n"
+                "  - text\n"
+                "  - code\n"
+                "  - weight\n"
+                "...\n"
+                "\n"
+                "𦰡\tnal\t0\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(build_flypy_assets, "ROOT", root):
+                converted = build_flypy_assets.convert_fixed_dictionary(
+                    "mohu_zrm_fixed.dict.yaml", "mohu_flypy_fixed"
+                )
+
+        # 仅保留 xq→xo 区块；目标码 xo 透传，主体音节正常转换
+        self.assertEqual(1, converted.count("开始飞键"))
+        self.assertIn("# 开始飞键 xq -> xo", converted)
+        self.assertIn("罢休\tbaxo", converted)
+        self.assertIn("秀\txo", converted)
+        self.assertIn("罢休\tbaxq", converted)
+        # qx→qo 区块内容是小鹤的 qie(qp) 词语（小鹤规则里 qie 不设飞键，
+        # qx→qo 属 qia），整块丢弃无镜像残留；wz→wk（wei）同理
+        self.assertNotIn("qx -> qo", converted)
+        self.assertNotIn("wz -> wk", converted)
+        self.assertNotIn("并且", converted)
+        self.assertNotIn("本位", converted)
+        self.assertNotIn("bkqo", converted)
+        self.assertNotIn("bfwk", converted)
+        self.assertNotIn("bfwc", converted)
+
+    def test_flypy_schemas_wire_fly_flypy_before_generate_code(self) -> None:
+        for name in (
+            "mohu_flypy.schema.yaml",
+            "mohu_flypy_core.schema.yaml",
+            "mohu_flypy_sentence_core.schema.yaml",
+        ):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            self.assertIn("mohu:/algebra/fly_flypy?", text, name)
+            self.assertNotIn("mohu:/algebra/fly_zrm?", text, name)
+            # 飞键派生必须先于 generate_code 的 erase/^(.+);(.+)$/ 生效
+            self.assertLess(
+                text.index("mohu:/algebra/fly_flypy?"),
+                text.index("mohu:/algebra/generate_code"),
+                name,
+            )
+        for name in (
+            "mohu_zrm.schema.yaml",
+            "mohu_zrm_core.schema.yaml",
+            "mohu_zrm_sentence_core.schema.yaml",
+        ):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            self.assertIn("mohu:/algebra/fly_zrm?", text, name)
+            self.assertNotIn("mohu:/algebra/fly_flypy?", text, name)
+
+    def test_user_sentence_top_slot_is_scheme_neutral(self) -> None:
+        text = (ROOT / "mohu.yaml").read_text(encoding="utf-8")
+        user_slot = text.split("user_sentence_top:", 1)[1].split(
+            "user_sentence_bottom:", 1
+        )[0]
+        self.assertNotIn("mohu_defs:/fly", user_slot)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -172,10 +172,28 @@ local function launcher_command(platform)
   return "sh " .. shell_quote(path) .. " >/dev/null 2>&1 &"
 end
 
+local function is_android()
+  -- 手机端（Trime/Hamster）不随包分发 Rime皮肤编辑器/；Android 上显式
+  -- 跳过，避免把注定失败的命令交给 os.execute。iOS 无法与 mac 区分，
+  -- 由下方 execute 缺失保护与缺失的启动器路径兜底。
+  local probe = io.open("/system/build.prop", "r")
+  if probe then
+    probe:close()
+    return true
+  end
+  return false
+end
+
 local function launch()
+  if is_android() then
+    return false
+  end
   local platform = detected_platform()
   local command = launcher_command(platform)
   local execute = execute_fn or os.execute
+  if not execute then
+    return false
+  end
   return execute(command)
 end
 

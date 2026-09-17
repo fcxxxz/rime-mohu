@@ -102,6 +102,7 @@ speller:
     __patch:
       - mohu:/algebra/user_force_top?
       - mohu:/algebra/user_sentence_top?
+      - mohu:/algebra/fly_zrm?
       - mohu:/algebra/generate_code
       - mohu:/algebra/user_sentence_bottom?
       - mohu:/algebra/user_force_bottom?

@@ -115,8 +115,10 @@ wz\t为\t2\t3
         readings = {"为": {"wz"}, "维": {"wz"}, "修": {"xq"}}
         fly = self.tool.build_rows(rows, scheme="flypy", character_syllables=readings)
         self.assertIn(("ww", "为", "1", "3", ""), fly)
-        self.assertIn(("wk", "为", "1", "3", ""), fly)
+        # 小鹤不设 wei 飞键：zrm 飞键行还原为 wz 基础码后转换，不再保留 wk 形态
+        self.assertNotIn(("wk", "为", "1", "3", ""), fly)
         self.assertIn(("wwxq", "维修", "1", "20", ""), fly)
+        self.assertIn(("wwxo", "维修", "1", "20", ""), fly)  # 小鹤闭包仅 xq→xo
         self.assertNotIn(("wzxq", "维修", "1", "20", ""), fly)
 
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
@@ -134,13 +136,58 @@ wz\t为\t2\t3
         readings = self.tool.load_character_syllables(chars_dict)
         self.assertEqual(loaded["zrm"], self.tool.build_rows(source, "zrm", readings))
         self.assertEqual(loaded["flypy"], self.tool.build_rows(source, "flypy", readings))
-        for rows in loaded.values():
+        for scheme, rows in loaded.items():
+            fly = self.tool.FLY_ZRM if scheme == "zrm" else self.tool.FLY_FLYPY
             row_set = set(rows)
             for code, text, rank, freq, reading in rows:
                 if len(code) < 2 * len(text) or not code[: 2 * len(text)].isalpha():
                     continue
-                for variant in self.tool._fly_closure(code, text):
+                for variant in self.tool._fly_closure(code, text, fly):
                     self.assertIn((variant, text, rank, freq, reading), row_set)
+
+    def test_flypy_fly_set_matches_flypy_syllables(self):
+        """小鹤飞键：xq→xo(xiu)、qx→qo(qia)；qie(qp)/wei(ww) 不设飞键。"""
+        paths = {
+            scheme: ROOT / "tiger_sentence_native" / "data" / scheme
+            / f"mohu_{scheme}.lexicon.txt"
+            for scheme in ("zrm", "flypy")
+        }
+        loaded = {scheme: self.tool.load_rows(path) for scheme, path in paths.items()}
+        flypy_codes = {r[0] for r in loaded["flypy"]}
+        by_text = {}
+        for code, text, *_ in loaded["flypy"]:
+            by_text.setdefault(text, set()).add(code)
+        # xq→xo 闭包存在且含整词链式组合
+        self.assertIn("xo", by_text["修"])
+        self.assertIn("hdxo", by_text["害羞"])
+        self.assertIn("hdxq", by_text["害羞"])
+        self.assertIn("wwxo", by_text["维修"])
+        # qx→qo（qia 的飞键）：qo 只挂 qia 字，qie 用 qp 无飞键
+        self.assertIn("qo", by_text["恰"])
+        self.assertIn("qo", by_text["掐"])
+        self.assertIn("qohc", by_text["恰好"])
+        self.assertIn("qp", by_text["且"])
+        self.assertNotIn("qo", by_text["且"])
+        self.assertNotIn("aiqo", by_text["哀切"])
+        self.assertIn("aiqp", by_text["哀切"])
+        # zrm 飞键死行还原为小鹤基础码，不透传 wk/wz 形态
+        self.assertNotIn("wk", by_text["为"])
+        self.assertIn("ww", by_text["为"])
+        self.assertNotIn("anwk", by_text["安慰"])
+        self.assertIn("anww", by_text["安慰"])
+        self.assertIn("aw", by_text["安慰"])  # 真首字母简码保留
+        self.assertIn("qx", by_text["取消"])  # 首字母简码保留
+        self.assertIn("qx", by_text["恰"])    # qia 本码仍在
+        # wc 卧槽等 w,c 首字母简码不受飞键清理影响
+        self.assertIn("wc", by_text["卧槽"])
+        # 自然码侧三条飞键闭包原样保留
+        zrm_by_text = {}
+        for code, text, *_ in loaded["zrm"]:
+            zrm_by_text.setdefault(text, set()).add(code)
+        self.assertIn("wk", zrm_by_text["为"])
+        self.assertIn("qo", zrm_by_text["且"])
+        self.assertIn("xo", zrm_by_text["修"])
+        self.assertIn("aiqo", zrm_by_text["哀切"])
 
     def test_filters_non_pinyin_auxiliary_codes(self):
         with tempfile.TemporaryDirectory() as tmp:

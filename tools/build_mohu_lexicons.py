@@ -3,8 +3,13 @@
 
 The checked-in Tiger lexicon is the source of sentence/text coverage.  This
 tool keeps that coverage identical for both schemes, converting only the
-syllable portion that can be identified from the character dictionary.  The
-three Mohu fly-key substitutions are then closed transitively.
+syllable portion that can be identified from the character dictionary.  Fly-key
+substitutions are scheme-specific and closed transitively per output: the
+natural-code set (wz->wk, xq->xo, qx->qo) and the Flypy set (xq->xo for xiu
+and qx->qo for qia -- note qx is qia in Flypy, not the Natural Code qie).
+Source rows that are themselves natural-code fly variants are reverted to
+their base codes when building the Flypy output instead of leaking through as
+dead codes (the qie rows under qo thus re-emerge as plain qp codes).
 """
 
 from __future__ import annotations
@@ -22,8 +27,12 @@ import flypyify
 import zrmify
 
 ROOT = TOOLS.parent
-FLY = {"wz": "wk", "xq": "xo", "qx": "qo"}
-FLY_INVERSE = {target: source for source, target in FLY.items()}
+FLY_ZRM = {"wz": "wk", "xq": "xo", "qx": "qo"}
+# 小鹤飞键集合：xq=xiu、qx=qia（同为小鹤音系下的别手组合）。
+# 注意 qx 在小鹤是 qia 而非自然码的 qie；qie(qp)、wei(ww) 不设飞键。
+FLY_FLYPY = {"xq": "xo", "qx": "qo"}
+# 仅用于源表（自然码形态）读音简频回溯，源行恒为自然码。
+FLY_INVERSE = {target: source for source, target in FLY_ZRM.items()}
 ROW_KEY = tuple[str, str, str, str, str]
 
 
@@ -168,8 +177,8 @@ def _convert_code(code: str, text: str,
     return converted + code[2 * len(text):]
 
 
-def _fly_closure(code: str, text: str) -> set[str]:
-    """Return all code variants from the three substitutions."""
+def _fly_closure(code: str, text: str, fly: dict[str, str]) -> set[str]:
+    """Return all code variants from the given fly-key substitutions."""
     if not text or len(code) < 2 * len(text):
         return set()
     base = code[: 2 * len(text)]
@@ -180,7 +189,7 @@ def _fly_closure(code: str, text: str) -> set[str]:
     pending = [syllables]
     while pending:
         current = pending.pop()
-        for source, target in FLY.items():
+        for source, target in fly.items():
             if source not in current:
                 continue
             variant = tuple(target if item == source else item for item in current)
@@ -191,15 +200,53 @@ def _fly_closure(code: str, text: str) -> set[str]:
     return {"".join(item) + suffix for item in seen if item != syllables}
 
 
+def _reverted_zrm_fly_code(code: str, text: str,
+                           character_syllables: dict[str, set[str]] | None,
+                           source_index: set[tuple[str, str]]) -> str | None:
+    """若源码表某行是自然码飞键变体行，返回还原后的基础码；否则返回 None。
+
+    全音节行：把音节前缀中的飞键目标音节还原为源码后能通过音节校验
+    （如 anwk→anwz、wkxo→wzxq，含 qofqo/ 带 o、/ 派生后缀的家族行）。
+    简码行（编码长度不足无音节结构）：码首两字母是飞键目标，且还原后
+    在源表存在同词行（如 qo 取消→qx 取消）；wc 完成、aw 安慰等真首字母
+    简码不满足条件，原样透传。
+    """
+    if not text or _canonical_syllables(code, text, character_syllables) is not None:
+        return None
+    if len(code) < 2 * len(text):
+        head = code[:2]
+        if head in FLY_INVERSE:
+            reverted = FLY_INVERSE[head] + code[2:]
+            return reverted if (reverted, text) in source_index else None
+        return None
+    base = code[: 2 * len(text)]
+    if not re.fullmatch(r"[a-z]+", base):
+        return None
+    reverted = "".join(
+        FLY_INVERSE.get(base[i:i + 2], base[i:i + 2])
+        for i in range(0, len(base), 2)
+    ) + code[2 * len(text):]
+    return reverted if _canonical_syllables(
+        reverted, text, character_syllables) is not None else None
+
+
 def build_rows(rows: list[ROW_KEY], scheme: str,
                character_syllables: dict[str, set[str]] | None = None) -> list[ROW_KEY]:
     if scheme not in {"zrm", "flypy"}:
         raise ValueError(f"unsupported scheme: {scheme}")
+    fly = FLY_ZRM if scheme == "zrm" else FLY_FLYPY
+    source_index = {(code, text) for code, text, _, _, _ in rows}
     output: set[ROW_KEY] = set()
-    for code, text, rank, freq, reading in rows:
+    for source_code, text, rank, freq, reading in rows:
+        code = source_code
+        if scheme == "flypy":
+            reverted = _reverted_zrm_fly_code(
+                source_code, text, character_syllables, source_index)
+            if reverted is not None:
+                code = reverted
         base_code = code if scheme == "zrm" else _convert_code(code, text, character_syllables)
         output.add((base_code, text, rank, freq, reading))
-        for variant in _fly_closure(base_code, text):
+        for variant in _fly_closure(base_code, text, fly):
             output.add((variant, text, rank, freq, reading))
     return sorted(output, key=lambda row: (row[0], int(row[2]), row[1], int(row[3]), row[4]))
 

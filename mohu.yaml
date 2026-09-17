@@ -4,6 +4,7 @@ algebra:
   # 优先级顺序为：
   #    user_force_top
   # -> user_sentence_top
+  # -> fly_zrm / fly_flypy（方案飞键，按方案装配其一）
   # -> generate_code
   # -> user_sentence_bottom
   # -> user_force_bottom
@@ -19,17 +20,30 @@ algebra:
   # 用户自定义演算式，这部分演算式会注入到类整句方案的开头和结尾，不包括字词模式
   # 用例：实现模糊音、将自然码双拼映射为别的双拼方案等
   user_sentence_top:
+    # __append:
+    #   __patch:
+    #     # 模糊音设置
+    #     - mohu_defs:/bufen/z_zh
+    #     - mohu_defs:/bufen/c_ch
+    #     - mohu_defs:/bufen/s_sh
+    #     - mohu_defs:/bufen/en_eng
+  user_sentence_bottom:
+
+  # 方案飞键：音节层别名，为别手组合提供替代打法，随双拼方案装配。
+  # 自然码三条（qx=qie、xq=xiu、wz=wei，目标码 xo/qo/wk 均为空闲伪音节）。
+  fly_zrm:
     __append:
       __patch:
-        - mohu_defs:/fly/qx_qo  # ZRM-SPECIFIC
-        - mohu_defs:/fly/xq_xo  # ZRM-SPECIFIC
-        - mohu_defs:/fly/wz_wk  # ZRM-SPECIFIC
-        # 模糊音设置
-        # - mohu_defs:/bufen/z_zh
-        # - mohu_defs:/bufen/c_ch
-        # - mohu_defs:/bufen/s_sh
-        # - mohu_defs:/bufen/en_eng
-  user_sentence_bottom:
+        - mohu_defs:/fly/qx_qo
+        - mohu_defs:/fly/xq_xo
+        - mohu_defs:/fly/wz_wk
+  # 小鹤两条（xq=xiu、qx=qia，均为小鹤音系下的别手组合）；
+  # 注意 qx 在小鹤是 qia 而非自然码的 qie，qie(qp)/wei(ww) 不设飞键。
+  fly_flypy:
+    __append:
+      __patch:
+        - mohu_defs:/fly_flypy/qx_qo
+        - mohu_defs:/fly_flypy/xq_xo
 
   # 用于生成用户输入码的核心演算式
   generate_code:

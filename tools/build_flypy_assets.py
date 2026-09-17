@@ -35,6 +35,14 @@ GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
 WORD_TABLE_MARKER = "#----------词库----------#\n"
 PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
 
+# 小鹤飞键集合：xq→xo（xiu）、qx→qo（qia）。固定码表的飞键区块由自然码
+# 母表镜像而来：xq→xo 区块语义两方案一致，保留；qx→qo 区块内容是小鹤的
+# qie(qp) 词语（小鹤规则里 qie 不设飞键），整块丢弃；qia 在自然码侧（qw）
+# 从无飞键行可镜像，如需固顶飞键行须另行生成。
+FLY_BLOCKS_KEEP = {("xq", "xo")}
+FLY_BLOCK_START = re.compile(r"^#\s*开始飞键\s*(\S+)\s*->\s*(\S+)")
+FLY_BLOCK_END = re.compile(r"^#\s*结束飞键")
+
 SCHEMAS = {
     "mohu_zrm_core.schema.yaml": ("mohu_zrm_core", "魔虎·自然码"),
     # 字词方案已从选单移除，但仍作为 compile-only 方案保留，
@@ -188,7 +196,24 @@ def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
     text = text.replace("mohu_zrm_tiger_fixed", "mohu_flypy_tiger_fixed")
     lines = []
     in_body = False
+    fly_drop = False
     for raw in text.splitlines(keepends=True):
+        fly_start = FLY_BLOCK_START.match(raw)
+        if fly_start is not None:
+            fly_drop = (
+                fly_start.group(1),
+                fly_start.group(2),
+            ) not in FLY_BLOCKS_KEEP
+            if not fly_drop:
+                lines.append(raw)
+            continue
+        if FLY_BLOCK_END.match(raw):
+            if not fly_drop:
+                lines.append(raw)
+            fly_drop = False
+            continue
+        if fly_drop:
+            continue
         if raw.strip() == "...":
             in_body = True
             lines.append(raw)
@@ -355,12 +380,10 @@ def flypy_schema(zrm_text: str) -> str:
     text = text.replace("自然码", "小鹤")
     text = text.replace("自然碼", "小鹤")
     text = re.sub(r"(?m)^    - 小鹤发明人：.*$", "    - 小鹤双拼方案：鹤氏", text)
-    text = "".join(
-        line
-        for line in text.splitlines(keepends=True)
-        if "mohu:/algebra/user_sentence_top?" not in line
-    )
-    return text
+    # 小鹤飞键集合与自然码不同（仅 xq→xo），装配槽随之替换。
+    # user_sentence_top 是空的用户自定义槽，小鹤方案保留引用，
+    # 用户可照常在其中配置模糊音等自定义演算式。
+    return text.replace("mohu:/algebra/fly_zrm?", "mohu:/algebra/fly_flypy?")
 
 
 def write(path: Path, content: str) -> None:

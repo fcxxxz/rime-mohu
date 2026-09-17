@@ -66,7 +66,9 @@ jobs:
           # 源 curl 仅作后备，统一以官方 sha256 校验。
           ORT_ZIP=onnxruntime-win-x64-1.20.1.zip
           ORT_SHA256=78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
-          if gh release download ort-deps --pattern "${ORT_ZIP}" --output ort.zip --clobber \
+          # msys2 shell 不继承 Windows PATH，gh 用绝对路径兜底。
+          GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
+          if "$GH_BIN" release download ort-deps --pattern "${ORT_ZIP}" --output ort.zip --clobber \
             && [ -s ort.zip ]; then
             echo "fetched from repo mirror via gh api"
           elif curl --fail --location --retry 3 --retry-all-errors --output ort.zip \
@@ -95,7 +97,8 @@ jobs:
           cp "$ORT_HOME/lib/onnxruntime.dll" ./
           # 模型资产自 603f65a 起以 zip 形式发布（裸 bin 直链已不存在）；
           # 与 ort 同理走 gh api 下载，解压后取裸 bin。
-          gh release download latest \
+          GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
+          "$GH_BIN" release download latest \
             --pattern 'mohu-sentence-ngram-v5.bin.zip' \
             --output model.zip --clobber
           python -m zipfile -e model.zip .
@@ -263,7 +266,12 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download latest --repo "$GITHUB_REPOSITORY" --pattern mohu-sentence-ngram-v5.bin --dir model-asset
+        run: |
+          # 模型资产自 603f65a 起以 zip 形式发布，取 zip 解压出裸 bin。
+          gh release download latest --repo "$GITHUB_REPOSITORY" \
+            --pattern mohu-sentence-ngram-v5.bin.zip --dir model-asset
+          unzip -o model-asset/mohu-sentence-ngram-v5.bin.zip -d model-asset -x "__MACOSX/*"
+          test -s model-asset/mohu-sentence-ngram-v5.bin
 
       - name: Upload V5 model asset
         if: github.event_name != 'pull_request'

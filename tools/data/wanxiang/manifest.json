@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "a2edbec6ae6ea022855d55e7fcc8ff6adaf44471",
+  "revision": "64c9c8c10524c5a354a62ef92fa4ad3187b16bc5",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,12 +9,12 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "a6b773ef2e693b777471639096eca5f619739c6b446f34713355970758dc7e99"
+      "sha256": "df5d17e17aa54ba5d65a7d4824517c50f4491d71fbec1f35d006a97b8a238a74"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
       "raw_path": "raw/lianxiang.dict.yaml",
-      "sha256": "0dd0043e527c437ef02a8c954b30d7ddb9647321ea7c20e94f3b3cd9f1a98bd4"
+      "sha256": "2352fb3520c578dfe52fbd6fb042807e11639b1c8f7d5534fc96cfff27987ba9"
     },
     "cuoyin": {
       "path": "dicts/cuoyin.dict.yaml",
@@ -29,7 +29,7 @@
     "shici": {
       "path": "dicts/shici.dict.yaml",
       "raw_path": "raw/shici.dict.yaml",
-      "sha256": "f2af08549a7dc2c8505e76e48d4b4056c50e479137bb399a9125aa38e435eec4"
+      "sha256": "bface54c260f8503927e062578d83f56f0ede66f5aca0bb4cc2d5c8318f813e4"
     },
     "diming": {
       "path": "dicts/diming.dict.yaml",
@@ -54,7 +54,7 @@
     "mingren": {
       "path": "dicts/mingren.dict.yaml",
       "raw_path": "raw/mingren.dict.yaml",
-      "sha256": "a249a14e2bb8e9d2dbbd8ef07ce4a36bd74a2e51bd52a043641724ba85a88f2f"
+      "sha256": "4266827f317fa33ddec322e39ad8274f7417bc4781333bfe7849784a5602d656"
     },
     "yiren": {
       "path": "dicts/yiren.dict.yaml",
@@ -69,7 +69,7 @@
     "renming": {
       "path": "dicts/renming.dict.yaml",
       "raw_path": "raw/renming.dict.yaml",
-      "sha256": "48c650fffacbfe00b6001635ef6335f2ac1d37355de8d69c11df41b8eb098f34"
+      "sha256": "70ea2f4ebc45a5e035e71039d0d140dbedc21dd36741393258a652cab117c693"
     },
     "taifeng": {
       "path": "dicts/taifeng.dict.yaml",

@@ -194,7 +194,9 @@ wz\t为\t2\t3
         self.assertNotIn("anwk", by_text["安慰"])
         self.assertIn("anww", by_text["安慰"])
         self.assertIn("aw", by_text["安慰"])  # 真首字母简码保留
-        self.assertIn("qx", by_text["取消"])  # 首字母简码保留
+        # 飞键对码位不放简词（2026-09-20 决定）：qx/qo 双侧的 取消 都移除
+        self.assertNotIn("qx", by_text["取消"])
+        self.assertNotIn("qo", by_text["取消"])
         self.assertIn("qx", by_text["恰"])    # qia 本码仍在
         # wc 卧槽等 w,c 首字母简码不受飞键清理影响
         self.assertIn("wc", by_text["卧槽"])

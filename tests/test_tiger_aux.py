@@ -1782,6 +1782,13 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertIn(("放", "fhl"), pairs)
                 self.assertNotIn(("放", "fh"), pairs)
                 self.assertNotIn(("方", "fhl"), pairs)
+                # 2026-09-20 像/象换位：一简 x 的次选从像换成象，
+                # 像落到自身三码 xdj/xlj；象原 xdw 行被一简覆盖消失。
+                expected_xiang = {"zrm": "xdj", "flypy": "xlj"}
+                self.assertIn(("象", "x"), pairs)
+                self.assertNotIn(("像", "x"), pairs)
+                self.assertIn(("像", expected_xiang[scheme]), pairs)
+                self.assertNotIn(("象", "xdw"), pairs)
                 # 文 登记次级简码 wf：问 wf 之后的次选位；文 让出的
                 # wfv 由紊按递补规则接手。
                 self.assertIn(("问", "wf"), pairs)

@@ -415,7 +415,7 @@ columns:
 位	ww	0
 微	ww	0
 小	x	0
-像	x	0
+象	x	0
 笑	xn	0
 想	xl	0
 详	xl	0
@@ -4455,6 +4455,7 @@ columns:
 享	xlg	152710
 鲞	xlh	160
 乡	xli	228067
+像	xlj	1.88348e+06
 湘	xlk	58673
 巷	xll	50218
 骧	xln	2552
@@ -4462,7 +4463,6 @@ columns:
 箱	xlr	115256
 向	xlt	2.57096e+06
 项	xlu	230765
-象	xlw	1.0411e+06
 香	xlx	563262
 镶	xlz	20858
 闲	xma	202953

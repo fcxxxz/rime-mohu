@@ -29,6 +29,10 @@ import_tables:
 哪里	nal
 
 #----------生成单字----------#
+喂	wwd		0
+右	yzn		0
+己	jiv		0
+政	vgh		0
 啊	a		0
 阿	aa		0
 昂	ah		0
@@ -555,7 +559,6 @@ import_tables:
 又	yz		0
 呀	ya		0
 亚	yaf		0
-有	yzn		0
 也	ye		0
 样	yh		0
 羊	yhg		0
@@ -609,8 +612,6 @@ import_tables:
 最	zv		0
 醉	zvy		0
 贼	zw		0
-喂	wwd		0
-己	jiv		0
 𤭢	cwz		0
 欻	ixc		0
 挼	rxu		0
@@ -1336,7 +1337,6 @@ import_tables:
 择	vdu		100
 握	wo		340839
 姓	xkb		248203
-郑	vgh		193156
 弱	rob		305241
 绿	lui		1
 叹	tjd		421997
@@ -50572,8 +50572,6 @@ JK制服	jkvf
 技术作物	juzw
 技术咨询	juzx
 节省资源	juzy
-简直	jv
-矩阵	jv
 九折臂	jvb
 焦灼不安	jvba
 静止不变	jvbb
@@ -76166,7 +76164,6 @@ P站	pvj
 前误则	qwz
 卡子	qxzi
 区闻陬见	qwzj
-取消	qx
 窃案	qpan
 曲学阿世	qxau
 清心安神	qxau
@@ -110171,7 +110168,6 @@ U盘	uyj
 殉葬	xyzh
 寻踪	xyzs
 寻租	xyzu
-下去	xq
 兴趣爱好	xqah
 兴趣盎然	xqar
 兴趣爱好者	xqav
@@ -120179,7 +120175,6 @@ U盘	uyj
 月子	ytzi
 一拖再拖	ytzt
 月租	ytzu
-于是	yu
 预案	yuan
 原生安卓	yuav
 渔霸	yuba
@@ -120921,9 +120916,6 @@ U盘	uyj
 以示尊重	yuzv
 优势在我	yuzw
 以身作则	yuzz
-一直	yv
-一种	yv
-一致	yv
 拥政爱民	yvam
 阳宅爱众	yvav
 眼中拔钉	yvbd
@@ -126983,7 +126975,6 @@ U盘	uyj
 纤秀	xmxo
 小修	xnxo
 修	xo		0
-下去	xo
 朽败	xobd
 休班	xobj
 锈斑	xobj
@@ -127117,7 +127108,6 @@ U盘	uyj
 路卡	luqo
 面洽	mmqo
 恰	qo		0
-取消	qo
 洽到	qodc
 恰当	qodh
 掐掉	qodn
@@ -127863,7 +127853,6 @@ U盘	uyj
 粤语	ytyv
 越狱	ytyv
 与	yv		0
-于是	yv
 瘀	yva		1494
 预案	yvan
 育	yvb		214206

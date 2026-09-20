@@ -9,6 +9,10 @@ columns:
   - weight
 ...
 
+喂	wzd	0
+右	ybn	0
+己	jiv	0
+政	vgh	0
 啊	a	0
 阿	aa	0
 昂	ah	0
@@ -535,7 +539,6 @@ columns:
 又	yb	0
 呀	ya	0
 亚	yaf	0
-有	ybn	0
 也	ye	0
 样	yh	0
 羊	yhg	0
@@ -589,8 +592,6 @@ columns:
 最	zv	0
 醉	zvy	0
 贼	zz	0
-喂	wzd	0
-己	jiv	0
 𤭢	czz	0
 欻	iwc	0
 挼	rwu	0
@@ -1316,7 +1317,6 @@ columns:
 择	vlu	100
 握	wo	340839
 姓	xyb	248203
-郑	vgh	193156
 弱	rob	305241
 绿	lui	1
 叹	tjd	421997

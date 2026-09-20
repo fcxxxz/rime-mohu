@@ -4130,7 +4130,7 @@ import_tables:
 镇	vfz		264517
 症	vga		58943
 政	vgf		633183
-郑	vgh		193156
+政	vgh		633183
 蒸	vgl		33714
 狰	vgm		19977
 睁	vgq		186982
@@ -7494,6 +7494,7 @@ import_tables:
 丁	vgad		4
 烝	vgak		473
 怔	vghf		100634
+郑	vghm		193156
 诤	vgsx		785
 拯	vgua		19388
 鲭	vgwa		0
@@ -54495,8 +54496,6 @@ JK制服	jkvf
 技术作物	juzw
 技术咨询	juzx
 节省资源	juzy
-简直	jv
-矩阵	jv
 九折臂	jvb
 焦灼不安	jvba
 静止不变	jvbb
@@ -80089,7 +80088,6 @@ P站	pvj
 前误则	qwz
 卡子	qwzi
 区闻陬见	qwzj
-取消	qx
 窃案	qxan
 曲学阿世	qxau
 清心安神	qxau
@@ -114094,7 +114092,6 @@ U盘	upj
 殉葬	xpzh
 寻踪	xpzs
 寻租	xpzu
-下去	xq
 兴趣爱好	xqah
 兴趣盎然	xqar
 兴趣爱好者	xqav
@@ -124102,7 +124099,6 @@ U盘	upj
 月子	ytzi
 一拖再拖	ytzt
 月租	ytzu
-于是	yu
 预案	yuan
 原生安卓	yuav
 渔霸	yuba
@@ -124844,9 +124840,6 @@ U盘	upj
 以示尊重	yuzv
 优势在我	yuzw
 以身作则	yuzz
-一直	yv
-一种	yv
-一致	yv
 拥政爱民	yvam
 阳宅爱众	yvav
 眼中拔钉	yvbd
@@ -131511,7 +131504,6 @@ U盘	upj
 纤秀	xmxo
 新秀	xnxo
 修	xo		0
-下去	xo
 袖标	xobc
 休班	xobj
 锈斑	xobj
@@ -131677,7 +131669,6 @@ U盘	upj
 妻妾	qiqo
 亲切	qnqo
 且	qo		0
-取消	qo
 挈	qoa		768
 窃案	qoan
 郄	qob		546
@@ -132542,7 +132533,6 @@ U盘	upj
 越狱	ytyv
 与	yv		0
 御	yv		0
-于是	yv
 瘀	yva		1494
 阈	yvad		185
 阈	yvaf		185

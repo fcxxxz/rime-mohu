@@ -1061,11 +1061,10 @@ class FixedDictionaryTest(unittest.TestCase):
             rebuild_fixed_tiger.SourceEntry("丁", "a", 0, "original"),
             rebuild_fixed_tiger.SourceEntry("丙", "ab", 0, "original"),
         ]
-        claim = [rebuild_fixed_tiger.SourceEntry("乙", "abc", 0, "original")]
         order = ["丁", "丙", "甲", "乙"]
 
         unique_rows = rebuild_fixed_tiger.allocate_reading_ordered_codes(
-            entries, order, [*legacy, *claim]
+            entries, order, legacy, claim_codes={"abc": "乙"}
         )
         unique_pairs = {(row.text, row.code) for row in unique_rows}
         self.assertIn(("乙", "abc"), unique_pairs)
@@ -1085,6 +1084,44 @@ class FixedDictionaryTest(unittest.TestCase):
         # 被顶替的高频字落到四码完整码，不再占据三码。
         self.assertIn(("甲", "abcd"), multi_pairs)
         self.assertNotIn(("甲", "abc"), multi_pairs)
+
+    def test_non_prefix_claim_pins_code_and_displaces_owner(self):
+        # 非前缀指定：戊=政（完整码 abfs，f 辅码）、甲=郑（完整码 abhm，
+        # h 辅码）、丁/丙占住 a/ab 更短前缀。指定戊占 abh（甲的前缀、
+        # 非戊自身前缀），甲被压制后落到自身四码，戊保留自然简码。
+        entries = [
+            rebuild_fixed_tiger.SourceEntry("丁", "axz", 5),
+            rebuild_fixed_tiger.SourceEntry("丙", "abz", 10),
+            rebuild_fixed_tiger.SourceEntry("甲", "abhm", 40),
+            rebuild_fixed_tiger.SourceEntry("戊", "abfs", 60),
+        ]
+        legacy = [
+            rebuild_fixed_tiger.SourceEntry("丁", "a", 0, "original"),
+            rebuild_fixed_tiger.SourceEntry("丙", "ab", 0, "original"),
+        ]
+        order = ["丁", "丙", "甲", "戊"]
+
+        unique_rows = rebuild_fixed_tiger.allocate_reading_ordered_codes(
+            entries, order, legacy, claim_codes={"abh": "戊"}
+        )
+        unique_pairs = {(row.text, row.code) for row in unique_rows}
+        self.assertIn(("戊", "abh"), unique_pairs)
+        # 戊 保留自然三码（abf）。
+        self.assertIn(("戊", "abf"), unique_pairs)
+
+        multi_rows = rebuild_fixed_tiger.allocate_legacy_codes(
+            entries,
+            order,
+            legacy,
+            fallback_rows=unique_rows,
+            claim_codes={"abh": "戊"},
+        )
+        multi_pairs = {(row.text, row.code) for row in multi_rows}
+        self.assertIn(("戊", "abh"), multi_pairs)
+        self.assertIn(("戊", "abf"), multi_pairs)
+        # 被顶替的甲不再占三码，落到自身四码完整码。
+        self.assertNotIn(("甲", "abh"), multi_pairs)
+        self.assertIn(("甲", "abhm"), multi_pairs)
 
     def test_multi_allocation_preserves_one_and_two_key_collisions(self):
         entries = [
@@ -1748,9 +1785,11 @@ class FixedDictionaryTest(unittest.TestCase):
         # 2026-09-20 方/放换位（方 fh、放 fhl）计数不变；文 次级简码
         # wf 进二码（2 键 +1），紊 接手文让出的 wfv 后其 wfvf 四码行
         # 被覆盖（zrm 4 键 3889 -> 3888、flypy 3434 -> 3433）。
+        # 2026-09-20 政/郑换位：非前缀指定 政 vgh，郑 vgh -> vghm 四码
+        #（zrm/flypy 4 键各 +1，三码净变化 0）。
         expected_lengths = {
-            "zrm": {1: 42, 2: 435, 3: 4567, 4: 3888},
-            "flypy": {1: 42, 2: 435, 3: 4567, 4: 3433},
+            "zrm": {1: 42, 2: 435, 3: 4567, 4: 3889},
+            "flypy": {1: 42, 2: 435, 3: 4567, 4: 3434},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1789,6 +1828,13 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertNotIn(("像", "x"), pairs)
                 self.assertIn(("像", expected_xiang[scheme]), pairs)
                 self.assertNotIn(("象", "xdw"), pairs)
+                # 2026-09-20 政/郑换位：非前缀指定 政 vgh（政的辅码是
+                # f 系，vgh 并非其全码前缀）；政保留自然简码 vgf，
+                # 郑被压制后落到自身四码 vghm。
+                self.assertIn(("政", "vgh"), pairs)
+                self.assertIn(("政", "vgf"), pairs)
+                self.assertNotIn(("郑", "vgh"), pairs)
+                self.assertIn(("郑", "vghm"), pairs)
                 # 文 登记次级简码 wf：问 wf 之后的次选位；文 让出的
                 # wfv 由紊按递补规则接手。
                 self.assertIn(("问", "wf"), pairs)
@@ -1891,7 +1937,9 @@ class FixedDictionaryTest(unittest.TestCase):
     def test_generated_short_codes_prefix_current_full_codes(self):
         # 手工登记的次级简码（mohu_fixed_secondary_codes.tsv）是「借同码字码位」
         # 的例外，允许不是该字全码的前缀（如 班 bjn 挂到斑的 bjn 上），
-        # 不参与前缀自洽校验。自动生成的短码仍必须满足全码前缀。
+        # 不参与前缀自洽校验。简码指定（mohu_fixed_code_claims.tsv）的
+        # 非前缀记忆码（如 政 vgh）同为登记例外。自动生成的短码仍必须
+        # 满足全码前缀。
         exempt = set()
         secondary_path = self.root / "tools/data/mohu_fixed_secondary_codes.tsv"
         for line in secondary_path.read_text(encoding="utf-8-sig").splitlines():
@@ -1909,6 +1957,18 @@ class FixedDictionaryTest(unittest.TestCase):
                         + code[2:],
                     )
                 )
+        claims_path = self.root / "tools/data/mohu_fixed_code_claims.tsv"
+        for char, code in rebuild_fixed_tiger.load_code_claims(claims_path):
+            exempt.add((char, code))
+            exempt.add(
+                (
+                    char,
+                    rebuild_fixed_tiger.flypyify1(
+                        rebuild_fixed_tiger.unzrmify1(code[:2])
+                    )
+                    + code[2:],
+                )
+            )
 
         for scheme in ("zrm", "flypy"):
             full_codes = defaultdict(set)

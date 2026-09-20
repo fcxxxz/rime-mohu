@@ -425,14 +425,8 @@ def validate_code_claims(
                 "code claim collides with a fixed character override: "
                 f"{entry.text} {entry.code}"
             )
-        if not any(
-            full_code.startswith(entry.code)
-            for full_code in full_codes.get(entry.text, [])
-        ):
-            raise ValueError(
-                f"code claim does not prefix a current full code: "
-                f"{entry.text} {entry.code}"
-            )
+        # 非前缀指定是刻意的记忆码覆盖（如 政 vgh）：不再要求编码是
+        # 该字当前完整码的前缀，只要求字符与码位都合法且不与其他指定冲突。
 
 
 def allocate_reading_ordered_codes(
@@ -441,8 +435,10 @@ def allocate_reading_ordered_codes(
     legacy_entries: list[SourceEntry] | None = None,
     *,
     fixed_codes: dict[str, str] | None = None,
+    claim_codes: dict[str, str] | None = None,
 ) -> list[TableEntry]:
     fixed_codes = fixed_codes or {}
+    claim_codes = claim_codes or {}
     blocked_codes = {code[:2] for code in fixed_codes.values()}
     occupied: dict[str, str] = {code: "<fixed-word-slot>" for code in blocked_codes}
     encoded: dict[str, list[str]] = defaultdict(list)
@@ -462,6 +458,27 @@ def allocate_reading_ordered_codes(
             raise ValueError(f"fixed character override code is already occupied: {text} {code}")
         occupied[code] = text
         encoded[text].append(code)
+
+    # 简码指定：在存档行循环之前直接预约码位（支持非前缀指定），
+    # 指定优先于存档行的三码顺延扩展（如 友 ybn 先于 有 yb 的扩展）；
+    # 指定字保留其自然分配的其他简码（如 政 的 vgf）。
+    for code, text in claim_codes.items():
+        if code in occupied:
+            raise ValueError(f"code claim is already occupied: {text} {code}")
+        occupied[code] = text
+        encoded[text].append(code)
+        value = (text, code)
+        if value not in seen:
+            seen.add(value)
+            rows.append(
+                TableEntry(
+                    text,
+                    code,
+                    weights[text],
+                    len(rows),
+                    source="original",
+                )
+            )
 
     for entry in legacy_entries or []:
         code = entry.code.strip().lower()
@@ -754,12 +771,31 @@ def allocate_legacy_codes(
             if prefix in fixed_codes.values():
                 continue
             claimant = claim_codes.get(prefix)
-            ordered = sorted(
-                candidates[prefix],
-                key=lambda item: (item[3] != claimant, item),
-            )
+            if (
+                claimant is not None
+                and claimant in allowed
+                and (claimant, prefix) not in seen
+                and not any(
+                    len(shorter) < length and prefix.startswith(shorter)
+                    for shorter in assigned[claimant]
+                )
+            ):
+                # 指定字直接固顶该码并压制其他候选；非前缀指定
+                #（指定字不在本组候选内）同样生效。
+                seen.add((claimant, prefix))
+                assigned[claimant].append(prefix)
+                rows.append(
+                    TableEntry(
+                        claimant,
+                        prefix,
+                        weights[claimant],
+                        len(rows),
+                        source="shape",
+                    )
+                )
+                continue
             checked: set[str] = set()
-            for negative_weight, _, source_order, text in ordered:
+            for negative_weight, _, source_order, text in sorted(candidates[prefix]):
                 if text in checked:
                     continue
                 checked.add(text)
@@ -1142,23 +1178,33 @@ def build_full_character_allocation(
         else []
     )
     legacy_entries = convert_legacy_entries(legacy_entries, double_pinyin)
-    # 简码指定：唯一表并入历史行通道预约，多重表按前缀归属递补。
-    claim_rows = convert_legacy_entries(
-        [
-            SourceEntry(text, code, 0.0, "original")
-            for text, code in code_claims or []
-        ],
-        double_pinyin,
-    )
+    # 简码指定：唯一表直接预约码位，多重表按前缀归属注入；
+    # 允许非前缀指定（刻意的记忆码覆盖，如 政 vgh）。
+    claim_codes = {
+        convert_legacy_entries(
+            [SourceEntry(text, code, 0.0, "original")],
+            double_pinyin,
+        )[0].code: text
+        for text, code in code_claims or []
+    }
     full_code_index: dict[str, list[str]] = defaultdict(list)
     for entry in source_entries:
         full_code_index[entry.text].append(entry.code.strip().lower())
-    validate_code_claims(claim_rows, full_code_index, tiger_chars, fixed_codes or {})
+    validate_code_claims(
+        [
+            SourceEntry(text, code, 0.0, "original")
+            for code, text in claim_codes.items()
+        ],
+        full_code_index,
+        tiger_chars,
+        fixed_codes or {},
+    )
     short_rows = allocate_reading_ordered_codes(
         shortcut_source_entries,
         tiger_order,
-        [*legacy_entries, *claim_rows],
+        legacy_entries,
         fixed_codes=fixed_codes,
+        claim_codes=claim_codes,
     )
     multi_rows = allocate_legacy_codes(
         shortcut_source_entries,
@@ -1168,7 +1214,7 @@ def build_full_character_allocation(
         fallback_rows=short_rows,
         fixed_codes=fixed_codes,
         secondary_codes=secondary_codes,
-        claim_codes={entry.code: entry.text for entry in claim_rows},
+        claim_codes=claim_codes,
     )
     if (compatibility_auxiliary_codes is None) != (compatibility_order is None):
         raise ValueError(

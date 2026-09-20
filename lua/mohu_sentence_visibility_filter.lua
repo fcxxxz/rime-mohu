@@ -97,9 +97,12 @@ end
 -- 挤占「整句观感」。0.4.0 起短 personal 不再豁免：排第一的学习词占
 -- 前排配额位（个人词先验保证），同族兄弟进押后尾部仍可选（xspizi 的
 -- 熊皮子/熊罴子学习闭环不断）。
--- 句形 = 覆盖到输入末尾（与 word_order 的 consumes_current_input 同型
--- 判定）＋ 达到 sentence_min_chars ＋ 字数不超过覆盖段音节容量
--- （字母数/2；超过即声母简码/缩写匹配，如 abjh→阿波罗计划）。
+-- 句形 = 覆盖到活动段末尾 ＋ 达到 sentence_min_chars ＋ 字数不超过
+-- 覆盖段音节容量（字母数/2；超过即声母简码/缩写匹配，如 abjh→阿波
+-- 罗计划）。覆盖终点取 composition 末段 _end 而非 #input：caret 移到
+-- 句中时段被截短，段内句形候选永远覆盖不到整个输入末尾，会被当成
+-- 部分跨度词组候选逃过配额裁剪（句尾减一处的编辑点上 20 条句形流
+-- 刷屏，2026-09-20）；caret 在句尾时末段即全输入，与旧判定等价。
 local function quota_sentence(env, cand)
   local genuine = cand.get_genuine and cand:get_genuine() or cand
   local t = genuine.type
@@ -111,8 +114,19 @@ local function quota_sentence(env, cand)
   local ctx = env.engine and env.engine.context
   local ctx_input = ctx and ctx.input
   if type(ctx_input) ~= "string" or #ctx_input == 0 then return false end
+  local finish_limit = #ctx_input
+  local comp_ok, comp = pcall(function() return ctx.composition end)
+  if comp_ok and comp ~= nil then
+    local seg_ok, seg = pcall(function() return comp:back() end)
+    if seg_ok and seg ~= nil then
+      local seg_end = tonumber(seg._end)
+      if seg_end and seg_end >= 0 and seg_end <= #ctx_input then
+        finish_limit = seg_end
+      end
+    end
+  end
   local finish = tonumber(genuine._end)
-  if finish ~= #ctx_input then return false end
+  if finish ~= finish_limit then return false end
   local start_pos = tonumber(genuine.start) or 0
   local seg = ctx_input:sub(start_pos + 1, finish)
   local letters = select(2, seg:gsub("%a", "%1"))

@@ -875,6 +875,139 @@ void expect_personal_truncation_does_not_force_rebuild() {
   tiger_engine_free(handle);
 }
 
+// 真删词走外科式撤销：静态命中复位、纯个人条目擦除、码长/前缀引用计数
+// 归还之后，引擎必须与「从未见过被删词」的新引擎逐字节一致——这正是旧
+// 「底稿深拷贝 + 重放」路径的语义。丙丁（4 键）与静态码共享前缀，甲乙丁
+// （6 键）引入全新码长；cdabc/efabcd 的续写尾探测依赖 proper_prefixes，
+// 撤销残留即分叉。
+void expect_personal_surgical_undo_matches_fresh_rebuild() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int undone = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(),
+                                         200, 1, error, sizeof(error));
+  const int fresh = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(),
+                                        200, 1, error, sizeof(error));
+  assert(undone >= 0 && fresh >= 0);
+
+  assert(tiger_engine_set_personal_lexicon(
+             undone, "cdef\t丙丁\t8\nabcdef\t甲乙丁\t9\n") == 0);
+  assert(tiger_engine_set_personal_lexicon(undone, "cdef\t丙丁\t8\n") == 0);
+  assert(tiger_engine_set_personal_lexicon(fresh, "cdef\t丙丁\t8\n") == 0);
+
+  char undone_output[8192] = {};
+  char fresh_output[8192] = {};
+  double elapsed = 0;
+  for (const char* raw : {"cdef", "abcdef", "abcd", "ab", "cd", "ef"}) {
+    assert(tiger_decode_full(undone, raw, 0, undone_output,
+                             sizeof(undone_output)) >= 0);
+    assert(tiger_decode_full(fresh, raw, 0, fresh_output,
+                             sizeof(fresh_output)) >= 0);
+    assert(std::strcmp(undone_output, fresh_output) == 0);
+  }
+  for (const char* raw : {"cdabc", "efabcd", "abc"}) {
+    assert(tiger_decode(undone, raw, 1, undone_output,
+                        sizeof(undone_output), &elapsed) >= 0);
+    assert(tiger_decode(fresh, raw, 1, fresh_output,
+                        sizeof(fresh_output), &elapsed) >= 0);
+    assert(std::strcmp(undone_output, fresh_output) == 0);
+  }
+  std::memset(undone_output, 0, sizeof(undone_output));
+  assert(tiger_decode_full(undone, "abcdef", 0, undone_output,
+                           sizeof(undone_output)) >= 1);
+  assert(std::strstr(undone_output, "甲乙丁") == nullptr);
+
+  // 删而复加：同一键重新应用后词边恢复。
+  assert(tiger_engine_set_personal_lexicon(
+             undone, "cdef\t丙丁\t8\nabcdef\t甲乙丁\t9\n") == 0);
+  std::memset(undone_output, 0, sizeof(undone_output));
+  assert(tiger_decode_full(undone, "abcdef", 0, undone_output,
+                           sizeof(undone_output)) >= 1);
+  assert(std::strstr(undone_output, "甲乙丁") != nullptr);
+
+  tiger_engine_free(undone);
+  tiger_engine_free(fresh);
+}
+
+// 静态命中的个人词删词后必须完整复位 personal/personal_boost/
+// personal_full_syllables 三字段（rank/text/chars 从未被覆盖层改写），
+// 与从未污染的静态引擎逐字节一致。static_keys 判错的方向是把静态条目
+// 整条 erase——甲丁必须仍在候选里。
+void expect_personal_static_hit_undo_resets_fields() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  {
+    std::ofstream stream(lexicon_path, std::ios::app);
+    stream << "abcd\t甲丁\t1\t1\n";
+  }
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(),
+                                         200, 1, error, sizeof(error));
+  const int pristine = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(),
+                                           200, 1, error, sizeof(error));
+  assert(handle >= 0 && pristine >= 0);
+
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲丁\t8\n") == 0);
+  assert(tiger_engine_set_personal_lexicon(handle, "") == 0);
+
+  char undone_output[8192] = {};
+  char pristine_output[8192] = {};
+  for (const char* raw : {"abcd", "abcdef", "ab"}) {
+    assert(tiger_decode_full(handle, raw, 0, undone_output,
+                             sizeof(undone_output)) >= 0);
+    assert(tiger_decode_full(pristine, raw, 0, pristine_output,
+                            sizeof(pristine_output)) >= 0);
+    assert(std::strcmp(undone_output, pristine_output) == 0);
+  }
+  // 静态条目必须整条仍在（static_keys 判错的代价是整条 erase）。
+  std::memset(undone_output, 0, sizeof(undone_output));
+  assert(tiger_decode_full(handle, "abcd", 0, undone_output,
+                           sizeof(undone_output)) >= 1);
+  assert(std::strstr(undone_output, "甲丁") != nullptr);
+
+  tiger_engine_free(handle);
+  tiger_engine_free(pristine);
+}
+
+// adjust_personal 即时注入、从未进入负载的词边，在其他键真删词的刷新后
+// 必须保留：外科撤销只动消失的键。旧「整表重建」分支会把非负载个人词
+// 一并抹掉——那只是重建手法的副作用，不是期望语义。注入词随后进入负载
+// 再消失，仍必须被正常撤销。戊乙选不可静态组合的文本，出现/消失即判据。
+void expect_personal_undo_keeps_adjust_injected_edges() {
+  const std::string model_path = write_many_candidate_model();
+  const std::string lexicon_path = write_personal_overlay_lexicon();
+  char error[512] = {};
+  const int handle = tiger_engine_create(model_path.c_str(), lexicon_path.c_str(),
+                                         200, 1, error, sizeof(error));
+  assert(handle >= 0);
+  char output[8192] = {};
+
+  assert(tiger_engine_set_personal_lexicon(
+             handle, "abcd\t甲乙\t8\ncdef\t丙丁\t5\n") == 0);
+  assert(tiger_engine_adjust_personal(handle, "efab", "戊乙", 3) == 1);
+
+  // 丙丁真删词；戊乙从未进入负载，必须存活。
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t8\n") == 0);
+  assert(tiger_decode_full(handle, "efab", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "戊乙") != nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "cdef", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "丙丁") == nullptr);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "abcd", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "甲乙") != nullptr);
+
+  // 注入词进入负载后再消失：构成真删词，必须被撤销。
+  assert(tiger_engine_set_personal_lexicon(
+             handle, "abcd\t甲乙\t8\nefab\t戊乙\t3\n") == 0);
+  assert(tiger_engine_set_personal_lexicon(handle, "abcd\t甲乙\t8\n") == 0);
+  std::memset(output, 0, sizeof(output));
+  assert(tiger_decode_full(handle, "efab", 0, output, sizeof(output)) >= 1);
+  assert(std::strstr(output, "戊乙") == nullptr);
+
+  tiger_engine_free(handle);
+}
+
 // 分片事务协议：与整体路径等价、事务中解码用旧快照、abort 回退、
 // 半行块拒绝、缺 begin 拒绝、事务收缩、no-op 提交。
 void expect_personal_transaction_paths() {
@@ -1036,6 +1169,9 @@ int main() {
   expect_personal_edge_deltas_are_immediate();
   expect_personal_incremental_refresh_paths();
   expect_personal_truncation_does_not_force_rebuild();
+  expect_personal_surgical_undo_matches_fresh_rebuild();
+  expect_personal_static_hit_undo_resets_fields();
+  expect_personal_undo_keeps_adjust_injected_edges();
   expect_personal_transaction_paths();
   expect_stale_engine_handles_are_rejected();
   expect_null_api_rejected();

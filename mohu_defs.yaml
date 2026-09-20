@@ -50,29 +50,36 @@ keyboard19:
     - 'derive/[xc]/X/'
     - 'derive/[bn]/B/'
 
-# 飛鍵
+# 飛鍵（單一事實源 tools/fly_keys.py；新增或刪改飛鍵對必須同步修改）
 fly:
-  qx_qo:
-    __append:
-      - derive/qx;/qo;/
-  xq_xo:
-    __append:
-      - derive/xq;/xo;/
   wz_wk:
     __append:
       - derive/wz;/wk;/
-
-# 小鶴飛鍵（xq=xiu、qx=qia，均爲小鶴自身音系下的別手組合；
-# 注意 qx 在小鶴是 qia 而非自然碼的 qie——qie(qp)、wei(ww) 不設飛鍵。）
-fly_flypy:
-  qx_qo:
-    __append:
-      - derive/qx;/qo;/
   xq_xo:
     __append:
       - derive/xq;/xo;/
-
-# 小寫可匹配大寫編碼（用於英語混輸）
+  qx_qo:
+    __append:
+      - derive/qx;/qo;/
+  ju_jv:
+    __append:
+      - derive/ju;/jv;/
+  yu_yv:
+    __append:
+      - derive/yu;/yv;/
+fly_flypy:
+  xq_xo:
+    __append:
+      - derive/xq;/xo;/
+  qx_qo:
+    __append:
+      - derive/qx;/qo;/
+  ju_jv:
+    __append:
+      - derive/ju;/jv;/
+  yu_yv:
+    __append:
+      - derive/yu;/yv;/
 casefold:
   __append:
     - derive/([A-Z])/\L$1\E/

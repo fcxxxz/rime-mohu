@@ -480,8 +480,6 @@ jobs:
           test -f dist-flypy/mohu_flypy.schema.yaml
           test -f dist-zrm/mohu/config/README.md
           test -f dist-flypy/mohu/config/README.md
-          chmod +x dist-zrm/Rime皮肤编辑器/启动.command
-          chmod +x dist-flypy/Rime皮肤编辑器/启动.command
           (cd dist-zrm && zip -qr ../rime-mohu-zrm-nightly.zip .)
           (cd dist-flypy && zip -qr ../rime-mohu-flypy-nightly.zip .)
           mv rime-mohu-mobile-zrm-lite.zip rime-mohu-mobile-zrm-lite-nightly.zip

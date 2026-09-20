@@ -181,12 +181,15 @@ local pending_memory = {
 }
 assert(subject.is_user_created(pending_memory, fresh_user_phrase, "cc"))
 
-local function deletion_context(selected)
+local function deletion_context(selected, management)
     local segment = {
         _start = 0,
         _end = 2,
         selected_index = 0,
-        menu = {},
+        menu = {
+            prepare = function() return 0 end,
+            get_candidate_at = function() return nil end,
+        },
         get_selected_candidate = function()
             return selected
         end,
@@ -201,7 +204,7 @@ local function deletion_context(selected)
         back = function() return segment end,
     }
     function context:get_option()
-        return false
+        return management == true
     end
     function context:delete_current_selection()
         self.delete_count = self.delete_count + 1
@@ -395,7 +398,7 @@ package.loaded["mohu_tiger_sentence"] = nil
 
 local builtin_hidden_calls = {}
 local builtin_context, builtin_segment = deletion_context(candidate("Built", "user_phrase"))
-local builtin_result = subject.delete_or_restore(builtin_context, builtin_segment, "aa", {
+local builtin_env = {
     override_store = {
         query = function()
             return {}
@@ -408,10 +411,124 @@ local builtin_result = subject.delete_or_restore(builtin_context, builtin_segmen
     override_memory = phrase_memory,
     override_management_option = "candidate_override_management",
     override_max_candidates = 50,
-})
-assert(builtin_result == 1)
+}
+-- 无 userdb 词条的隐藏同样两段式（2026-09-20 统一）：第一按只进入
+-- 待隐藏状态，不写记录。
+local builtin_first = subject.delete_or_restore(builtin_context, builtin_segment, "aa", builtin_env)
+assert(builtin_first == 1)
+assert(builtin_context.delete_count == 0)
+assert(#builtin_hidden_calls == 0, "first press must arm, not hide")
+assert(builtin_env.override_weight_cleared ~= nil
+    and builtin_env.override_weight_cleared.action == "hide")
+-- 两秒内第二按：执行隐藏。
+local builtin_second = subject.delete_or_restore(builtin_context, builtin_segment, "aa", builtin_env)
+assert(builtin_second == 1)
 assert(builtin_context.delete_count == 0)
 assert(#builtin_hidden_calls == 1 and builtin_hidden_calls[1][3] == true)
+assert(builtin_env.override_weight_cleared == nil)
+
+-- pin 库词条（置顶/万灵药/自由加词）不在 userdb：Shift+Delete 直接触发
+-- 去 pin，不再掉进兜底隐藏分支写遮挡记录。
+local pin_memory = {
+    user_lookup = function() return false end,
+    dictiter_lookup = function()
+        return { iter = function() return function() return nil end end }
+    end,
+}
+local pin_store_calls = {}
+local pin_context, pin_segment = deletion_context(candidate("3D打印机", "pinned"))
+local pin_env = {
+    override_store = {
+        query = function()
+            return {}
+        end,
+        set_hidden = function(_, code, text, value)
+            table.insert(pin_store_calls, { "hidden", code, text, value })
+            return true
+        end,
+    },
+    override_pin_store = {
+        remove = function(code, text)
+            table.insert(pin_store_calls, { "remove", code, text })
+            return true
+        end,
+        query_and_unpack_as_list = function(code)
+            return { { code = code, phrase = "3D打印机", source = "freestyle" } }
+        end,
+    },
+    override_memory = pin_memory,
+    override_management_option = "candidate_override_management",
+    override_max_candidates = 50,
+    override_pin_indicator = "📌",
+}
+assert(subject.delete_or_restore(pin_context, pin_segment, "sdd", pin_env) == 1)
+assert(pin_context.refresh_count == 1)
+assert(pin_context.delete_count == 0)
+assert(#pin_store_calls == 1 and pin_store_calls[1][1] == "remove"
+    and pin_store_calls[1][2] == "sdd" and pin_store_calls[1][3] == "3D打印机",
+    "pin candidates must be removed from the pin store, not hidden")
+
+-- 被 ShadowCandidate 之类包装的 pin 真身同样按去 pin 处理。
+local wrapped_pin = {
+    text = "3D打印机",
+    type = "mohu_hidden",
+    comment = "📌 已包装",
+    get_genuine = function()
+        return candidate("3D打印机", "pinned")
+    end,
+}
+assert(subject.is_pin_candidate(wrapped_pin, "📌") == true)
+assert(subject.is_pin_candidate(candidate("普通词", "phrase"), "📌") == false)
+
+-- 管理模式下已隐藏的 pin 词仍优先恢复，不被去 pin 抢先。
+local pin_mgmt_calls = {}
+local pin_mgmt_context, pin_mgmt_segment = deletion_context(candidate("PIN", "pinned"), true)
+assert(subject.delete_or_restore(pin_mgmt_context, pin_mgmt_segment, "sdd", {
+    override_store = {
+        query = function()
+            return { PIN = { hidden = true, rank = -1, tick = 9 } }
+        end,
+        set_hidden = function(_, code, text, value)
+            table.insert(pin_mgmt_calls, { code, text, value })
+            return true
+        end,
+    },
+    override_pin_store = {
+        remove = function(code, text)
+            table.insert(pin_mgmt_calls, { "remove", code, text })
+            return true
+        end,
+    },
+    override_memory = pin_memory,
+    override_management_option = "candidate_override_management",
+    override_max_candidates = 50,
+    override_pin_indicator = "📌",
+}) == 1)
+assert(#pin_mgmt_calls == 1 and pin_mgmt_calls[1][3] == false,
+    "management mode must restore hidden pin words instead of unpinning")
+
+-- pin 库不可用时保持旧行为：隐藏（可经 Ctrl+Shift+M 恢复）——同样
+-- 两段式，第二按才写隐藏记录。
+local pin_fallback_hidden = {}
+local pin_fallback_context, pin_fallback_segment = deletion_context(candidate("3D打印机", "pinned"))
+local pin_fallback_env = {
+    override_store = {
+        query = function()
+            return {}
+        end,
+        set_hidden = function(_, code, text, value)
+            table.insert(pin_fallback_hidden, { code, text, value })
+            return true
+        end,
+    },
+    override_memory = pin_memory,
+    override_management_option = "candidate_override_management",
+    override_max_candidates = 50,
+}
+assert(subject.delete_or_restore(pin_fallback_context, pin_fallback_segment, "sdd", pin_fallback_env) == 1)
+assert(#pin_fallback_hidden == 0, "first press must arm, not hide")
+assert(subject.delete_or_restore(pin_fallback_context, pin_fallback_segment, "sdd", pin_fallback_env) == 1)
+assert(#pin_fallback_hidden == 1 and pin_fallback_hidden[1][3] == true)
 
 local learned_builtin = candidate("Built", "phrase")
 local reset_context, reset_segment = deletion_context(learned_builtin)

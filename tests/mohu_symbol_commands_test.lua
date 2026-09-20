@@ -40,7 +40,6 @@ assert(all_text["/sjfh 时间符号"])
 assert(all_text["/xqfh 象棋符号"])
 assert(all_text["/jqfh 节气符号"])
 assert(all_text["/gl 候选管理"])
-assert(all_text["/skin 皮肤编辑"])
 for _, code in ipairs({ "riqi", "nongli", "shijian", "xingqi", "jieqi" }) do
     assert(not all_text["/" .. code .. " 日期"])
     assert(not all_text["/" .. code .. " 农历"])

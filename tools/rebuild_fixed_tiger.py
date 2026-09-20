@@ -210,7 +210,6 @@ def render_parent_with_characters(
     character_rows = "".join(
         f"{char}\t{code}\t\t{weight}\n" for char, code, weight in rows
     )
-    remaining = refresh_fly_characters(remaining, rows)
     return (
         header
         + "\n"
@@ -222,69 +221,8 @@ def render_parent_with_characters(
     )
 
 
-# 仅用于 zrm 母表（mohu_zrm_fixed/_legacy）的单字飞键行重生成；
-# 小鹤母表不经此处——其飞键区块由 build_flypy_assets 转换时只保留 xq→xo。
-FLY_SUBSTITUTIONS = {"wz": "wk", "xq": "xo", "qx": "qo"}
-
-
-def refresh_fly_characters(
-    body: str,
-    rows: list[tuple[str, str, str]],
-) -> str:
-    """按当前字表重生成飞键区块中的单字行（先剔除旧单字行，再按码序注入）。
-
-    单字飞键随码表分配走：zrm 与 legacy 的单字简码不同，
-    渲染每个变体时都以各自的字表为准，避免继承另一方案的飞键单字。
-    """
-    start_mark = "# 开始飞键 "
-    end_mark = "# 结束飞键"
-    fly_targets = {new: [] for new in FLY_SUBSTITUTIONS.values()}
-    for char, code, weight in rows:
-        if len(code) >= 2 and code[:2] in FLY_SUBSTITUTIONS:
-            new = FLY_SUBSTITUTIONS[code[:2]]
-            flycode = new + code[2:]
-            fly_targets[new].append((flycode, f"{char}\t{flycode}\t\t{weight}\n"))
-
-    # 第一遍：剔除飞键区块内既有的单字行
-    stripped_lines = []
-    block_new = None
-    for raw in body.splitlines(keepends=True):
-        stripped = raw.rstrip("\n")
-        if stripped.startswith(start_mark):
-            block_new = stripped.split("->")[-1].strip()
-        elif stripped.startswith(end_mark):
-            block_new = None
-        elif block_new is not None:
-            fields = stripped.split("\t")
-            if (len(fields) >= 2 and len(fields[0]) == 1
-                    and LOWERCASE_CODE.fullmatch(fields[1])):
-                continue
-        stripped_lines.append(raw)
-
-    # 第二遍：按码序把生成的单字行注入对应块（同码保持字表顺序）
-    result = []
-    pending = None
-    for raw in stripped_lines:
-        stripped = raw.rstrip("\n")
-        if stripped.startswith(start_mark):
-            label_new = stripped.split("->")[-1].strip()
-            pending = list(fly_targets.get(label_new, []))
-            result.append(raw)
-            continue
-        if stripped.startswith(end_mark):
-            result.extend(line for _, line in pending or [])
-            pending = None
-            result.append(raw)
-            continue
-        if pending:
-            fields = stripped.split("\t")
-            code = (fields[1] if len(fields) >= 2
-                    and LOWERCASE_CODE.fullmatch(fields[1] or "") else None)
-            while pending and code is not None and pending[0][0] <= code:
-                result.append(pending.pop(0)[1])
-        result.append(raw)
-    result.extend(line for _, line in pending or [])
-    return "".join(result)
+# 飞键区块由 tools/sync_flykey_quickcodes.py 全量生成（tools/fly_keys.py
+# 为单一事实源），本工具只透传、不再改写其中的行。
 
 
 def load_production_pinyin_table(path: Path) -> dict[str, list[tuple[str, float]]]:

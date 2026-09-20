@@ -131,7 +131,7 @@ class FlypyAssetConversionTest(unittest.TestCase):
         self.assertIn("𦰡\tnal\t\t0", converted[generated:words])
 
 
-    def test_fixed_dictionary_keeps_only_xq_xo_fly_block(self) -> None:
+    def test_fixed_dictionary_regenerates_all_configured_fly_blocks(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "mohu_zrm_fixed.dict.yaml").write_text(
@@ -139,35 +139,26 @@ class FlypyAssetConversionTest(unittest.TestCase):
                 "name: mohu_zrm_fixed\n"
                 'version: "1"\n'
                 "sort: original\n"
-                "...\n"
-                "\n"
+                "...\n\n"
                 "#----------词库----------#\n"
                 "罢休\tbaxq\n"
+                "且\tqw\n"
+                "安居\tanju\n"
+                "暗语\tanyu\n"
                 "# 开始飞键 xq -> xo\n"
-                "罢休\tbaxo\n"
-                "秀\txo\n"
-                "# 结束飞键\n"
-                "# 开始飞键 qx -> qo\n"
-                "并且\tbkqo\n"
+                "旧\t旧\n"
                 "# 结束飞键\n"
                 "# 开始飞键 wz -> wk\n"
-                "本位\tbfwk\n"
-                "# 结束飞键\n"
-                "哪里\tnali\n",
+                "旧\t旧\n"
+                "# 结束飞键\n",
                 encoding="utf-8",
             )
             (root / "mohu_flypy_tiger_fixed.dict.yaml").write_text(
-                "# Generated\n"
-                "---\n"
+                "# Generated\n---\n"
                 "name: mohu_flypy_tiger_fixed\n"
                 'version: "1"\n'
                 "sort: by_weight\n"
-                "columns:\n"
-                "  - text\n"
-                "  - code\n"
-                "  - weight\n"
-                "...\n"
-                "\n"
+                "columns:\n  - text\n  - code\n  - weight\n...\n\n"
                 "𦰡\tnal\t0\n",
                 encoding="utf-8",
             )
@@ -176,21 +167,13 @@ class FlypyAssetConversionTest(unittest.TestCase):
                     "mohu_zrm_fixed.dict.yaml", "mohu_flypy_fixed"
                 )
 
-        # 仅保留 xq→xo 区块；目标码 xo 透传，主体音节正常转换
-        self.assertEqual(1, converted.count("开始飞键"))
-        self.assertIn("# 开始飞键 xq -> xo", converted)
-        self.assertIn("罢休\tbaxo", converted)
-        self.assertIn("秀\txo", converted)
-        self.assertIn("罢休\tbaxq", converted)
-        # qx→qo 区块内容是小鹤的 qie(qp) 词语（小鹤规则里 qie 不设飞键，
-        # qx→qo 属 qia），整块丢弃无镜像残留；wz→wk（wei）同理
-        self.assertNotIn("qx -> qo", converted)
-        self.assertNotIn("wz -> wk", converted)
-        self.assertNotIn("并且", converted)
-        self.assertNotIn("本位", converted)
-        self.assertNotIn("bkqo", converted)
-        self.assertNotIn("bfwk", converted)
-        self.assertNotIn("bfwc", converted)
+        self.assertEqual(4, converted.count("开始飞键"))
+        self.assertNotIn("MOHU_FLY_SECTION", converted)
+        for source, target in build_flypy_assets.fly_keys.FLY_FLYPY.items():
+            self.assertIn(f"# 开始飞键 {source} -> {target}", converted)
+        self.assertIn("且\tqo", converted)
+        self.assertIn("安居\tanjv", converted)
+        self.assertIn("暗语\tanyv", converted)
 
     def test_flypy_schemas_wire_fly_flypy_before_generate_code(self) -> None:
         for name in (

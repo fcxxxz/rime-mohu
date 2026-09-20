@@ -6,7 +6,9 @@ import argparse
 import re
 from pathlib import Path
 
+import fly_keys  # noqa: E402
 import flypyify
+from sync_flykey_quickcodes import build_expected  # noqa: E402
 import zrmify
 from tiger_aux import load_auxiliary_tsv
 
@@ -35,11 +37,11 @@ GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
 WORD_TABLE_MARKER = "#----------词库----------#\n"
 PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
 
-# 小鹤飞键集合：xq→xo（xiu）、qx→qo（qia）。固定码表的飞键区块由自然码
-# 母表镜像而来：xq→xo 区块语义两方案一致，保留；qx→qo 区块内容是小鹤的
-# qie(qp) 词语（小鹤规则里 qie 不设飞键），整块丢弃；qia 在自然码侧（qw）
-# 从无飞键行可镜像，如需固顶飞键行须另行生成。
-FLY_BLOCKS_KEEP = {("xq", "xo")}
+# 小鹤飞键集合（单一事实源 tools/fly_keys.py）：xq→xo（xiu）、qx→qo（qia）、
+# ju→jv、yu→yv。小鹤词典的飞键区块不镜像自然码母表（自然码 qx=qie 的
+# qx→qo 内容对小鹤语义是错的），而是在音节转换完成后从小鹤主区块
+# 全量再生成（tools/sync_flykey_quickcodes.py 的闭包逻辑）。
+FLY_SECTION_SENTINEL = "\x00MOHU_FLY_SECTION\x00"
 FLY_BLOCK_START = re.compile(r"^#\s*开始飞键\s*(\S+)\s*->\s*(\S+)")
 FLY_BLOCK_END = re.compile(r"^#\s*结束飞键")
 
@@ -186,6 +188,18 @@ def convert_dictionary(source_name: str, target_name: str) -> str:
     return "".join(lines)
 
 
+def compose_fly_blocks(expected: dict, fly: dict[str, str]) -> list[str]:
+    """按 fly 集合顺序把生成结果编排成飞键区块行（块间空行分隔）。"""
+    blocks: list[str] = []
+    for index, (source, target) in enumerate(fly.items()):
+        if index:
+            blocks.append("\n")
+        blocks.append(f"# 开始飞键 {source} -> {target}\n")
+        blocks.extend(f"{line}\n" for line in expected.get((source, target), []))
+        blocks.append("# 结束飞键\n")
+    return blocks
+
+
 def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
     text = (ROOT / source_name).read_text(encoding="utf-8")
     if GENERATED_CHARACTER_MARKER in text:
@@ -197,19 +211,15 @@ def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
     lines = []
     in_body = False
     fly_drop = False
+    fly_sentinel = False
     for raw in text.splitlines(keepends=True):
-        fly_start = FLY_BLOCK_START.match(raw)
-        if fly_start is not None:
-            fly_drop = (
-                fly_start.group(1),
-                fly_start.group(2),
-            ) not in FLY_BLOCKS_KEEP
-            if not fly_drop:
-                lines.append(raw)
+        if FLY_BLOCK_START.match(raw):
+            fly_drop = True
+            if not fly_sentinel:
+                lines.append(FLY_SECTION_SENTINEL + "\n")
+                fly_sentinel = True
             continue
         if FLY_BLOCK_END.match(raw):
-            if not fly_drop:
-                lines.append(raw)
             fly_drop = False
             continue
         if fly_drop:
@@ -239,12 +249,32 @@ def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
             raise ValueError(f"invalid generated character row: {raw!r}")
         parent_rows.append(f"{fields[0]}\t{fields[1]}\t\t{fields[2]}\n")
     generated = GENERATED_CHARACTER_MARKER + "".join(parent_rows) + "\n"
+
+    def backfill_fly_section(text: str) -> str:
+        # 在原飞键区位置回填从小鹤主区块（含生成单字）再生成的飞键区块。
+        if FLY_SECTION_SENTINEL + "\n" not in text:
+            return text
+        body = text.splitlines(keepends=True)
+        at = next(
+            index for index, line in enumerate(body)
+            if line == FLY_SECTION_SENTINEL + "\n"
+        )
+        bare = [line.rstrip("\n") for line in body
+                if line != FLY_SECTION_SENTINEL + "\n"]
+        expected = build_expected(bare, [], fly_keys.FLY_FLYPY)
+        blocks = compose_fly_blocks(expected, fly_keys.FLY_FLYPY)
+        return "".join(body[:at] + blocks + body[at + 1:])
+
     # 置顶词块必须保持在生成单字之前，因此把单字块插到词库标记处。
     priority_index = converted.find(PRIORITY_WORD_MARKER)
     if priority_index != -1:
         insert_at = converted.index(WORD_TABLE_MARKER, priority_index)
-        return converted[:insert_at] + generated + "\n" + converted[insert_at:]
-    return converted.replace("...\n", "...\n\n" + generated, 1)
+        return backfill_fly_section(
+            converted[:insert_at] + generated + "\n" + converted[insert_at:]
+        )
+    return backfill_fly_section(
+        converted.replace("...\n", "...\n\n" + generated, 1)
+    )
 
 
 def split_dictionary_body(path: Path) -> tuple[str, list[str]]:
@@ -380,7 +410,7 @@ def flypy_schema(zrm_text: str) -> str:
     text = text.replace("自然码", "小鹤")
     text = text.replace("自然碼", "小鹤")
     text = re.sub(r"(?m)^    - 小鹤发明人：.*$", "    - 小鹤双拼方案：鹤氏", text)
-    # 小鹤飞键集合与自然码不同（仅 xq→xo），装配槽随之替换。
+    # 小鹤飞键集合与自然码不同（qx 在小鹤是 qia，且无 wz→wk），装配槽随之替换。
     # user_sentence_top 是空的用户自定义槽，小鹤方案保留引用，
     # 用户可照常在其中配置模糊音等自定义演算式。
     return text.replace("mohu:/algebra/fly_zrm?", "mohu:/algebra/fly_flypy?")

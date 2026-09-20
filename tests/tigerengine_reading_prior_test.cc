@@ -128,6 +128,60 @@ int main() {
     return 1;
   }
 
+  // 组合读音罚分（vgxjv＝整+车 jū）：字符 LM 的搭配证据来自主读音语料
+  // （整车 zhěngchē），关闭罚分时「整车」凭 3.4 nats 搭配差排第一；
+  // 默认开启（平方先验）后应被压到「整句」之后。jv 是 ju 的飞键换头
+  // 变体（第 6 列规范头归并读音），vgxjv 与 vgxju 必须同序。
+  if (tiger_engine_set_reading_prior_weight(h, 1.0) != 1) {
+    printf("fail: re-enable prior for composed test\n");
+    return 1;
+  }
+  if (tiger_engine_set_composed_reading_prior_weight(h, 0.0) != 1) {
+    printf("fail: disable composed penalty\n");
+    return 1;
+  }
+  std::vector<std::string> composed_off = decode_candidates(h, "vgxjv");
+  if (composed_off.empty() || composed_off[0] != "整车") {
+    printf("skip: composed-off baseline does not rank 整车 first\n");
+    tiger_engine_free(h);
+    return 0;
+  }
+  if (tiger_engine_set_composed_reading_prior_weight(h, 1.0) != 1) {
+    printf("fail: enable composed penalty\n");
+    return 1;
+  }
+  for (const char* query : {"vgxjv", "vgxju"}) {
+    std::vector<std::string> composed_on = decode_candidates(h, query);
+    if (composed_on.empty() || composed_on[0] != "整句") {
+      printf("fail: %s must rank 整句 first with composed penalty on\n", query);
+      return 1;
+    }
+  }
+  // 整词命中（vgie=整车 chē 词边）不受影响；单字直打（jv，混有简拼词
+  // 候选）在组合罚分开/关时完整候选序列必须逐项一致——整段单边不吃罚分。
+  std::vector<std::string> whole_word = decode_candidates(h, "vgie");
+  if (whole_word.empty() || whole_word[0] != "整车") {
+    printf("fail: vgie must keep 整车 (word edge) first\n");
+    return 1;
+  }
+  tiger_engine_set_composed_reading_prior_weight(h, 0.0);
+  std::vector<std::string> single_off = decode_candidates(h, "jv", 20);
+  tiger_engine_set_composed_reading_prior_weight(h, 1.0);
+  std::vector<std::string> single_on = decode_candidates(h, "jv", 20);
+  if (single_off != single_on) {
+    printf("fail: jv standalone ranking must not change with composed penalty\n");
+    return 1;
+  }
+  if (!contains(single_on, "车")) {
+    printf("fail: jv standalone must still offer 车\n");
+    return 1;
+  }
+  if (tiger_engine_set_composed_reading_prior_weight(h, -0.5) != -1 ||
+      tiger_engine_set_composed_reading_prior_weight(h, 4.5) != -1) {
+    printf("fail: out-of-range composed weights must be rejected\n");
+    return 1;
+  }
+
   tiger_engine_free(h);
   printf("ok: reading prior ranks rare readings down and keeps real words\n");
   return 0;

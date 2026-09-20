@@ -108,7 +108,7 @@ columns:
 酚	ffy	0
 风	fg	0
 丰	fga	0
-放	fh	0
+方	fh	0
 反	fj	0
 番	fjt	0
 佛	fo	0
@@ -589,7 +589,8 @@ columns:
 最	zv	0
 醉	zvy	0
 贼	zw	0
-味	wwd	0
+喂	wwd	0
+忌	jiv	0
 𤭢	cwz	0
 欻	ixc	0
 挼	rxu	0
@@ -617,7 +618,6 @@ columns:
 行	hgp	1
 只	qid	0
 家	jpw	0
-方	fhl	347176
 心	xbh	1.55583e+06
 种	isx	1669
 种	vsx	2.65392e+06
@@ -672,7 +672,6 @@ columns:
 门	mfa	223346
 合	gej	2
 信	xbj	1.52974e+06
-己	jiv	456925
 立	lii	1.29382e+06
 代	ddj	932729
 斯	siz	1.10572e+06
@@ -710,6 +709,7 @@ columns:
 张	vhb	1.97722e+06
 员	yrd	887168
 员	yyd	1
+放	fhl	7.73074e+06
 至	viy	1.19906e+06
 系	jit	942245
 命	mkj	1.36806e+06

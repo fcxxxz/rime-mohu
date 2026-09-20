@@ -5,10 +5,13 @@
 // 模型：TCSKNM01（整表）/ TCSKNM02（分页）/ TCSKNM03（分页 + 后继概率 f16）/
 // TCSKNM04（分页 + 后继概率 u8 对数码），mmap 直读，页缓存交给 OS。
 // 码表（外挂 txt，UTF-8，每行）：
-//   code <TAB> text <TAB> rank <TAB> freq_rank [<TAB> reading_freq]
+//   code <TAB> text <TAB> rank <TAB> freq_rank [<TAB> reading_freq [<TAB> reading_canon]]
 //   code：小写字母与 /；text：单字；rank：选重档位（1 起）；freq_rank：字频名次（1 起）；
 //   reading_freq：可选读音条件简频（同字罕用读音≈0），装载期归一为
-//   log P(读音|字) 先验并入路径分（tiger_engine_set_reading_prior_weight）。
+//   log P(读音|字) 先验并入路径分（tiger_engine_set_reading_prior_weight；
+//   组合路径再加一次，tiger_engine_set_composed_reading_prior_weight）。
+//   reading_canon：可选规范音节头（两字母小写），飞键换头变体行指回源
+//   读音，归一时同一读音的多码形合并，否则总频翻倍、主读音被错罚 ln2。
 //
 // C ABI：
 //   tiger_engine_create(model, lexicon, beam, all_ranks_always, err, errcap) -> handle(>=0)|-1
@@ -1353,6 +1356,10 @@ struct LexEntry {
   // wàn ≈ 0。缺列（旧码表、多字词、个人词）保持 0 = 中性。
   double reading_prior = 0.0;
   int reading_freq_raw = -1;
+  // 可选第 6 列「规范音节头」：飞键换头变体行（ju→jv、yu→yv、xq→xo、
+  // qx→qo、wz→wk）指回源读音头。为空时按码头两字母归一——旧码表同一
+  // 读音的两种码形会被当成两个读音、总频翻倍，主读音先验被错罚 ln2。
+  std::string reading_key;
 };
 
 struct Lexicon {
@@ -1362,8 +1369,15 @@ struct Lexicon {
   std::unordered_map<std::string, int> freq_rank;        // text -> 名次
   int max_code_len = 1;
   bool has_multi_char_entries = false;
-  std::unordered_map<std::string, std::vector<LexEntry>> base_codes;
-  std::unordered_map<std::string, int> base_freq_rank;
+  // 装载基线键集（code\ttext）：真删词撤销时区分「静态条目复位」与
+  // 「纯个人条目擦除」。判错方向是把静态条目整条 erase（数据损毁级），
+  // 故用明文键而不用指纹集（17 万键 64bit 碰撞 ~1e-10 也嫌代价高）。
+  std::unordered_set<std::string> static_keys;
+  // 个人码元数据引用计数：只统计「静态基线中不存在、由个人码首次引入」
+  // 的码长/前缀（计数项存在即「个人引入」标记），撤销到 0 时在
+  // unnote_personal_code 里从主结构归还；静态所有的项只借用、永不计数。
+  std::unordered_map<int, size_t> personal_length_refs;
+  std::unordered_map<std::string, size_t> personal_prefix_refs;
 
   static std::string trim(const std::string& s) {
     size_t a = s.find_first_not_of(" \t\r\n");
@@ -1387,6 +1401,7 @@ struct Lexicon {
     std::vector<int> lens;
     char buf[4096];
     std::unordered_set<int> len_set;
+    size_t entry_count = 0;
     while (fgets(buf, sizeof(buf), f)) {
       std::string line = trim(buf);
       if (line.empty() || line[0] == '#') continue;
@@ -1404,12 +1419,19 @@ struct Lexicon {
       int rank = cols.size() > 2 ? parse_int(cols[2], 1) : 1;
       int fr = cols.size() > 3 ? parse_int(cols[3], 20001) : 20001;
       // 可选第 5 列：读音条件简频（同一字罕用读音接近 0，主读音大）。
+      // 可选第 6 列：规范音节头（飞键换头变体指回源读音，两字母小写）。
       int reading_freq = cols.size() > 4 ? parse_int(cols[4], -1) : -1;
+      std::string reading_key;
+      if (cols.size() > 5 && cols[5].size() == 2 &&
+          cols[5][0] >= 'a' && cols[5][0] <= 'z' &&
+          cols[5][1] >= 'a' && cols[5][1] <= 'z')
+        reading_key = cols[5];
       if (code.empty() || text.empty()) continue;
       LexEntry e;
       e.text = text;
       e.rank = rank < 1 ? 1 : rank;
       e.reading_freq_raw = reading_freq < 0 ? -1 : reading_freq;
+      e.reading_key = std::move(reading_key);
       for (auto& ch : utf8_split(text)) {
         uint32_t cp;
         size_t n;
@@ -1420,6 +1442,7 @@ struct Lexicon {
       e.abbrev = e.chars.size() > 1 && code.size() < 2 * e.chars.size();
       e.abbrev_exact = e.abbrev && code.size() == e.chars.size();
       codes[code].push_back(std::move(e));
+      ++entry_count;
       if (freq_rank.find(text) == freq_rank.end()) freq_rank[text] = fr;
       len_set.insert((int)code.size());
     }
@@ -1436,21 +1459,26 @@ struct Lexicon {
         proper_prefixes.insert(code.substr(0, l));
     }
     finalize_reading_priors();
-    base_codes = codes;
-    base_freq_rank = freq_rank;
+    static_keys.reserve(entry_count);
+    for (const auto& kv : codes)
+      for (const auto& e : kv.second)
+        static_keys.insert(kv.first + '\t' + e.text);
     return !codes.empty();
   }
 
-  // 先验 = log((f+0.5)/(total+0.5))，f 为该 (字, 双拼音节) 的读音简频，
-  // total 为该字全部读音简频之和（同一音节多码形去重取最大，避免重复
-  // 计数）。+0.5 平滑使 f=0 的读音只受有限惩罚、单一读音的字为 0。
+  // 先验 = log((f+0.5)/(total+0.5))，f 为该 (字, 双拼读音) 的读音简频，
+  // total 为该字全部读音简频之和（同一读音多码形去重取最大，避免重复
+  // 计数；飞键换头变体经第 6 列规范头归并——ju/jv 是同一读音）。
+  // +0.5 平滑使 f=0 的读音只受有限惩罚、单一读音的字为 0。
   void finalize_reading_priors() {
     std::unordered_map<std::string,
         std::unordered_map<std::string, long long>> per_text;
     for (const auto& kv : codes) {
-      const std::string syllable = kv.first.substr(0, 2);
+      const std::string code_head = kv.first.substr(0, 2);
       for (const LexEntry& e : kv.second) {
         if (e.chars.size() != 1 || e.reading_freq_raw < 0) continue;
+        const std::string& syllable =
+            e.reading_key.empty() ? code_head : e.reading_key;
         long long& slot = per_text[e.text][syllable];
         if (e.reading_freq_raw > slot) slot = e.reading_freq_raw;
       }
@@ -1462,6 +1490,7 @@ struct Lexicon {
       totals[t.first] = total;
     }
     for (auto& kv : codes) {
+      const std::string code_head = kv.first.substr(0, 2);
       for (LexEntry& e : kv.second) {
         if (e.chars.size() != 1 || e.reading_freq_raw < 0) continue;
         auto it = totals.find(e.text);
@@ -1487,37 +1516,20 @@ struct Lexicon {
     return true;
   }
 
-  void rebuild_metadata() {
-    lengths.clear();
-    proper_prefixes.clear();
-    max_code_len = 1;
-    has_multi_char_entries = false;
-    std::unordered_set<int> length_set;
-    for (const auto& kv : codes) {
-      const std::string& code = kv.first;
-      max_code_len = std::max(max_code_len, static_cast<int>(code.size()));
-      length_set.insert(static_cast<int>(code.size()));
-      for (size_t l = 1; l < code.size(); ++l)
-        proper_prefixes.insert(code.substr(0, l));
-      for (const auto& entry : kv.second)
-        if (entry.chars.size() != 1) has_multi_char_entries = true;
-    }
-    lengths.assign(length_set.begin(), length_set.end());
-    std::sort(lengths.begin(), lengths.end());
-  }
-
   // 增量刷新状态：上次成功应用的负载原文与生效个人词键集（code\ttext -> boost）。
   std::string personal_payload;
   std::unordered_map<std::string, double> personal_boosts;
   std::unordered_map<std::string, int> personal_counts;
   // 上一次负载里实际出现过的键。用来区分两种「键不在本轮负载中」：
-  //   - 曾在上一次负载、这次消失 => 用户真实删词，必须回退基线整表重建；
+  //   - 曾在上一次负载、这次消失 => 用户真实删词，逐键外科撤销（见
+  //     undo_personal_key）；
   //   - 从未进入过任何负载（由 adjust_personal 即时注入，可能只是被
   //     personal_lexicon_max_rows 之类的行数上限截断在头部之外）=> 不构成
-  //     删词证据。保留其词边与计数，绝不因此触发整表重建。
-  // 少了这个区分，行数上限会让每一轮刷新都退化成「codes = base_codes +
-  // rebuild_metadata()」的同步整表重建：bench_decode 在 5000 行个人词 +
-  // 真实码表下实测 P50≈43ms / max≈74ms，且每轮都发生（按键线程上的冻结）。
+  //     删词证据。保留其词边与计数，绝不因此触发撤销。
+  // 历史教训：旧引擎缺少这个区分时，行数上限会让每一轮刷新都退化成
+  // 「codes = base_codes + rebuild_metadata()」的同步整表重建：bench_decode
+  // 在 5000 行个人词 + 真实码表下实测 P50≈43ms / max≈74ms，且每轮都发生
+  // （按键线程上的冻结）。
   std::unordered_set<std::string> personal_payload_keys;
 
   struct PersonalRow {
@@ -1536,27 +1548,67 @@ struct Lexicon {
     return std::min(12.0, std::log1p(static_cast<double>(bounded)) * 5.0);
   }
 
-  // 个人词新增后增量登记编码元数据，等价于 rebuild_metadata 对该码的部分效果。
+  // 个人词新增后增量登记编码元数据，等价于整表重建对该码的效果；只对
+  // 静态基线中不存在的长度/前缀建引用计数（计数项存在即「个人引入」），
+  // 静态所有的项只借用、不计数。
   void note_personal_code(const std::string& code) {
     const int length = static_cast<int>(code.size());
-    if (std::find(lengths.begin(), lengths.end(), length) == lengths.end()) {
-      lengths.insert(std::upper_bound(lengths.begin(), lengths.end(), length), length);
+    auto length_ref = personal_length_refs.find(length);
+    if (length_ref == personal_length_refs.end()) {
+      if (std::find(lengths.begin(), lengths.end(), length) == lengths.end()) {
+        lengths.insert(std::upper_bound(lengths.begin(), lengths.end(), length), length);
+        personal_length_refs.emplace(length, 1);
+      }
+    } else {
+      ++length_ref->second;
     }
     if (length > max_code_len) max_code_len = length;
-    for (size_t l = 1; l < code.size(); ++l)
-      proper_prefixes.insert(code.substr(0, l));
+    for (size_t l = 1; l < code.size(); ++l) {
+      std::string prefix = code.substr(0, l);
+      auto ref = personal_prefix_refs.find(prefix);
+      if (ref != personal_prefix_refs.end()) {
+        ++ref->second;
+        continue;
+      }
+      if (proper_prefixes.insert(prefix).second)
+        personal_prefix_refs.emplace(std::move(prefix), 1);
+    }
+  }
+
+  // note_personal_code 的逆操作：纯个人条目擦除时归还引用计数，归零即
+  // 从主结构移除并按剩余 lengths 回算 max_code_len。静态所有的项没有
+  // 计数项，天然跳过。
+  void unnote_personal_code(const std::string& code) {
+    const int length = static_cast<int>(code.size());
+    auto length_ref = personal_length_refs.find(length);
+    if (length_ref != personal_length_refs.end() && --length_ref->second == 0) {
+      personal_length_refs.erase(length_ref);
+      lengths.erase(std::find(lengths.begin(), lengths.end(), length));
+      max_code_len = lengths.empty() ? 1 : lengths.back();
+    }
+    for (size_t l = 1; l < code.size(); ++l) {
+      auto ref = personal_prefix_refs.find(code.substr(0, l));
+      if (ref == personal_prefix_refs.end()) continue;
+      if (--ref->second == 0) {
+        proper_prefixes.erase(ref->first);
+        personal_prefix_refs.erase(ref);
+      }
+    }
   }
 
   bool personal_has_full_syllables(const std::string& code,
                                    const std::vector<uint32_t>& chars) const {
     if (chars.size() < 2 || code.size() != chars.size() * 2) return false;
     for (size_t index = 0; index < chars.size(); ++index) {
-      const auto found = base_codes.find(code.substr(index * 2, 2));
-      if (found == base_codes.end()) return false;
+      const auto found = codes.find(code.substr(index * 2, 2));
+      if (found == codes.end()) return false;
       const uint32_t character = chars[index];
+      // 静态纯视图：个人词条目不得自我佐证 full-syllable 标记。个人码
+      // ≥4 键，2 键桶本就不会被覆盖层触碰，过滤是等价变换兼双保险。
       const bool matches = std::any_of(found->second.begin(), found->second.end(),
           [character](const LexEntry& entry) {
-            return entry.chars.size() == 1 && entry.chars.front() == character;
+            return !entry.personal && entry.chars.size() == 1 &&
+                   entry.chars.front() == character;
           });
       if (!matches) return false;
     }
@@ -1626,65 +1678,80 @@ struct Lexicon {
     return true;
   }
 
-  // 应用已解析的行集（整体替换语义）：旧键全部保留时走增量路径，
-  // 只加新条目并更新 boost；键集收缩则恢复基线并整表重建。
+  // 真删词的外科式撤销：静态命中条目只复位三个覆盖字段（rank/text/chars
+  // 从未被覆盖层改写），纯个人条目连同桶、元数据引用计数一并归还。判错
+  // 方向（static_keys 误判）会把静态条目整条 erase，属数据损毁级 bug。
+  void undo_personal_key(const std::string& key) {
+    const size_t tab = key.find('\t');
+    const std::string code = key.substr(0, tab);
+    const std::string text = key.substr(tab + 1);
+    auto bucket = codes.find(code);
+    if (bucket != codes.end()) {
+      for (auto it = bucket->second.begin(); it != bucket->second.end(); ++it) {
+        if (it->text != text) continue;
+        if (static_keys.count(key)) {
+          it->personal_boost = 0.0;
+          it->personal = false;
+          it->personal_full_syllables = false;
+        } else {
+          bucket->second.erase(it);
+          unnote_personal_code(code);
+          if (bucket->second.empty()) codes.erase(bucket);
+        }
+        break;
+      }
+    }
+    personal_boosts.erase(key);
+    personal_counts.erase(key);
+  }
+
+  // 应用已解析的行集（整体替换语义）：先对「上次负载有、本轮消失」的键
+  // 逐键外科撤销，再增量应用新行（加条目/刷 boost）。
   // *changed 指示是否发生了任何实际变化。
   void apply_personal_parsed(const std::unordered_map<std::string, size_t>& index,
                              const std::vector<PersonalRow>& parsed,
                              bool* changed) {
-    bool incremental = true;
+    std::vector<const std::string*> undo;
     for (const auto& applied : personal_boosts) {
       if (index.find(applied.first) != index.end()) continue;
       // 只有「上次负载里有、这次没了」才是真实删词。从未进入过负载的键
       // （adjust_personal 在两次快照之间即时注入的提交）在负载被行数上限
-      // 截断时天然缺席，不能当作删词证据，否则每轮刷新都会整表重建。
-      if (personal_payload_keys.find(applied.first) != personal_payload_keys.end()) {
-        incremental = false;
-        break;
-      }
+      // 截断时天然缺席，不能当作删词证据，否则每轮刷新都会误伤。
+      if (personal_payload_keys.find(applied.first) != personal_payload_keys.end())
+        undo.push_back(&applied.first);
+    }
+    for (const std::string* key : undo) {
+      undo_personal_key(*key);
+      *changed = true;
     }
 
-    if (incremental) {
-      for (const auto& row : parsed) {
-        auto existing = personal_boosts.find(row.key);
-        if (existing != personal_boosts.end()) {
-          personal_counts[row.key] = row.commits;
-          if (existing->second != row.boost) {
-            auto bucket = codes.find(row.code);
-            if (bucket != codes.end()) {
-              for (auto& entry : bucket->second) {
-                if (entry.text == row.text) {
-                  entry.personal_boost = row.boost;
-                  break;
-                }
+    for (const auto& row : parsed) {
+      auto existing = personal_boosts.find(row.key);
+      if (existing != personal_boosts.end()) {
+        personal_counts[row.key] = row.commits;
+        if (existing->second != row.boost) {
+          auto bucket = codes.find(row.code);
+          if (bucket != codes.end()) {
+            for (auto& entry : bucket->second) {
+              if (entry.text == row.text) {
+                entry.personal_boost = row.boost;
+                break;
               }
             }
-            existing->second = row.boost;
-            *changed = true;
           }
-          continue;
+          existing->second = row.boost;
+          *changed = true;
         }
-        apply_personal_row(row);
-        personal_boosts[row.key] = row.boost;
-        personal_counts[row.key] = row.commits;
-        *changed = true;
+        continue;
       }
-    } else {
-      codes = base_codes;
-      freq_rank = base_freq_rank;
-      personal_boosts.clear();
-      personal_counts.clear();
-      for (const auto& row : parsed) {
-        apply_personal_row(row);
-        personal_boosts[row.key] = row.boost;
-        personal_counts[row.key] = row.commits;
-      }
-      rebuild_metadata();
+      apply_personal_row(row);
+      personal_boosts[row.key] = row.boost;
+      personal_counts[row.key] = row.commits;
       *changed = true;
     }
 
     // 本轮负载的键集成为下一轮判断「真实删词」的基准。整体替换而非合并：
-    // 重建分支会丢弃全部非负载个人词，基准必须与实际生效的负载键集一致。
+    // 即时注入的非负载键不受影响，基准只描述负载本身。
     personal_payload_keys.clear();
     personal_payload_keys.reserve(index.size());
     for (const auto& kv : index) personal_payload_keys.insert(kv.first);
@@ -1819,6 +1886,11 @@ struct State {
   // 用户层融合增益累计（log 域）：该路径上每个 trigram 的
   // log(融合分) − log(静态分) 之和。仅用户调频层显著抬升的路径为正。
   double user_gain = 0;
+  // 组合读音罚分累计：路径上单字边因次读音参与多段组合而付出的
+  // composed_reading_prior 之和。>0 表示该路径宣称了与词典词不一致的
+  // 读音组合（vgxju 的「整车」jū）——文本词典先验不再奖励这类路径
+  //（词「整车」的证据属于 zhěngchē，不该给 jū 组合加 +6.5）。
+  double composed_penalty = 0;
   std::string text;
   std::string segmented;
   uint32_t prev2 = kBOS, prev1 = kBOS;
@@ -2141,6 +2213,15 @@ struct Engine {
   // 读音先验权重：把码表第 5 列推导的 log P(读音|字) 加进路径分，
   // 补上字符级模型「只认字频、不认读音」的盲区（万 mò 类罕用读音）。
   double reading_prior_weight = 1.0;
+  // 组合读音罚分权重：单字边参与多段组合路径时，把读音先验再加一次。
+  // 单独的先验按贝叶斯 P(码|字) 似然补偿，但字符 LM 的搭配证据本身取自
+  // 主读音语料（vgxju 的「整车」证据全部来自 zhěngchē，P(车|整) 领先
+  // P(句|整) 约 3.4 nats），占比不算极小的次读音（车 jū≈4.3%，先验仅
+  // −3.15）压不住；组合路径宣称了整个多音节读音，对无义读音组合
+  // （zhěngjū）按平方先验压制。整段单边（单字直打、整词命中）不加，
+  // 象棋单字 ju=车 与 jumapc=车马炮 类真组合（领先次名 4.7 nats）不受
+  // 影响。0 = 关闭并保持旧行为。
+  double composed_reading_prior_weight = 1.0;
   // 词边先验：>0 时允许静态多字词（非个人/非简词）作为长句句中内部边，
   // 并给每条内部词边加该有界分——「词典里有这个词」在路径分中获得一次
   // 投票，对应 librime/万象 entry_weight+Query 的加法融合结构（词频地板
@@ -2635,6 +2716,18 @@ struct Engine {
             // 会凭全局字频挤到候选前列；先验按贝叶斯项 P(码|字) 惩罚。
             if (reading_prior_weight != 0.0 && cand.reading_prior != 0.0)
               score += reading_prior_weight * cand.reading_prior;
+            // 组合读音罚分：搭配证据取自主读音语料，占比不小的次读音
+            // （车 jū）单次先验压不住主读音搭配差，多段组合路径再加
+            // 一次；整段单边不加（单字直打、整词命中均不受影响）。
+            // reading_prior_weight=0 视为整套读音先验关闭（组合罚分一并
+            // 消失），保持「0 关闭」的完整语义。
+            double composed_paid = 0.0;
+            if (composed_reading_prior_weight != 0.0 &&
+                reading_prior_weight != 0.0 &&
+                cand.reading_prior != 0.0 && !whole_input_edge) {
+              composed_paid = composed_reading_prior_weight * cand.reading_prior;
+              score += composed_paid;
+            }
             score += cand.personal_boost;
             std::string piece = raw.substr(pos, consumed_end - pos);
             if (cand.personal_full_syllables) {
@@ -2666,6 +2759,7 @@ struct Engine {
             s2->raw_length = consumed_end;
             s2->personal = item->personal || cand.personal;
             s2->user_gain = user_gain;
+            s2->composed_penalty = item->composed_penalty + composed_paid;
             states[consumed_end]->add(s2);
           }
         }
@@ -2693,7 +2787,12 @@ struct Engine {
   void to_out(State* s, double ending_adjustment, OutItem* out) {
     out->text = s->text;
     out->segmented = s->segmented;
-    const double text_bonus = text_lexicon_bonus(s->text);
+    // 文本词典先验是「词典里有这个词」的投票，证据属于词的词典读音；
+    // 付过组合读音罚分的路径宣称了不一致的读音组合（整车 jū），
+    // 不享受该加成——否则 +weight 会反超同码正确读音的词形候选。
+    // composed_penalty 是负的 log 先验，故以 < 0 判定「付过罚分」。
+    const double text_bonus =
+        s->composed_penalty < 0.0 ? 0.0 : text_lexicon_bonus(s->text);
     out->score = s->score + ending_adjustment + text_bonus;
     out->confidence = s->mass_score + ending_adjustment + text_bonus;
     out->max_rank = std::max(1, s->max_rank);
@@ -3544,6 +3643,31 @@ int tiger_engine_set_reading_prior_weight(int handle, double weight) {
     return 1;
   } catch (...) {
     set_error("reading prior weight update failed");
+    return -1;
+  }
+}
+
+/* 组合读音罚分权重：0 关闭（默认行为同 reading_prior_weight 单次先验）；
+   >0 时单字边参与多段组合路径再把读音先验加一次（平方先验），压制
+   占比不小的次读音凭主读音搭配证据顶到首选（vgxju=整车 jū）。范围 [0, 4]。 */
+int tiger_engine_set_composed_reading_prior_weight(int handle, double weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(weight >= 0.0 && weight <= 4.0)) {
+      set_error("composed reading prior weight must be in [0, 4]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->composed_reading_prior_weight == weight) return 0;
+    e->composed_reading_prior_weight = weight;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("composed reading prior weight update failed");
     return -1;
   }
 }

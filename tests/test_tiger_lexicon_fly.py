@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LEXICON = ROOT / "tiger_sentence_native" / "mohu_tiger.lexicon.txt"
+LEXICON = ROOT / "tiger_sentence_native" / "data" / "zrm" / "mohu_zrm.lexicon.txt"
 CHARS_DICT = ROOT / "mohu_zrm.chars.dict.yaml"
 TOOL = ROOT / "tools" / "fix_tiger_lexicon_fly.py"
 
@@ -17,11 +17,7 @@ def load_tool():
 
 
 class TigerLexiconFlyCoverageTest(unittest.TestCase):
-    """原生整句码表的飞键行必须与 mohu 飞键规则（wz→wk, xq→xo, qx→qo）对齐。
-
-    历史缺陷：码表只携带了上游自带的高频飞键，导致飞键输入下引擎看不见
-    大部分同音字（如 wk 只剩「为」），整句组出「万为淘汰」这类候选。
-    """
+    """生成后的 native 词表必须包含配置要求的完整飞键闭包。"""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -38,21 +34,24 @@ class TigerLexiconFlyCoverageTest(unittest.TestCase):
             f"首条缺失: {new_rows[0] if new_rows else None}")
 
     def test_fly_codes_mirror_normal_codes(self) -> None:
-        by_code_text = {(r[0], r[1]): r for r in self.rows}
-        for src, dst in self.tool.FLY.items():
-            src_bare = [r for r in self.rows if r[0] == src]
-            dst_bare = [r for r in self.rows if r[0] == dst]
-            self.assertEqual(
-                len(src_bare), len(dst_bare),
-                f"裸码 {src}({len(src_bare)} 行) 与飞键 {dst}({len(dst_bare)} 行) 条目数不一致")
-            for r in src_bare:
-                mirror = by_code_text.get((dst, r[1]))
-                self.assertIsNotNone(
-                    mirror, f"飞键 {dst} 缺少「{r[1]}」（源行 {src} rank={r[2]}）")
-                if mirror:
-                    self.assertEqual(r[2], mirror[2],
-                                     f"「{r[1]}」在 {src} 与 {dst} 下 rank 不一致")
+        from tools import build_mohu_lexicons
 
+        row_set = {
+            (r[0], r[1], r[2], r[3], r[4] if len(r) > 4 else "")
+            for r in self.rows
+        }
+        for row in self.rows:
+            code, text, rank, freq = row[:4]
+            reading = row[4] if len(row) > 4 else ""
+            for variant in build_mohu_lexicons._fly_closure(
+                code, text, self.tool.FLY
+            ):
+                expected = (variant, text, rank, freq, reading or "")
+                self.assertIn(
+                    expected,
+                    row_set,
+                    f"飞键 {variant} 缺少「{text}」（源行 {code} rank={rank}）",
+                )
 
 if __name__ == "__main__":
     unittest.main()

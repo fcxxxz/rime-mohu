@@ -45,6 +45,15 @@ int tiger_engine_set_user_model_weight(int handle, double static_weight);
  * frequency). 0 disables, default 1.0. Returns 1 applied, 0 no change,
  * -1 error. Old lexicons without the column stay neutral at any weight. */
 int tiger_engine_set_reading_prior_weight(int handle, double weight);
+/* Composed reading prior weight in [0, 4]: when a single-char edge takes part
+ * in a multi-segment composed path (i.e. it is not the whole-input edge), the
+ * reading prior is applied a second time (squared prior). The char-level LM's
+ * collocation evidence comes from the dominant reading's corpus (vgxju → 整车
+ * borrows all its evidence from zhěngchē), so a secondary reading with a
+ * non-trivial share (车 jū ≈ 4.3%) survives a single prior. Whole-input edges
+ * (single-char input, whole-word hits) are never affected. 0 disables,
+ * default 1.0. */
+int tiger_engine_set_composed_reading_prior_weight(int handle, double weight);
 /* Bounded word-edge prior: 0 disables (default; static multi-char words
  * match the whole input only), >0 lets static dictionary words act as
  * sentence-internal beam edges and adds this bounded bonus per internal

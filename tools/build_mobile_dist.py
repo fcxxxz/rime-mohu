@@ -15,8 +15,7 @@
   回退。
 - 不含语义推理资产（mohu_semantic/）：手机端引擎以 onnxruntime 桩链接，
   语义重排不可用，其余功能不受影响。
-- 不含桌面专用内容：Rime皮肤编辑器/、Rime同步助手/、解除隔离.command、
-  squirrel.yaml。皮肤编辑器的 lua 启动器在 Android 上会被平台探测跳过。
+- 不含桌面专用内容：Rime同步助手/、解除隔离.command、squirrel.yaml。
 - 附 default.custom.yaml 只启用对应方案：Trime/Hamster 的「已启用方案」
   同样落在 default.custom.yaml 的 schema_list patch 上，随包预置等价于
   安装后在 App 里勾选一次。
@@ -45,7 +44,6 @@ NATIVE_LUA = (
 )
 
 DESKTOP_ONLY_PATHS = (
-    "Rime皮肤编辑器",
     "Rime同步助手",
     "解除隔离.command",
     "squirrel.yaml",
@@ -88,7 +86,6 @@ MOBILE_INSTALL_DOC = """# 魔虎手机版安装说明（精简包）
 
 ## 已知差异
 
-- `/skin` 皮肤编辑器为桌面功能，手机上不可用。
 - 建议使用 26 键全键盘布局；反查引导键 `` ` `` 可通过键盘长按符号输入，
   或使用 `ohm` 引导。
 - 桌面快捷键（Ctrl 组合、Tab 词移动等）在软键盘上无效，翻页请用屏幕

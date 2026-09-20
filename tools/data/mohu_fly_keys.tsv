@@ -1,0 +1,11 @@
+# scheme	source	target
+# source is the canonical syllable; target is the user-entered fly-key alias.
+zrm	wz	wk
+zrm	xq	xo
+zrm	qx	qo
+zrm	ju	jv
+zrm	yu	yv
+flypy	xq	xo
+flypy	qx	qo
+flypy	ju	jv
+flypy	yu	yv

@@ -260,6 +260,26 @@ do
         same_texts(texts_of(out), { "我很", "想你", "想拟" }))
 end
 
+-- 8b) caret 在句中：活动段截短，覆盖到段末尾的句形候选仍计入配额
+-- （否则句尾减一处的编辑点 20 条句形流逃过裁剪刷屏）；覆盖超出段末
+-- （超界整句）的候选仍按部分跨度放行。
+do
+  local env = make_env({ input = "wojntmhfxdni" })
+  env.engine.context.composition = {
+    back = function() return { _start = 0, _end = 10 } end,
+  }
+  filter.init(env)
+  local out = run_filter(env, {
+    candidate("mohu_zrm", "我今天很想", nil, { start = 0, finish = 10 }),
+    candidate("mohu_zrm", "我今天很像", nil, { start = 0, finish = 10 }),
+    candidate("mohu_zrm", "超界整句", nil, { start = 0, finish = 12 }),
+    candidate("phrase", "我很", nil, { start = 0, finish = 4 }),
+  })
+  check("caret-mid sentence candidates share the quota",
+        same_texts(texts_of(out), { "我今天很想", "超界整句", "我很", "我今天很像" }),
+        table.concat(texts_of(out), "/"))
+end
+
 -- 9) 全拼整句（字数=音节容量）超配额押后到词组之后。
 do
   local env = make_env({ input = "wojntmhfxdni" })

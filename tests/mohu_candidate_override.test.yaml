@@ -118,12 +118,16 @@ deploy:
       - send: 'lmjx{Down}{Control+minus}{Control+t}{Control+Shift+M}'
         assert: eq(cand[1].text, '连接') and eq(cand[1].comment, '📌')
 
-  hidden_pin_recovery_hint:
+  shift_delete_unpins:
     patch:
-      mohu/candidate_override/db_name: mohu_candidate_override_mira_hidden_pin
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_unpin
     tests:
-      - send: 'lmjx{Control+t}{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
-        assert: cand[1].comment:find('📌') and cand[1].comment:find('Shift%+Delete 恢复')
+      - send: 'zzqu{Control+semicolon}tbnk{space}fgbk{space}{Return}'
+        assert: eq(cand[1].text, '头脑风暴') and eq(cand[1].comment, '📌')
+      - send: 'zzqu{Shift+Delete}{Escape}zzqu'
+        assert: not has_comment(cand, '📌')
+      - send: '{Control+Shift+M}'
+        assert: not has_comment(cand, 'Shift%+Delete 恢复')
 
   disabled:
     patch:

@@ -108,7 +108,7 @@ import_tables:
 否	fb		0
 分	ff		0
 风	fg		0
-放	fh		0
+方	fh		0
 反	fj		0
 佛	fo		0
 服	fu		0
@@ -1221,7 +1221,7 @@ import_tables:
 坊	fhg		28892
 纺	fhi		8718
 仿	fhj		313234
-方	fhl		347176
+放	fhl		7.73074e+06
 房	fhm		980289
 昉	fho		575
 髣	fhp		354
@@ -4321,7 +4321,7 @@ import_tables:
 玟	wfn		7088
 璺	wfp		527
 雯	wft		57561
-文	wfv		1.63787e+06
+紊	wfv		9236
 鳁	wfw		0
 稳	wfx		203430
 辒	wfy		62
@@ -4398,7 +4398,7 @@ import_tables:
 未	wza		758953
 娓	wzb		8105
 慰	wzc		160488
-味	wzd		493741
+喂	wzd		148044
 桅	wze		5611
 违	wzg		83636
 惟	wzh		92036
@@ -4688,7 +4688,7 @@ import_tables:
 游	ybk		537555
 莠	ybl		1187
 犹	ybm		246801
-友	ybn		869919
+右	ybn		483406
 尤	ybo		229183
 黝	ybp		16397
 囿	ybr		1124
@@ -7652,7 +7652,6 @@ import_tables:
 蕰	wflk		9
 刎	wfne		2349
 𫘜	wfnv		0
-紊	wfvi		9236
 鹟	wghk		0
 蓊	wglh		458
 妄	whfb		56997
@@ -7728,7 +7727,7 @@ import_tables:
 遗	wzco		0
 煨	wzcq		1424
 尾	wzcv		148960
-喂	wzdq		148044
+味	wzda		493741
 唯	wzdu		217658
 梶	wzec		565
 圩	wzgf		1050
@@ -8068,7 +8067,7 @@ import_tables:
 浟	ybkj		363
 莜	yblj		616
 莸	yblm		96
-右	ybnd		483406
+友	ybnr		869919
 尢	yboy		0
 鼬	ybpd		1023
 鲉	ybwd		3
@@ -8506,6 +8505,7 @@ import_tables:
 加	jw		0
 梨	lix		0
 班	bjn		0
+文	wf		0
 嗌	aida		645
 胺	anvb		1174
 螯	aoac		636
@@ -130815,367 +130815,6 @@ U盘	upj
 # 化学元素
 
 
-# 开始飞键 xq -> xo
-罢休	baxo
-必修	bixo
-半休	bjxo
-保修	bkxo
-编修	bmxo
-不朽	buxo
-补休	buxo
-病休	byxo
-刺绣	cixo
-大修	daxo
-单休	djxo
-倒休	dkxo
-短袖	drxo
-防锈	fhxo
-返修	fjxo
-腐朽	fuxo
-甘休	gjxo
-公休	gsxo
-顾绣	guxo
-闺秀	gvxo
-含羞	hjxo
-害羞	hlxo
-红袖	hsxo
-回修	hvxo
-嘿咻	hzxo
-茶锈	iaxo
-长袖	ihxo
-厂休	ihxo
-重修	isxo
-娇羞	jcxo
-机修	jixo
-检修	jmxo
-锦绣	jnxo
-进修	jnxo
-俊秀	jpxo
-娟秀	jrxo
-静修	jyxo
-竞秀	jyxo
-苦修	kuxo
-枯朽	kuxo
-离休	lixo
-老朽	lkxo
-轮休	lpxo
-领袖	lyxo
-苗绣	mcxo
-蒙羞	mgxo
-明秀	myxo
-没羞	mzxo
-暖袖	nrxo
-内秀	nzxo
-瓯绣	ouxo
-怕羞	paxo
-貔貅	pixo
-培修	pzxo
-抢修	qdxo
-奇秀	qixo
-全休	qrxo
-清秀	qyxo
-绒绣	rsxo
-乳臭	ruxo
-苏绣	suxo
-调休	tcxo
-套袖	tkxo
-铜锈	tsxo
-退休	tvxo
-铁锈	txxo
-挺秀	tyxo
-双休	udxo
-生锈	ugxo
-失修	uixo
-韶秀	ukxo
-蜀绣	uuxo
-水袖	uvxo
-衰朽	uyxo
-装修	vdxo
-遮羞	vexo
-珍馐	vfxo
-整修	vgxo
-专修	vrxo
-主修	vuxo
-文秀	wfxo
-午休	wuxo
-维修	wzxo
-小修	xcxo
-湘绣	xdxo
-纤秀	xmxo
-新秀	xnxo
-修	xo		0
-下去	xo
-袖标	xobc
-休班	xobj
-锈斑	xobj
-朽败	xobl
-修编	xobm
-修补	xobu
-锈病	xoby
-䗛	xoc		0
-修辞	xoci
-羞惭	xocj
-秀才	xocl
-嗅	xod		25646
-秀逗	xodb
-嗅到	xodk
-修订	xody
-朽	xoe		25425
-秀发	xofa
-羞愤	xoff
-绣房	xofh
-修复	xofu
-羞	xog		148102
-修改	xogl
-绣工	xogs
-休怪	xogy
-修好	xohk
-羞红	xohs
-修护	xohu
-休会	xohv
-绣花	xohw
-绣	xoi		38793
-修车	xoie
-修长	xoih
-羞耻	xoii
-休	xoj		334462
-修脚	xojc
-锈迹	xoji
-修建	xojm
-秀俊	xojp
-嗅觉	xojt
-休假	xojw
-溴	xok		845
-袖口	xokb
-休克	xoke
-休刊	xokj
-羞愧	xokv
-修理	xoli
-朽烂	xolj
-修炼	xolm
-修罗	xolo
-修路	xolu
-貅	xom		1043
-朽迈	xoml
-休眠	xomm
-朽木	xomu
-秀美	xomz
-琇	xon		589
-羞赧	xonj
-羞恼	xonk
-修女	xonv
-臭	xoo		2
-髹	xop		484
-绣品	xopn
-修配	xopz
-馐	xoq		793
-修桥	xoqc
-秀气	xoqi
-绣球	xoqq
-羞怯	xoqx
-羞人	xorf
-秀润	xorp
-羞辱	xoru
-羞涩	xose
-羞臊	xosk
-袖	xot		112531
-嗅探	xotj
-袖套	xotk
-袖筒	xots
-休庭	xoty
-袖手	xoub
-修身	xouf
-修饰	xoui
-修缮	xouj
-修书	xouu
-岫	xov		2562
-袖珍	xovf
-修正	xovg
-休整	xovg
-袖章	xovh
-休止	xovi
-休战	xovj
-修筑	xovu
-宿	xow		181931
-修为	xowz
-秀	xox		364108
-休想	xoxd
-休息	xoxi
-休闲	xoxm
-休学	xoxt
-绣鞋	xoxx
-修行	xoxy
-秀雅	xoya
-休业	xoye
-修业	xoye
-修养	xoyh
-秀逸	xoyi
-休要	xoyk
-羞于	xoyu
-锈	xoz		10628
-咻	xodj		7148
-鸺	xoje		24
-脩	xojg		640
-滫	xokj		326
-珛	xonn		416
-庥	xoxj		624
-袖子	xozi
-修造	xozk
-选修	xrxo
-星宿	xyxo
-兴修	xyxo
-优秀	ybxo
-衣袖	yixo
-研修	yjxo
-粤绣	ytxo
-自修	zixo
-糟朽	zkxo
-作秀	zoxo
-# 结束飞键
-
-# 开始飞键 qx -> qo
-哀切	aiqo
-并且	byqo
-悲切	bzqo
-操切	ckqo
-裁切	clqo
-胆怯	djqo
-盗窃	dkqo
-带挈	dlqo
-颠茄	dmqo
-而且	erqo
-番茄	fjqo
-苟且	gbqo
-割切	geqo
-关切	grqo
-姑且	guqo
-横切	hgqo
-臣妾	ifqo
-娇怯	jcqo
-急切	jiqo
-剪切	jmqo
-况且	kdqo
-恳切	kfqo
-露怯	lbqo
-聊且	lcqo
-趔趄	lxqo
-密切	miqo
-纳妾	naqo
-扒窃	paqo
-剽窃	pcqo
-迫切	poqo
-妻妾	qiqo
-亲切	qnqo
-且	qo		0
-取消	qo
-挈	qoa		768
-窃案	qoan
-郄	qob		546
-切变	qobm
-且不	qobu
-怯步	qobu
-切菜	qocl
-切磋	qoco
-切掉	qodc
-切当	qodh
-挈带	qodl
-切点	qodm
-窃夺	qodo
-切断	qodr
-窃	qoe		47730
-切分	qoff
-切腹	qofu
-切割	qoge
-切糕	qogk
-窃国	qogo
-怯	qoh		42612
-切合	qohe
-切换	qohr
-切回	qohv
-切花	qohw
-惬怀	qohy
-妾	qoi		33441
-切成	qoig
-怯场	qoih
-切齿	qoii
-切除	qoiu
-伽	qoj		1098
-切记	qoji
-切忌	qoji
-切近	qojn
-切口	qokb
-且看	qokj
-切开	qokl
-切块	qoky
-茄	qol		16373
-伽蓝	qolj
-砌	qom		0
-窃密	qomi
-且慢	qomj
-切脉	qoml
-切面	qomm
-切莫	qomo
-且莫	qomo
-怯懦	qono
-趄	qop		4866
-切盼	qopj
-切片	qopm
-切切	qoqo
-窃取	qoqu
-切	qor		900592
-怯弱	qoro
-切入	qoru
-切丝	qosi
-切碎	qosv
-切题	qoti
-切图	qotu
-窃听	qoty
-切身	qouf
-怯生	qoug
-切实	qoui
-且说	qouo
-怯阵	qovf
-切中	qovs
-切勿	qowu
-窃笑	qoxc
-切削	qoxc
-窃喜	qoxi
-切线	qoxm
-切形	qoxy
-且有	qoyb
-惬意	qoyi
-切要	qoyk
-切音	qoyn
-锲	qoz		2139
-慊	qohh		178
-惬	qohn		12404
-箧	qorn		452
-茄子	qozi
-窃贼	qozz
-权且	qrqo
-确切	qtqo
-恰切	qwqo
-热切	reqo
-偷窃	tbqo
-提挈	tiqo
-痛切	tsqo
-贴切	txqo
-深切	ufqo
-尚且	uhqo
-失窃	uiqo
-真切	vfqo
-正切	vgqo
-外切	wlqo
-畏怯	wzqo
-心切	xnqo
-羞怯	xqqo
-行窃	xyqo
-一切	yiqo
-殷切	ynqo
-余切	yuqo
-暂且	zjqo
-# 结束飞键
-
 # 开始飞键 wz -> wk
 安慰	anwk
 本位	bfwk
@@ -131427,10 +131066,12 @@ U盘	upj
 位	wk		0
 微	wk		0
 未	wka		758953
+闱	wkag		1805
 胃癌	wkai
 未按	wkan
 慰安	wkan
 违拗	wkao
+痿	wkax		2501
 娓	wkb		8105
 尾巴	wkba
 为本	wkbf
@@ -131443,12 +131084,21 @@ U盘	upj
 胃病	wkby
 违背	wkbz
 慰	wkc		160488
+螱	wkcc		270
+尉	wkcf		62071
+炜	wkcg		10301
 未曾	wkcg
 味噌	wkcg
 为此	wkci
 位次	wkci
+螱	wkck		270
+遗	wkco		0
+煨	wkcq		1424
 苇丛	wkcs
-味	wkd		493741
+尾	wkcv		148960
+煟	wkcv		0
+喂	wkd		148044
+味	wkda		493741
 伟大	wkda
 微雕	wkdc
 尾灯	wkdg
@@ -131457,10 +131107,12 @@ U盘	upj
 味道	wkdk
 危殆	wkdl
 委顿	wkdp
+唯	wkdu		217658
 唯独	wkdu
 维度	wkdu
 未定	wkdy
 桅	wke		5611
+梶	wkec		565
 巍峨	wkee
 味儿	wker
 违法	wkfa
@@ -131475,6 +131127,7 @@ U盘	upj
 违	wkg		83636
 微光	wkgd
 伟哥	wkge
+圩	wkgf		1050
 桅杆	wkgj
 位高	wkgk
 微改	wkgl
@@ -131485,6 +131138,7 @@ U盘	upj
 围攻	wkgs
 尾骨	wkgu
 违规	wkgv
+韦	wkgw		77085
 惟	wkh		92036
 为何	wkhe
 违和	wkhe
@@ -131497,7 +131151,9 @@ U盘	upj
 微红	wkhs
 维护	wkhu
 维	wki		369458
+艉	wkic		580
 微创	wkid
+纬	wkig		7715
 围城	wkig
 未尝	wkih
 维持	wkii
@@ -131505,13 +131161,16 @@ U盘	upj
 伪钞	wkik
 伟	wkj		242973
 围剿	wkjc
+伪	wkji		66990
 危机	wkji
 未见	wkjm
 围歼	wkjm
 围巾	wkjn
 伪军	wkjp
+偎	wkjq		18007
 味觉	wkjt
 畏惧	wkju
+畏惧	wkjv
 为佳	wkjw
 慰藉	wkjx
 未接	wkjx
@@ -131520,29 +131179,44 @@ U盘	upj
 胃口	wkkb
 未可	wkke
 围垦	wkkf
+𣲗	wkkg		0
 违抗	wkkh
+潍	wkki		792
 未开	wkkl
+洧	wkkn		657
 围困	wkkp
+涠	wkkr		57
 尾款	wkkr
+沩	wkks		106
 唯恐	wkks
+溦	wkkv		647
+洈	wkkx		403
 薇	wkl		104428
 微辣	wkla
 危楼	wklb
+蔚	wklc		20152
 未了	wklc
+薳	wkld		4
 微量	wkld
 为了	wkle
+苇	wklg		16237
+𫇭	wkli		0
 威力	wkli
 蔚蓝	wklj
 慰劳	wklk
 未来	wkll
+葳	wkln		2548
 维纶	wklp
 围拢	wkls
+薳	wklu		4
+萎	wklx		17426
 伪劣	wklx
 违令	wkly
 味蕾	wklz
 猥	wkm		8898
 微码	wkma
 微妙	wkmc
+碨	wkmf		295
 威猛	wkmg
 微茫	wkmh
 萎靡	wkmi
@@ -131554,16 +131228,22 @@ U盘	upj
 卫冕	wkmm
 为民	wkmn
 微末	wkmo
+猬	wkmq		5025
+碨	wkmt		295
 帷幕	wkmu
+硙	wkmv		2
 威名	wkmy
 唯美	wkmz
 威	wkn		503918
 伪娘	wknd
+玮	wkng		10284
 未能	wkng
 违逆	wkni
 为难	wknj
 喂奶	wknl
+琟	wknu		265
 韪	wko		1315
+𬀩	wkog		0
 围殴	wkou
 尾盘	wkpj
 为盼	wkpj
@@ -131575,20 +131255,24 @@ U盘	upj
 为期	wkqi
 围棋	wkqi
 尾欠	wkqm
+畏怯	wkqo
 围裙	wkqp
 维权	wkqr
 威权	wkqr
 委屈	wkqu
+胃	wkqv		53113
 畏怯	wkqx
 围	wkr		659219
 为人	wkrf
 伟人	wkrf
+帏	wkrg		1123
 蔚然	wkrj
 巍然	wkrj
 围绕	wkrk
 微弱	wkro
 微软	wkrr
 为荣	wkrs
+帷	wkru		8007
 葳蕤	wkrv
 谓	wks		235703
 萎缩	wkso
@@ -131597,12 +131281,15 @@ U盘	upj
 味素	wksu
 尾随	wksv
 未遂	wksv
+诿	wksx		1417
 隗	wkt		4223
+霨	wktc		322
 微调	wktc
 胃疼	wktg
 苇塘	wkth
 圩田	wktm
 委托	wkto
+隈	wktq		526
 胃痛	wkts
 畏途	wktu
 偎贴	wktx
@@ -131617,6 +131304,7 @@ U盘	upj
 尾数	wkuu
 为数	wkuu
 巍	wkv		20904
+嵬	wkva		5144
 伪装	wkvd
 围着	wkve
 威震	wkvf
@@ -131624,20 +131312,29 @@ U盘	upj
 违章	wkvh
 位置	wkvi
 未知	wkvi
+崴	wkvn		753
 围桌	wkvo
 为准	wkvp
 为重	wkvs
 为主	wkvu
 围住	wkvu
 围追	wkvv
+峗	wkvx		273
 鲔	wkw		488
+鳚	wkwc		0
 慰问	wkwf
 威望	wkwh
 委婉	wkwj
 巍巍	wkwk
 帷幄	wkwo
+鳂	wkwq		0
 威武	wkwu
+𬶏	wkwx		0
+巍巍	wkwz
 危	wkx		279881
+廆	wkxa		80
+魏	wkxa		0
+委	wkxb		274305
 微笑	wkxc
 未向	wkxd
 未详	wkxd
@@ -131646,9 +131343,12 @@ U盘	upj
 威信	wkxn
 违心	wkxn
 微信	wkxn
+维修	wkxo
 微醺	wkxp
 维修	wkxq
 为兄	wkxs
+逶	wkxu		1163
+𬱟	wkxx		0
 威胁	wkxx
 猥亵	wkxx
 卫星	wkxy
@@ -131664,74 +131364,19 @@ U盘	upj
 委员	wkyr
 违约	wkyt
 位于	wkyu
+位于	wkyv
 卫	wkz		504141
-闱	wkag		1805
-痿	wkax		2501
-尉	wkcf		62071
-炜	wkcg		10301
-遗	wkco		0
-煨	wkcq		1424
-尾	wkcv		148960
-喂	wkdq		148044
-唯	wkdu		217658
-梶	wkec		565
-圩	wkgf		1050
-韦	wkgw		77085
-艉	wkic		580
-纬	wkig		7715
-伪	wkji		66990
-偎	wkjq		18007
-𣲗	wkkg		0
-潍	wkki		792
-洧	wkkn		657
-涠	wkkr		57
-溦	wkkv		647
-洈	wkkx		403
-蔚	wklc		20152
-苇	wklg		16237
-𫇭	wkli		0
-葳	wkln		2548
-萎	wklx		17426
-猬	wkmq		5025
-硙	wkmv		2
-玮	wkng		10284
-琟	wknu		265
-𬀩	wkog		0
-胃	wkqv		53113
-帏	wkrg		1123
-帷	wkru		8007
-诿	wksx		1417
-霨	wktc		322
-隈	wktq		526
-嵬	wkva		5144
-崴	wkvn		753
-峗	wkvx		273
-鳚	wkwc		0
-鳂	wkwq		0
-𬶏	wkwx		0
-廆	wkxa		80
-委	wkxb		274305
-𬱟	wkxx		0
 味噌	wkzg
 位子	wkzi
 伪造	wkzk
 围坐	wkzo
 亹	wkzp		443
-螱	wkcc		270
-螱	wkck		270
-沩	wkks		106
-薳	wkld		4
-薳	wklu		4
-碨	wkmf		295
-碨	wkmt		295
-逶	wkxu		1163
-煟	wkcv		0
-魏	wkxa		0
 维族	wkzu
 畏罪	wkzv
 外围	wlwk
 无畏	wuwk
 无谓	wuwk
+巍巍	wzwk
 校尉	xcwk
 香味	xdwk
 细微	xiwk
@@ -131775,6 +131420,1501 @@ U盘	upj
 座位	zowk
 作为	zowk
 最为	zvwk
+# 结束飞键
+
+# 开始飞键 xq -> xo
+罢休	baxo
+必修	bixo
+半休	bjxo
+保修	bkxo
+编修	bmxo
+不朽	buxo
+补休	buxo
+病休	byxo
+刺绣	cixo
+大修	daxo
+单休	djxo
+倒休	dkxo
+短袖	drxo
+防锈	fhxo
+返修	fjxo
+腐朽	fuxo
+甘休	gjxo
+公休	gsxo
+顾绣	guxo
+闺秀	gvxo
+含羞	hjxo
+害羞	hlxo
+红袖	hsxo
+回修	hvxo
+嘿咻	hzxo
+茶锈	iaxo
+长袖	ihxo
+厂休	ihxo
+重修	isxo
+娇羞	jcxo
+机修	jixo
+检修	jmxo
+锦绣	jnxo
+进修	jnxo
+俊秀	jpxo
+娟秀	jrxo
+静修	jyxo
+竞秀	jyxo
+苦修	kuxo
+枯朽	kuxo
+离休	lixo
+老朽	lkxo
+轮休	lpxo
+领袖	lyxo
+苗绣	mcxo
+蒙羞	mgxo
+明秀	myxo
+没羞	mzxo
+暖袖	nrxo
+内秀	nzxo
+瓯绣	ouxo
+怕羞	paxo
+貔貅	pixo
+培修	pzxo
+抢修	qdxo
+奇秀	qixo
+全休	qrxo
+清秀	qyxo
+绒绣	rsxo
+乳臭	ruxo
+苏绣	suxo
+调休	tcxo
+套袖	tkxo
+铜锈	tsxo
+退休	tvxo
+铁锈	txxo
+挺秀	tyxo
+双休	udxo
+生锈	ugxo
+失修	uixo
+韶秀	ukxo
+蜀绣	uuxo
+水袖	uvxo
+衰朽	uyxo
+装修	vdxo
+遮羞	vexo
+珍馐	vfxo
+整修	vgxo
+专修	vrxo
+主修	vuxo
+文秀	wfxo
+午休	wuxo
+维修	wzxo
+小修	xcxo
+湘绣	xdxo
+纤秀	xmxo
+新秀	xnxo
+修	xo		0
+下去	xo
+袖标	xobc
+休班	xobj
+锈斑	xobj
+朽败	xobl
+修编	xobm
+修补	xobu
+锈病	xoby
+䗛	xoc		0
+修辞	xoci
+羞惭	xocj
+秀才	xocl
+嗅	xod		25646
+秀逗	xodb
+咻	xodj		7148
+嗅到	xodk
+修订	xody
+朽	xoe		25425
+秀发	xofa
+羞愤	xoff
+绣房	xofh
+修复	xofu
+羞	xog		148102
+修改	xogl
+绣工	xogs
+休怪	xogy
+修好	xohk
+羞红	xohs
+修护	xohu
+休会	xohv
+绣花	xohw
+绣	xoi		38793
+修车	xoie
+修长	xoih
+羞耻	xoii
+休	xoj		334462
+修脚	xojc
+鸺	xoje		24
+脩	xojg		640
+锈迹	xoji
+修建	xojm
+秀俊	xojp
+嗅觉	xojt
+休假	xojw
+溴	xok		845
+袖口	xokb
+休克	xoke
+滫	xokj		326
+休刊	xokj
+羞愧	xokv
+修理	xoli
+朽烂	xolj
+修炼	xolm
+修罗	xolo
+修路	xolu
+貅	xom		1043
+朽迈	xoml
+休眠	xomm
+朽木	xomu
+秀美	xomz
+琇	xon		589
+羞赧	xonj
+羞恼	xonk
+珛	xonn		416
+修女	xonv
+臭	xoo		2
+髹	xop		484
+绣品	xopn
+修配	xopz
+馐	xoq		793
+修桥	xoqc
+秀气	xoqi
+羞怯	xoqo
+绣球	xoqq
+羞怯	xoqx
+羞人	xorf
+秀润	xorp
+羞辱	xoru
+羞涩	xose
+羞臊	xosk
+袖	xot		112531
+嗅探	xotj
+袖套	xotk
+袖筒	xots
+休庭	xoty
+袖手	xoub
+修身	xouf
+修饰	xoui
+修缮	xouj
+修书	xouu
+岫	xov		2562
+袖珍	xovf
+修正	xovg
+休整	xovg
+袖章	xovh
+休止	xovi
+休战	xovj
+修筑	xovu
+宿	xow		181931
+修为	xowk
+修为	xowz
+秀	xox		364108
+休想	xoxd
+休息	xoxi
+庥	xoxj		624
+休闲	xoxm
+休学	xoxt
+绣鞋	xoxx
+修行	xoxy
+秀雅	xoya
+休业	xoye
+修业	xoye
+修养	xoyh
+秀逸	xoyi
+休要	xoyk
+羞于	xoyu
+羞于	xoyv
+锈	xoz		10628
+袖子	xozi
+修造	xozk
+选修	xrxo
+星宿	xyxo
+兴修	xyxo
+优秀	ybxo
+衣袖	yixo
+研修	yjxo
+粤绣	ytxo
+自修	zixo
+糟朽	zkxo
+作秀	zoxo
+# 结束飞键
+
+# 开始飞键 qx -> qo
+哀切	aiqo
+并且	byqo
+悲切	bzqo
+操切	ckqo
+裁切	clqo
+胆怯	djqo
+盗窃	dkqo
+带挈	dlqo
+颠茄	dmqo
+而且	erqo
+番茄	fjqo
+苟且	gbqo
+割切	geqo
+关切	grqo
+姑且	guqo
+横切	hgqo
+臣妾	ifqo
+娇怯	jcqo
+急切	jiqo
+剪切	jmqo
+况且	kdqo
+恳切	kfqo
+露怯	lbqo
+聊且	lcqo
+趔趄	lxqo
+密切	miqo
+纳妾	naqo
+扒窃	paqo
+剽窃	pcqo
+迫切	poqo
+妻妾	qiqo
+亲切	qnqo
+且	qo		0
+取消	qo
+挈	qoa		768
+窃案	qoan
+郄	qob		546
+切变	qobm
+且不	qobu
+怯步	qobu
+切菜	qocl
+切磋	qoco
+切掉	qodc
+切当	qodh
+挈带	qodl
+切点	qodm
+窃夺	qodo
+切断	qodr
+窃	qoe		47730
+切分	qoff
+切腹	qofu
+切割	qoge
+切糕	qogk
+窃国	qogo
+怯	qoh		42612
+切合	qohe
+慊	qohh		178
+惬	qohn		12404
+切换	qohr
+切回	qohv
+切花	qohw
+惬怀	qohy
+妾	qoi		33441
+切成	qoig
+怯场	qoih
+切齿	qoii
+切除	qoiu
+伽	qoj		1098
+切记	qoji
+切忌	qoji
+切近	qojn
+切口	qokb
+且看	qokj
+切开	qokl
+切块	qoky
+茄	qol		16373
+伽蓝	qolj
+砌	qom		0
+窃密	qomi
+且慢	qomj
+切脉	qoml
+切面	qomm
+切莫	qomo
+且莫	qomo
+怯懦	qono
+趄	qop		4866
+切盼	qopj
+切片	qopm
+切切	qoqo
+窃取	qoqu
+切切	qoqx
+切	qor		900592
+箧	qorn		452
+怯弱	qoro
+切入	qoru
+切丝	qosi
+切碎	qosv
+切题	qoti
+切图	qotu
+窃听	qoty
+切身	qouf
+怯生	qoug
+切实	qoui
+且说	qouo
+怯阵	qovf
+切中	qovs
+切勿	qowu
+窃笑	qoxc
+切削	qoxc
+窃喜	qoxi
+切线	qoxm
+切形	qoxy
+且有	qoyb
+惬意	qoyi
+切要	qoyk
+切音	qoyn
+锲	qoz		2139
+茄子	qozi
+窃贼	qozz
+权且	qrqo
+确切	qtqo
+恰切	qwqo
+切切	qxqo
+热切	reqo
+偷窃	tbqo
+提挈	tiqo
+痛切	tsqo
+贴切	txqo
+深切	ufqo
+尚且	uhqo
+失窃	uiqo
+真切	vfqo
+正切	vgqo
+外切	wlqo
+畏怯	wzqo
+心切	xnqo
+羞怯	xqqo
+行窃	xyqo
+一切	yiqo
+殷切	ynqo
+余切	yuqo
+暂且	zjqo
+# 结束飞键
+
+# 开始飞键 ju -> jv
+安居	anjv
+镖局	bcjv
+鼻疽	bijv
+保举	bkjv
+败局	bljv
+编剧	bmjv
+边距	bmjv
+布局	bujv
+病句	byjv
+并举	byjv
+悲剧	bzjv
+测距	cejv
+此举	cijv
+词句	cijv
+餐具	cjjv
+残局	cjjv
+才具	cljv
+村居	cpjv
+攒聚	crjv
+从句	csjv
+蹴鞠	cujv
+翠菊	cvjv
+大局	dajv
+钓具	dcjv
+灯具	dgjv
+当局	dhjv
+单据	djjv
+道具	dkjv
+带锯	dljv
+电锯	dmjv
+断句	drjv
+短句	drjv
+短剧	drjv
+独居	dujv
+独具	dujv
+对局	dvjv
+定居	dyjv
+分局	ffjv
+饭局	fjjv
+格局	gejv
+根据	gfjv
+更具	ggjv
+钢锯	ghjv
+柑橘	gjjv
+高举	gkjv
+锅具	gojv
+国剧	gojv
+官居	grjv
+工具	gsjv
+故居	gujv
+规矩	gvjv
+寡居	gwjv
+惶遽	hdjv
+和局	hejv
+行距	hhjv
+韩剧	hjjv
+汉剧	hjjv
+豪举	hkjv
+火炬	hojv
+欢聚	hrjv
+护具	hujv
+汇聚	hvjv
+话剧	hwjv
+坏疽	hyjv
+差距	iajv
+丑剧	ibjv
+创举	idjv
+车距	iejv
+长句	ihjv
+潮剧	ikjv
+川剧	irjv
+重聚	isjv
+出局	iujv
+出具	iujv
+炊具	ivjv
+焦距	jcjv
+僵局	jdjv
+几句	jijv
+急剧	jijv
+艰巨	jmjv
+间距	jmjv
+近距	jnjv
+几句	jojv
+旧居	jqjv
+绝句	jtjv
+聚居	jujv
+举	jv		0
+据	jv		0
+疽	jva		992
+举哀	jvai
+倨傲	jvao
+娵	jvb		345
+剧本	jvbf
+举办	jvbj
+举报	jvbk
+巨变	jvbm
+巨擘	jvbo
+局部	jvbu
+举兵	jvby
+具备	jvbz
+居	jvc		527014
+局	jvca		461034
+焗	jvca		0
+剧	jvcc		220880
+焗	jvcd		682
+据此	jvci
+聚餐	jvcj
+炬	jvcn		6448
+举措	jvco
+局促	jvcu
+屦	jvcw		98
+咀	jvd		8667
+巨大	jvda
+句读	jvdb
+据点	jvdm
+居多	jvdo
+锯断	jvdr
+举动	jvds
+剧毒	jvdu
+橘	jve		14755
+椐	jvec		554
+巨额	jvee
+桔	jveg		7128
+榉	jvek		581
+柜	jven		5
+窭	jvep		83
+雎	jvf		2014
+句法	jvfa
+飓风	jvfg
+且	jvfq		0
+拒付	jvfu
+巨幅	jvfu
+句	jvg		254300
+聚光	jvgd
+橘柑	jvgj
+弆	jvgk		448
+举国	jvgo
+居官	jvgr
+鞠躬	jvgs
+巨贾	jvgu
+惧	jvh		165581
+居后	jvhb
+橘黄	jvhd
+聚合	jvhe
+句号	jvhk
+橘红	jvhs
+聚会	jvhv
+菊花	jvhw
+据查	jvia
+据称	jvig
+剧场	jvih
+锯齿	jvii
+据传	jvir
+举出	jviu
+俱	jvj		92404
+倨	jvjc		2628
+聚焦	jvjc
+巨匠	jvjd
+聚集	jvji
+举荐	jvjm
+拘谨	jvjn
+雎鸠	jvjq
+拒绝	jvjt
+咀嚼	jvjt
+聚居	jvju
+聚居	jvjv
+居家	jvjw
+具结	jvjx
+沮	jvk		31095
+菊科	jvke
+泃	jvkg		371
+巨款	jvkr
+澽	jvkz		278
+菊	jvl		43031
+苴	jvlc		565
+莒	jvld		817
+巨量	jvld
+龃	jvlf		624
+巨浪	jvlh
+蒟	jvli		400
+距离	jvli
+举例	jvli
+聚敛	jvlm
+苣	jvln		641
+聚落	jvlo
+巨轮	jvlp
+苴	jvlq		565
+拘留	jvlq
+拘挛	jvlr
+巨龙	jvls
+聚拢	jvls
+剧烈	jvlx
+聚类	jvlz
+狙	jvm		17116
+局麻	jvma
+砠	jvmf		336
+橘猫	jvmk
+局面	jvmm
+居民	jvmn
+句末	jvmo
+锯末	jvmo
+剧目	jvmu
+具名	jvmy
+巨	jvn		753729
+拘拿	jvna
+琚	jvnc		1045
+驹	jvng		11020
+拘泥	jvni
+莒南	jvnj
+惧内	jvnz
+局内	jvnz
+矩	jvo		56720
+飓	jvob		9487
+距	jvp		193245
+惧怕	jvpa
+踞	jvpc		6612
+拘票	jvpc
+趄	jvpf		461
+局骗	jvpm
+拒聘	jvpn
+踽	jvpt		1379
+剧评	jvpy
+拒赔	jvpz
+具	jvq		433976
+举起	jvqi
+䴗	jvqm		0
+居前	jvqm
+拘牵	jvqm
+犋	jvqq		373
+聚	jvqr		222383
+俱全	jvqr
+剧情	jvqy
+筥	jvr		362
+巨人	jvrf
+居然	jvrj
+蒟蒻	jvro
+巨乳	jvru
+讵	jvs		447
+惧色	jvse
+沮丧	jvsh
+聚散	jvsj
+居所	jvso
+鞠	jvt		23015
+巨头	jvtb
+剧透	jvtb
+裾	jvtc		1369
+锯条	jvtc
+具体	jvti
+巨贪	jvtj
+剧坛	jvtj
+鞫	jvtn		562
+剧团	jvtr
+剧痛	jvts
+拒	jvu		150199
+举手	jvub
+剧社	jvue
+拘	jvug		35775
+局势	jvui
+掬	jvun		6329
+据说	jvuo
+拘束	jvuu
+岠	jvv		463
+崌	jvvc		363
+举着	jvve
+岨	jvvf		332
+矩阵	jvvf
+举证	jvvg
+局长	jvvh
+举止	jvvi
+剧照	jvvk
+举债	jvvl
+举重	jvvs
+居中	jvvs
+居住	jvvu
+𬶋	jvw		0
+具文	jvwf
+句尾	jvwk
+居委	jvwk
+局外	jvwl
+句尾	jvwz
+居委	jvwz
+秬	jvx		378
+巨响	jvxd
+具象	jvxd
+据悉	jvxi
+局限	jvxm
+居心	jvxn
+巨蟹	jvxx
+剧协	jvxx
+举行	jvxy
+矩形	jvxy
+车	jvy		60000
+拘押	jvya
+具有	jvyb
+車	jvyc		651
+拘役	jvyi
+举要	jvyk
+剧院	jvyr
+居于	jvyu
+局域	jvyu
+龃龉	jvyu
+居于	jvyv
+局域	jvyv
+龃龉	jvyv
+醵	jvyz		513
+锯	jvz		8953
+锔	jvzc		218
+剧增	jvzg
+句子	jvzi
+巨资	jvzi
+遽	jvzj		3222
+拒载	jvzl
+钜	jvzn		1496
+剧作	jvzo
+巨作	jvzo
+剧组	jvzu
+家具	jwjv
+加剧	jwjv
+结局	jxjv
+拮据	jxjv
+京剧	jyjv
+科举	kejv
+抗拒	khjv
+考据	kkjv
+开局	kljv
+困局	kpjv
+困居	kpjv
+恐惧	ksjv
+拉锯	lajv
+了局	lcjv
+两句	ldjv
+量具	ldjv
+例句	lijv
+邻居	lnjv
+螺距	lojv
+论据	lpjv
+留居	lqjv
+乱局	lrjv
+略举	ltjv
+炉具	lujv
+旅居	lvjv
+列举	lxjv
+类聚	lzjv
+马驹	majv
+蜜橘	mijv
+面具	mmjv
+民居	mnjv
+磨具	mojv
+模具	mujv
+名句	myjv
+美剧	mzjv
+枚举	mzjv
+闹剧	nkjv
+扭矩	nqjv
+农具	nsjv
+凝聚	nyjv
+内聚	nzjv
+票据	pcjv
+皮具	pijv
+盘踞	pjjv
+牌局	pljv
+骗局	pmjv
+姘居	pnjv
+颇具	pojv
+蒲剧	pujv
+平局	pyjv
+凭据	pyjv
+侨居	qcjv
+器具	qijv
+迁居	qmjv
+寝具	qnjv
+群居	qpjv
+秋菊	qqjv
+全局	qrjv
+穷举	qsjv
+屈居	qujv
+卡具	qwjv
+刃具	rfjv
+日剧	rijv
+燃具	rjjv
+死局	sijv
+散居	sjjv
+缩聚	sojv
+苏剧	sujv
+抬举	tljv
+托举	tojv
+囤聚	tpjv
+团聚	trjv
+同居	tsjv
+推举	tvjv
+挺举	tyjv
+厅局	tyjv
+收据	ubjv
+设局	uejv
+胜局	ugjv
+盛举	ugjv
+上句	uhjv
+赏菊	uhjv
+诗句	uijv
+善举	ujjv
+绍剧	ukjv
+说句	uojv
+数据	uujv
+水具	uvjv
+轴距	vbjv
+壮举	vdjv
+这句	vejv
+蛰居	vejv
+证据	vgjv
+整句	vgjv
+支局	vijv
+占据	vjjv
+终局	vsjv
+追剧	vvjv
+抓举	vwjv
+文具	wfjv
+网剧	whjv
+玩具	wjjv
+蜗居	wojv
+莴苣	wojv
+舞剧	wujv
+畏惧	wzjv
+小聚	xcjv
+相聚	xdjv
+相距	xdjv
+喜剧	xijv
+戏剧	xijv
+闲居	xmjv
+新居	xnjv
+选举	xrjv
+雄踞	xsjv
+穴居	xtjv
+下句	xwjv
+刑拘	xyjv
+刑具	xyjv
+哑剧	yajv
+邮局	ybjv
+野菊	yejv
+扬剧	yhjv
+依据	yijv
+盐焗	yjjv
+烟具	yjjv
+药具	ykjv
+隐居	ynjv
+用具	ysjv
+越剧	ytjv
+跃居	ytjv
+语句	yujv
+影剧	yyjv
+杂居	zajv
+字据	zijv
+自居	zijv
+趑趄	zijv
+暂居	zjjv
+造句	zkjv
+灶具	zkjv
+坐具	zojv
+总局	zsjv
+祖居	zujv
+最具	zvjv
+# 结束飞键
+
+# 开始飞键 yu -> yv
+碍于	aiyv
+暗语	anyv
+按语	anyv
+鲅鱼	bayv
+标语	bcyv
+比喻	biyv
+暴雨	bkyv
+白玉	blyv
+便于	bmyv
+宾语	bnyv
+濒于	bnyv
+钵盂	boyv
+不予	buyv
+捕鱼	buyv
+哺育	buyv
+别于	bxyv
+并于	byyv
+病愈	byyv
+苍郁	chyv
+词语	ciyv
+赐予	ciyv
+参与	cjyv
+残余	cjyv
+草鱼	ckyv
+存于	cpyv
+葱郁	csyv
+翠玉	cvyv
+大于	dayv
+大雨	dayv
+钓鱼	dcyv
+鲷鱼	dcyv
+德语	deyv
+德育	deyv
+等于	dgyv
+党羽	dhyv
+低于	diyv
+地狱	diyv
+但与	djyv
+岛屿	dkyv
+待遇	dlyv
+殿宇	dmyv
+多余	doyv
+多于	doyv
+短语	dryv
+冻雨	dsyv
+对于	dvyv
+定语	dyyv
+定于	dyyv
+鳄鱼	eeyv
+俄语	eeyv
+恩遇	enyv
+耳语	eryv
+发育	fayv
+法语	fayv
+风雨	fgyv
+丰腴	fgyv
+防御	fhyv
+繁育	fjyv
+赋予	fuyv
+富裕	fuyv
+馥郁	fuyv
+飞鱼	fzyv
+刚玉	ghyv
+干预	gjyv
+敢于	gjyv
+高于	gkyv
+过于	goyv
+国语	goyv
+过誉	goyv
+关于	gryv
+公寓	gsyv
+古语	guyv
+归于	gvyv
+桂鱼	gvyv
+寡欲	gwyv
+给予	gzyv
+厚遇	hbyv
+黄鱼	hdyv
+合于	heyv
+汉语	hjyv
+好于	hkyv
+海域	hlyv
+婚育	hpyv
+寰宇	hryv
+欢愉	hryv
+红鱼	hsyv
+呼吁	huyv
+毁誉	hvyv
+话语	hwyv
+黑鱼	hzyv
+沉郁	ifyv
+成语	igyv
+长于	ihyv
+驰誉	iiyv
+产于	ijyv
+春雨	ipyv
+传语	iryv
+充裕	isyv
+处于	iuyv
+出于	iuyv
+教育	jcyv
+降雨	jdyv
+机遇	jiyv
+觊觎	jiyv
+基于	jiyv
+给予	jiyv
+鉴于	jmyv
+监狱	jmyv
+金鱼	jnyv
+旧雨	jqyv
+绝育	jtyv
+居于	juyv
+局域	juyv
+龃龉	juyv
+驾驭	jwyv
+介于	jxyv
+境遇	jyyv
+鲸鱼	jyyv
+敬语	jyyv
+口语	kbyv
+诳语	kdyv
+可与	keyv
+课余	keyv
+抗御	khyv
+堪舆	kjyv
+蛞蝓	koyv
+宽裕	kryv
+空余	ksyv
+苦于	kuyv
+快语	kyyv
+漏雨	lbyv
+楼宇	lbyv
+乐于	leyv
+冷遇	lgyv
+浪语	lhyv
+利于	liyv
+捞鱼	lkyv
+牢狱	lkyv
+炼狱	lmyv
+淋雨	lnyv
+淋浴	lnyv
+落雨	loyv
+论语	lpyv
+流域	lqyv
+略语	ltyv
+鲈鱼	luyv
+领域	lyyv
+雷雨	lzyv
+庙宇	mcyv
+蒙语	mgyv
+忙于	mhyv
+谜语	miyv
+鳗鱼	mjyv
+冒雨	mkyv
+免于	mmyv
+摸鱼	moyv
+墨鱼	moyv
+沐浴	muyv
+母语	muyv
+名誉	myyv
+美誉	mzyv
+鸟语	ncyv
+难于	njyv
+鲇鱼	nmyv
+年逾	nmyv
+浓郁	nsyv
+偶遇	ouyv
+飘雨	pcyv
+盆浴	pfyv
+批语	piyv
+番禺	pjyv
+迫于	poyv
+评语	pyyv
+培育	pzyv
+巧遇	qcyv
+强于	qdyv
+其余	qiyv
+勤于	qnyv
+秋雨	qqyv
+痊愈	qryv
+穷于	qsyv
+区域	quyv
+趋于	quyv
+恰与	qwyv
+情欲	qyyv
+肉欲	rbyv
+人鱼	rfyv
+日语	riyv
+弱于	royv
+软语	rryv
+软玉	rryv
+荣誉	rsyv
+冗余	rsyv
+入狱	ruyv
+如玉	ruyv
+色欲	seyv
+森郁	sfyv
+桑榆	shyv
+死于	siyv
+私语	siyv
+梭鱼	soyv
+酸雨	sryv
+俗语	suyv
+体育	tiyv
+贪欲	tjyv
+套语	tkyv
+泰语	tlyv
+天宇	tmyv
+唾余	toyv
+团鱼	tryv
+同余	tsyv
+土语	tuyv
+突遇	tuyv
+听阈	tyyv
+鲨鱼	uayv
+授予	ubyv
+手语	ubyv
+双语	udyv
+慑于	ueyv
+甚于	ufyv
+神谕	ufyv
+剩余	ugyv
+声誉	ugyv
+生育	ugyv
+伤愈	uhyv
+食欲	uiyv
+善于	ujyv
+少于	ukyv
+属于	uuyv
+术语	uuyv
+水域	uvyv
+炸鱼	vayv
+咒语	vbyv
+状语	vdyv
+阵雨	vfyv
+章鱼	vhyv
+至于	viyv
+治愈	viyv
+谵语	vjyv
+准予	vpyv
+终于	vsyv
+忠于	vsyv
+主语	vuyv
+文娱	wfyv
+蓊郁	wgyv
+妄语	whyv
+外语	wlyv
+无语	wuyv
+物欲	wuyv
+位于	wzyv
+小雨	xcyv
+小于	xcyv
+相遇	xdyv
+西域	xiyv
+洗浴	xiyv
+咸鱼	xmyv
+限于	xmyv
+信誉	xnyv
+熏鱼	xpyv
+羞于	xqyv
+选育	xryv
+鳕鱼	xtyv
+须臾	xuyv
+下雨	xwyv
+泄欲	xxyv
+性欲	xyyv
+亚于	yayv
+由于	ybyv
+犹豫	ybyv
+忧郁	ybyv
+业余	yeyv
+揶揄	yeyv
+养育	yhyv
+抑郁	yiyv
+易于	yiyv
+言语	yjyv
+谚语	yjyv
+艳遇	yjyv
+药浴	ykyv
+阴雨	ynyv
+音域	ynyv
+孕育	ypyv
+源于	yryv
+缘于	yryv
+用于	ysyv
+勇于	ysyv
+粤语	ytyv
+越狱	ytyv
+与	yv		0
+御	yv		0
+于是	yv
+瘀	yva		1494
+阈	yvad		185
+阈	yvaf		185
+预案	yvan
+瘐	yvap		427
+育	yvb		214206
+渔霸	yvba
+鱼鳔	yvbc
+娱	yvbd		37970
+愚笨	yvbf
+妤	yvbi		6923
+御笔	yvbi
+预报	yvbk
+鱼白	yvbl
+妪	yvbn		3418
+余波	yvbo
+鬻	yvbp		575
+聿	yvbv		4831
+语病	yvby
+预备	yvbz
+煜	yvc		18582
+预测	yvce
+熨	yvcf		367
+燏	yvci		1308
+鱼刺	yvci
+遇刺	yvci
+蝓	yvcj		372
+育才	yvcl
+蜮	yvcp		1057
+渔村	yvcp
+燠	yvct		460
+吁	yvd		47540
+语调	yvdc
+余地	yvdi
+喻	yvdj		36595
+遇到	yvdk
+雨点	yvdm
+窳惰	yvdo
+愚钝	yvdp
+喁	yvdq		945
+预断	yvdr
+鱼肚	yvdu
+预读	yvdu
+预定	yvdy
+榆	yve		12802
+余额	yvee
+窬	yvej		548
+毓	yvek		7778
+棫	yvep		1238
+鱼儿	yver
+育儿	yver
+窳	yvey		555
+于	yvf		1.61499e+06
+欤	yvfa		860
+盂	yvfa		0
+语法	yvfa
+愈发	yvfa
+与否	yvfb
+鱼粉	yvff
+预防	yvfh
+迂	yvfn		10277
+玉佛	yvfo
+髃	yvfq		16
+邘	yvft		363
+预付	yvfu
+迂腐	yvfu
+育肥	yvfz
+域	yvg		135460
+堉	yvgb		347
+预购	yvgb
+余光	yvgd
+渔歌	yvge
+鱼缸	yvgh
+浴缸	yvgh
+预感	yvgj
+预告	yvgk
+遇过	yvgo
+与共	yvgs
+预估	yvgu
+雨刮	yvgw
+欲	yvh		353022
+预后	yvhb
+愈合	yvhe
+谷	yvhg		100
+宇航	yvhh
+愉	yvhj		60639
+御寒	yvhj
+遇害	yvhl
+欲火	yvho
+玉环	yvhr
+渔户	yvhu
+迂回	yvhv
+羽化	yvhw
+鹆	yvhx		136
+预	yvi		218757
+鱼叉	yvia
+矞	yvid		436
+纡	yvif		431
+玉成	yvig
+浴场	yvih
+渔场	yvih
+鱼翅	yvii
+浴池	yvii
+艅	yvij		393
+预产	yvij
+矞	yvim		436
+遹	yvim		0
+愚蠢	yvip
+渔船	yvir
+鱼虫	yvis
+鹬	yvit		596
+遹	yviu		433
+育雏	yviu
+予	yviv		105542
+豫	yviw		140767
+余	yvj		441792
+预交	yvjc
+俣	yvjd		383
+觎	yvje		3643
+悆	yvjh		440
+预计	yvji
+雨季	yvji
+遇见	yvjm
+伛	yvjn		255
+浴巾	yvjn
+于今	yvjn
+俞	yvjp		26139
+逾	yvjp		0
+觎	yvjp		0
+遇救	yvjq
+逾	yvju		13686
+语句	yvju
+愈	yvjv		103820
+语句	yvjv
+瑜伽	yvjw
+愈加	yvjw
+畬	yvjx		540
+郁结	yvjx
+预警	yvjy
+浴	yvk		69322
+淯	yvkb		423
+鱼口	yvkb
+潏	yvkd		10
+预科	yvke
+誉	yvkh		69067
+滪	yvki		14
+渝	yvkj		10653
+预考	yvkk
+淤	yvkl		8794
+迂阔	yvko
+余款	yvkr
+潏	yvkt		10
+渔	yvkw		31185
+愉快	yvky
+於	yvl		73580
+遇剌	yvla
+蔚	yvlc		6
+预料	yvlc
+龉	yvld		575
+雨量	yvld
+娱乐	yvle
+芋	yvlf		4991
+蓣	yvli		16
+余力	yvli
+预览	yvlj
+雨涝	yvlk
+雨帘	yvlm
+雨林	yvln
+鱼鳞	yvln
+萸	yvlp		618
+舆论	yvlp
+预留	yvlq
+鱼卵	yvlr
+玉龙	yvls
+薁	yvlt		337
+语录	yvlu
+雨露	yvlu
+伛偻	yvlv
+菀	yvlw		665
+渔猎	yvlx
+育龄	yvly
+鱼类	yvlz
+狱	yvm		133801
+预谋	yvmb
+育苗	yvmc
+鱼苗	yvmc
+郁闷	yvmf
+玉米	yvmi
+狳	yvmj		423
+羽毛	yvmk
+渔民	yvmn
+㺄	yvmp		0
+榆木	yvmu
+㺄	yvmv		0
+域名	yvmy
+愚昧	yvmz
+玉	yvn		721753
+玙	yvnf		98
+淤泥	yvni
+芋泥	yvni
+瑜	yvnj		37277
+遇难	yvnj
+鱼腩	yvnj
+芋艿	yvnl
+欲念	yvnm
+驭	yvnr		11486
+愚弄	yvns
+瑀	yvnt		7470
+郁怒	yvnu
+郁	yvnv		156526
+玉女	yvnv
+余孽	yvnx
+宇内	yvnz
+昱	yvo		6273
+舆	yvp		17587
+鱼漂	yvpc
+彧	yvpd		2681
+浴盆	yvpf
+雨披	yvpi
+臾	yvpj		4333
+预判	yvpj
+浴袍	yvpk
+舁	yvpl		447
+鱼片	yvpm
+玉璞	yvpu
+玉佩	yvpz
+遇	yvq		409411
+预期	yvqi
+语气	yvqi
+与其	yvqi
+余切	yvqo
+鱼群	yvqp
+欲求	yvqq
+饫	yvqt		247
+余缺	yvqt
+愚	yvqv		60381
+余切	yvqx
+淤青	yvqy
+圄	yvr		1046
+鱼肉	yvrb
+预热	yvre
+竽	yvrf		963
+育人	yvrf
+圉	yvrg		580
+羽绒	yvrs
+裕如	yvru
+语	yvs		843913
+语塞	yvse
+淤塞	yvse
+雨丝	yvsi
+谕	yvsj		15061
+雨伞	yvsj
+预赛	yvsl
+寓所	yvso
+谀	yvsp		3139
+预算	yvsr
+鱼松	yvss
+语速	yvsu
+雨	yvt		725801
+芋头	yvtb
+禹	yvtd		19590
+裕	yvth		43025
+鱼塘	yvth
+预提	yvti
+玉体	yvti
+褕	yvtj		451
+羽坛	yvtj
+语态	yvtl
+雩	yvtm		535
+雨天	yvtm
+隅	yvtq		5608
+隩	yvtt		476
+鄅	yvtt		0
+玉兔	yvtu
+鄅	yvtv		278
+玉腿	yvtv
+熨帖	yvtx
+揄	yvu		4290
+淤沙	yvua
+预售	yvub
+预设	yvue
+预审	yvuf
+余生	yvug
+雨声	yvug
+遇上	yvuh
+于是	yvui
+预示	yvui
+玉山	yvuj
+榆树	yvuu
+雨水	yvuv
+雨刷	yvuw
+屿	yvv		11826
+宇宙	yvvb
+预装	yvvd
+御者	yvve
+余震	yvvf
+预征	yvvg
+峪	yvvh		4061
+预知	yvvi
+阈值	yvvi
+嵛	yvvj		586
+预展	yvvj
+预兆	yvvk
+玉镯	yvvo
+腴	yvvp		2956
+嵎	yvvq		422
+雨中	yvvs
+语种	yvvs
+预祝	yvvu
+宇	yvw		311167
+敔	yvwd		400
+语文	yvwf
+渔翁	yvwg
+欲望	yvwh
+鱼丸	yvwj
+愚顽	yvwj
+誉为	yvwk
+域外	yvwl
+寓	yvwq		34060
+雨雾	yvwu
+鱼	yvwv		288142
+誉为	yvwz
+庾	yvx		1850
+预想	yvxd
+预习	yvxi
+预先	yvxm
+渔汛	yvxp
+预选	yvxr
+愚兄	yvxs
+瘀血	yvxt
+雨靴	yvxt
+语序	yvxu
+余下	yvxw
+鱼虾	yvxw
+雨鞋	yvxx
+余兴	yvxy
+渔业	yvye
+浴液	yvye
+予以	yvyi
+寓意	yvyi
+羽翼	yvyi
+雨衣	yvyi
+语义	yvyi
+语言	yvyj
+预言	yvyj
+语音	yvyn
+余韵	yvyp
+御用	yvys
+预约	yvyt
+愉悦	yvyt
+逾越	yvyt
+羽	yvz		322339
+虞	yvzd		30560
+鱼子	yvzi
+玉簪	yvzj
+预载	yvzl
+钰	yvzn		11516
+狱卒	yvzu
+铻	yvzw		0
+英语	yyyv
+杂鱼	zayv
+赠予	zgyv
+赠与	zgyv
+藏语	zhyv
+自愈	ziyv
+自娱	ziyv
+赞誉	zjyv
+遭遇	zkyv
+在于	zlyv
+鳟鱼	zpyv
+纵欲	zsyv
+足浴	zuyv
 # 结束飞键
 
 啊啊啊	aaa

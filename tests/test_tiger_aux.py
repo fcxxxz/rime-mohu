@@ -1745,9 +1745,12 @@ class FixedDictionaryTest(unittest.TestCase):
         # 2026-09-14 af85534 回退 s 一简重分配（三 s、散 sj、斯 siz、
         # 锶 sizq）：3 键 -1、zrm 4 键 +2、flypy 4 键 +1。
         # 2026-09-17 简码指定（喂 wzd 换味 wzd/wzdq）码长计数不变。
+        # 2026-09-20 方/放换位（方 fh、放 fhl）计数不变；文 次级简码
+        # wf 进二码（2 键 +1），紊 接手文让出的 wfv 后其 wfvf 四码行
+        # 被覆盖（zrm 4 键 3889 -> 3888、flypy 3434 -> 3433）。
         expected_lengths = {
-            "zrm": {1: 42, 2: 434, 3: 4567, 4: 3889},
-            "flypy": {1: 42, 2: 434, 3: 4567, 4: 3434},
+            "zrm": {1: 42, 2: 435, 3: 4567, 4: 3888},
+            "flypy": {1: 42, 2: 435, 3: 4567, 4: 3433},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1774,6 +1777,17 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertIn(("件", "jm"), pairs)
                 self.assertIn(("减", "jmw"), pairs)
                 self.assertNotIn(("减", "jm"), pairs)
+                # 2026-09-20 方/放换位：方 fh、放 fhl（放原二码让位）。
+                self.assertIn(("方", "fh"), pairs)
+                self.assertIn(("放", "fhl"), pairs)
+                self.assertNotIn(("放", "fh"), pairs)
+                self.assertNotIn(("方", "fhl"), pairs)
+                # 文 登记次级简码 wf：问 wf 之后的次选位；文 让出的
+                # wfv 由紊按递补规则接手。
+                self.assertIn(("问", "wf"), pairs)
+                self.assertIn(("文", "wf"), pairs)
+                self.assertNotIn(("文", "wfv"), pairs)
+                self.assertIn(("紊", "wfv"), pairs)
                 # af85534 回退 s 一简重分配后的现状：三 s、散 sj、
                 # 斯 siz、锶 sizq（置顶词不再占用 s，什么仍可用 sm）。
                 self.assertIn(("三", "s"), pairs)

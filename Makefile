@@ -28,11 +28,24 @@ ORT_DEFINES =
 TIGER_EXTRA_LDFLAGS = -framework Accelerate
 endif
 
-quick: classics tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen opencc
+quick: classics tiger_aux fixed_tiger sync_flykey chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
-dict: classics tiger_aux chars fixed_tiger update-compact-dicts
+	$(MAKE) mohu_lexicons
+
+dict: classics tiger_aux chars fixed_tiger sync_flykey update-compact-dicts
 	uv run tools/build_flypy_assets.py
+	$(MAKE) mohu_lexicons
+
 all: quick dict
+
+sync_flykey: tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/sync_flykey_config.py tools/sync_flykey_quickcodes.py fixed_tiger
+	uv run python tools/sync_flykey_config.py --apply
+	uv run python tools/sync_flykey_quickcodes.py --apply
+
+flykey-check: tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/sync_flykey_config.py tools/sync_flykey_quickcodes.py
+	uv run python tools/sync_flykey_config.py --check
+	uv run python tools/sync_flykey_quickcodes.py --check
+	uv run python tools/sync_flykey_quickcodes.py --check --scheme flypy mohu_flypy_fixed.dict.yaml mohu_flypy_fixed_legacy.dict.yaml
 
 mohu_flypy_custom_phrases.txt: mohu_zrm_custom_phrases.txt tools/build_flypy_assets.py
 	uv run tools/build_flypy_assets.py --custom-phrases-only
@@ -311,12 +324,12 @@ test: dist-zrm dist-flypy mohu_lexicons
 	uv run python -m unittest tests.test_mohu_migration -v
 	uv run python -m unittest tests.test_tiger_symbol_workflow -v
 	uv run python -m unittest tests.test_merge_emoji -v
-	PYTHONDONTWRITEBYTECODE=1 uv run python -m unittest tests.test_skin_editor_local_server -v
 	bash tests/rime_sync_conf_test.sh
 	lua tests/mohu_candidate_override_test.lua
 	lua tests/mohu_candidate_weight_reset_test.lua
 	lua tests/mohu_pin_store_test.lua
 	lua tests/option_sync_test.lua
+	lua tests/mohu_tab_nav_test.lua
 	lua tests/mohu_candidate_manager_test.lua
 	lua tests/mohu_candidate_manager_config_test.lua
 	lua tests/mohu_tiger_sentence_native_test.lua
@@ -342,12 +355,11 @@ test: dist-zrm dist-flypy mohu_lexicons
 	lua tests/mohu_express_tiger_test.lua
 	lua tests/mohu_pin_test.lua
 	lua tests/mohu_symbol_commands_test.lua
-	lua tests/mohu_skin_command_test.lua
-	lua tests/rime_skin_editor_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_override_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_weight_reset_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_pin_store_test.lua
 	$(MOHU_LUA_BIN) tests/option_sync_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tab_nav_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_config_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_tiger_sentence_native_test.lua
@@ -369,11 +381,6 @@ test: dist-zrm dist-flypy mohu_lexicons
 	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_pin_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_symbol_commands_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_skin_command_test.lua
-	$(MOHU_LUA_BIN) tests/rime_skin_editor_test.lua
-	node tests/skin_editor_core_test.js
-	node tests/schema_settings_test.js
-	node tests/skin_editor_integration_test.js
 	cp -a /usr/share/opencc/* dist/opencc       2>/dev/null || true
 	cp -a /usr/local/share/opencc/* dist/opencc 2>/dev/null || true
 	cp -a /opt/homebrew/share/opencc/* dist/opencc 2>/dev/null || true
@@ -390,4 +397,4 @@ test: dist-zrm dist-flypy mohu_lexicons
 	rm -rf /tmp/mira-cache
 
 .PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-semantic tigerengine-word-score tigerengine-word-edge tigerengine-word-gate tigerengine-bench dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy test lint-python
-.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy test lint-python
+.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python

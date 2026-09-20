@@ -71,6 +71,37 @@ local function is_pinned(cand, pin_indicator)
     return cand.type == "pinned" or (pin_indicator ~= nil and cand.comment == pin_indicator)
 end
 
+local function is_pin_candidate(cand, pin_indicator)
+    -- librime-lua 的 get_genuine 每次调用都返回新的 userdata 包装器：
+    -- 包装器身份比较（seen 去重、genuine == current）永远不成立，而普通
+    -- 候选的真身就是自身——按身份走查真身链会对任意非 Shadow 候选无限
+    -- 循环（vgxju 后 Shift+Delete 冻结的根因，2026-09-20）。改用深度
+    -- 上限硬兜底，并以「同文本同类型」作为链已到头的判定。
+    local current = cand
+    local seen = {}
+    for _ = 1, 8 do
+        if current == nil or seen[current] then
+            break
+        end
+        seen[current] = true
+        if is_pinned(current, pin_indicator) then
+            return true
+        end
+        if current.get_genuine == nil then
+            break
+        end
+        local ok, genuine = pcall(current.get_genuine, current)
+        if not ok or genuine == nil then
+            break
+        end
+        if genuine.text == current.text and genuine.type == current.type then
+            break
+        end
+        current = genuine
+    end
+    return false
+end
+
 local function order_entries(candidates, records, management, pin_indicator)
     local status = {}
     local pinned = {}
@@ -512,6 +543,13 @@ local function is_soft_deletable(cand)
         return true
     end
     local cand_type = genuine_candidate(cand).type
+    -- native 整句候选（mohu_zrm/mohu_flypy）此前不在 lexical_types 白
+    -- 名单，Shift+Delete 对其静默 kNoop——引擎组合路径学出的搭配
+    -- （vgxju 的「整车」jū）删不掉。隐藏记录对 native 候选本来生效
+    -- （record_applies 不排除），这里放行进入标准软隐藏路径。
+    if cand_type == "mohu_zrm" or cand_type == "mohu_flypy" then
+        return true
+    end
     return lexical_types[cand_type] == true
 end
 
@@ -857,6 +895,16 @@ function processor.init(env)
             env.override_memory = memory
         end
     end
+    -- pin 库连接：Shift+Delete 对置顶/万灵药/自由加词候选直接去 pin。
+    -- 惰加载避免测试环境与模块加载顺序依赖（库不可用时回退隐藏语义）。
+    local pin_ok, pin_module = pcall(require, "mohu_pin")
+    if pin_ok and type(pin_module) == "table"
+        and type(pin_module.pin_store) == "table" then
+        local acquire_ok, acquired = pcall(pin_module.pin_store.acquire)
+        if acquire_ok and acquired then
+            env.override_pin_store = pin_module.pin_store
+        end
+    end
     env.override_management_armed = false
     local function reset_management(context)
         env.override_management_armed = false
@@ -886,6 +934,10 @@ function processor.fini(env)
     if env.override_memory ~= nil then
         pcall(function() env.override_memory:disconnect() end)
         env.override_memory = nil
+    end
+    if env.override_pin_store ~= nil then
+        pcall(env.override_pin_store.release)
+        env.override_pin_store = nil
     end
     release(env)
 end
@@ -1110,9 +1162,32 @@ local function finish_permanent_delete(context, env, selected, text, stored_code
     if not already_forgotten then
         forget_engine_user_model(text, count)
     end
+    -- native 整句候选：删掉个人词条后，组合路径仍会重新生成同一候选
+    -- （vgxju 的「整车」jū——用户词删了、菜单里还在）。对 native 类型
+    -- 补写隐藏记录，让「删了就没了」对组合候选同样成立。
+    local native_type = genuine_candidate(selected).type
+    if native_type == "mohu_zrm" or native_type == "mohu_flypy" then
+        pcall(function() env.override_store:set_hidden(code, text, true) end)
+    end
     refresh_override_memory(env)
     refresh(context)
     set_prompt(context, "〔已永久删除「" .. text .. "」〕")
+    return kAccepted
+end
+
+-- 无 userdb 词条候选（词典词/组合候选）两段式的第二按：执行隐藏；
+-- native 类型同时反学习一次提交量。
+local function commit_soft_hide(context, env, selected, text, code)
+    local native_type = genuine_candidate(selected).type
+    if native_type == "mohu_zrm" or native_type == "mohu_flypy" then
+        forget_engine_user_model(text, 1)
+    end
+    if env.override_store:set_hidden(code, text, true) then
+        refresh(context)
+        set_prompt(context, "〔已隐藏「" .. text .. "」；Ctrl+Shift+M 可管理和恢复〕")
+    else
+        set_prompt(context, "〔隐藏失败：无法写入用户资料〕")
+    end
     return kAccepted
 end
 
@@ -1129,12 +1204,17 @@ local function delete_or_restore(context, segment, code, env)
     local record = records[text]
     local management = context:get_option(env.override_management_option)
 
-    -- 两段式：第一按清空学习权重，两秒内第二按永久删除。armed 状态让
-    -- 第二按不依赖 userdb 条目是否仍可寻回（清零后可能已被丢弃）。
+    -- 两段式：第一按清空学习权重（或进入待隐藏），两秒内第二按执行
+    -- 永久删除/隐藏。armed 状态让第二按不依赖 userdb 条目是否仍可寻回
+    -- （清零后可能已被丢弃）；action 区分第二按的执行动作。
     local armed = env.override_weight_cleared
     local seg_norm = normalize_code(code)
     if armed ~= nil and armed.text == text and armed.seg == seg_norm
         and (os.clock() - armed.time) <= 2.0 then
+        env.override_weight_cleared = nil
+        if armed.action == "hide" then
+            return commit_soft_hide(context, env, selected, text, code)
+        end
         return finish_permanent_delete(context, env, selected, text,
             armed.entry_code, armed.count, code, true)
     end
@@ -1157,6 +1237,7 @@ local function delete_or_restore(context, segment, code, env)
                 entry_code = normalize_code(entry_code(created_entry)),
                 count = count,
                 time = os.clock(),
+                action = "permanent",
             }
             refresh_engine_personal(env.override_memory)
             -- 用户层 trigram 反学习的唯一点：armed 第二按复用同一个 count，
@@ -1165,8 +1246,19 @@ local function delete_or_restore(context, segment, code, env)
             set_prompt(context, "〔已清空「" .. text .. "」的学习权重；两秒内再按一次永久删除〕")
             return kAccepted
         end
-        return finish_permanent_delete(context, env, selected, text,
-            normalize_code(entry_code(created_entry)), count, code, false)
+        -- 权重已清（或从未学习）的词条也保持两段式：第一按只进入 armed
+        -- 状态，2 秒内第二按才永久删除——不提供「一按直删」捷径，避免
+        -- 误触直接删词（2026-09-20 恢复严格两段式）。
+        env.override_weight_cleared = {
+            text = text,
+            seg = seg_norm,
+            entry_code = normalize_code(entry_code(created_entry)),
+            count = 0,
+            time = os.clock(),
+            action = "permanent",
+        }
+        set_prompt(context, "〔「" .. text .. "」无学习权重；两秒内再按一次永久删除〕")
+        return kAccepted
     end
 
     if management and record ~= nil and record.hidden then
@@ -1180,15 +1272,48 @@ local function delete_or_restore(context, segment, code, env)
         end
         return kAccepted
     end
+    -- pin 库词条（置顶/万灵药/自由加词）不在 userdb，user_created_entry
+    -- 找不到它们：Shift+Delete 直接触发去 pin（同 ==w 管理路径的
+    -- pin_store.remove），而不是写一条只起遮挡作用的隐藏记录。
+    if env.override_pin_store ~= nil and is_pin_candidate(selected, env.override_pin_indicator) then
+        local source = nil
+        local entries_ok, entries = pcall(env.override_pin_store.query_and_unpack_as_list, code)
+        if entries_ok and type(entries) == "table" then
+            for _, entry in ipairs(entries) do
+                if entry.phrase == text then
+                    source = entry.source
+                    break
+                end
+            end
+        end
+        local remove_ok, removed = pcall(env.override_pin_store.remove, code, text)
+        if remove_ok and removed then
+            refresh(context)
+            if source == "pin" then
+                set_prompt(context, "〔已取消置顶「" .. text .. "」〕")
+            else
+                set_prompt(context, "〔已删除「" .. text .. "」〕")
+            end
+        else
+            set_prompt(context, "〔删除失败：无法写入用户资料〕")
+        end
+        return kAccepted
+    end
     if not is_soft_deletable(selected) then
         return kNoop
     end
-    if env.override_store:set_hidden(code, text, true) then
-        refresh(context)
-        set_prompt(context, "〔已隐藏「" .. text .. "」；Ctrl+Shift+M 可管理和恢复〕")
-    else
-        set_prompt(context, "〔隐藏失败：无法写入用户资料〕")
-    end
+    -- 隐藏同样两段式（2026-09-20 统一）：无 userdb 词条的候选此前一按
+    -- 即隐藏；现第一按只进入待隐藏状态，2 秒内第二按执行隐藏与
+    -- native 反学习（commit_soft_hide）。
+    env.override_weight_cleared = {
+        text = text,
+        seg = seg_norm,
+        entry_code = "",
+        count = 0,
+        time = os.clock(),
+        action = "hide",
+    }
+    set_prompt(context, "〔两秒内再按一次隐藏「" .. text .. "」〕")
     return kAccepted
 end
 
@@ -1396,6 +1521,7 @@ M.forget_engine_user_model = forget_engine_user_model
 M._test = {
     acquire_store = acquire_store,
     delete_or_restore = delete_or_restore,
+    is_pin_candidate = is_pin_candidate,
     is_user_created = is_user_created,
     reset_learned_weight = reset_learned_weight,
     user_created_entry = user_created_entry,

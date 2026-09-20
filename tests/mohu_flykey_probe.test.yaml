@@ -1,0 +1,51 @@
+## 飞键探针：jv/ju、yv/yu 候选菜单成员逐项断言
+
+schema: mohu_zrm
+source_dir: ../dist-zrm
+script: |
+  function has(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+  function count(candidates)
+    return #candidates
+  end
+  function first(candidates)
+    return candidates[1] and candidates[1].text or 'NONE'
+  end
+
+deploy:
+  probe:
+    tests:
+      - send: ju
+        assert: has(cand, '举') and first(cand) ~= 'NONE'
+      - send: ju
+        assert: has(cand, '句') and has(cand, '巨') and has(cand, '具') and has(cand, '局') and has(cand, '据')
+      - send: jv
+        assert: has(cand, '举')
+      - send: jv
+        assert: has(cand, '句')
+      - send: jv
+        assert: has(cand, '巨')
+      - send: jv
+        assert: has(cand, '具')
+      - send: jv
+        assert: has(cand, '局')
+      - send: jv
+        assert: has(cand, '据')
+      - send: yu
+        assert: has(cand, '于') and has(cand, '鱼') and has(cand, '玉')
+      - send: yv
+        assert: has(cand, '于')
+      - send: yv
+        assert: has(cand, '鱼')
+      - send: yv
+        assert: has(cand, '玉')
+      - send: wk
+        assert: has(cand, '为') and has(cand, '位') and has(cand, '微')
+      - send: jv
+        assert: print('count_jv=' .. count(cand)) or true
+      - send: ju
+        assert: print('count_ju=' .. count(cand)) or true

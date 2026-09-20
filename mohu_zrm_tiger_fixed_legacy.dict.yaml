@@ -88,7 +88,7 @@ columns:
 否	fb	0
 分	ff	0
 风	fg	0
-放	fh	0
+方	fh	0
 反	fj	0
 佛	fo	0
 服	fu	0
@@ -1201,7 +1201,7 @@ columns:
 坊	fhg	28892
 纺	fhi	8718
 仿	fhj	313234
-方	fhl	347176
+放	fhl	7.73074e+06
 房	fhm	980289
 昉	fho	575
 髣	fhp	354
@@ -4301,7 +4301,7 @@ columns:
 玟	wfn	7088
 璺	wfp	527
 雯	wft	57561
-文	wfv	1.63787e+06
+紊	wfv	9236
 鳁	wfw	0
 稳	wfx	203430
 辒	wfy	62
@@ -4378,7 +4378,7 @@ columns:
 未	wza	758953
 娓	wzb	8105
 慰	wzc	160488
-味	wzd	493741
+喂	wzd	148044
 桅	wze	5611
 违	wzg	83636
 惟	wzh	92036
@@ -4668,7 +4668,7 @@ columns:
 游	ybk	537555
 莠	ybl	1187
 犹	ybm	246801
-友	ybn	869919
+右	ybn	483406
 尤	ybo	229183
 黝	ybp	16397
 囿	ybr	1124
@@ -7632,7 +7632,6 @@ columns:
 蕰	wflk	9
 刎	wfne	2349
 𫘜	wfnv	0
-紊	wfvi	9236
 鹟	wghk	0
 蓊	wglh	458
 妄	whfb	56997
@@ -7708,7 +7707,7 @@ columns:
 遗	wzco	0
 煨	wzcq	1424
 尾	wzcv	148960
-喂	wzdq	148044
+味	wzda	493741
 唯	wzdu	217658
 梶	wzec	565
 圩	wzgf	1050
@@ -8048,7 +8047,7 @@ columns:
 浟	ybkj	363
 莜	yblj	616
 莸	yblm	96
-右	ybnd	483406
+友	ybnr	869919
 尢	yboy	0
 鼬	ybpd	1023
 鲉	ybwd	3
@@ -8486,6 +8485,7 @@ columns:
 加	jw	0
 梨	lix	0
 班	bjn	0
+文	wf	0
 嗌	aida	645
 胺	anvb	1174
 螯	aoac	636

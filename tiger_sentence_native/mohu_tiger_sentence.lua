@@ -141,6 +141,12 @@ local semantic_load_failed = false
 -- 0 关闭；旧码表（无第 5 列）任何权重下都保持中性。
 local reading_prior_weight_default = 1.0
 
+-- 组合读音罚分默认权重：单字边参与多段组合路径时读音先验再加一次
+-- （平方先验）。字符 LM 的搭配证据取自主读音语料（vgxju 的「整车」
+-- 证据全部来自 zhěngchē），占比不小的次读音（车 jū≈4.3%）单次先验
+-- 压不住搭配差；整段单边（单字直打、整词命中）不受影响。0 关闭。
+local composed_reading_prior_weight_default = 1.0
+
 -- 词边先验默认权重：静态多字词作长句句中内部边并每边加该有界分，
 -- 「词典里有这个词」在路径分中投票（librime entry_weight+Query 结构的
 -- native 对应物），修「只吃一口气」类跨词界粘连反杀（详见
@@ -408,6 +414,17 @@ local function ensure_engine(env)
   end
   if type(tigerengine.set_reading_prior_weight) == "function" then
     pcall(tigerengine.set_reading_prior_weight, h, reading_weight)
+  end
+  -- 组合读音罚分权重：tiger/composed_reading_prior_weight（0 关闭，
+  -- 默认 1.0）。旧 ABI dylib 无该函数时静默保持引擎内建默认；非法值
+  -- 回退默认。
+  local composed_reading_weight = tonumber(conf("composed_reading_prior_weight"))
+  if composed_reading_weight == nil or not finite_number(composed_reading_weight) or
+      composed_reading_weight < 0 or composed_reading_weight > 4 then
+    composed_reading_weight = composed_reading_prior_weight_default
+  end
+  if type(tigerengine.set_composed_reading_prior_weight) == "function" then
+    pcall(tigerengine.set_composed_reading_prior_weight, h, composed_reading_weight)
   end
   -- 词边先验权重：tiger/word_edge_weight（0 关闭）。旧 ABI dylib 无该
   -- 函数时静默保持引擎内建默认（0=旧行为）；非法值回退默认。
@@ -1208,6 +1225,31 @@ local function trim_segmented_after_raw_prefix(segmented, raw_prefix_length)
   return index <= #segmented and segmented:sub(index) or ""
 end
 
+local function trim_segmented_to_raw_length(segmented, raw_length)
+  -- 把音节串裁到至多 raw_length 个原始字母（截在音节中间也硬截）。
+  -- librime Composition::GetPreedit 对候选 end 之后的输入会以原始字母
+  -- 追加显示；被 caret 截短的段先在这里裁掉超界音节，拼接后恰好
+  -- 还原完整显示，避免「按一次方向键 preedit 多一个字母」。
+  if not segmented or segmented == "" or not finite_number(raw_length) or
+      raw_length < 0 then
+    return ""
+  end
+  local raw_count = 0
+  local index = 1
+  while index <= #segmented do
+    if segmented:sub(index, index) ~= " " then
+      raw_count = raw_count + 1
+      if raw_count > raw_length then
+        break
+      end
+    end
+    index = index + 1
+  end
+  -- 恰好裁在音节边界时保留其后的分隔空格：与 librime 追加的原始
+  -- 字母拼接后还原原有「音节 词组」显示样式。
+  return segmented:sub(1, index - 1)
+end
+
 local function segment_start_position(segment)
   if type(segment) ~= "table" and type(segment) ~= "userdata" then return 0 end
   local access_ok, value = pcall(function()
@@ -1264,6 +1306,22 @@ local function candidate_prefix_boundary(item, prefix_text, raw_boundary)
   local mapped = lengths and tonumber(lengths[text_bytes]) or nil
   if mapped ~= raw_boundary then return nil end
   return text_bytes
+end
+
+-- 文本前缀与 raw 边界的对齐：返回「恰好覆盖 raw_boundary 个原始字母」
+-- 的文本字节数（raw_lengths 键为文本前缀字节数、值为覆盖的 raw 字母
+-- 数）。找不到精确对齐（边界落在字码中间等）时返回 nil。
+local function text_bytes_at_raw_boundary(item, raw_boundary)
+  if type(item) ~= "table" or type(item.raw_lengths) ~= "table" or
+      not finite_number(raw_boundary) then
+    return nil
+  end
+  for bytes, raw_len in pairs(item.raw_lengths) do
+    if tonumber(raw_len) == raw_boundary then
+      return tonumber(bytes)
+    end
+  end
+  return nil
 end
 
 local function bind_native_decode_provenance(candidate, item, candidate_type,
@@ -1596,6 +1654,16 @@ function M.translator.func(input, seg, env)
     context_input_raw:sub(1, segment_start))
   local prefix_text = selected_text
   local prefix_raw_boundary = #raw_prefix_in_context
+  -- 段右界的 raw 字母数：caret 把段截短（seg._end 早于输入末尾）时，
+  -- 候选的音节 preedit 必须裁到段边界，否则超出候选 end 的音节字母
+  -- 与 librime 渲染层追加的原始 input 剩余重复显示（2026-09-20 方向键
+  -- preedit 递增问题）。段覆盖到输入末尾时保持 nil（原行为）。
+  local segment_end_raw_boundary = nil
+  local seg_end_pos = tonumber(seg and seg._end)
+  if finite_number(seg_end_pos) and seg_end_pos < #context_input_raw then
+    segment_end_raw_boundary =
+      #normalize_raw(context_input_raw:sub(1, seg_end_pos))
+  end
   -- Keep the complete raw input for native/LM scoring.  The candidate view is
   -- trimmed to the active segment below.
   local raw = context_input
@@ -1638,7 +1706,30 @@ function M.translator.func(input, seg, env)
       local preedit = trim_segmented_after_raw_prefix(item.segmented,
         prefix_raw_boundary)
       if preedit == "" and segment_input ~= "" then preedit = segment_input end
-      if text ~= "" then
+      -- 段被 caret 截短时，候选 text 与音节 preedit 都必须裁到段边界：
+      -- text 超界会让整句文本顶掉段内候选（caret 移到句中后菜单仍是
+      -- 全句），preedit 超界则与 librime 渲染层追加的原始字母重复
+      -- 显示。raw_lengths 给出字级对齐；边界落在字码中间的路径没有
+      -- 段内表示，跳过（该段由 smart 层兜底）。
+      if segment_end_raw_boundary ~= nil then
+        local within_boundary = segment_end_raw_boundary - prefix_raw_boundary
+        if not finite_number(within_boundary) or within_boundary < 0 then
+          prefix_ok = false
+        elseif within_boundary == 0 then
+          text = ""
+        else
+          local clip_bytes = text_bytes_at_raw_boundary(item, within_boundary)
+          if clip_bytes == nil then
+            prefix_ok = false
+          else
+            text = item.text:sub(prefix_bytes + 1, clip_bytes)
+            if #normalize_raw(preedit) > within_boundary then
+              preedit = trim_segmented_to_raw_length(preedit, within_boundary)
+            end
+          end
+        end
+      end
+      if prefix_ok and text ~= "" then
         local candidate_type = env and env._tiger_candidate_type or "mohu_zrm"
         if item.personal then candidate_type = candidate_type .. "_personal" end
         local cand = Candidate(candidate_type, seg.start, seg._end, text, "")

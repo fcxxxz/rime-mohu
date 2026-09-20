@@ -55,7 +55,6 @@ switches:
 
 engine:
   processors:
-    - lua_processor@*mohu_skin_command
     - lua_processor@*mohu_candidate_manager*manager_processor
     - lua_processor@*mohu_candidate_override*override_processor
     - lua_processor@*mohu_pin*pin_processor

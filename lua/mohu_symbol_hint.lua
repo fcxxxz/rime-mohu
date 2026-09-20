@@ -30,9 +30,6 @@ local hints = {
   { code = "jq", label = "节气" },
   { code = "gl", label = "候选管理" },
   { code = "model", label = "模型选择" },
-  { code = "skin", label = "皮肤编辑" },
-  { code = "pifu", label = "皮肤编辑" },
-  { code = "pfbj", label = "皮肤编辑" },
 }
 
 local semantic_meta = nil

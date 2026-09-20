@@ -330,6 +330,20 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
   为 log P(读音|字) 先验并入每步路径分（`tiger/reading_prior_weight`，
   默认 1.0，0 关闭）。贝叶斯上是给 LM 补上 P(码|字) 似然项，与
   octagram 的 entry_weight+Query 加法融合同构。
+- **次读音搭配搭便车（2026-09-20 修，组合读音罚分 + 变体归并）**：
+  读音先验按 share 补偿，但搭配证据本身取自主读音语料——`vgxju` 的
+  「整车」全部证据来自 zhěngchē（P(车|整) 领先 P(句|整) 约 3.4 nats），
+  占比不小的次读音（车 jū≈4.3%，先验仅 −3.15）单次先验压不住，组合
+  路径仍把「整车 jū」顶到首选。修复①：单字边参与多段组合路径时先验
+  再加一次（平方先验，`tiger/composed_reading_prior_weight` 默认 1.0，
+  0 关闭；整段单边——单字直打/整词命中——恒不吃罚分，jumapc=车马炮
+  等真组合实测保留，权重安全上界≈1.5）。修复②（连带）：飞键换头
+  变体（ju→jv、yu→yv、xq→xo、qx→qo、wz→wk）两种码形曾被当成两个
+  读音、总频翻倍，主读音先验被错罚 ln2（句 −0.693）；码表加可选第 6
+  列「规范音节头」由构建器按 (码,方案) 确定生成，引擎按规范键去重，
+  新旧码表/引擎双向兼容。500 词 A/B（两方案三档）：裸双拼逐词不变、
+  一位末辅各 +1（拉脚）、零修坏。详见
+  [组合读音罚分报告](../reports/2026-09-20-composed-reading-prior.md)。
 - **字符级模型看不见词界（2026-09-13 修，词边先验）**：字符三元独占的
   路径分会被「错词与后文跨词界粘连」反杀——`vegeuurufaviiiyikbqiuuruyivgjuhw`
   （这个输入法**支持**一口气输入一整句话）首选「只吃」：V5 局部对「支持」
@@ -400,9 +414,20 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
    Tiger 字符模型；旧 `mohu_llm_*` schema 已从发行方案移除。
 5. **延迟测量**：跨会话基线漂移 ~1.4ms，必须同会话交替配对、取每
    (id,mode) 多次中位数；后台训练进程会污染 p95（Δmax 20ms+ 毛刺）。
-6. **`make test 2>&1 | tail` 会吞退出码**（管道取 tail 的 0）——查
+6. **librime-lua 的 `get_genuine()` 每次返回新 userdata 包装器**
+   （2026-09-20 冻结事故根因）：候选真身链走查**不能**用 Lua 对象身份
+   （`seen[cand]` 判重、`genuine == current` 终止）——普通候选真身即
+   自身，身份比较恒假，循环无限分配包装器（vgxju 后 Shift+Delete
+   冻结，80s 内 13GB）。正确写法：深度上限 + 「同 text 同 type」到头
+   判定（lua/mohu_candidate_override.lua `is_pin_candidate`）。线上
+   冻结排查工具箱：RSS 看门狗自动 sample+回滚、
+   `/Library/Logs/DiagnosticReports/*.cpu_resource.diag`、
+   `$DARWIN_USER_TEMP_DIR/rime.squirrel/` glog 日志、无头
+   librime 逐键探针（补发 Shift+Delete 等修饰键才复现字母键之外的
+   路径）。
+7. **`make test 2>&1 | tail` 会吞退出码**（管道取 tail 的 0）——查
    pipestatus 或直接跑。
-7. mira 测试 `mohu_zrm::cross_candidate_order` 在 HEAD 即失败（与词级重排
+8. mira 测试 `mohu_zrm::cross_candidate_order` 在 HEAD 即失败（与词级重排
    无关，已在干净提交复现）。**更关键的是：mira 默认根本跑不到 native。**
    Lua 5.5 / 5.4 ABI 不匹配（`luaopen` 失败）+ `dist-*` 缺
    `libonnxruntime.1.dylib` + 不随包发 ngram 模型，三层叠加使引擎 fail-open，
@@ -410,9 +435,9 @@ Lua 融合：F_k = score_k − rank_penalty×(k−1)，稳定排序，第 k 名�
    **假通过**（`default::jiivo`，native 可用时返回 `既拙`）。评估 native 排序
    别只看 mira；构造可用宿主与完整对照见
    `docs/reports/2026-09-11-mira-native-blind-spot.md`。
-8. 新 lua_filter 组件本身有逐候选桥接开销（fresh 直通也有 ~+0.1ms p50/
+9. 新 lua_filter 组件本身有逐候选桥接开销（fresh 直通也有 ~+0.1ms p50/
    0.4ms p95）——延迟优化的方向是并入 mohu_reorder_filter，不是优化评分。
-9. **读音先验的回归口径**（2026-09-04）：改动只影响 native 解码的 fresh
+10. **读音先验的回归口径**（2026-09-04）：改动只影响 native 解码的 fresh
    排序，4 键裸双拼 500 词（频表前 300 + 随机 200）新旧码表 top-1
    零变化；末辅档同池对比见当期报告。权威五方案 harness 需要
    sentence-ngram-mobile.bin 与 /tmp 模板（均已不在），重跑前先按

@@ -4,9 +4,11 @@
 The checked-in Tiger lexicon is the source of sentence/text coverage.  This
 tool keeps that coverage identical for both schemes, converting only the
 syllable portion that can be identified from the character dictionary.  Fly-key
-substitutions are scheme-specific and closed transitively per output: the
-natural-code set (wz->wk, xq->xo, qx->qo) and the Flypy set (xq->xo for xiu
-and qx->qo for qia -- note qx is qia in Flypy, not the Natural Code qie).
+substitutions are scheme-specific and closed transitively per output; the
+single source of truth is ``tools/data/mohu_fly_keys.tsv`` (loaded via
+``tools/fly_keys.py``): the natural-code set (wz->wk, xq->xo, qx->qo,
+ju->jv, yu->yv) and the Flypy set (xq->xo for xiu, qx->qo for qia, ju->jv,
+yu->yv -- note qx is qia in Flypy, not the Natural Code qie).
 Source rows that are themselves natural-code fly variants are reverted to
 their base codes when building the Flypy output instead of leaking through as
 dead codes (the qie rows under qo thus re-emerge as plain qp codes).
@@ -23,17 +25,25 @@ TOOLS = Path(__file__).resolve().parent
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+import fly_keys
 import flypyify
 import zrmify
 
 ROOT = TOOLS.parent
-FLY_ZRM = {"wz": "wk", "xq": "xo", "qx": "qo"}
-# 小鹤飞键集合：xq=xiu、qx=qia（同为小鹤音系下的别手组合）。
-# 注意 qx 在小鹤是 qia 而非自然码的 qie；qie(qp)、wei(ww) 不设飞键。
-FLY_FLYPY = {"xq": "xo", "qx": "qo"}
+# 飞键替换对单一事实源（tools/fly_keys.py），与 mohu_defs.yaml /fly* 同步：
+# 自然码 wz->wk、xq->xo、qx->qo、ju->jv、yu->yv；小鹤 qx 在其音系下是
+# qia（qie=qp、wei=ww 不设飞键）。此处仅保留别名供本模块历史命名引用。
+FLY_ZRM = fly_keys.FLY_ZRM
+FLY_FLYPY = fly_keys.FLY_FLYPY
 # 仅用于源表（自然码形态）读音简频回溯，源行恒为自然码。
 FLY_INVERSE = {target: source for source, target in FLY_ZRM.items()}
-ROW_KEY = tuple[str, str, str, str, str]
+# 行结构（含可选第 6 列规范音节头）：源表行恒为 4/5 列，第 6 列只在
+# 构建产物中出现。飞键换头变体行（ju→jv、yu→yv、xq→xo、qx→qo、
+# wz→wk）指回源读音头，供引擎把同一读音的多码形合并后再归一
+# log P(读音|字)——否则同一读音被当成两个读音、总频翻倍，主读音先验
+# 被白白罚 ln2（句 ju/jv 均挂 254300 时先验恰为 -0.693）。非变体行为空。
+ROW_KEY = tuple[str, str, str, str, str, str]
+ROW_OUT = ROW_KEY
 
 
 def load_rows(path: Path,
@@ -49,6 +59,7 @@ def load_rows(path: Path,
         rank = fields[2] if len(fields) > 2 and fields[2] else "1"
         freq = fields[3] if len(fields) > 3 and fields[3] else "20001"
         reading = fields[4] if len(fields) > 4 and fields[4] else ""
+        canonical = fields[5] if len(fields) > 5 and fields[5] else ""
         try:
             int(rank)
             int(freq)
@@ -56,9 +67,11 @@ def load_rows(path: Path,
                 int(reading)
         except ValueError as exc:
             raise ValueError(f"invalid rank/freq at {path}:{line_no}") from exc
+        if canonical and not re.fullmatch(r"[a-z]{2}", canonical):
+            raise ValueError(f"invalid reading canon at {path}:{line_no}: {canonical!r}")
         if not reading and reading_frequencies is not None:
             reading = _reading_frequency(fields[0], fields[1], reading_frequencies)
-        rows.append((fields[0], fields[1], rank, freq, reading))
+        rows.append((fields[0], fields[1], rank, freq, reading, canonical))
     return rows
 
 
@@ -178,26 +191,8 @@ def _convert_code(code: str, text: str,
 
 
 def _fly_closure(code: str, text: str, fly: dict[str, str]) -> set[str]:
-    """Return all code variants from the given fly-key substitutions."""
-    if not text or len(code) < 2 * len(text):
-        return set()
-    base = code[: 2 * len(text)]
-    if not re.fullmatch(r"[a-z]+", base):
-        return set()
-    syllables = tuple(base[i:i + 2] for i in range(0, len(base), 2))
-    seen = {syllables}
-    pending = [syllables]
-    while pending:
-        current = pending.pop()
-        for source, target in fly.items():
-            if source not in current:
-                continue
-            variant = tuple(target if item == source else item for item in current)
-            if variant not in seen:
-                seen.add(variant)
-                pending.append(variant)
-    suffix = code[2 * len(text):]
-    return {"".join(item) + suffix for item in seen if item != syllables}
+    """Return all positional variants for a native full-syllable code."""
+    return fly_keys.full_syllable_variants(code, text, fly)
 
 
 def _reverted_zrm_fly_code(code: str, text: str,
@@ -231,13 +226,26 @@ def _reverted_zrm_fly_code(code: str, text: str,
 
 
 def build_rows(rows: list[ROW_KEY], scheme: str,
-               character_syllables: dict[str, set[str]] | None = None) -> list[ROW_KEY]:
+               character_syllables: dict[str, set[str]] | None = None) -> list[ROW_OUT]:
     if scheme not in {"zrm", "flypy"}:
         raise ValueError(f"unsupported scheme: {scheme}")
     fly = FLY_ZRM if scheme == "zrm" else FLY_FLYPY
-    source_index = {(code, text) for code, text, _, _, _ in rows}
-    output: set[ROW_KEY] = set()
-    for source_code, text, rank, freq, reading in rows:
+    fly_inverse = {target: source for source, target in fly.items()}
+    source_index = {(code, text) for code, text, *_ in rows}
+
+    def emit(code: str, text: str, rank: str, freq: str, reading: str) -> ROW_OUT:
+        # 规范头是 (码, 方案) 的确定函数：读音先验只消费单字行，规范头
+        # 只对换头变体的单字行有意义。
+        canonical = ""
+        if len(text) == 1 and len(code) >= 2:
+            head = code[:2]
+            source_head = fly_inverse.get(head)
+            if source_head is not None and source_head != head:
+                canonical = source_head
+        return (code, text, rank, freq, reading, canonical)
+
+    output: set[ROW_OUT] = set()
+    for source_code, text, rank, freq, reading, _source_canonical in rows:
         code = source_code
         if scheme == "flypy":
             reverted = _reverted_zrm_fly_code(
@@ -245,9 +253,9 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
             if reverted is not None:
                 code = reverted
         base_code = code if scheme == "zrm" else _convert_code(code, text, character_syllables)
-        output.add((base_code, text, rank, freq, reading))
+        output.add(emit(base_code, text, rank, freq, reading))
         for variant in _fly_closure(base_code, text, fly):
-            output.add((variant, text, rank, freq, reading))
+            output.add(emit(variant, text, rank, freq, reading))
     return sorted(output, key=lambda row: (row[0], int(row[2]), row[1], int(row[3]), row[4]))
 
 
@@ -257,11 +265,33 @@ def validate_output_path(path: Path, root: Path = ROOT) -> None:
         raise ValueError(f"output path must be inside repository: {path}")
 
 
-def write_rows(path: Path, rows: list[ROW_KEY], root: Path = ROOT) -> None:
+def write_rows(path: Path, rows: list[ROW_OUT], root: Path = ROOT) -> None:
     validate_output_path(path, root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = "# code\ttext\trank\tfreq_rank\treading_freq\n" + \
-        "\n".join("\t".join(row) for row in rows) + "\n"
+    existing5: dict[tuple[str, str, str, str, str], bool] = {}
+    existing6: dict[tuple[str, str, str, str, str], bool] = {}
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            fields = line.split("\t")
+            if len(fields) >= 4 and fields[0] != "# code":
+                key = tuple((fields + [""] * 5)[:5])
+                existing5[key] = len(fields) >= 5
+                existing6[key] = len(fields) >= 6
+    rendered = []
+    for row in rows:
+        fields = list(row[:4])
+        # 第 5 列（读音简频）保持既有幂等规则；第 6 列（规范音节头）是
+        # (码, 方案) 的确定函数，只在非空时输出，出现即说明该行是换头
+        # 变体。规范头非空时第 5 列必须保留占位（空值也是一列）。
+        keep5 = bool(row[4]) or bool(row[5]) or existing5.get(tuple(row[:5]), False)
+        keep6 = bool(row[5]) or existing6.get(tuple(row[:5]), False)
+        if keep5:
+            fields.append(row[4])
+            if keep6:
+                fields.append(row[5])
+        rendered.append("\t".join(fields))
+    text = "# code\ttext\trank\tfreq_rank\treading_freq\treading_canon\n" + \
+        "\n".join(rendered) + "\n"
     path.write_text(text, encoding="utf-8")
 
 

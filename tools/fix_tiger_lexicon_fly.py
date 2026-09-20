@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """补齐原生整句码表（mohu_tiger.lexicon.txt）的飞键行。
 
-mohu 方案的 speller algebra（mohu_defs.yaml:/fly）在音节层派生三条飞键：
-    wz; -> wk;   xq; -> xo;   qx; -> qo;
+mohu 方案的 speller algebra（mohu_defs.yaml:/fly）在音节层派生飞键，
+替换对单一事实源 tools/data/mohu_fly_keys.tsv，自然码当前五条：
+    wz; -> wk;   xq; -> xo;   qx; -> qo;   ju; -> jv;   yu; -> yv;
 派生按规则链式应用（后一条规则能看到前一条的产物），同一规则内全局替换。
 
 原生码表当初只同步了上游自带的高频飞键，且未做闭包，导致例如：
@@ -29,7 +30,11 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-FLY = {"wz": "wk", "xq": "xo", "qx": "qo"}
+if str(REPO / "tools") not in sys.path:
+    sys.path.insert(0, str(REPO / "tools"))
+
+import fly_keys
+from fly_keys import FLY_ZRM as FLY  # noqa: E402
 
 
 def load_syllables(chars_dict: Path) -> set[str]:
@@ -52,18 +57,8 @@ def load_syllables(chars_dict: Path) -> set[str]:
 
 
 def fly_closure(syllables: tuple[str, ...]) -> set[tuple[str, ...]]:
-    """链式应用三条飞键规则，同一条规则内全局替换，返回全部变体（不含原码）。"""
-    seen = {syllables}
-    frontier = [syllables]
-    while frontier:
-        cur = frontier.pop()
-        for src, dst in FLY.items():
-            if src in cur:
-                nxt = tuple(dst if s == src else s for s in cur)
-                if nxt not in seen:
-                    seen.add(nxt)
-                    frontier.append(nxt)
-    return seen - {syllables}
+    """Return all positional variants from the shared fly-key closure."""
+    return fly_keys.fly_closure(syllables, FLY)
 
 
 def parse_lexicon(path: Path) -> tuple[list[list[str]], list[str], list[str]]:

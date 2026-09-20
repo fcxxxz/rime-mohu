@@ -11,6 +11,24 @@ permissions:
   contents: read
 
 jobs:
+  flykey-drift:
+    # 飞键派生层漂移检查：对提交状态跑 make flykey-check（不重新生成）。
+    # 改过 fixed 词典主区却未重跑 sync_flykey 的提交会在此红掉，
+    # 避免 2026-09-20 尾/wkcv 类"部署了过期飞键块"的问题进仓库。
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Sync Python environment
+        run: uv sync --locked
+
+      - name: Fly-key drift check
+        run: make flykey-check
+
   windows-runtime:
     runs-on: windows-latest
     steps:

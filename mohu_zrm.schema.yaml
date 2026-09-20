@@ -57,11 +57,11 @@ switches:
 
 engine:
   processors:
-    - lua_processor@*mohu_skin_command
     - lua_processor@*mohu_candidate_manager*manager_processor
     - lua_processor@*mohu_candidate_override*override_processor
     - lua_processor@*mohu_pin*pin_processor
     - lua_processor@*option_sync
+    - lua_processor@*mohu_tab_nav  # 方向键/Tab 音节导航与 Shift+字母补辅码：native 候选无 librime spans，1.16 navigator 跳不动，这里接管
     - key_binder
     - ascii_composer
     - lua_processor@*mohu_processor
@@ -281,6 +281,13 @@ tiger:
   # 读音先验权重：码表第 5 列（读音条件简频）→ log P(读音|字) 并入路径
   # 分，压制多音字罕用读音（如「万」mò）拼出的首选；0 关闭。
   reading_prior_weight: 1.0
+  # 组合读音罚分权重：单字边参与多段组合路径时读音先验再加一次（平方
+  # 先验）。搭配证据取自主读音语料（vgxju 的「整车」证据全部来自
+  # zhěngchē，P(车|整) 领先 P(句|整) 约 3.4 nats），占比不小的次读音
+  # （车 jū≈4.3%）单次先验压不住；整段单边（单字直打、整词命中）不受
+  # 影响；0 关闭并保持旧行为。1.3 为车马炮（jumapc）保持首选的安全
+  # 上界附近值（1.5 时被局麻炮反超）。
+  composed_reading_prior_weight: 1.3
   # 词边先验权重：静态多字词可作长句句中内部边，每条内部词边加该有界
   # 分——「词典里有这个词」在路径分中投票，压住「只吃一口气」类错词与
   # 后文跨词界粘连的反杀；0 关闭并逐字节保持旧行为。
@@ -407,9 +414,9 @@ key_binder:
       - mohu:/key_bindings/mohu_switches
       - mohu:/key_bindings/mohu_keypad
       - mohu:/key_bindings/mohu_toggle_inflexible
-      # 大写字母追加辅助码到上一音节
-      # 该功能可使用 Shift-tab 替代
-      - mohu:/key_bindings/mohu_capital_for_last_syllable
+      # 大写字母追加辅码已由 lua/mohu_tab_nav 接管（key_binder 的
+      # send_sequence 在 librime 1.16 长句上会把字母插进句首），不再
+      # 引用 mohu_capital_for_last_syllable；字词/裁剪方案仍用旧绑定。
 
 recognizer:
   import_preset: default

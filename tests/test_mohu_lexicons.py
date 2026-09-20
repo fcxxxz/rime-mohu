@@ -35,12 +35,12 @@ ab\t阿布\t2\t20001
             zrm = self.tool.build_rows(rows, scheme="zrm")
             fly = self.tool.build_rows(rows, scheme="flypy")
 
-        self.assertIn(("wk", "为", "1", "3", ""), zrm)
-        self.assertIn(("wkxo", "维修", "1", "20", ""), zrm)
-        self.assertIn(("ww", "为", "1", "3", ""), fly)
-        self.assertIn(("wwxo", "维修", "1", "20", ""), fly)
-        self.assertIn(("ba", "爸", "1", "12", ""), fly)
-        self.assertIn(("ab", "阿布", "2", "20001", ""), fly)
+        self.assertIn(("wk", "为", "1", "3", "", "wz"), zrm)  # zrm 飞键变体指回 wz
+        self.assertIn(("wkxo", "维修", "1", "20", "", ""), zrm)
+        self.assertIn(("ww", "为", "1", "3", "", ""), fly)
+        self.assertIn(("wwxo", "维修", "1", "20", "", ""), fly)
+        self.assertIn(("ba", "爸", "1", "12", "", ""), fly)
+        self.assertIn(("ab", "阿布", "2", "20001", "", ""), fly)
 
     def test_text_target_set_matches_and_output_is_stably_sorted(self):
         source = """ba\t爸\t1\t12
@@ -108,18 +108,36 @@ wz\t为\t2\t3
 
     def test_uses_character_readings_to_avoid_reconverting_fly_rows(self):
         rows = [
-            ("wz", "为", "1", "3", ""),
-            ("wk", "为", "1", "3", ""),  # already a fly-key variant
-            ("wzxq", "维修", "1", "20", ""),
+            ("wz", "为", "1", "3", "", ""),
+            ("wk", "为", "1", "3", "", ""),  # already a fly-key variant
+            ("wzxq", "维修", "1", "20", "", ""),
         ]
         readings = {"为": {"wz"}, "维": {"wz"}, "修": {"xq"}}
         fly = self.tool.build_rows(rows, scheme="flypy", character_syllables=readings)
-        self.assertIn(("ww", "为", "1", "3", ""), fly)
+        self.assertIn(("ww", "为", "1", "3", "", ""), fly)
         # 小鹤不设 wei 飞键：zrm 飞键行还原为 wz 基础码后转换，不再保留 wk 形态
-        self.assertNotIn(("wk", "为", "1", "3", ""), fly)
-        self.assertIn(("wwxq", "维修", "1", "20", ""), fly)
-        self.assertIn(("wwxo", "维修", "1", "20", ""), fly)  # 小鹤闭包仅 xq→xo
-        self.assertNotIn(("wzxq", "维修", "1", "20", ""), fly)
+        self.assertNotIn(("wk", "为", "1", "3", "", ""), fly)
+        self.assertIn(("wwxq", "维修", "1", "20", "", ""), fly)
+        self.assertIn(("wwxo", "维修", "1", "20", "", ""), fly)  # 小鹤闭包仅 xq→xo
+        self.assertNotIn(("wzxq", "维修", "1", "20", "", ""), fly)
+
+    def test_variant_rows_carry_canonical_reading_head(self):
+        """飞键换头变体行携带第 6 列规范头；非换头行（含辅码变体）为空。"""
+        rows = [("ju", "句", "8", "1062", "254300", "")]
+        zrm = self.tool.build_rows(rows, scheme="zrm")
+        fly = self.tool.build_rows(rows, scheme="flypy")
+        by_code = {r[0]: r for r in zrm}
+        self.assertEqual(by_code[("ju")][5], "")      # 源码本身，无规范头
+        self.assertEqual(by_code[("jv")][5], "ju")    # jv→ju 换头变体
+        by_code_fly = {r[0]: r for r in fly}
+        self.assertEqual(by_code_fly[("ju")][5], "")
+        self.assertEqual(by_code_fly[("jv")][5], "ju")
+        # 词行（多字）不携带规范头：读音先验对多字行恒中性
+        word_rows = [("vgju", "整句", "2", "20001", "", "")]
+        zrm_word = self.tool.build_rows(word_rows, scheme="zrm")
+        for code, text, rank, freq, reading, canonical in zrm_word:
+            if text == "整句":
+                self.assertEqual(canonical, "")
 
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
         paths = {
@@ -138,12 +156,12 @@ wz\t为\t2\t3
         self.assertEqual(loaded["flypy"], self.tool.build_rows(source, "flypy", readings))
         for scheme, rows in loaded.items():
             fly = self.tool.FLY_ZRM if scheme == "zrm" else self.tool.FLY_FLYPY
-            row_set = set(rows)
-            for code, text, rank, freq, reading in rows:
+            prefix_set = {row[:5] for row in rows}
+            for code, text, rank, freq, reading, _canonical in rows:
                 if len(code) < 2 * len(text) or not code[: 2 * len(text)].isalpha():
                     continue
                 for variant in self.tool._fly_closure(code, text, fly):
-                    self.assertIn((variant, text, rank, freq, reading), row_set)
+                    self.assertIn((variant, text, rank, freq, reading), prefix_set)
 
     def test_flypy_fly_set_matches_flypy_syllables(self):
         """小鹤飞键：xq→xo(xiu)、qx→qo(qia)；qie(qp)/wei(ww) 不设飞键。"""

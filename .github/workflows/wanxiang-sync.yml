@@ -302,7 +302,9 @@ jobs:
           from pathlib import Path
 
           report = Path("tools/data/wanxiang/sync_report.md").read_text(encoding="utf-8")
-          limits = {"added": 100000, "removed": 50000}
+          # 2026-09-21 起万象上游权重 <100 不导入；首次落地会一次性
+          # 丢掉约 76 万低权噪声（郑据 vgju 类），之后每日增量仍很小。
+          limits = {"added": 100000, "removed": 800000}
           for name, limit in limits.items():
               match = re.search(rf"^- {name}: (\d+)$", report, re.MULTILINE)
               if match is None:
@@ -333,7 +335,7 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
+          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|tools/data/wanxiang/cuoyin_words\.txt|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
           if [[ -n "$unexpected" ]]; then
             echo 'build changed an unexpected tracked file:' >&2
             printf '%s\n' "$unexpected" >&2
@@ -362,7 +364,7 @@ jobs:
             echo "main moved during synchronization; retry against $base_sha" >&2
             exit 1
           fi
-          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
+          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|tools/data/wanxiang/cuoyin_words\.txt|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
           if [[ -n "$unexpected" ]]; then
             echo 'synchronizer changed an unexpected tracked file:' >&2
             printf '%s\n' "$unexpected" >&2
@@ -377,6 +379,7 @@ jobs:
           git add tools/data/wanxiang/manifest.json \
             tools/data/wanxiang/SOURCE.md \
             tools/data/wanxiang/sync_report.md \
+            tools/data/wanxiang/cuoyin_words.txt \
             mohu_zrm.wanxiang.dict.yaml \
             mohu_flypy.wanxiang.dict.yaml
           git diff --cached --check

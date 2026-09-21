@@ -2,8 +2,7 @@
 """补齐原生整句码表（mohu_tiger.lexicon.txt）的飞键行。
 
 mohu 方案的 speller algebra（mohu_defs.yaml:/fly）在音节层派生飞键，
-替换对单一事实源 tools/data/mohu_fly_keys.tsv，自然码当前五条：
-    wz; -> wk;   xq; -> xo;   qx; -> qo;   ju; -> jv;   yu; -> yv;
+替换对单一事实源 tools/data/mohu_fly_keys.tsv（清单见该文件，不在此枚举）。
 派生按规则链式应用（后一条规则能看到前一条的产物），同一规则内全局替换。
 
 原生码表当初只同步了上游自带的高频飞键，且未做闭包，导致例如：

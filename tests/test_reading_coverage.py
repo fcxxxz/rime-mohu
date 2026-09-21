@@ -5,6 +5,12 @@
 全拼输入下就不可达，首选被「不得聊」类非词占据。词权越高的缺读影响越大，
 本测试把「最高词权 ≥ READING_COVERAGE_MIN_WEIGHT 的 (字, 音节)」设为硬性
 回归线；低权尾巴只汇总打印，供后续批量清理。
+
+2026-09-21 万象改真实词权后新增两类豁免（均有独立依据，不是放松门槛）：
+1. 引擎未收录字（chars.txt 简频=0 被有意排除的繁体/生僻字）：引擎字集是
+   另一项策略决定，这些词用编码仍可打出，与 weight-20 时代行为一致；
+2. tools/data/wanxiang/cuoyin_words.txt 里的错音词（东庠 dong yang 类）：
+   错音表按设计携带非规范读音供打错音出词，引擎不应学习。
 """
 
 import unittest
@@ -12,11 +18,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LEXICON = ROOT / "tiger_sentence_native" / "mohu_tiger.lexicon.txt"
+CUOYIN_WORDS = ROOT / "tools/data/wanxiang/cuoyin_words.txt"
 TABLES = [
     "mohu_zrm.base.dict.yaml",
     "mohu_zrm.words.dict.yaml",
     "mohu_zrm.tencent.dict.yaml",
-    "mohu_zrm.computer.dict.yaml",
     "mohu_zrm.moe.dict.yaml",
     "mohu_zrm.classics.dict.yaml",
     "mohu_zrm.wanxiang.dict.yaml",
@@ -36,9 +42,33 @@ def _load_covered_syllables() -> set[tuple[str, str]]:
     return covered
 
 
+def _load_engine_chars() -> set[str]:
+    chars: set[str] = set()
+    for line in LEXICON.read_text(encoding="utf-8").splitlines():
+        fields = line.split("\t")
+        if len(fields) < 2 or fields[0].startswith("#"):
+            continue
+        code, text = fields[0], fields[1]
+        if len(text) == 1 and len(code) >= 2:
+            chars.add(text)
+    return chars
+
+
+def _load_cuoyin_words() -> set[str]:
+    if not CUOYIN_WORDS.is_file():
+        return set()
+    return {
+        line.strip()
+        for line in CUOYIN_WORDS.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    }
+
+
 def _collect_missing() -> dict[tuple[str, str], int]:
     """返回 (字, 音节) -> 使用该缺读的最高词权。"""
     covered = _load_covered_syllables()
+    engine_chars = _load_engine_chars()
+    cuoyin_words = _load_cuoyin_words()
     missing: dict[tuple[str, str], int] = {}
     for name in TABLES:
         path = ROOT / name
@@ -51,6 +81,8 @@ def _collect_missing() -> dict[tuple[str, str], int]:
             if len(fields) < 3:
                 continue
             word, code = fields[0], fields[1]
+            if word in cuoyin_words:
+                continue
             try:
                 weight = int(fields[2] or 0)
             except ValueError:
@@ -59,6 +91,8 @@ def _collect_missing() -> dict[tuple[str, str], int]:
             if len(syllables) != len(word):
                 continue
             for char, syllable in zip(word, syllables):
+                if char not in engine_chars:
+                    continue
                 if (char, syllable) not in covered:
                     key = (char, syllable)
                     if weight > missing.get(key, -1):

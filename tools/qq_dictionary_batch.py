@@ -19,7 +19,6 @@ ACTIVE_WORD_TABLES = (
     "mohu_zrm.base.dict.yaml",
     "mohu_zrm.words.dict.yaml",
     "mohu_zrm.tencent.dict.yaml",
-    "mohu_zrm.computer.dict.yaml",
     "mohu_zrm.moe.dict.yaml",
 )
 FIXED_TABLE = "mohu_zrm_fixed.dict.yaml"

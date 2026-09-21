@@ -32,8 +32,9 @@ algebra:
   # 方案飞键：音节层别名，为别手组合提供替代打法，随双拼方案装配。
   # 替换对的单一事实源是 tools/fly_keys.py，此处装配列表与
   # mohu_defs.yaml 的 /fly、/fly_flypy 必须与之一致（有单测校验）。
-  # 自然码五条（qx=qie、xq=xiu、wz=wei、ju/yu 补 v 位打法；
-  # 目标码 xo/qo/wk/jv/yv 均为空闲伪音节）。
+  # 清单见 tools/data/mohu_fly_keys.tsv。自然码目标码均为空闲伪音节；
+  # po->pd 当天改为 po->pe（2026-09-21 用户决定）：pd 还给 p+d 首字母简词
+  # （判断/碰到/片段/派对），pe 上原 配额/普洱 简词让位。
   fly_zrm:
     __append:
       __patch:
@@ -42,6 +43,8 @@ algebra:
         - mohu_defs:/fly/qx_qo
         - mohu_defs:/fly/ju_jv
         - mohu_defs:/fly/yu_yv
+        - mohu_defs:/fly/pl_pr
+        - mohu_defs:/fly/po_pe
   fly_flypy:
     __append:
       __patch:
@@ -49,6 +52,7 @@ algebra:
         - mohu_defs:/fly_flypy/qx_qo
         - mohu_defs:/fly_flypy/ju_jv
         - mohu_defs:/fly_flypy/yu_yv
+        - mohu_defs:/fly_flypy/po_pe
   generate_code:
     __append:
       - derive|^(.+);(\w)(\w)$|$1$2$3o| # 全码 YYXXo

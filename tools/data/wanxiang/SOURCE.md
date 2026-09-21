@@ -6,13 +6,18 @@
 
 上游仓库标注为 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)。本项目保留上游仓库链接、固定 revision、每个源文件的 SHA-256 和来源文件名；本项目对原始词表做了以下改动：
 
-- 去除已存在于魔虎活动词表（chars/base/words/tencent/computer/moe/classics）中的词；
+- 去除已存在于魔虎活动词表（chars/base/words/tencent/moe/classics）中的词；
 - 同一词多读音时按最高上游权重确定性选择单一读音；
-- 由本项目重新生成自然码双拼和发布权重（固定 20），并为每个音节附加魔虎主辅码；
+- 上游权重 <100 的词不导入（人名/生僻噪声，如「郑据」）；
+- 错音词库（cuoyin）按设计携带非规范读音供打错音出词（如 东庠 dong yang，
+  第 4 列才是正确音）；构建会输出 `cuoyin_words.txt` 词面清单，
+  `tests/test_reading_coverage.py` 据此豁免这些词的引擎读音覆盖要求；
+- 先并入魔然简体 dist（`dist/moran.base.dict.yaml`）种子，辅码按魔虎主辅重写，词权保留魔然原值；万象只补种子与活动词表都没有的词；
+- 由本项目重新生成自然码双拼，发布权重使用上游真实词权，并为每个音节附加魔虎主辅码；
 - 由自然码表自动生成小鹤双拼表；
-- 不复制上游任何双拼编码或权重。
+- 不复制万象上游的双拼编码。
 
-`manifest.json` 是同步状态的唯一记录（revision + 每文件 SHA-256）。`raw/` 是本地缓存的上游快照（不入库，可用 `sync` 按固定 revision 重新下载校验），`entries.tsv` 是规范化中间产物（同样不入库，保留上游权重供审计）。
+`manifest.json` 是同步状态的唯一记录（revision + 每文件 SHA-256）。`raw/` 是本地缓存的上游快照（不入库，可用 `sync` 按固定 revision 重新下载校验），`entries.tsv` 是规范化中间产物（同样不入库，保留上游权重供审计）。`moran_seed.tsv` 是魔然简体 dist 的转码种子（入库，供 `build`/`check` 复现）。
 
 ## 来源文件
 

@@ -1,4 +1,5 @@
 # Lowercase single-character rows removed from moran_fixed_simp.dict.yaml.
+# 一/二码换位改对应原行（保留 source_line），不要追加到文末。步骤见 docs/fixed-code-swap.md。
 # source_line	original_row
 30	啊	a	aaka
 31	阿	aa
@@ -5707,7 +5708,8 @@
 58907	瓯	ouw
 58908	怄	oux
 58913	讴	ouy
-58933	平	p	pyaa
+# 2026-09-21 一简 p 让给派：平落到 pya，派让出 plk/pak。
+58933	派	p
 58934	怕	pa
 58935	琶	pab
 58936	葩	pac

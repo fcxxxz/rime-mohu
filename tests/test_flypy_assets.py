@@ -167,7 +167,11 @@ class FlypyAssetConversionTest(unittest.TestCase):
                     "mohu_zrm_fixed.dict.yaml", "mohu_flypy_fixed"
                 )
 
-        self.assertEqual(4, converted.count("开始飞键"))
+        # 小鹤飞键块数随 mohu_fly_keys.tsv 走（2026-09-21 起含 po->pd 共 5 块）。
+        self.assertEqual(
+            len(build_flypy_assets.fly_keys.FLY_FLYPY),
+            converted.count("开始飞键"),
+        )
         self.assertNotIn("MOHU_FLY_SECTION", converted)
         for source, target in build_flypy_assets.fly_keys.FLY_FLYPY.items():
             self.assertIn(f"# 开始飞键 {source} -> {target}", converted)

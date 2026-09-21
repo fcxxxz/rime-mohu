@@ -4,6 +4,7 @@
 
 - Always consult **rime-workflow** _and_ **rime-gears** skills if available. Even if you think you know Rime, double check! Mohu is a set of modern and advanced Rime schemas. You need up-to-date Rime knowledge first to answer questions accurately.
 - If user's choice of mohu schema is undecided, confirm which schema the user is asking about, and always refer to the documentation.
+- Short-code swaps / 简码换位 / 三码固顶: consult **rime-mohu-fixed-code-swap** and `docs/fixed-code-swap.md`. Edit claims / secondary / archive source files, then `make dict`. Do not hand-edit generated `mohu_*_fixed*.dict.yaml`.
 
 ## Dev environment
 
@@ -22,6 +23,7 @@
 - **mohu_fixed** options: https://zrmfans.cn/book/schemas/zici/features.md
 - **mohu_aux** options: https://zrmfans.cn/book/schemas/fushai/features.md
 - **mohu_sentence** is a cut-down version of mohu, see the yaml file and compare to mohu.schema.yaml
+- **简码换位**: `docs/fixed-code-swap.md`（skill: `docs/skills/rime-mohu-fixed-code-swap/SKILL.md`）
 
 ## Project knowledge base
 
@@ -50,3 +52,4 @@
 - When editing entries whose code contains a fly-key pattern (`wz -> wk`, `xq -> xo`, `qx -> qo`), update the corresponding fly-key region as well. For example, changing the order of `ihwz` entries also requires checking the generated/parallel `ihwk` entries.
 - When adding a new decomposition for a character in `tools/data/mohu_chai.txt`, keep existing decompositions unless the issue explicitly says the old decomposition is wrong and should be removed.
 - For intelligent/sentence dictionary additions without an explicit code, add them to `mohu.words.dict.yaml` at the end of the first block after the YAML header.
+- For single-character short-code swaps (一简 / 二简 / 三码固顶 / 同码次选), do **not** edit the generated character block in `mohu_*_fixed*.dict.yaml`. Use the three source files documented in `docs/fixed-code-swap.md`: `tools/data/mohu_fixed_code_claims.tsv` (3-code pin), `tools/data/mohu_fixed_secondary_codes.tsv` (same-code last place), `tools/data/mohu_fixed_simp_legacy_chars.txt` (1–2-key archive). Then run `make dict`. Do not use `mohu_fixed_char_code_overrides.tsv` for these swaps.

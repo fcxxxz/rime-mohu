@@ -62,6 +62,7 @@
 | 个人拼写别名（见下节） | `~/Library/Rime/mohu.custom.yaml` | ✅ | ✅ | ❌ 手动 |
 | 候选调频 | 打字学习，存 `*.userdb` | — | 不需要 | ✅ 自动 |
 | 候选置顶/沉底 | 候选管理模式（开关 `candidate_override_management`） | — | 不需要 | ✅ 自动 |
+| 单字简码换位（一/二/三码固顶、同码次选） | 仓库三份源数据，见 [`docs/fixed-code-swap.md`](fixed-code-swap.md) | ❌ 只改码表 | ✅ | ❌ 手动 |
 
 说明：
 

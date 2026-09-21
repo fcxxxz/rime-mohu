@@ -28,9 +28,14 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "tools" / "data" / "wanxiang"
 MANIFEST = DATA / "manifest.json"
 ENTRIES = DATA / "entries.tsv"
+MORAN_SEED = DATA / "moran_seed.tsv"
+CUOYIN_WORDS = DATA / "cuoyin_words.txt"
 OUTPUT = ROOT / "mohu_zrm.wanxiang.dict.yaml"
 REPORT = DATA / "sync_report.md"
 RAW_ROOT = DATA / "raw"
+# 万象上游词权门槛（2026-09-21）：<100 不导入——人名/生僻噪声
+# （郑据 vgju 类，实测上游 <100 段贡献了 76 万条低质条目）。
+MIN_UPSTREAM_WEIGHT = 100
 API_URL = "https://api.github.com/repos/amzxyz/rime-wanxiang/commits/wanxiang"
 CONTENTS_URL = "https://api.github.com/repos/amzxyz/rime-wanxiang/contents/{path}?ref={revision}"
 BLOB_URL = "https://api.github.com/repos/amzxyz/rime-wanxiang/git/blobs/{sha}"
@@ -184,7 +189,7 @@ def parse_source(path: Path, source: str) -> tuple[list[Candidate], int]:
 
 
 def active_words() -> set[str]:
-    names = ("chars", "base", "words", "tencent", "computer", "moe", "classics")
+    names = ("chars", "base", "words", "tencent", "moe", "classics")
     result: set[str] = set()
     for name in names:
         path = ROOT / f"mohu_zrm.{name}.dict.yaml"
@@ -204,7 +209,43 @@ def load_auxiliary() -> dict[str, list[str]]:
     return load_auxiliary_tsv(ROOT / "tools" / "data" / "tiger_aux.txt")
 
 
-def select_candidates() -> tuple[list[Candidate], dict[str, int]]:
+def load_seed_rows() -> list[tuple[str, str, int]]:
+    """读魔然简体 dist 种子：text<TAB>code<TAB>weight。
+
+    来源是 rime-moran `dist/moran.base.dict.yaml`（简体方案，不是繁体
+    源表），音节保留、辅码按魔虎 `tiger_aux.txt` 主辅重写。同词同码
+    保留最高词权；同词异码（多音）都保留。build 时先灌这批种子，再
+    用万象补缺口。
+    """
+    if not MORAN_SEED.exists():
+        return []
+    best: dict[tuple[str, str], int] = {}
+    order: list[tuple[str, str]] = []
+    header = True
+    for line in MORAN_SEED.read_text(encoding="utf-8").splitlines():
+        if header:
+            header = False
+            continue
+        fields = line.split("\t")
+        if len(fields) != 3 or not fields[0] or not fields[1]:
+            continue
+        try:
+            weight = int(fields[2])
+        except ValueError:
+            continue
+        key = (fields[0], fields[1])
+        if key not in best:
+            order.append(key)
+            best[key] = weight
+        elif weight > best[key]:
+            best[key] = weight
+    return [(text, code, best[(text, code)]) for text, code in order]
+
+
+def select_candidates(
+    existing: set[str] | None = None,
+    skip_texts: set[str] | None = None,
+) -> tuple[list[Candidate], dict[str, int]]:
     manifest = load_manifest()
     grouped: dict[str, list[Candidate]] = defaultdict(list)
     rejected = 0
@@ -215,18 +256,32 @@ def select_candidates() -> tuple[list[Candidate], dict[str, int]]:
         for candidate in candidates:
             grouped[candidate.text].append(candidate)
 
-    existing = active_words()
+    occupied = active_words() if existing is None else existing
+    skip = skip_texts or set()
     selected: list[Candidate] = []
     duplicate_existing = 0
+    duplicate_seed = 0
     conflicts = 0
+    below_min_weight = 0
     for text, values in grouped.items():
-        if text in existing:
+        if text in occupied:
             duplicate_existing += 1
             continue
-        pinyins = {value.pinyin for value in values}
+        if text in skip:
+            duplicate_seed += 1
+            continue
+        # 上游权重门槛（2026-09-21）：<100 的条目是人名/生僻噪声
+        # （郑据 vgju 类），同名词先取全部候选中 ≥门槛 的最高权重。
+        kept = [
+            value for value in values if value.upstream_weight >= MIN_UPSTREAM_WEIGHT
+        ]
+        if not kept:
+            below_min_weight += 1
+            continue
+        pinyins = {value.pinyin for value in kept}
         conflicts += len(pinyins) > 1
         selected.append(
-            min(values, key=lambda value: (-value.upstream_weight, value.pinyin, value.source))
+            min(kept, key=lambda value: (-value.upstream_weight, value.pinyin, value.source))
         )
     selected.sort(key=lambda value: (value.text, value.pinyin, value.source))
     # 没有主辅码的字无法生成符合魔虎词库约定的编码，拒收并计数。
@@ -238,9 +293,26 @@ def select_candidates() -> tuple[list[Candidate], dict[str, int]]:
         "source_rows_rejected": rejected,
         "source_words": sum(len(values) for values in grouped.values()),
         "duplicate_existing": duplicate_existing,
+        "duplicate_seed": duplicate_seed,
         "pronunciation_conflicts": conflicts,
+        "below_min_weight": below_min_weight,
         "missing_auxiliary": len(selected) - len(usable),
     }
+
+
+def prepare_rows() -> tuple[list[Candidate], list[tuple[str, str, int]], dict[str, int]]:
+    """魔然种子优先，万象只补缺口。active_words 只读一次。"""
+    existing = active_words()
+    seed_all = load_seed_rows()
+    seed_rows = [row for row in seed_all if row[0] not in existing]
+    seed_texts = {row[0] for row in seed_rows}
+    entries, stats = select_candidates(existing=existing, skip_texts=seed_texts)
+    stats.update(
+        selected=len(entries),
+        seed_total=len(seed_all),
+        seed_merged=len(seed_rows),
+    )
+    return entries, seed_rows, stats
 
 
 def render_entries(entries: list[Candidate]) -> str:
@@ -252,7 +324,8 @@ def render_entries(entries: list[Candidate]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_dictionary(entries: list[Candidate], version: str, auxiliary: dict[str, list[str]]) -> str:
+def render_dictionary(entries: list[Candidate], version: str, auxiliary: dict[str, list[str]],
+                      seed_rows: list[tuple[str, str, int]] | None = None) -> str:
     lines = [
         "# Rime dictionary",
         "# encoding: utf-8",
@@ -277,12 +350,16 @@ def render_dictionary(entries: list[Candidate], version: str, auxiliary: dict[st
             f"{zrmify.zrmify(syllable)};{auxiliary[char][0]}"
             for syllable, char in zip(syllables, entry.text)
         ]
-        lines.append(f"{entry.text}\t{' '.join(codes)}\t20")
+        lines.append(f"{entry.text}\t{' '.join(codes)}\t{entry.upstream_weight}")
+    # 魔然种子行：辅码已按魔虎主辅重写，词权保留魔然简体 dist 原值。
+    # 输出顺序是万象补缺在前、种子在后；Rime sort: by_weight，运行时不按文件序。
+    for text, code, weight in seed_rows or []:
+        lines.append(f"{text}\t{code}\t{weight}")
     return "\n".join(lines) + "\n"
 
 
 def build() -> dict[str, int]:
-    entries, stats = select_candidates()
+    entries, seed_rows, stats = prepare_rows()
     # 与已提交的生成词典对比增量：CI 的全新克隆里没有本地中间文件，
     # 只有 mohu_zrm.wanxiang.dict.yaml 始终存在，才能算出真实的每日增删。
     previous: dict[str, str] = {}
@@ -296,17 +373,26 @@ def build() -> dict[str, int]:
                 fields = line.split("\t")
                 previous[fields[0]] = fields[1]
     current = {entry.text: zrmify.zrmify(entry.pinyin) for entry in entries}
+    for text, code, _weight in seed_rows:
+        current.setdefault(text, code)
     stats.update(
         added=len(set(current) - set(previous)),
         removed=len(set(previous) - set(current)),
         pronunciation_changed=sum(
             word in previous and previous[word] != code for word, code in current.items()
         ),
-        selected=len(entries),
     )
     ENTRIES.write_text(render_entries(entries), encoding="utf-8")
+    # 错音词库（cuoyin）按设计携带非规范读音（如 东庠 dong yang，第 4 列
+    # 才是正确音），供打错音时仍能出词。引擎不应学习这些读音；
+    # tests/test_reading_coverage.py 依据本清单豁免这些词的读音覆盖要求。
+    cuoyin = sorted({entry.text for entry in entries if entry.source == "cuoyin"})
+    CUOYIN_WORDS.write_text(
+        "".join(f"{word}\n" for word in cuoyin), encoding="utf-8")
     revision = load_manifest()["revision"]
-    OUTPUT.write_text(render_dictionary(entries, revision[:12], load_auxiliary()), encoding="utf-8")
+    OUTPUT.write_text(
+        render_dictionary(entries, revision[:12], load_auxiliary(), seed_rows),
+        encoding="utf-8")
     REPORT.write_text(render_report(stats, revision), encoding="utf-8")
     return stats
 
@@ -322,11 +408,16 @@ def render_report(stats: dict[str, int], revision: str) -> str:
             f"- removed: {stats['removed']}",
             f"- pronunciation changed: {stats['pronunciation_changed']}",
             f"- duplicate existing words: {stats['duplicate_existing']}",
+            f"- skipped because already in moran seed: {stats.get('duplicate_seed', 0)}",
             f"- pronunciation conflicts: {stats['pronunciation_conflicts']}",
+            f"- dropped below min upstream weight (<{MIN_UPSTREAM_WEIGHT}): {stats.get('below_min_weight', 0)}",
             f"- rejected source rows: {stats['source_rows_rejected']}",
             f"- dropped for missing auxiliary: {stats.get('missing_auxiliary', 0)}",
+            f"- moran seed total / merged: {stats.get('seed_total', 0)} / {stats.get('seed_merged', 0)}",
             "",
-            "The generated dictionary uses a fixed local weight of 20; upstream weights are retained only in entries.tsv.",
+            "Dictionary weights are the real upstream weights (min "
+            f"{MIN_UPSTREAM_WEIGHT} since 2026-09-21). Moran simplified-dist "
+            "seed is merged first; Wanxiang only fills gaps.",
             "",
         ]
     )
@@ -349,11 +440,16 @@ def verify_snapshots(manifest: dict) -> None:
 def check() -> dict[str, int]:
     manifest = load_manifest()
     verify_snapshots(manifest)
-    entries, stats = select_candidates()
-    expected = render_dictionary(entries, manifest["revision"][:12], load_auxiliary())
+    entries, seed_rows, stats = prepare_rows()
+    expected = render_dictionary(
+        entries, manifest["revision"][:12], load_auxiliary(), seed_rows)
     if not OUTPUT.is_file() or OUTPUT.read_text(encoding="utf-8") != expected:
         raise ValueError("generated dictionary is not deterministic")
-    stats["selected"] = len(entries)
+    cuoyin = sorted({entry.text for entry in entries if entry.source == "cuoyin"})
+    if not CUOYIN_WORDS.is_file() or CUOYIN_WORDS.read_text(encoding="utf-8") != "".join(
+        f"{word}\n" for word in cuoyin
+    ):
+        raise ValueError("cuoyin word list is not deterministic")
     return stats
 
 

@@ -22,7 +22,6 @@ ZRM_DICTIONARIES = {
     "mohu_zrm.base.dict.yaml": "mohu_flypy.base",
     "mohu_zrm.words.dict.yaml": "mohu_flypy.words",
     "mohu_zrm.tencent.dict.yaml": "mohu_flypy.tencent",
-    "mohu_zrm.computer.dict.yaml": "mohu_flypy.computer",
     "mohu_zrm.moe.dict.yaml": "mohu_flypy.moe",
     "mohu_zrm.classics.dict.yaml": "mohu_flypy.classics",
     "mohu_zrm.wanxiang.dict.yaml": "mohu_flypy.wanxiang",
@@ -37,8 +36,8 @@ GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
 WORD_TABLE_MARKER = "#----------词库----------#\n"
 PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
 
-# 小鹤飞键集合（单一事实源 tools/fly_keys.py）：xq→xo（xiu）、qx→qo（qia）、
-# ju→jv、yu→yv。小鹤词典的飞键区块不镜像自然码母表（自然码 qx=qie 的
+# 小鹤飞键集合（单一事实源 tools/fly_keys.py，清单见 mohu_fly_keys.tsv）。
+# 小鹤词典的飞键区块不镜像自然码母表（自然码 qx=qie 的
 # qx→qo 内容对小鹤语义是错的），而是在音节转换完成后从小鹤主区块
 # 全量再生成（tools/sync_flykey_quickcodes.py 的闭包逻辑）。
 FLY_SECTION_SENTINEL = "\x00MOHU_FLY_SECTION\x00"
@@ -453,7 +452,7 @@ def build() -> None:
     extended = T2S.convert(extended)
     extended = replace_dictionary_name(extended, "mohu_zrm.extended")
     extended = extended.replace("mohu.chars", "mohu_zrm.chars")
-    for suffix in ("base", "words", "tencent", "computer", "moe", "classics"):
+    for suffix in ("base", "words", "tencent", "moe", "classics"):
         extended = extended.replace(f"mohu.{suffix}", f"mohu_zrm.{suffix}")
     write(ROOT / "mohu_zrm.extended.dict.yaml", extended)
     flypy_extended = extended.replace("mohu_zrm", "mohu_flypy").replace(

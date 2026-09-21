@@ -1,11 +1,16 @@
 # scheme	source	target
 # source is the canonical syllable; target is the user-entered fly-key alias.
+# 2026-09-21 po->pd 当天改为 po->pe（用户决定）：pd 还给 p+d 首字母简词
+# （判断/碰到/片段/派对）；pe 上原 配额/普洱 简词按飞键规则让位。
 zrm	wz	wk
 zrm	xq	xo
 zrm	qx	qo
 zrm	ju	jv
 zrm	yu	yv
+zrm	pl	pr
+zrm	po	pe
 flypy	xq	xo
 flypy	qx	qo
 flypy	ju	jv
 flypy	yu	yv
+flypy	po	pe

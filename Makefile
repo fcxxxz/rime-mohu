@@ -106,7 +106,7 @@ check-classics:
 update-compact-dicts:
 	uv run ./tools/update_compact_dicts.sh
 
-fixed_tiger: tiger_aux tiger.dict.yaml tools/data/pinyin_simp.txt tools/data/simp_chars.txt tools/data/tiger_race_profile.tsv tools/data/mohu_fixed_code_claims.tsv tools/modern_readings.py tools/tiger_compatibility.py
+fixed_tiger: tiger_aux tiger.dict.yaml tools/data/pinyin_simp.txt tools/data/simp_chars.txt tools/data/tiger_race_profile.tsv tools/data/mohu_fixed_code_claims.tsv tools/data/mohu_fixed_secondary_codes.tsv tools/data/mohu_fixed_simp_legacy_chars.txt tools/data/mohu_fixed_char_code_overrides.tsv tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/modern_readings.py tools/tiger_compatibility.py
 	uv run tools/rebuild_fixed_tiger.py
 
 tools/data/tiger_compatibility_chars.txt: fixed_tiger

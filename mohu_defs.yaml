@@ -67,6 +67,12 @@ fly:
   yu_yv:
     __append:
       - derive/yu;/yv;/
+  pl_pr:
+    __append:
+      - derive/pl;/pr;/
+  po_pe:
+    __append:
+      - derive/po;/pe;/
 fly_flypy:
   xq_xo:
     __append:
@@ -80,6 +86,9 @@ fly_flypy:
   yu_yv:
     __append:
       - derive/yu;/yv;/
+  po_pe:
+    __append:
+      - derive/po;/pe;/
 casefold:
   __append:
     - derive/([A-Z])/\L$1\E/

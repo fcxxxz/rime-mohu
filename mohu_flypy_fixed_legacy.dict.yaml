@@ -286,7 +286,7 @@ import_tables:
 内	nw		0
 哦	o		0
 欧	ou		0
-平	p		0
+派	p		0
 怕	pa		0
 剖	pz		0
 票	pn		0
@@ -633,6 +633,7 @@ import_tables:
 𠳐	bhd		0
 棒	bhe		77284
 塝	bhg		447
+彭	bhh		201
 绑	bhi		58012
 傍	bhj		34850
 浜	bhk		1877
@@ -1786,8 +1787,10 @@ import_tables:
 砗	iem		232
 㬚	ieo		0
 掣	ieq		7797
+屮	ies		784
 扯	ieu		131478
 彻	iew		168415
+車	iey		774
 疢	ifa		342
 煁	ifc		267
 嗔	ifd		31168
@@ -3098,7 +3101,7 @@ import_tables:
 牌	pda		237160
 哌	pdd		759
 俳	pdj		561
-派	pdk		537090
+湃	pdk		12221
 蒎	pdl		493
 簰	pdr		454
 排	pdu		449584
@@ -3162,7 +3165,7 @@ import_tables:
 胖	pjv		36
 娉	pkb		8067
 屏	pkc		89750
-枰	pke		685
+平	pke		1.43996e+06
 坪	pkg		20132
 瓶	pkh		151362
 俜	pkj		525
@@ -3516,6 +3519,7 @@ import_tables:
 仨	saj		5719
 洒	sak		96761
 萨	sal		5184
+糁	sap		339
 靸	sat		393
 脎	sav		370
 瘙	sca		722
@@ -3900,6 +3904,7 @@ import_tables:
 酾	udy		0
 舌	uea		115405
 蛇	uec		160445
+叶	ued		374
 社	uef		76704
 赦	ueg		16333
 慑	ueh		20266
@@ -4059,6 +4064,7 @@ import_tables:
 喳	vad		21141
 栅	vae		12177
 鲝	vag		0
+祭	vah		148
 渣	vak		16543
 砟	vam		550
 齇	vao		323
@@ -4719,6 +4725,7 @@ import_tables:
 业	yec		938051
 叶	yed		625969
 椰	yee		5739
+堨	yeg		100
 爷	yeh		641029
 倻	yej		449
 液	yek		101930
@@ -5104,7 +5111,7 @@ import_tables:
 捌	baud		791
 胈	bavn		296
 鲃	bawm		40
-鲌	bawu		0
+鲌	bawu		104
 槟	bbew		4489
 濒	bbks		6797
 豳	bbvj		511
@@ -5305,6 +5312,7 @@ import_tables:
 袋	ddjp		303806
 迨	ddkd		593
 玳	ddnj		2810
+骀	ddnk		100
 凳	dghz		36123
 𣗋	dhes		0
 𬍡	dhka		0
@@ -5355,7 +5363,7 @@ import_tables:
 丁	dkad		278627
 啶	dkdw		663
 鼎	dkqa		59165
-铤	dkzt		0
+铤	dkzt		146
 锭	dkzw		7341
 癜	dmac		569
 靛	dmav		1237
@@ -5712,7 +5720,7 @@ import_tables:
 行	hgpx		1
 绗	hhip		38
 亢	hhzo		0
-阚	hjaa		0
+阚	hjaa		414
 憨	hjaq		19728
 虷	hjce		408
 焓	hjcj		614
@@ -5873,7 +5881,7 @@ import_tables:
 棽	ifee		368
 榇	ifei		155
 梣	ifev		371
-沈	ifkw		1
+沈	ifkw		100
 瞋	ifqn		575
 谶	ifsj		1734
 衬	iftk		50272
@@ -6055,7 +6063,7 @@ import_tables:
 蹐	jipw		342
 畸	jiqm		5545
 剂	jiqp		31371
-齐	jiqq		0
+齐	jiqq		118
 齑	jiqr		1382
 籍	jira		66610
 笈	jirc		5428
@@ -6419,6 +6427,7 @@ import_tables:
 鳞	lbwp		24864
 廪	lbxz		725
 耢	lcal		17
+乐	lcby		473
 嫪	lcbz		1309
 潦	lckm		75
 落	lclk		10000
@@ -6780,14 +6789,12 @@ import_tables:
 奴	nubr		142209
 嚄	oodl		322
 鸥	ounb		9276
-派	pakx		0
 筢	paru		568
 姘	pbbh		1291
 𬞟	pbls		0
 牝	pbqv		864
 颦	pbss		4297
 匏	pcmm		558
-湃	pdku		12221
 迫	pduu		12
 椪	pgeh		375
 堋	pggv		555
@@ -6834,6 +6841,7 @@ import_tables:
 番	pjtp		199
 扳	pjux		0
 蚲	pkce		233
+枰	pkee		685
 涄	pkkd		0
 洴	pkkh		338
 苹	pkle		37052
@@ -8043,6 +8051,7 @@ import_tables:
 哑	yadf		65950
 堐	yagx		327
 芽	yall		17121
+邪	yalt		100
 迓	yalu		602
 鸦	yalx		39645
 牙	yaly		300629
@@ -8299,6 +8308,7 @@ import_tables:
 颍	ykvk		2512
 颖	ykvx		63259
 膺	ykxj		6134
+呦	yodi		643
 妧	yrbm		451
 嫄	yrbx		473
 蜎	yrcd		369
@@ -72830,8 +72840,6 @@ JK制服	jkvf
 排毒养颜	pdyy
 排队自首	pdzu
 平等自愿	pdzy
-配额	pe
-普洱	pe
 破而不立	pebl
 品而第之	pedv
 破而后立	pehl
@@ -74436,7 +74444,6 @@ JK制服	jkvf
 贫穷限制了我的想象	pqxx
 迫切需要	pqxy
 迫切要求	pqyq
-骗人	pr
 判然不同	prbt
 派人参加	prcj
 派人调查	prdi
@@ -131724,6 +131731,219 @@ U盘	uyj
 足浴	zuyv
 鳟鱼	zyyv
 # 结束飞键
+
+# 开始飞键 po -> pe
+阿婆	aape
+爆破	bcpe
+逼迫	bipe
+被迫	bwpe
+擦破	cape
+刺破	cipe
+残破	cjpe
+催迫	cvpe
+打破	dape
+道破	dcpe
+堤坡	dipe
+胆魄	djpe
+点破	dmpe
+跌破	dppe
+东坡	dspe
+读破	dupe
+陡坡	dzpe
+富婆	fupe
+肥婆	fwpe
+告破	gcpe
+高坡	gcpe
+公婆	gspe
+攻破	gspe
+姑婆	gupe
+刮破	gxpe
+活泼	hope
+缓坡	hrpe
+湖泊	hupe
+琥珀	hupe
+滑坡	hxpe
+魂魄	hype
+厚朴	hzpe
+撑破	igpe
+产婆	ijpe
+戳破	iope
+穿破	irpe
+冲破	ispe
+吹破	ivpe
+紧迫	jbpe
+急迫	jipe
+景颇	jkpe
+交迫	jnpe
+揭破	jppe
+窘迫	jspe
+看破	kjpe
+窥破	kvpe
+老婆	lcpe
+廉颇	lmpe
+落魄	lope
+陆坡	lupe
+慢坡	mjpe
+磨破	mope
+媒婆	mwpe
+爬坡	pape
+破	pe		0
+破案	pean
+破败	pebd
+破壁	pebi
+破布	pebu
+破财	pecd
+叵测	pece
+颇大	peda
+坡道	pedc
+坡地	pedi
+颇多	pedo
+破洞	peds
+坡度	pedu
+桲	pee		10
+繁	peek		3
+朴	peey		9
+破防	pefh
+泼妇	pefu
+破费	pefw
+颇费	pefw
+坡	peg		79228
+颇高	pegc
+破格	pege
+颇感	pegj
+破功	pegs
+破瓜	pegx
+迫害	pehd
+破坏	pehk
+破获	peho
+破钞	peic
+破车	peie
+破产	peij
+破除	peiu
+迫近	pejb
+破击	peji
+迫降	pejl
+破解	pejp
+破旧	pejq
+颇具	peju
+颇具	pejv
+婆家	pejx
+婆	pek		325914
+泺	pekb		0
+破开	pekd
+破壳	peke
+泼	peks		49867
+破空	peks
+泊	peku		41521
+破口	pekz
+泼辣	pela
+迫临	pelb
+泼赖	peld
+破浪	pelh
+魄力	peli
+破例	peli
+破烂	pelj
+迫令	pelk
+破脸	pelm
+破落	pelo
+破裂	pelp
+破陋	pelz
+婆妈	pema
+破门	pemf
+泼墨	pemo
+破灭	pemp
+婆母	pemu
+珀	pen		10455
+叵	pend		3366
+颇能	peng
+婆娘	penl
+粕	pep		898
+婆婆	pepe
+泼皮	pepi
+婆婆	pepo
+迫切	peqp
+颇	per		127012
+笸	pern		549
+泼洒	pesa
+婆娑	peso
+破碎	pesv
+破损	pesy
+鄱	pet		2106
+破题	peti
+坡田	petm
+陂	petr		37
+破土	petu
+迫	peu		181073
+魄	peua		76856
+迫使	peui
+皤	peut		543
+泼水	peuv
+颇受	peuz
+破阵	pevf
+破绽	pevj
+破五	pewu
+颇为	peww
+破位	peww
+婆媳	pexi
+破相	pexl
+破晓	pexn
+朴硝	pexn
+破鞋	pexp
+酦	pey		0
+破音	peyb
+鄱阳	peyh
+破译	peyi
+破约	peyt
+迫于	peyu
+迫于	peyv
+颇有	peyz
+钋	pez		81
+婆子	pezi
+钷	pezn		38
+䥽	pezs		0
+偏颇	pmpe
+瓢泼	pnpe
+婆婆	pope
+气魄	qipe
+强迫	qlpe
+敲破	qnpe
+驱迫	qupe
+撒泼	sape
+撕破	sipe
+太婆	tdpe
+体魄	tipe
+挑破	tnpe
+脱坡	tope
+捅破	tspe
+突破	tupe
+退坡	tvpe
+神婆	ufpe
+上坡	uhpe
+识破	uipe
+山坡	ujpe
+摔破	ukpe
+说破	uope
+叔婆	uupe
+耍泼	uxpe
+侦破	vfpe
+撞破	vlpe
+外婆	wdpe
+巫婆	wupe
+威迫	wwpe
+心魄	xbpe
+胁迫	xppe
+血泊	xtpe
+下坡	xxpe
+压迫	yape
+咬破	ycpe
+阳坡	yhpe
+诱迫	yzpe
+油泼	yzpe
+砸破	zape
+糟粕	zcpe
+# 结束飞键
+
+
 
 
 

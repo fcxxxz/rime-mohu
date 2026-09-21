@@ -8,7 +8,6 @@ compact_dicts=(
     "mohu_zrm.base.dict.yaml"
     "mohu_zrm.tencent.dict.yaml"
     "mohu_zrm.moe.dict.yaml"
-    "mohu_zrm.computer.dict.yaml"
     "mohu_zrm.words.dict.yaml"
 )
 

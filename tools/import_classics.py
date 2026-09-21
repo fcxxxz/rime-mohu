@@ -35,7 +35,6 @@ ACTIVE_TABLES = (
     ROOT / "mohu_zrm.base.dict.yaml",
     ROOT / "mohu_zrm.words.dict.yaml",
     ROOT / "mohu_zrm.tencent.dict.yaml",
-    ROOT / "mohu_zrm.computer.dict.yaml",
     ROOT / "mohu_zrm.moe.dict.yaml",
 )
 AUXILIARY = ROOT / "tools" / "data" / "tiger_aux.txt"

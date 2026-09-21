@@ -6,9 +6,7 @@ tool keeps that coverage identical for both schemes, converting only the
 syllable portion that can be identified from the character dictionary.  Fly-key
 substitutions are scheme-specific and closed transitively per output; the
 single source of truth is ``tools/data/mohu_fly_keys.tsv`` (loaded via
-``tools/fly_keys.py``): the natural-code set (wz->wk, xq->xo, qx->qo,
-ju->jv, yu->yv) and the Flypy set (xq->xo for xiu, qx->qo for qia, ju->jv,
-yu->yv -- note qx is qia in Flypy, not the Natural Code qie).
+``tools/fly_keys.py``; pair lists live there, per scheme).
 Source rows that are themselves natural-code fly variants are reverted to
 their base codes when building the Flypy output instead of leaking through as
 dead codes (the qie rows under qo thus re-emerge as plain qp codes).
@@ -30,16 +28,16 @@ import flypyify
 import zrmify
 
 ROOT = TOOLS.parent
-# 飞键替换对单一事实源（tools/fly_keys.py），与 mohu_defs.yaml /fly* 同步：
-# 自然码 wz->wk、xq->xo、qx->qo、ju->jv、yu->yv；小鹤 qx 在其音系下是
-# qia（qie=qp、wei=ww 不设飞键）。此处仅保留别名供本模块历史命名引用。
+# 飞键替换对单一事实源（tools/fly_keys.py，清单见 mohu_fly_keys.tsv），
+# 与 mohu_defs.yaml /fly* 同步；小鹤集合与自然码不同（如 qx 在小鹤音系
+# 下是 qia）。此处仅保留别名供本模块历史命名引用。
 FLY_ZRM = fly_keys.FLY_ZRM
 FLY_FLYPY = fly_keys.FLY_FLYPY
 # 仅用于源表（自然码形态）读音简频回溯，源行恒为自然码。
 FLY_INVERSE = {target: source for source, target in FLY_ZRM.items()}
 # 行结构（含可选第 6 列规范音节头）：源表行恒为 4/5 列，第 6 列只在
-# 构建产物中出现。飞键换头变体行（ju→jv、yu→yv、xq→xo、qx→qo、
-# wz→wk）指回源读音头，供引擎把同一读音的多码形合并后再归一
+# 构建产物中出现。飞键换头变体行（如 ju→jv、wz→wk，集合见
+# mohu_fly_keys.tsv）指回源读音头，供引擎把同一读音的多码形合并后再归一
 # log P(读音|字)——否则同一读音被当成两个读音、总频翻倍，主读音先验
 # 被白白罚 ln2（句 ju/jv 均挂 254300 时先验恰为 -0.693）。非变体行为空。
 ROW_KEY = tuple[str, str, str, str, str, str]
@@ -321,13 +319,27 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
     # （不变量：每个全音节行的飞键变体必须存在）。配合引擎二字组合
     # 门控，这些词的组合路径恢复可见，并按词频参与排序。
     emitted_pairs = {(row[0], row[1]) for row in output}
+    injected_variants: set[tuple[str, str]] = set()
     for text, (weight, bare) in word_weights.items():
         if (bare, text) in emitted_pairs:
             continue
         output.add((bare, text, "99", str(weight), "", ""))
         for variant in _fly_closure(bare, text, fly):
+            injected_variants.add((variant, text))
             if (variant, text) not in emitted_pairs:
                 output.add((variant, text, "99", str(weight), "", ""))
+    # 注入词的飞键变体若与源表行同 (码,词) 共存（master 历史上手工同步过
+    # 上游飞键行，如 xomo 休谟 rank=1），把源行 rank 对齐到 99：镜像不变
+    # 量要求变体与基码同 rank/词频，且引擎按 rank<90 词典边先验——同一词
+    # 的两种码形不应一个走词边一个不走。
+    if injected_variants:
+        aligned: set[ROW_OUT] = set()
+        for row in output:
+            if (row[0], row[1]) in injected_variants and row[2] != "99":
+                aligned.add((row[0], row[1], "99", row[3], row[4], row[5]))
+            else:
+                aligned.add(row)
+        output = aligned
     return sorted(output, key=lambda row: (row[0], int(row[2]), row[1], int(row[3]), row[4]))
 
 

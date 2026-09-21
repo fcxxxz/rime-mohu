@@ -1787,9 +1787,16 @@ class FixedDictionaryTest(unittest.TestCase):
         # 被覆盖（zrm 4 键 3889 -> 3888、flypy 3434 -> 3433）。
         # 2026-09-20 政/郑换位：非前缀指定 政 vgh，郑 vgh -> vghm 四码
         #（zrm/flypy 4 键各 +1，三码净变化 0）。
+        # 2026-09-21 平/派换位：一简 p 让给派（平落 pye/pke，枰顺延
+        # pyee/pkee；派让出 plk/pak，plk/pdk 由 湃 递补、湃原 plku/pdku
+        # 消失），zrm/flypy 4 键各 -1。
+        # 2026-09-21 万象真实词权暴露的多音缺读补登记（阚han/这zhei/呲zi/
+        # 齐ji/俞shu/铤ding/沈chen/鲌ba/繇yao/乐lao/糁sa/祭zha/邪ya/骀dai/
+        # 堨ye/屮che/車che/叶she/彭bang/呦yo 共 20 读），legacy 表 3 键 +7、
+        # 4 键 +4（纯新增短码，无既有码位被挤）。
         expected_lengths = {
-            "zrm": {1: 42, 2: 435, 3: 4567, 4: 3889},
-            "flypy": {1: 42, 2: 435, 3: 4567, 4: 3434},
+            "zrm": {1: 42, 2: 435, 3: 4574, 4: 3892},
+            "flypy": {1: 42, 2: 435, 3: 4574, 4: 3437},
         }
         expected_duplicate_lengths = {
             "zrm": {1, 2, 3, 4},
@@ -1835,6 +1842,16 @@ class FixedDictionaryTest(unittest.TestCase):
                 self.assertIn(("政", "vgf"), pairs)
                 self.assertNotIn(("郑", "vgh"), pairs)
                 self.assertIn(("郑", "vghm"), pairs)
+                # 2026-09-21 平/派换位：一简 p 让给派，平落自身三码
+                # pye（小鹤 pke，其 pya 存档行已不前缀匹配现代辅码）；
+                # 派让出的 plk/pdk 由 湃 递补。
+                expected_ping = {"zrm": "pye", "flypy": "pke"}
+                expected_pai = {"zrm": "plk", "flypy": "pdk"}
+                self.assertIn(("派", "p"), pairs)
+                self.assertNotIn(("平", "p"), pairs)
+                self.assertIn(("平", expected_ping[scheme]), pairs)
+                self.assertNotIn(("派", expected_pai[scheme]), pairs)
+                self.assertIn(("湃", expected_pai[scheme]), pairs)
                 # 文 登记次级简码 wf：问 wf 之后的次选位；文 让出的
                 # wfv 由紊按递补规则接手。
                 self.assertIn(("问", "wf"), pairs)
@@ -2198,7 +2215,6 @@ class DictionaryAuxiliaryInvariantTest(unittest.TestCase):
             "mohu_zrm.chars.dict.yaml",
             "mohu_zrm.base.dict.yaml",
             "mohu_zrm.tencent.dict.yaml",
-            "mohu_zrm.computer.dict.yaml",
             "mohu_zrm.moe.dict.yaml",
             "mohu_zrm.words.dict.yaml",
         )

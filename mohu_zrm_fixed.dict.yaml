@@ -358,7 +358,7 @@ import_tables:
 哦	o		0
 欧	ou		0
 鸥	oun		0
-平	p		0
+派	p		0
 怕	pa		0
 剖	pb		0
 票	pc		0
@@ -707,6 +707,7 @@ import_tables:
 感	gjn		2.52914e+06
 王	whn		1.89171e+06
 气	qiv		3.22737e+06
+平	pye		1.43996e+06
 常	ihs		1.6237e+06
 解	jxx		1.31207e+06
 解	xxx		13120
@@ -880,8 +881,6 @@ import_tables:
 六	lua		371
 朝	ikn		709793
 朝	vkn		42588
-派	plk		537090
-派	pak		0
 线	xmi		539444
 究	jqe		275220
 首	ubh		588887
@@ -1004,6 +1003,7 @@ import_tables:
 续	xui		591245
 假	xwj		0
 乐	ytb		77726
+乐	lkb		473
 陆	lqt		4000
 陆	lut		431372
 铁	txz		520031
@@ -1159,6 +1159,7 @@ import_tables:
 圣	ugr		413460
 叶	xxd		493
 叶	yed		625969
+叶	ued		374
 毫	hkg		414933
 宋	ssw		255294
 谢	xxs		623220
@@ -1659,6 +1660,7 @@ import_tables:
 骗	pmn		178600
 曰	yto		74013
 彭	pgh		36069
+彭	bhh		201
 租	zux		98428
 奏	zba		100818
 幽	ybv		238716
@@ -1810,6 +1812,7 @@ import_tables:
 猫	mkm		137136
 祭	jih		89101
 祭	vlh		1
+祭	vah		148
 池	iik		132332
 琴	qnn		161113
 遥	yky		188299
@@ -2524,7 +2527,6 @@ import_tables:
 垮	kwg		23378
 岚	ljv		69463
 燥	zkc		32172
-姥	lkb		45943
 沦	lpk		25113
 砂	uam		17805
 牟	mbk		13962
@@ -3317,6 +3319,7 @@ import_tables:
 髻	jip		7307
 泗	sik		4611
 贲	bfn		4601
+湃	plk		12221
 哞	mbd		1583
 淞	ssk		2959
 煦	xuo		7265
@@ -3888,7 +3891,6 @@ import_tables:
 溴	xqk		845
 缂	kei		79
 蛞	koc		551
-枰	pye		685
 磔	vem		565
 旎	nil		3505
 氚	irv		552
@@ -3930,6 +3932,7 @@ import_tables:
 胍	gwv		643
 笳	jwr		1383
 糁	sjp		1
+糁	sap		339
 阍	hpa		371
 跏	jwp		553
 鳕	xtw		399
@@ -4592,6 +4595,7 @@ import_tables:
 堃	kpl		563
 堧	rrg		432
 堨	eeg		442
+堨	yeg		100
 堽	ghg		422
 塅	drg		382
 塆	wjg		12
@@ -4626,6 +4630,7 @@ import_tables:
 尨	mho		467
 屌	dcc		93026
 屮	cks		2222
+屮	ies		784
 屼	wuv		521
 岠	juv		463
 峘	hrv		347
@@ -4720,6 +4725,7 @@ import_tables:
 溞	skk		411
 滃	wgk		517
 滆	gek		489
+潖	pak		340
 濛	mgk		695
 瀌	bck		330
 瀼	rhk		526
@@ -5033,6 +5039,7 @@ import_tables:
 𬺓	iul		0
 鲕	erw		4
 卻	qth		44530
+車	iey		774
 嬥	tcb		266
 礽	rgf		478
 舺	xwi		426
@@ -69359,8 +69366,6 @@ JK制服	jkvf
 排毒养颜	pdyy
 排队自首	pdzu
 平等自愿	pdzy
-配额	pe
-普洱	pe
 破而不立	pebl
 品而第之	pedv
 破而后立	pehl
@@ -70965,7 +70970,6 @@ JK制服	jkvf
 贫穷限制了我的想象	pqxx
 迫切需要	pqxy
 迫切要求	pqyq
-骗人	pr
 判然不同	prbt
 派人参加	prcj
 派人调查	prdi
@@ -127272,10 +127276,12 @@ U盘	upj
 喂奶	wknl
 韪	wko		1315
 围殴	wkou
+威迫	wkpe
 尾盘	wkpj
 为盼	wkpj
 委派	wkpl
 威迫	wkpo
+委派	wkpr
 委培	wkpz
 畏	wkq		70481
 围墙	wkqd
@@ -128770,6 +128776,470 @@ U盘	upj
 鳟鱼	zpyv
 纵欲	zsyv
 足浴	zuyv
+# 结束飞键
+
+# 开始飞键 pl -> pr
+安排	anpr
+标牌	bcpr
+帮派	bhpr
+半拍	bjpr
+摆拍	blpr
+编排	bmpr
+并排	bypr
+词牌	cipr
+彩排	clpr
+打牌	dapr
+调派	dcpr
+党派	dhpr
+底牌	dipr
+单排	djpr
+盾牌	dppr
+赌牌	dupr
+发牌	fapr
+发排	fapr
+分派	ffpr
+翻拍	fjpr
+复牌	fupr
+俯拍	fupr
+鸽派	gepr
+跟拍	gfpr
+公派	gspr
+骨牌	gupr
+挂牌	gwpr
+后排	hbpr
+黄牌	hdpr
+合拍	hepr
+横排	hgpr
+号牌	hkpr
+海派	hlpr
+混排	hppr
+红牌	hspr
+互派	hupr
+画派	hwpr
+黑牌	hzpr
+插排	iapr
+筹拍	ibpr
+车牌	iepr
+出牌	iupr
+吹拍	ivpr
+教派	jcpr
+奖牌	jdpr
+鸡排	jipr
+减排	jmpr
+金牌	jnpr
+加派	jwpr
+节拍	jxpr
+竞拍	jypr
+京派	jypr
+烤牌	kkpr
+开拍	klpr
+跨排	kwpr
+楼牌	lbpr
+两排	ldpr
+亮牌	ldpr
+力排	lipr
+老牌	lkpr
+邻排	lnpr
+流派	lqpr
+路牌	lupr
+令牌	lypr
+灵牌	lypr
+门派	mfpr
+门牌	mfpr
+冒牌	mkpr
+摸排	mopr
+木牌	mupr
+木排	mupr
+名牌	mypr
+男排	njpr
+牛排	nqpr
+女排	nvpr
+澎湃	pgpr
+滂湃	phpr
+拍拍	plpr
+品牌	pnpr
+拍	pr		0
+牌	pra		237160
+拍案	pran
+排比	prbi
+排版	prbj
+拍板	prbj
+牌匾	prbm
+派别	prbx
+派兵	prby
+排错	prco
+哌	prd		759
+拍打	prda
+拍档	prdh
+排挡	prdh
+派单	prdj
+派到	prdk
+排毒	prdu
+排队	prdv
+派对	prdv
+排定	prdy
+牌儿	prer
+派发	prfa
+排放	prfh
+派赴	prfu
+派购	prgb
+排灌	prgr
+排骨	prgu
+排后	prhb
+排行	prhh
+排号	prhk
+派活	prho
+排洪	prhs
+排华	prhw
+徘徊	prhy
+排查	pria
+排成	prig
+排场	prih
+排斥	prii
+排除	priu
+俳	prj		561
+排挤	prji
+派件	prjm
+排检	prjm
+牌九	prjq
+牌局	prju
+牌局	prjv
+牌价	prjw
+排解	prjx
+湃	prk		12221
+派克	prke
+派款	prkr
+排空	prks
+蒎	prl		493
+牌楼	prlb
+排量	prld
+排涝	prlk
+派来	prll
+排练	prlm
+排卵	prlr
+排律	prlv
+排列	prlx
+排雷	prlz
+拍马	prma
+拍卖	prml
+排面	prmm
+牌面	prmm
+排名	prmy
+排尿	prnc
+排偶	prou
+排炮	prpk
+拍拍	prpl
+拍片	prpm
+拍拍	prpr
+排枪	prqd
+排气	prqi
+派遣	prqm
+排球	prqq
+派去	prqu
+簰	prr		454
+派人	prrf
+排入	prru
+派送	prss
+排他	prta
+派头	prtb
+排坛	prtj
+拍拖	prto
+排	pru		449584
+拍手	prub
+拍摄	prue
+派生	prug
+派上	pruh
+排水	pruv
+排着	prve
+拍着	prve
+牌证	prvg
+排长	prvh
+拍掌	prvh
+拍照	prvk
+牌照	prvk
+牌桌	prvo
+拍砖	prvr
+派驻	prvu
+徘	prw		17122
+拍完	prwj
+排位	prwk
+牌位	prwk
+排外	prwl
+排污	prwu
+排位	prwz
+牌位	prwz
+排箫	prxc
+拍戏	prxi
+派息	prxi
+派系	prxi
+排险	prxm
+排揎	prxr
+排序	prxu
+拍下	prxw
+排泄	prxx
+俳优	pryb
+排椅	pryi
+排演	pryj
+排印	pryn
+派员	pryr
+牌子	przi
+拍子	przi
+排在	przl
+铺排	pupr
+桥牌	qcpr
+抢拍	qdpr
+气派	qipr
+前排	qmpr
+球拍	qqpr
+曲牌	qupr
+肉排	rbpr
+三排	sjpr
+偷拍	tbpr
+特派	tepr
+藤牌	tgpr
+摊牌	tjpr
+摊派	tjpr
+托派	topr
+铜牌	tspr
+停牌	typr
+收拍	ubpr
+双排	udpr
+上排	uhpr
+实拍	uipr
+竖排	uupr
+水牌	uvpr
+正派	vgpr
+指派	vipr
+站牌	vjpr
+招牌	vkpr
+摘牌	vlpr
+中排	vspr
+猪排	vupr
+抓拍	vwpr
+王牌	whpr
+玩牌	wjpr
+外派	wlpr
+委派	wzpr
+洗牌	xipr
+新派	xnpr
+选派	xrpr
+学派	xtpr
+下排	xwpr
+右派	ybpr
+夜拍	yepr
+洋派	yhpr
+一排	yipr
+一派	yipr
+银牌	ynpr
+鹰派	yypr
+蝇拍	yypr
+杂牌	zapr
+增派	zgpr
+自拍	zipr
+做派	zopr
+宗派	zspr
+# 结束飞键
+
+# 开始飞键 po -> pe
+阿婆	aape
+逼迫	bipe
+爆破	bkpe
+被迫	bzpe
+擦破	cape
+刺破	cipe
+残破	cjpe
+催迫	cvpe
+打破	dape
+陡坡	dbpe
+堤坡	dipe
+胆魄	djpe
+道破	dkpe
+点破	dmpe
+东坡	dspe
+读破	dupe
+跌破	dxpe
+富婆	fupe
+肥婆	fzpe
+告破	gkpe
+高坡	gkpe
+公婆	gspe
+攻破	gspe
+姑婆	gupe
+刮破	gwpe
+厚朴	hbpe
+活泼	hope
+魂魄	hppe
+缓坡	hrpe
+湖泊	hupe
+琥珀	hupe
+滑坡	hwpe
+撑破	igpe
+产婆	ijpe
+戳破	iope
+穿破	irpe
+冲破	ispe
+吹破	ivpe
+交迫	jcpe
+急迫	jipe
+紧迫	jnpe
+窘迫	jspe
+揭破	jxpe
+景颇	jype
+看破	kjpe
+窥破	kvpe
+老婆	lkpe
+廉颇	lmpe
+落魄	lope
+陆坡	lupe
+慢坡	mjpe
+磨破	mope
+媒婆	mzpe
+爬坡	pape
+瓢泼	pcpe
+破	pe		0
+破案	pean
+破壁	pebi
+破败	pebl
+破布	pebu
+叵测	pece
+破财	pecl
+颇大	peda
+坡地	pedi
+坡道	pedk
+颇多	pedo
+破洞	peds
+坡度	pedu
+繁	pee		3
+破防	pefh
+泼妇	pefu
+破费	pefz
+颇费	pefz
+坡	peg		79228
+破格	pege
+颇感	pegj
+颇高	pegk
+破功	pegs
+破瓜	pegw
+迫害	pehl
+破获	peho
+破坏	pehy
+破车	peie
+破产	peij
+破钞	peik
+破除	peiu
+迫降	pejd
+破击	peji
+迫近	pejn
+破旧	pejq
+颇具	peju
+颇具	pejv
+婆家	pejw
+破解	pejx
+婆	pek		325914
+破口	pekb
+破壳	peke
+破开	pekl
+破空	peks
+泼辣	pela
+破陋	pelb
+破浪	pelh
+魄力	peli
+破例	peli
+破烂	pelj
+泼赖	pell
+破脸	pelm
+迫临	peln
+破落	pelo
+破裂	pelx
+迫令	pely
+婆妈	pema
+破门	pemf
+泼墨	pemo
+婆母	pemu
+破灭	pemx
+珀	pen		10455
+婆娘	pend
+颇能	peng
+粕	pep		898
+婆婆	pepe
+泼皮	pepi
+婆婆	pepo
+迫切	peqo
+迫切	peqx
+颇	per		127012
+泼洒	pesa
+婆娑	peso
+破损	pesp
+破碎	pesv
+鄱	pet		2106
+破题	peti
+坡田	petm
+破土	petu
+迫	peu		181073
+颇受	peub
+迫使	peui
+泼水	peuv
+破阵	pevf
+破绽	pevj
+颇为	pewk
+破位	pewk
+破五	pewu
+颇为	pewz
+破位	pewz
+破晓	pexc
+朴硝	pexc
+破相	pexd
+婆媳	pexi
+破鞋	pexx
+酦	pey		0
+颇有	peyb
+鄱阳	peyh
+破译	peyi
+破音	peyn
+破约	peyt
+迫于	peyu
+迫于	peyv
+钋	pez		81
+婆子	pezi
+偏颇	pmpe
+婆婆	pope
+敲破	qcpe
+强迫	qdpe
+气魄	qipe
+驱迫	qupe
+撒泼	sape
+撕破	sipe
+挑破	tcpe
+体魄	tipe
+太婆	tlpe
+脱坡	tope
+捅破	tspe
+突破	tupe
+退坡	tvpe
+神婆	ufpe
+上坡	uhpe
+识破	uipe
+山坡	ujpe
+说破	uope
+叔婆	uupe
+耍泼	uwpe
+摔破	uype
+撞破	vdpe
+侦破	vfpe
+外婆	wlpe
+巫婆	wupe
+威迫	wzpe
+心魄	xnpe
+血泊	xtpe
+下坡	xwpe
+胁迫	xxpe
+压迫	yape
+诱迫	ybpe
+油泼	ybpe
+阳坡	yhpe
+咬破	ykpe
+砸破	zape
+糟粕	zkpe
 # 结束飞键
 
 啊啊啊	aaa

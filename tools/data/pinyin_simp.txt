@@ -115,7 +115,7 @@
 羓	ba	3
 朳	ba	1
 妭	ba	0
-鲌	ba	0
+鲌	ba	104
 白	bai	2322211
 百	bai	962451
 败	bai	364055
@@ -168,6 +168,7 @@
 谤	bang	4578
 蚌	bang	3936
 浜	bang	1079
+彭	bang	201
 蒡	bang	70
 玤	bang	3
 搒	bang	1
@@ -700,6 +701,8 @@
 撤	che	111118
 澈	che	32041
 掣	che	7797
+屮	che	784
+車	che	774
 砗	che	232
 坼	che	196
 尺	che	1
@@ -731,7 +734,7 @@
 煁	chen	0
 𬘭	chen	0
 伧	chen	0
-沈	chen	0
+沈	chen	100
 成	cheng	3478315
 城	cheng	1258895
 程	cheng	590619
@@ -1110,7 +1113,7 @@
 绐	dai	373
 叇	dai	327
 埭	dai	95
-骀	dai	79
+骀	dai	100
 轪	dai	39
 垈	dai	0
 但	dan	7505257
@@ -1348,7 +1351,7 @@
 啶	ding	95
 耵	ding	19
 萣	ding	6
-铤	ding	0
+铤	ding	146
 丢	diu	190646
 铥	diu	2
 动	dong	3073269
@@ -2232,7 +2235,7 @@
 嵅	han	0
 蔊	han	0
 擀	han	0
-阚	han	0
+阚	han	414
 行	hang	2756706
 航	hang	116067
 杭	hang	34033
@@ -2749,7 +2752,7 @@
 其	ji	100
 诘	ji	100
 革	ji	0
-齐	ji	0
+齐	ji	118
 家	jia	4546765
 加	jia	1329722
 价	jia	384863
@@ -3636,6 +3639,7 @@
 嫪	lao	1309
 痨	lao	1271
 醪	lao	498
+乐	lao	473
 栳	lao	92
 铑	lao	25
 耢	lao	17
@@ -5575,6 +5579,7 @@
 仨	sa	5719
 萨	sa	5184
 卅	sa	1019
+糁	sa	339
 靸	sa	168
 挲	sa	100
 潵	sa	60
@@ -5725,7 +5730,9 @@
 玿	shao	0
 杓	shao	0
 射	she	386983
+叶	she	374
 射	ye	328
+堨	ye	100
 设	she	369436
 舍	she	276743
 蛇	she	160445
@@ -5956,7 +5963,7 @@
 隃	shu	1
 陎	shu	0
 𬬸	shu	0
-俞	shu	0
+俞	shu	100
 刷	shua	82427
 耍	shua	70234
 唰	shua	16179
@@ -7398,6 +7405,7 @@
 玡	ya	156
 揠	ya	139
 猰	ya	108
+邪	ya	100
 氩	ya	80
 砑	ya	66
 堐	ya	6
@@ -7568,7 +7576,7 @@
 飖	yao	100
 㙘	yao	0
 么	yao	0
-繇	yao	0
+繇	yao	306
 陶	yao	0
 也	ye	9508702
 业	ye	938051
@@ -7835,6 +7843,7 @@
 媖	ying	3
 䓨	ying	0
 哟	yo	59051
+呦	yo	643
 唷	yo	1
 育	yo	0
 用	yong	3170468
@@ -8253,6 +8262,7 @@
 铡	zha	1281
 楂	zha	964
 鲊	zha	158
+祭	zha	148
 馇	zha	99
 揸	zha	90
 砟	zha	76
@@ -8779,7 +8789,7 @@
 鼒	zi	4
 虸	zi	0
 鄑	zi	0
-呲	zi	0
+呲	zi	677
 灾	zi	0
 总	zong	1273655
 宗	zong	329551
@@ -56940,7 +56950,7 @@
 宫保拼音	gong bao pin yin	100
 唔	n	0
 嗯	n	0
-这	zhei	0
+这	zhei	8383
 
 慜	min	467
 叡	rui	100

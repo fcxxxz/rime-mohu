@@ -55,6 +55,14 @@ class WanxiangEnvironment:
                 sync_wanxiang, "ENTRIES", self.root / "tools/data/wanxiang/entries.tsv"
             ),
             mock.patch.object(
+                sync_wanxiang, "MORAN_SEED", self.root / "tools/data/wanxiang/moran_seed.tsv"
+            ),
+            mock.patch.object(
+                sync_wanxiang,
+                "CUOYIN_WORDS",
+                self.root / "tools/data/wanxiang/cuoyin_words.txt",
+            ),
+            mock.patch.object(
                 sync_wanxiang, "OUTPUT", self.root / "mohu_zrm.wanxiang.dict.yaml"
             ),
             mock.patch.object(
@@ -150,54 +158,184 @@ class SelectCandidatesTest(unittest.TestCase):
 
     def test_selection_dedup_and_conflicts(self) -> None:
         with WanxiangEnvironment() as root:
+            # 夹具权重 10~99，低于生产门槛 100——覆写为 10 保持用例语义，
+            # 门槛本身由 test_selection_min_upstream_weight 覆盖。
+            with mock.patch.object(sync_wanxiang, "MIN_UPSTREAM_WEIGHT", 10):
+                self.make_manifest(root)
+                data = root / "tools/data/wanxiang"
+                write_snapshot(
+                    data / "raw/one.dict.yaml",
+                    [
+                        "库迪\tku4 di2\t50",
+                        "重复\tchong2 fu2\t10",
+                        "长发\tchang2 fa1\t10",
+                        "无辅\twu2 fu3\t10",
+                    ],
+                )
+                write_snapshot(
+                    data / "raw/two.dict.yaml",
+                    [
+                        "重复\tzhong4 fu4\t99",
+                        "长发\tzhang3 fa4\t30",
+                        "已有\tyi3 you3\t10",
+                    ],
+                )
+                write_aux(
+                    root,
+                    {
+                        "库": "kk",
+                        "迪": "dd",
+                        "重": "cc",
+                        "复": "ff",
+                        "长": "ll",
+                        "发": "fa",
+                        "已": "yy",
+                        "有": "yo",
+                    },
+                )
+                (root / "mohu_zrm.base.dict.yaml").write_text(
+                    "---\nname: base\n...\n\n已有\tyi vw\t1\n", encoding="utf-8"
+                )
+                selected, stats = sync_wanxiang.select_candidates()
+                by_text = {entry.text: entry for entry in selected}
+                # 同词跨表取上游权重最高的一条。
+                self.assertEqual(by_text["重复"].upstream_weight, 99)
+                self.assertNotIn("已有", by_text)
+                # 缺主辅码的词被拒收并计数。
+                self.assertNotIn("无辅", by_text)
+                self.assertEqual(stats["missing_auxiliary"], 1)
+                self.assertEqual(stats["duplicate_existing"], 1)
+                self.assertEqual(stats["pronunciation_conflicts"], 2)
+                # 排序稳定。
+                again, _ = sync_wanxiang.select_candidates()
+                self.assertEqual(selected, again)
+
+    def test_selection_min_upstream_weight(self) -> None:
+        """上游权重 <100 不导入；同名词只要有一条过线即保留过线条目。"""
+        with WanxiangEnvironment() as root:
             self.make_manifest(root)
             data = root / "tools/data/wanxiang"
             write_snapshot(
                 data / "raw/one.dict.yaml",
                 [
-                    "库迪\tku4 di2\t50",
-                    "重复\tchong2 fu2\t10",
-                    "长发\tchang2 fa1\t10",
-                    "无辅\twu2 fu3\t10",
+                    "郑据\tzheng4 ju4\t20",
+                    "高频\tgao1 pin2\t500",
+                    "跨表\tkua4 biao3\t5",
                 ],
             )
             write_snapshot(
                 data / "raw/two.dict.yaml",
+                ["跨表\tkua4 biao3\t300"],
+            )
+            write_aux(
+                root,
+                {"郑": "vg", "据": "ju", "高": "gk", "频": "pb", "跨": "kk", "表": "bb"},
+            )
+            selected, stats = sync_wanxiang.select_candidates()
+            by_text = {entry.text: entry for entry in selected}
+            self.assertNotIn("郑据", by_text)
+            self.assertIn("高频", by_text)
+            # 低权重候选被滤掉后，同名词由过线条目（300）代表。
+            self.assertEqual(by_text["跨表"].upstream_weight, 300)
+            self.assertEqual(stats["below_min_weight"], 1)
+
+    def test_selection_skips_seed_texts(self) -> None:
+        with WanxiangEnvironment() as root:
+            self.make_manifest(root)
+            data = root / "tools/data/wanxiang"
+            write_snapshot(data / "raw/one.dict.yaml", ["证据\tzheng4 ju4\t500"])
+            write_snapshot(data / "raw/two.dict.yaml", ["高频\tgao1 pin2\t200"])
+            write_aux(root, {"证": "vg", "据": "ju", "高": "gk", "频": "pb"})
+            selected, stats = sync_wanxiang.select_candidates(skip_texts={"证据"})
+            by_text = {entry.text: entry for entry in selected}
+            self.assertNotIn("证据", by_text)
+            self.assertIn("高频", by_text)
+            self.assertEqual(stats["duplicate_seed"], 1)
+
+
+class SeedRowsTest(unittest.TestCase):
+    def test_keeps_highest_weight_for_same_code(self) -> None:
+        with WanxiangEnvironment() as root:
+            path = root / "tools/data/wanxiang/moran_seed.tsv"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "text\tcode\tweight\n"
+                "一一映射\tyi;fi yi;fi yy;om ue;zk\t1\n"
+                "一一映射\tyi;fi yi;fi yy;om ue;zk\t30\n"
+                "一行\tyi;fi hh;px\t2324\n"
+                "一行\tyi;fi xy;px\t2324\n",
+                encoding="utf-8",
+            )
+            rows = sync_wanxiang.load_seed_rows()
+            self.assertEqual(
+                rows,
                 [
-                    "重复\tzhong4 fu4\t99",
-                    "长发\tzhang3 fa4\t30",
-                    "已有\tyi3 you3\t10",
+                    ("一一映射", "yi;fi yi;fi yy;om ue;zk", 30),
+                    ("一行", "yi;fi hh;px", 2324),
+                    ("一行", "yi;fi xy;px", 2324),
+                ],
+            )
+
+
+class PrepareRowsTest(unittest.TestCase):
+    def test_seed_first_then_wanxiang_gap_fill(self) -> None:
+        with WanxiangEnvironment() as root:
+            data = root / "tools/data/wanxiang"
+            data.mkdir(parents=True, exist_ok=True)
+            (data / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "revision": REVISION,
+                        "files": {
+                            "one": {
+                                "path": "dicts/one.dict.yaml",
+                                "raw_path": "raw/one.dict.yaml",
+                                "sha256": "",
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            write_snapshot(
+                data / "raw/one.dict.yaml",
+                [
+                    "郑据\tzheng4 ju4\t20",
+                    "证据\tzheng4 ju4\t17694",
+                    "万象独有\twan4 xiang4 du2 you3\t200",
                 ],
             )
             write_aux(
                 root,
                 {
-                    "库": "kk",
-                    "迪": "dd",
-                    "重": "cc",
-                    "复": "ff",
-                    "长": "ll",
-                    "发": "fa",
-                    "已": "yy",
+                    "郑": "vg",
+                    "据": "ju",
+                    "证": "vg",
+                    "万": "wj",
+                    "象": "xd",
+                    "独": "du",
                     "有": "yo",
+                    "已": "yi",
                 },
             )
             (root / "mohu_zrm.base.dict.yaml").write_text(
                 "---\nname: base\n...\n\n已有\tyi vw\t1\n", encoding="utf-8"
             )
-            selected, stats = sync_wanxiang.select_candidates()
-            by_text = {entry.text: entry for entry in selected}
-            # 同词跨表取上游权重最高的一条。
-            self.assertEqual(by_text["重复"].upstream_weight, 99)
-            self.assertNotIn("已有", by_text)
-            # 缺主辅码的词被拒收并计数。
-            self.assertNotIn("无辅", by_text)
-            self.assertEqual(stats["missing_auxiliary"], 1)
-            self.assertEqual(stats["duplicate_existing"], 1)
-            self.assertEqual(stats["pronunciation_conflicts"], 2)
-            # 排序稳定。
-            again, _ = sync_wanxiang.select_candidates()
-            self.assertEqual(selected, again)
+            (data / "moran_seed.tsv").write_text(
+                "text\tcode\tweight\n"
+                "已有\tyi;yi yo;yo\t9\n"
+                "证据\tvg;sf ju;uc\t17694\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(sync_wanxiang, "active_words", wraps=sync_wanxiang.active_words) as wrapped:
+                entries, seed_rows, stats = sync_wanxiang.prepare_rows()
+            self.assertEqual(wrapped.call_count, 1)
+            self.assertEqual([row[0] for row in seed_rows], ["证据"])
+            self.assertEqual([entry.text for entry in entries], ["万象独有"])
+            self.assertNotIn("郑据", {entry.text for entry in entries})
+            self.assertEqual(stats["seed_merged"], 1)
+            self.assertEqual(stats["duplicate_seed"], 1)
+            self.assertEqual(stats["below_min_weight"], 1)
 
 
 class RenderDictionaryTest(unittest.TestCase):
@@ -209,7 +347,7 @@ class RenderDictionaryTest(unittest.TestCase):
         self.assertIn("name: mohu_zrm.wanxiang", lines)
         self.assertIn('version: "abcdef123456"', lines)
         body = [line for line in lines if line and not line.startswith(("#", "---"))]
-        self.assertIn("你好\tni;na hk;hb\t20", body)
+        self.assertIn("你好\tni;na hk;hb\t5", body)  # 输出权重=上游权重
 
 
 class FetchSafetyTest(unittest.TestCase):
@@ -439,7 +577,7 @@ class BuildDeltaTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            write_snapshot(data / "raw/one.dict.yaml", ["新增\txin1 zeng1\t10"])
+            write_snapshot(data / "raw/one.dict.yaml", ["新增\txin1 zeng1\t100"])
             write_aux(root, {"新": "xx", "增": "zz"})
             (root / "mohu_zrm.wanxiang.dict.yaml").write_text(
                 "---\nname: mohu_zrm.wanxiang\n...\n\n旧词\tjiu4 ci2\t20\n",
@@ -449,8 +587,14 @@ class BuildDeltaTest(unittest.TestCase):
             self.assertEqual(stats["added"], 1)
             self.assertEqual(stats["removed"], 1)
             self.assertEqual(stats["selected"], 1)
+            self.assertEqual(stats["seed_merged"], 0)
             output = (root / "mohu_zrm.wanxiang.dict.yaml").read_text(encoding="utf-8")
-            self.assertIn("新增\txn;xx zg;zz\t20", output.splitlines())
+            self.assertIn("新增\txn;xx zg;zz\t100", output.splitlines())
+            # 错音词库词面清单随构建落盘。
+            self.assertEqual(
+                (root / "tools/data/wanxiang/cuoyin_words.txt").read_text(encoding="utf-8"),
+                "",
+            )
             # 第二次构建增量为零。
             self.assertEqual(sync_wanxiang.build()["added"], 0)
 
@@ -460,7 +604,7 @@ class ReadOnlyCheckTest(unittest.TestCase):
         with WanxiangEnvironment() as root:
             data = root / "tools/data/wanxiang"
             raw = data / "raw/one.dict.yaml"
-            write_snapshot(raw, ["新增\txin1 zeng1\t10"])
+            write_snapshot(raw, ["新增\txin1 zeng1\t100"])
             payload = raw.read_bytes()
             manifest = {
                 "revision": REVISION,
@@ -476,14 +620,18 @@ class ReadOnlyCheckTest(unittest.TestCase):
             (data / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
             write_aux(root, {"新": "xx", "增": "zz"})
             auxiliary = {"新": ["xx"], "增": ["zz"]}
-            entry = sync_wanxiang.Candidate("新增", "xin zeng", "one", 10)
+            entry = sync_wanxiang.Candidate("新增", "xin zeng", "one", 100)
             sync_wanxiang.OUTPUT.write_text(
                 sync_wanxiang.render_dictionary([entry], REVISION[:12], auxiliary),
                 encoding="utf-8",
             )
             sync_wanxiang.ENTRIES.write_text("entries sentinel\n", encoding="utf-8")
             sync_wanxiang.REPORT.write_text("report sentinel\n", encoding="utf-8")
-            paths = (raw, sync_wanxiang.ENTRIES, sync_wanxiang.REPORT, sync_wanxiang.OUTPUT)
+            sync_wanxiang.CUOYIN_WORDS.write_text("", encoding="utf-8")
+            paths = (
+                raw, sync_wanxiang.ENTRIES, sync_wanxiang.REPORT, sync_wanxiang.OUTPUT,
+                sync_wanxiang.CUOYIN_WORDS,
+            )
             before = {path: path.read_bytes() for path in paths}
 
             stats = sync_wanxiang.check()

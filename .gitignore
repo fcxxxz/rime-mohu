@@ -165,3 +165,4 @@ nul
 /mohu/config/user-ngram.snapshot
 /mohu/config/user-ngram.snapshot.tmp-*
 /tiger_sentence_native/*.bin
+/tiger_sentence_native/*.bin.zip

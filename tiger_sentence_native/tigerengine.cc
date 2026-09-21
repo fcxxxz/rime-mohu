@@ -1858,6 +1858,11 @@ struct Lexicon {
 const uint32_t kBOS = 2, kEOS = 3;
 const double kRankPenalty = 0.03;
 const double kCharReward = 2.0;
+// 词形短查询（≤5 键）的罕用读音组合门限：读音占比 <20%（先验
+// log(0.2)≈−1.61）时该读音禁止作为组合路径的内部边——词典没有该
+// 读音的词就不出候选（与魔然的结构性行为对齐）。≥20% 的双读字
+// （行 háng 类）不受此限，仍走组合罚分。
+const double kWordQueryReadingFloor = -1.6094379124341003;
 // 词级模式的每字奖励（实验可调；默认与字符模式一致）
 inline double word_char_reward() {
   static const double cached = []() {
@@ -2659,6 +2664,16 @@ struct Engine {
           states[consumed_end]->truncated = true;
         for (State* item : current) {
           for (const LexEntry& cand : *chosen) {
+            // 词形短查询（≤5 键＝两音节+一辅助码）禁止罕用读音参与组合：
+            // 占比 <20% 的读音（车 jū≈4.3%、万 mò）与魔然对齐——词典里
+            // 没有该读音的词，候选就不该出现（结构上不可达）。整段单边
+            // （单字直打）不受影响；≥3 音节的长查询保留罚分路径，逐字
+            // 组合是整句与缺词回退的基础，不能整体禁用。
+            if (raw.size() <= 5 && !(pos == 0 && consumed_end == length) &&
+                reading_prior_weight != 0.0 &&
+                cand.reading_prior < kWordQueryReadingFloor) {
+              continue;
+            }
             // 静态多字词保持整段命中语义；个人词允许成为长句内部边；
             // 简词（缩写码）在 abbrev_edges 打开时同样允许做内部边。
             const bool abbrev_edge_ok = abbrev_edges_max_rank > 0 && cand.abbrev &&
@@ -2669,7 +2684,12 @@ struct Engine {
             // 所有边本就是词，加分会重复计权）。0 = 关闭，逐字节旧行为。
             const bool word_prior_edge = word_edge_weight > 0.0 && !word_mode &&
                                          cand.chars.size() > 1 &&
-                                         !cand.personal && !cand.abbrev;
+                                         !cand.personal && !cand.abbrev &&
+                                         cand.rank < 90;
+            // rank ≥ 90 是注入词标记（base 词典二字词，见 build_mohu_lexicons）：
+            // 只做整段命中与 freq_rank 可见性（二字组合门控、词频梯度），
+            // 不作句中内部边——注入词若进内部边会改变长句切分空间
+            // （实测「只吃/一只」反杀回归），长句打分保持注入前的形态。
             if (cand.chars.size() != 1 && !cand.personal && !abbrev_edge_ok &&
                 !whole_input_edge && !word_prior_edge) continue;
             // 整段命中的静态多字词在输入继续增长后语义会失效（整段→内部），
@@ -2760,6 +2780,26 @@ struct Engine {
             s2->personal = item->personal || cand.personal;
             s2->user_gain = user_gain;
             s2->composed_penalty = item->composed_penalty + composed_paid;
+            // 魔然对齐（2026-09-20 方案 A）：词形查询的两字组合终态（整段
+            // 覆盖输入、恰两字、两音节+辅助码形态）必须是词表词条——
+            // 词典没有该词，候选就不出现（正句/郑据类无义拼装不再出
+            // 候选）。个人词不在静态词表，不受此限。首辅/末辅输入均适
+            // 用（smart 层无法解析辅助码，词条判据只能由引擎给出）。
+            if (consumed_end == length && s2->edges == 2 && !s2->personal) {
+              size_t char_count = 0;
+              for (size_t ci = 0; ci < s2->text.size() && char_count <= 2;) {
+                uint32_t cp = 0;
+                size_t cn = 0;
+                utf8_next(s2->text.data(), s2->text.size(), ci, &cp, &cn);
+                if (cn == 0) break;
+                ci += cn;
+                ++char_count;
+              }
+              if (char_count == 2 &&
+                  lex.freq_rank.find(s2->text) == lex.freq_rank.end()) {
+                continue;  // 状态未入桶，池化分配随本轮解码回收
+              }
+            }
             states[consumed_end]->add(s2);
           }
         }
@@ -2768,9 +2808,14 @@ struct Engine {
   }
 
   // 文本词典先验分：文本是词表多字条目（任意码形）时返回权重，否则 0。
+  // 词频梯度（方案 B，2026-09-20）：多字词行的第 4 列现在携带词典权重
+  // （0=未知），「词典里有这个词」的投票按词频加权——高频词拿满权重，
+  // 低频词至少 0.35 档（保留成词证据、继续压组合反杀），未知权重维持
+  // 全额平票。参考上限 200 万（词典最大词权重量级）。
   double text_lexicon_bonus(const std::string& text) const {
     if (text_lexicon_weight <= 0.0 || text.size() < 4) return 0.0;
-    if (lex.freq_rank.find(text) == lex.freq_rank.end()) return 0.0;
+    auto it = lex.freq_rank.find(text);
+    if (it == lex.freq_rank.end()) return 0.0;
     size_t chars = 0;
     for (size_t i = 0; i < text.size() && chars <= 1;) {
       uint32_t cp = 0;
@@ -2781,7 +2826,14 @@ struct Engine {
       ++chars;
     }
     if (chars <= 1) return 0.0;
-    return text_lexicon_weight;
+    const double weight_value = static_cast<double>(it->second);
+    // 0 与 20001 是「权重未知」标记（20001 为旧占位名次，真实词权恰为
+    // 20001 的概率可忽略）：维持全额平票，兼容旧格式与测试小词表。
+    if (weight_value <= 0.0 || weight_value == 20001.0) return text_lexicon_weight;
+    double grad = std::log(weight_value + 2.0) / std::log(2000000.0);
+    if (grad < 0.35) grad = 0.35;
+    if (grad > 1.0) grad = 1.0;
+    return text_lexicon_weight * grad;
   }
 
   void to_out(State* s, double ending_adjustment, OutItem* out) {
@@ -2790,9 +2842,11 @@ struct Engine {
     // 文本词典先验是「词典里有这个词」的投票，证据属于词的词典读音；
     // 付过组合读音罚分的路径宣称了不一致的读音组合（整车 jū），
     // 不享受该加成——否则 +weight 会反超同码正确读音的词形候选。
-    // composed_penalty 是负的 log 先验，故以 < 0 判定「付过罚分」。
+    // composed_penalty 是负的 log 先验，故以 < 0 判定「付过罚分」；
+    // 阈值取 1e-3 容差：带频次≈0 旁读音的字（句 gou=1）其主读音先验
+    // 是 −4e−6 级的浮点 epsilon，不构成读音不一致的证据。
     const double text_bonus =
-        s->composed_penalty < 0.0 ? 0.0 : text_lexicon_bonus(s->text);
+        s->composed_penalty < -1e-3 ? 0.0 : text_lexicon_bonus(s->text);
     out->score = s->score + ending_adjustment + text_bonus;
     out->confidence = s->mass_score + ending_adjustment + text_bonus;
     out->max_rank = std::max(1, s->max_rank);

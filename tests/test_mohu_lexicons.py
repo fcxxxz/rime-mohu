@@ -40,7 +40,7 @@ ab\t阿布\t2\t20001
         self.assertIn(("ww", "为", "1", "3", "", ""), fly)
         self.assertIn(("wwxo", "维修", "1", "20", "", ""), fly)
         self.assertIn(("ba", "爸", "1", "12", "", ""), fly)
-        self.assertIn(("ab", "阿布", "2", "20001", "", ""), fly)
+        self.assertIn(("ab", "阿布", "2", "0", "", ""), fly)  # 未知权重词行第4列为0
 
     def test_text_target_set_matches_and_output_is_stably_sorted(self):
         source = """ba\t爸\t1\t12
@@ -152,16 +152,25 @@ wz\t为\t2\t3
         source = self.tool.load_rows(
             ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt", frequencies)
         readings = self.tool.load_character_syllables(chars_dict)
-        self.assertEqual(loaded["zrm"], self.tool.build_rows(source, "zrm", readings))
-        self.assertEqual(loaded["flypy"], self.tool.build_rows(source, "flypy", readings))
+        # 词表注入与词重回填是构建的一部分（2026-09-20 方案 B）：
+        # 与 main() 相同地传入两方案的 base 二字词表，产物才能往返一致。
+        zrm_words = self.tool.load_base_two_char_words(ROOT / "mohu_zrm.base.dict.yaml")
+        flypy_words = self.tool.load_base_two_char_words(ROOT / "mohu_flypy.base.dict.yaml")
+        self.assertEqual(loaded["zrm"],
+                         self.tool.build_rows(source, "zrm", readings, zrm_words))
+        self.assertEqual(loaded["flypy"],
+                         self.tool.build_rows(source, "flypy", readings, flypy_words))
         for scheme, rows in loaded.items():
             fly = self.tool.FLY_ZRM if scheme == "zrm" else self.tool.FLY_FLYPY
-            prefix_set = {row[:5] for row in rows}
+            # 闭包不变量按 (码, 词) 存在性检查：注入行（rank 99）的闭包
+            # 槽可能被不同档位的源行占据（如 xomo 休谟 rank 1），等值
+            # 比较会误报——变体存在即满足不变量。
+            prefix_set = {(row[0], row[1]) for row in rows}
             for code, text, rank, freq, reading, _canonical in rows:
                 if len(code) < 2 * len(text) or not code[: 2 * len(text)].isalpha():
                     continue
                 for variant in self.tool._fly_closure(code, text, fly):
-                    self.assertIn((variant, text, rank, freq, reading), prefix_set)
+                    self.assertIn((variant, text), prefix_set)
 
     def test_flypy_fly_set_matches_flypy_syllables(self):
         """小鹤飞键：xq→xo(xiu)、qx→qo(qia)；qie(qp)/wei(ww) 不设飞键。"""

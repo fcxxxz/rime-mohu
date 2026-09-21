@@ -82,16 +82,18 @@ int main() {
     return 1;
   }
 
-  // 基线：关闭先验，确认旧排序（万虎 首选）。
+  // 基线：关闭先验。万虎 作为二字组合终态如今被词条可见性门控拦截
+  // （2026-09-20 方案 A：词形查询的组合终态必须是词表词条，万虎 不在
+  // 词典），任何权重下都不再出现——旧的「关闭先验万虎第一」世界不复
+  // 存在，断言随之更新为「始终缺席」。
   if (tiger_engine_set_reading_prior_weight(h, 0.0) != 1) {
     printf("fail: disable prior\n");
     return 1;
   }
-  std::vector<std::string> disabled = decode_candidates(h, "mohuz");
-  if (disabled.empty() || disabled[0] != "万虎") {
-    printf("skip: baseline without prior does not rank 万虎 first\n");
-    tiger_engine_free(h);
-    return 0;
+  std::vector<std::string> disabled = decode_candidates(h, "mohuz", 10);
+  if (contains(disabled, "万虎")) {
+    printf("fail: 万虎 must be gated out even without the prior\n");
+    return 1;
   }
 
   // 开启默认权重：万虎 不再进前十，mohup 的 模糊 仍是首选。
@@ -110,14 +112,15 @@ int main() {
     return 1;
   }
 
-  // 权重回 0 恢复旧排序：旋钮可逆。
+  // 权重回 0：门控与先验是两层机制，关闭先验不影响词条可见性门控
+  //（万虎 依然缺席）；旋钮可逆性由 vgxjv 段的 reading=0 基线覆盖。
   if (tiger_engine_set_reading_prior_weight(h, 0.0) != 1) {
     printf("fail: re-disable prior\n");
     return 1;
   }
-  disabled = decode_candidates(h, "mohuz");
-  if (disabled.empty() || disabled[0] != "万虎") {
-    printf("fail: weight 0 must restore the old ranking\n");
+  disabled = decode_candidates(h, "mohuz", 10);
+  if (contains(disabled, "万虎")) {
+    printf("fail: 万虎 must stay gated out at weight 0\n");
     return 1;
   }
 
@@ -128,32 +131,33 @@ int main() {
     return 1;
   }
 
-  // 组合读音罚分（vgxjv＝整+车 jū）：字符 LM 的搭配证据来自主读音语料
-  // （整车 zhěngchē），关闭罚分时「整车」凭 3.4 nats 搭配差排第一；
-  // 默认开启（平方先验）后应被压到「整句」之后。jv 是 ju 的飞键换头
-  // 变体（第 6 列规范头归并读音），vgxjv 与 vgxju 必须同序。
-  if (tiger_engine_set_reading_prior_weight(h, 1.0) != 1) {
-    printf("fail: re-enable prior for composed test\n");
+  // 词形短查询的罕用读音硬门控（vgxjv/vgxju＝整+车 jū，≤5 键）：读音
+  // 系统全关时「整车」凭 zhěngchē 语料搭配排第一；开启后占比 <20% 的
+  // 读音禁止参与组合，与魔然对齐——整车应**完全消失**（而非仅降名次）。
+  // jv 是 ju 的飞键换头变体（第 6 列规范头归并读音），vgxjv 与 vgxju
+  // 必须同序。门控属读音先验体系，composed 权重为 0 时仍生效。
+  if (tiger_engine_set_reading_prior_weight(h, 0.0) < 0) {
+    printf("fail: disable reading system for gate baseline\n");
     return 1;
   }
-  if (tiger_engine_set_composed_reading_prior_weight(h, 0.0) != 1) {
-    printf("fail: disable composed penalty\n");
-    return 1;
-  }
-  std::vector<std::string> composed_off = decode_candidates(h, "vgxjv");
-  if (composed_off.empty() || composed_off[0] != "整车") {
-    printf("skip: composed-off baseline does not rank 整车 first\n");
+  std::vector<std::string> gate_off = decode_candidates(h, "vgxjv");
+  if (gate_off.empty() || gate_off[0] != "整车") {
+    printf("skip: reading-off baseline does not rank 整车 first\n");
     tiger_engine_free(h);
     return 0;
   }
-  if (tiger_engine_set_composed_reading_prior_weight(h, 1.0) != 1) {
-    printf("fail: enable composed penalty\n");
+  if (tiger_engine_set_reading_prior_weight(h, 1.0) < 0) {
+    printf("fail: re-enable reading system for gate test\n");
     return 1;
   }
   for (const char* query : {"vgxjv", "vgxju"}) {
-    std::vector<std::string> composed_on = decode_candidates(h, query);
-    if (composed_on.empty() || composed_on[0] != "整句") {
-      printf("fail: %s must rank 整句 first with composed penalty on\n", query);
+    std::vector<std::string> gated = decode_candidates(h, query, 20);
+    if (gated.empty() || gated[0] != "整句") {
+      printf("fail: %s must rank 整句 first with the word-query gate on\n", query);
+      return 1;
+    }
+    if (contains(gated, "整车")) {
+      printf("fail: %s must not offer 整车(jū) at all on word-like queries\n", query);
       return 1;
     }
   }

@@ -131,6 +131,11 @@ std::string write_many_consensus_lexicon() {
   stream << "ab\t共\t1\t1\n";
   for (int index = 0; index < 25; ++index)
     stream << "cd\t" << static_cast<char>('a' + index) << "\t1\t1\n";
+  // 二字组合终态的词条可见性行（2026-09-20 方案 A 门控）：abcd 输入的
+  // 组合终态文本是 共X，需在词表中存在才不被引擎丢弃。zz 为占位码，
+  // 仅提供 freq_rank 可见性，不参与实际匹配。
+  for (int index = 0; index < 25; ++index)
+    stream << "zz\t共" << static_cast<char>('a' + index) << "\t1\t1\n";
   assert(stream);
   return path;
 }
@@ -183,6 +188,8 @@ std::string write_incremental_phrase_lexicon() {
   stream << "ab\t甲\t1\t1\n";
   stream << "cd\t丁\t1\t1\n";
   stream << "ab\t甲乙\t1\t1\n";
+  // 二字组合终态 甲丁 的词条可见性行（方案 A 门控；zz 为占位码）。
+  stream << "zz\t甲丁\t1\t1\n";
   assert(stream);
   return path;
 }
@@ -672,6 +679,15 @@ std::string write_personal_overlay_lexicon() {
   stream << "ab\t甲\t1\t1\n";
   stream << "cd\t丁\t1\t1\n";
   stream << "ef\t戊\t1\t1\n";
+  // 二字组合终态的词条可见性行（方案 A 门控；zz 为占位码）——覆盖
+  // 甲丁/丁戊/戊甲 及逆序，各安全用例的静态组合在个人词快照变化后
+  // 仍需可见。
+  stream << "zz\t甲丁\t1\t1\n";
+  stream << "zz\t丁戊\t1\t1\n";
+  stream << "zz\t戊甲\t1\t1\n";
+  stream << "zz\t丁甲\t1\t1\n";
+  stream << "zz\t戊丁\t1\t1\n";
+  stream << "zz\t甲戊\t1\t1\n";
   assert(stream);
   return path;
 }

@@ -164,6 +164,19 @@ int main() {
   lua_pushliteral(state, "ab\t个人\t2\n");
   expect_lua_error(state, "set_personal_lexicon", 2);
   expect_valid_status(state, handle);
+
+  push_method(state, "set_word_form_weight");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 6.5);
+  assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+  assert(lua_toboolean(state, -1));
+  lua_settop(state, 0);
+  push_method(state, "set_word_form_weight");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 16.5);
+  expect_lua_error(state, "set_word_form_weight", 2);
+  expect_valid_decode(state, handle);
+
   push_method(state, "free");
   lua_pushinteger(state, handle);
   assert(lua_pcall(state, 1, 0, 0) == LUA_OK);

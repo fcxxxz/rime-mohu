@@ -264,6 +264,14 @@ tigerengine-word-gate:
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_gate_test
 	/tmp/tigerengine_word_gate_test
 
+# 词形整段命中加分：三字全码词典词整段覆盖输入时按码内权重占比增加
+# 排序证据（bagerf 八个人>把个人）；开关两态下二字辅码与长句逐字节不变。
+# 真实模型 + 码表断言；资源缺失时自动跳过。
+tigerengine-word-form:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_form_test.cc \
+		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_form_test
+	/tmp/tigerengine_word_form_test
+
 # Decode latency benchmark; pass the installed model explicitly, e.g.
 #   make tigerengine-bench TIGER_NGRAM=~/Library/Rime/mohu-sentence-ngram-v5.bin
 tigerengine-bench:
@@ -302,6 +310,7 @@ test: dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-reading-prior
 	$(MAKE) tigerengine-word-edge
 	$(MAKE) tigerengine-word-gate
+	$(MAKE) tigerengine-word-form
 	$(MAKE) tigerengine-context
 	$(MAKE) tigerengine-semantic
 	uv run python -m unittest tests.test_neural_toggle_schema -v

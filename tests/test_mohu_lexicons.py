@@ -139,6 +139,30 @@ wz\t为\t2\t3
             if text == "整句":
                 self.assertEqual(canonical, "")
 
+    def test_three_char_full_code_injection_and_abbreviation_weight(self):
+        source = [("bgr", "八个人", "1", "20001", "", "")]
+        words = {"八个人": (354, "bagerf"), "把个人": (173, "bagerf")}
+        rows = self.tool.build_rows(source, scheme="zrm", word_weights=words)
+        self.assertIn(("bgr", "八个人", "1", "354", "", ""), rows)
+        self.assertIn(("bagerf", "八个人", "99", "354", "", ""), rows)
+        self.assertIn(("bagerf", "把个人", "99", "173", "", ""), rows)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp) / "base.dict.yaml"
+            base.write_text(
+                "...\n八个人\tba;hb ge;jg rf;jr\t354\n"
+                "把个人\tba;um ge;jg rf;jr\t173\n"
+                "八个人\tba;zz ge;zz rf;zz\t1\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(self.tool.load_base_words(base, 3), words)
+
+    def test_three_char_full_code_fly_key_closure(self):
+        words = {"为修句": (42, "wzxqju")}
+        rows = self.tool.build_rows([], scheme="zrm", word_weights=words)
+        self.assertIn(("wzxqju", "为修句", "99", "42", "", ""), rows)
+        self.assertIn(("wkxo jv".replace(" ", ""), "为修句", "99", "42", "", ""), rows)
+
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
         paths = {
             scheme: ROOT / "tiger_sentence_native" / "data" / scheme
@@ -152,10 +176,13 @@ wz\t为\t2\t3
         source = self.tool.load_rows(
             ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt", frequencies)
         readings = self.tool.load_character_syllables(chars_dict)
-        # 词表注入与词重回填是构建的一部分（2026-09-20 方案 B）：
-        # 与 main() 相同地传入两方案的 base 二字词表，产物才能往返一致。
-        zrm_words = self.tool.load_base_two_char_words(ROOT / "mohu_zrm.base.dict.yaml")
-        flypy_words = self.tool.load_base_two_char_words(ROOT / "mohu_flypy.base.dict.yaml")
+        # 词表注入与词重回填是构建的一部分（2026-09-20 方案 B 二字、
+        # 2026-09-23 三字全码）：与 main() 相同地传入两方案的 base
+        # 二/三字词表，产物才能往返一致。
+        zrm_words = self.tool.load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 2)
+        zrm_words.update(self.tool.load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 3))
+        flypy_words = self.tool.load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 2)
+        flypy_words.update(self.tool.load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 3))
         self.assertEqual(loaded["zrm"],
                          self.tool.build_rows(source, "zrm", readings, zrm_words))
         self.assertEqual(loaded["flypy"],

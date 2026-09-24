@@ -159,6 +159,12 @@ local word_edge_weight_default = 1.5
 -- 反杀（实现+tsyige 时「统一个」反超「同一个」0.13 nats）。0 关闭。
 local text_lexicon_weight_default = 6.5
 
+-- 词形整段命中权威默认权重：输入恰被一条三字全码词典词整段覆盖（如
+-- bagerf→八个人）时，按码内词典权重占比给该路径加有界分——text_lexicon
+-- 的全局对数梯度对 2 倍词频差只值 ~0.32 nats，翻不过字符模型的字频
+-- 噪声；码内线性占比增强同码高权重词的排序证据。0 关闭。
+local word_form_weight_default = 6.5
+
 local function report_engine_error(message)
   engine_error = message
   if not engine_error_logged then
@@ -445,6 +451,16 @@ local function ensure_engine(env)
   end
   if type(tigerengine.set_text_lexicon_weight) == "function" then
     pcall(tigerengine.set_text_lexicon_weight, h, text_lexicon_weight)
+  end
+  -- 词形整段命中权威权重：tiger/word_form_weight（0 关闭）。旧 ABI dylib
+  -- 无该函数时静默保持引擎内建默认（0=旧行为）；非法值回退默认。
+  local word_form_weight = tonumber(conf("word_form_weight"))
+  if word_form_weight == nil or not finite_number(word_form_weight) or
+      word_form_weight < 0 or word_form_weight > 16 then
+    word_form_weight = word_form_weight_default
+  end
+  if type(tigerengine.set_word_form_weight) == "function" then
+    pcall(tigerengine.set_word_form_weight, h, word_form_weight)
   end
   engine_handle = h
   engine_signature = signature

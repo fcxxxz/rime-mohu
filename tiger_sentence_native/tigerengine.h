@@ -68,6 +68,16 @@ int tiger_engine_set_word_edge_weight(int handle, double weight);
  * prior, to stop composed paths from outranking real dictionary words on
  * context-leveraged LM margins (observed up to ~4.5 nats). Range [0, 16]. */
 int tiger_engine_set_text_lexicon_weight(int handle, double weight);
+/* Word-form whole-hit authority: 0 disables (default); >0 adds
+ * weight * (dict_weight / max_known_weight_of_code, floored at 0.35) to
+ * paths whose six-key input is covered whole by a single three-character
+ * full-code dictionary word. While text-lexicon votes "is a word" on a global log gradient
+ * (a 2x weight ratio is worth only ~0.32 nats, below char-model noise), this
+ * encodes the dictionary's intended intra-code ordering with a linear share,
+ * favors higher-weight words sharing the same code without guaranteeing their
+ * final order (bagerf: 八个人 354 vs 把个人 173). Only whole-input edges: composed paths and long-sentence
+ * segmentation are untouched. Range [0, 16]. */
+int tiger_engine_set_word_form_weight(int handle, double weight);
 /* Word-evidence disagreement gate: given newline-joined candidate texts in
  * ranked order, returns out_flag=1 when the top candidate continues the
  * common (codepoint-aligned) prefix with a non-word glued segment while the

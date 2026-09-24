@@ -208,11 +208,12 @@ int main() {
     return 1;
   }
 
-  // 文本词典先验回归：tsyige 的「同一个」（ts+一个，词表只有其简码
-  // tyg 条目）对阵「统一个」（统一+个，不成词组合）。特定上文（实现）
-  // 下字符三元让「统一个」以 ~0.13 nats 反超——硬币差；词典文本证据
-  // 一票翻回。机制断言（成词候选恰好 +weight、不成词候选不动）不依赖
-  // 边缘名次，翻转断言在基线未翻转的环境自动跳过。
+  // 文本词典先验回归：tsyige 的「同一个」（ts+一个，简码 tyg 条目 +
+  // 2026-09-23 三字全码注入的 tsyige 条目）对阵「统一个」（统一+个，
+  // 不成词组合）。特定上文（实现）下字符三元让「统一个」以 ~0.13 nats
+  // 反超——硬币差；词典文本证据一票翻回。机制断言（成词候选按词频梯度
+  // 恰好 +weight×grad、不成词候选不动）不依赖边缘名次，翻转断言在基线
+  // 未翻转的环境自动跳过。
   {
     const std::string kReal = "同一个";
     const std::string kGlue = "统一个";
@@ -233,8 +234,16 @@ int main() {
       std::vector<std::string> lex_on = decode_lines(h, "tsyige", 8);
       double real_on = score_of(lex_on, kReal);
       double glue_on = score_of(lex_on, kGlue);
-      if (fabs((real_on - real_off) - 1.5) > 1e-4) {
-        printf("fail: dictionary-text candidate must gain exactly the prior\n");
+      // 三字词全码注入把「同一个」的 base 词典权重（11588）回填到全部
+      // 码形，文本先验从「未知权重全额平票」改为按词频梯度发放：
+      // gain = weight × max(ln(W+2)/ln(2e6), 0.35)。词典权重变动时同步
+      // 此常量。
+      const double kDictWeight = 11588.0;
+      double grad = std::log(kDictWeight + 2.0) / std::log(2000000.0);
+      if (grad < 0.35) grad = 0.35;
+      if (grad > 1.0) grad = 1.0;
+      if (fabs((real_on - real_off) - 1.5 * grad) > 1e-4) {
+        printf("fail: dictionary-text candidate must gain weight*gradient\n");
         return 1;
       }
       if (fabs(glue_on - glue_off) > 1e-9) {

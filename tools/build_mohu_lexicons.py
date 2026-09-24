@@ -86,20 +86,22 @@ def _reading_frequency(code: str, text: str,
     return "" if value is None else str(value)
 
 
-# 二字词注入下限：base 词典有权重（≥1，即真实收录）的二字词全部注入
-# 整句词表——词形查询的可见性判据与词频梯度都依赖词表知道这些词。
-# 首版用 ≥10 时 500 词基准末辅档丢失 26 个低权重目标词（门控不可见），
-# 降至 1 后恢复；噪声控制交给词频梯度（低权重词只拿 0.35 档加成）。
+# 词注入下限：base 词典有权重（≥1，即真实收录）的多字词全部注入
+# 整句词表——词形查询的可见性判据、词频梯度与词形整段命中权威都依赖
+# 词表知道这些词。首版用 ≥10 时 500 词基准末辅档丢失 26 个低权重目标词
+# （门控不可见），降至 1 后恢复；噪声控制交给词频梯度（低权重词只拿
+# 0.35 档加成）。
 WORD_INJECT_MIN_WEIGHT = 1
 
 
-def load_base_two_char_words(path: Path,
-                             min_weight: int = WORD_INJECT_MIN_WEIGHT,
-                             ) -> dict[str, tuple[int, str]]:
-    """读 base 词典的二字词，返回 词 -> (权重, 裸双拼码)。
+def load_base_words(path: Path,
+                    char_count: int,
+                    min_weight: int = WORD_INJECT_MIN_WEIGHT,
+                    ) -> dict[str, tuple[int, str]]:
+    """读 base 词典指定字数的多字词，返回 词 -> (权重, 裸双拼码)。
 
-    同词多码行取权重最大者；码为逐字 token 去辅助码后的四字母小写
-    （方案原生码——zrm base 产自然码、flypy base 产小鹤，无需转换）。
+    同词多码行取权重最大者；码为逐字 token 去辅助码后的 2×字数 字母
+    小写（方案原生码——zrm base 产自然码、flypy base 产小鹤，无需转换）。
     """
     result: dict[str, tuple[int, str]] = {}
     in_body = False
@@ -113,13 +115,13 @@ def load_base_two_char_words(path: Path,
         if len(fields) < 2:
             continue
         word = fields[0]
-        if len(word) != 2:
+        if len(word) != char_count:
             continue
         tokens = fields[1].split()
-        if len(tokens) != 2:
+        if len(tokens) != char_count:
             continue
         bare = "".join(t.split(";", 1)[0] for t in tokens)
-        if len(bare) != 4 or not bare.isalpha() or not bare.islower():
+        if len(bare) != 2 * char_count or not bare.isalpha() or not bare.islower():
             continue
         weight = 0
         if len(fields) > 2 and fields[2].strip():
@@ -133,6 +135,13 @@ def load_base_two_char_words(path: Path,
         if current is None or weight > current[0]:
             result[word] = (weight, bare)
     return result
+
+
+def load_base_two_char_words(path: Path,
+                             min_weight: int = WORD_INJECT_MIN_WEIGHT,
+                             ) -> dict[str, tuple[int, str]]:
+    return load_base_words(path, 2, min_weight)
+
 
 
 def load_reading_frequencies(path: Path) -> dict[tuple[str, str], int]:
@@ -314,10 +323,11 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
         output.add(emit(base_code, text, rank, freq, reading))
         for variant in _fly_closure(base_code, text, fly):
             output.add(emit(variant, text, rank, freq, reading))
-    # 注入 base 词典二字词（源表没有的）：裸码词条、rank 99（不与源表
-    # 简码档位竞争）、第 4 列=词典权重。与源行同规则生成飞键闭包变体
-    # （不变量：每个全音节行的飞键变体必须存在）。配合引擎二字组合
-    # 门控，这些词的组合路径恢复可见，并按词频参与排序。
+    # 注入 base 词典多字词（源表没有的）：裸码词条、rank 99（不与源表
+    # 简码档位竞争、不作句中内部边）、第 4 列=词典权重。与源行同规则生成
+    # 飞键闭包变体（不变量：每个全音节行的飞键变体必须存在）。配合引擎
+    # 二字组合门控与词形整段命中权威：二字词的组合路径恢复可见并按词频
+    # 参与排序；三字词在全码词形查询时按码内权重占比接管同码先后。
     emitted_pairs = {(row[0], row[1]) for row in output}
     injected_variants: set[tuple[str, str]] = set()
     for text, (weight, bare) in word_weights.items():
@@ -392,8 +402,10 @@ def main() -> int:
     reading_frequencies = load_reading_frequencies(args.chars_dict)
     rows = load_rows(args.source, reading_frequencies)
     syllables = load_character_syllables(args.chars_dict)
-    zrm_words = load_base_two_char_words(ROOT / "mohu_zrm.base.dict.yaml")
-    flypy_words = load_base_two_char_words(ROOT / "mohu_flypy.base.dict.yaml")
+    zrm_words = load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 2)
+    zrm_words.update(load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 3))
+    flypy_words = load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 2)
+    flypy_words.update(load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 3))
     zrm_rows = build_rows(rows, "zrm", syllables, zrm_words)
     fly_rows = build_rows(rows, "flypy", syllables, flypy_words)
     write_rows(args.zrm_output, zrm_rows)
@@ -403,7 +415,7 @@ def main() -> int:
     injected_zrm = sum(1 for row in zrm_rows if row[2] == "99")
     injected_fly = sum(1 for row in fly_rows if row[2] == "99")
     print(f"source rows: {len(rows)}; zrm rows: {len(zrm_rows)}; flypy rows: {len(fly_rows)}")
-    print(f"injected base two-char words: zrm {injected_zrm}, flypy {injected_fly}")
+    print(f"injected base multi-char words: zrm {injected_zrm}, flypy {injected_fly}")
     print(f"reading_freq coverage: {matched}/{single} single-char rows")
     return 0
 

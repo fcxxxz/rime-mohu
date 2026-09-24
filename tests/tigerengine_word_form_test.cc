@@ -1,4 +1,4 @@
-// 词形整段命中权威引擎测试：输入恰被一条 ≥3 字词典词整段覆盖（如
+// 词形整段命中权威引擎测试：输入恰被一条全码词典词（≥3 字）整段覆盖（如
 // bagerf→八个人 354 / 把个人 173）时，同码先后由码内词典权重占比决定；
 // 权重 0 回退旧行为；二字辅码词形与长句解码在开关两态下逐字节不变
 // （注入行不作内部边）。模型或词表缺失时打印 skip 并通过；TIGER_NGRAM
@@ -88,6 +88,18 @@ int main() {
     ok = false;
   } else {
     printf("pass: bagerf(word_form=6.5) 八个人 > 把个人\n");
+  }
+
+  // ①' 长词整段命中：yewufgyuyewuqy 的「也无风雨也无晴」（base 权重
+  //     113，全码注入）须压过「业务+风雨+也+无+晴」组合——源表词「业务」
+  //     的内部词边 +1.5 曾反杀名句 0.18 nats。
+  std::string poem = decode_to_string(h, "yewufgyuyewuqy");
+  if (nth_text(poem, 0) != "也无风雨也无晴") {
+    printf("fail: yewufgyuyewuqy(word_form=6.5) top=%s\n",
+           nth_text(poem, 0).c_str());
+    ok = false;
+  } else {
+    printf("pass: yewufgyuyewuqy(word_form=6.5) 也无风雨也无晴\n");
   }
 
   // ② 开关两态零回归面：长句（含三字词做前缀的输入）与二字辅码词形

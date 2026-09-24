@@ -264,7 +264,7 @@ tigerengine-word-gate:
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_gate_test
 	/tmp/tigerengine_word_gate_test
 
-# 词形整段命中加分：三字全码词典词整段覆盖输入时按码内权重占比增加
+# 词形整段命中加分：全码词典词（≥3 字）整段覆盖输入时按码内权重占比增加
 # 排序证据（bagerf 八个人>把个人）；开关两态下二字辅码与长句逐字节不变。
 # 真实模型 + 码表断言；资源缺失时自动跳过。
 tigerengine-word-form:

@@ -70,7 +70,8 @@ int tiger_engine_set_word_edge_weight(int handle, double weight);
 int tiger_engine_set_text_lexicon_weight(int handle, double weight);
 /* Word-form whole-hit authority: 0 disables (default); >0 adds
  * weight * (dict_weight / max_known_weight_of_code, floored at 0.35) to
- * paths whose six-key input is covered whole by a single three-character
+ * paths whose full-code input (2 keys per char, >= 3 chars) is covered
+ * whole by a single
  * full-code dictionary word. While text-lexicon votes "is a word" on a global log gradient
  * (a 2x weight ratio is worth only ~0.32 nats, below char-model noise), this
  * encodes the dictionary's intended intra-code ordering with a linear share,

@@ -163,6 +163,28 @@ wz\t为\t2\t3
         self.assertIn(("wzxqju", "为修句", "99", "42", "", ""), rows)
         self.assertIn(("wkxo jv".replace(" ", ""), "为修句", "99", "42", "", ""), rows)
 
+    def test_long_word_injection_weight_floor(self):
+        """2–3 字全量（≥1），≥4 字按 LONG_WORD_INJECT_MIN_WEIGHT=10。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp) / "base.dict.yaml"
+            base.write_text(
+                "...\n"
+                "业务\tbi;hs ye;cy\t52299\n"
+                "吃一口\tii;uo yi;fi ko;hb\t9\n"
+                "高频四字\tgp;mo pi;sm si;hb zi;hb\t10\n"
+                "低频四字\tdi;fk pi;sm si;hb zi;hb\t9\n"
+                "也无风雨也无晴\tye;ey wu;du fg;ob yu;tv ye;ey wu;du qy;oa\t113\n"
+                "低频九字\tdi;fk pi;sm si;hb zi;hb di;fk pi;sm si;hb zi;hb\t5\n",
+                encoding="utf-8",
+            )
+            words = self.tool.load_inject_words(base)
+        self.assertIn("业务", words)               # 2 字 ≥1
+        self.assertIn("吃一口", words)             # 3 字 ≥1（低权重也全量）
+        self.assertIn("高频四字", words)           # 4 字 10 ≥门槛
+        self.assertIn("也无风雨也无晴", words)     # 7 字 113 ≥门槛
+        self.assertNotIn("低频四字", words)        # 4 字 9 <门槛
+        self.assertNotIn("低频九字", words)        # 9 字 5 <门槛
+
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
         paths = {
             scheme: ROOT / "tiger_sentence_native" / "data" / scheme
@@ -177,12 +199,10 @@ wz\t为\t2\t3
             ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt", frequencies)
         readings = self.tool.load_character_syllables(chars_dict)
         # 词表注入与词重回填是构建的一部分（2026-09-20 方案 B 二字、
-        # 2026-09-23 三字全码）：与 main() 相同地传入两方案的 base
-        # 二/三字词表，产物才能往返一致。
-        zrm_words = self.tool.load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 2)
-        zrm_words.update(self.tool.load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 3))
-        flypy_words = self.tool.load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 2)
-        flypy_words.update(self.tool.load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 3))
+        # 2026-09-23 三字全码、2026-09-24 ≥4 字权重≥10）：与 main() 相同
+        # 地传入两方案的注入词集，产物才能往返一致。
+        zrm_words = self.tool.load_inject_words(ROOT / "mohu_zrm.base.dict.yaml")
+        flypy_words = self.tool.load_inject_words(ROOT / "mohu_flypy.base.dict.yaml")
         self.assertEqual(loaded["zrm"],
                          self.tool.build_rows(source, "zrm", readings, zrm_words))
         self.assertEqual(loaded["flypy"],

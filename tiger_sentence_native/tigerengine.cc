@@ -1363,8 +1363,9 @@ struct LexEntry {
   // 第 4 列原始值：多字行=词典权重、字行=字频名次（0/20001=未知占位）。
   int lex_weight_raw = -1;
   // 词形整段命中权重占比（词典权重 / 同码最大已知权重，地板 0.35）：
-  // 仅三字全码且权重已知的行在装载期派生非零。整段命中该码时按
-  // word_form_weight × share 加分，增强同码词典高权重词的排序证据。
+  // 仅全码（码长=2×字数）且 ≥3 字、权重已知的行在装载期派生非零。
+  // 整段命中该码时按 word_form_weight × share 加分，增强同码词典
+  // 高权重词的排序证据。
   double word_form_share = 0.0;
 };
 
@@ -1519,20 +1520,22 @@ struct Lexicon {
   // 全局对数梯度（text_lexicon_bonus）对 2 倍词频差只值 ~0.32 nats，翻不过
   // 字符模型的字频噪声（bagerf「把+个人」组合反杀「八个人」差 0.34）；码内
   // 占比 354:173 差 3.3 nats。地板 0.35 沿袭「低频词保留成词证据」的
-  // 设计：占比过低的词仍拿保底、彼此不排序。仅三字全码行——二字词形
-  // 保持现行梯度（末辅 500 词基准口径不动）；权重未知不参与。
+  // 设计：占比过低的词仍拿保底、彼此不排序。仅全码行（码长=2×字数）且
+  // ≥3 字——二字词形保持现行梯度（末辅 500 词基准口径不动）；权重未知
+  // 不参与。
   void finalize_word_form_shares() {
     for (auto& kv : codes) {
-      if (kv.first.size() != 6) continue;
+      if (kv.first.size() < 6 || kv.first.size() % 2 != 0) continue;
+      const size_t char_count = kv.first.size() / 2;
       double max_w = 0.0;
       for (const LexEntry& e : kv.second) {
-        if (e.chars.size() != 3) continue;
+        if (e.chars.size() != char_count) continue;
         const double w = known_lex_weight(e);
         if (w > max_w) max_w = w;
       }
       if (max_w <= 0.0) continue;
       for (LexEntry& e : kv.second) {
-        if (e.chars.size() != 3) continue;
+        if (e.chars.size() != char_count) continue;
         const double w = known_lex_weight(e);
         if (w <= 0.0) continue;
         double share = w / max_w;
@@ -2281,7 +2284,7 @@ struct Engine {
   // 0 = 关闭并保持旧行为。仅作用于输出层（to_out/提前上屏置信度），
   // 不进入 beam 展开分——同文本路径加分恒定，beam 去重与裁剪不变。
   double text_lexicon_weight = 0.0;
-  // 词形整段命中权威：>0 时，输入恰被一条三字全码词典词整段覆盖（如
+  // 词形整段命中权威：>0 时，输入恰被一条全码词典词（≥3 字）整段覆盖（如
   // bagerf→八个人）的路径按 word_form_weight × 码内权重占比 加分。
   // text_lexicon 按「整候选是否成词」投票但梯度被 200 万参考上限对数
   // 压缩（2 倍词频差仅 0.32 nats）；此项在码内用线性占比编码词表想要
@@ -2780,7 +2783,7 @@ struct Engine {
                                               cand.chars.size() > 1 && whole_input_edge;
             if ((word_prior_edge && !whole_input_edge) || personal_whole_prior)
               score += word_edge_weight;
-            // 词形整段命中权威：输入恰被一条三字全码词典词整段覆盖时按码内
+            // 词形整段命中权威：输入恰被一条全码词典词（≥3 字）整段覆盖时按码内
             // 权重占比投票（word_form_weight × share）。同码高权重词得到
             // 更多词形证据——bagerf 的「八个人(354):把个人(173)」在全局对数
             // 梯度下只差 0.32 nats、翻不过字符模型 0.34 的字频噪声，码内
@@ -3835,8 +3838,8 @@ int tiger_engine_set_text_lexicon_weight(int handle, double weight) {
   }
 }
 
-/* 词形整段命中权威权重：0 关闭（默认，三字全码整段命中不按码内权重
-   占比获得额外加分）；>0 时输入恰被一条三字全码词典词整段覆盖的路径按
+/* 词形整段命中权威权重：0 关闭（默认，全码整段命中不按码内权重
+   占比获得额外加分）；>0 时输入恰被一条全码词典词（≥3 字）整段覆盖的路径按
    weight × (词典权重/同码最大已知权重，地板 0.35) 加分，范围 [0, 16]。
    与 text_lexicon_weight 的分工：后者按「是否成词」全局梯度投票，前者
    在码内用线性占比增强同码高权重词的排序证据。 */

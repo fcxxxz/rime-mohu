@@ -93,6 +93,12 @@ def _reading_frequency(code: str, text: str,
 # 0.35 档加成）。
 WORD_INJECT_MIN_WEIGHT = 1
 
+# 长词（≥4 字）注入下限：全码整段命中只在输入长度恰等于词长时触发，
+# 长词绝大多数在句子流里打（整段命中不触发），1–4 权重的超长短语整段
+# 收益极低而成本占一半以上（实测 ≥1 全量 99.6 万行：装载 2.65s、
+# +255MB；≥10 档 71.1 万行：1.45s、+93MB，名句成语全覆盖）。
+LONG_WORD_INJECT_MIN_WEIGHT = 10
+
 
 def load_base_words(path: Path,
                     char_count: int,
@@ -137,11 +143,14 @@ def load_base_words(path: Path,
     return result
 
 
-def load_base_two_char_words(path: Path,
-                             min_weight: int = WORD_INJECT_MIN_WEIGHT,
-                             ) -> dict[str, tuple[int, str]]:
-    return load_base_words(path, 2, min_weight)
-
+def load_inject_words(base: Path) -> dict[str, tuple[int, str]]:
+    """全码整段命中的注入词集：2–3 字全量（≥1），≥4 字按权重 ≥10。"""
+    words: dict[str, tuple[int, str]] = {}
+    for count in (2, 3):
+        words.update(load_base_words(base, count))
+    for count in range(4, 40):
+        words.update(load_base_words(base, count, LONG_WORD_INJECT_MIN_WEIGHT))
+    return words
 
 
 def load_reading_frequencies(path: Path) -> dict[tuple[str, str], int]:
@@ -326,8 +335,8 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
     # 注入 base 词典多字词（源表没有的）：裸码词条、rank 99（不与源表
     # 简码档位竞争、不作句中内部边）、第 4 列=词典权重。与源行同规则生成
     # 飞键闭包变体（不变量：每个全音节行的飞键变体必须存在）。配合引擎
-    # 二字组合门控与词形整段命中权威：二字词的组合路径恢复可见并按词频
-    # 参与排序；三字词在全码词形查询时按码内权重占比接管同码先后。
+    # 二字组合门控与词形整段命中加分：二字词的组合路径恢复可见并按词频
+    # 参与排序；≥3 字词在全码词形查询时按码内权重占比增强排序证据。
     emitted_pairs = {(row[0], row[1]) for row in output}
     injected_variants: set[tuple[str, str]] = set()
     for text, (weight, bare) in word_weights.items():
@@ -402,10 +411,8 @@ def main() -> int:
     reading_frequencies = load_reading_frequencies(args.chars_dict)
     rows = load_rows(args.source, reading_frequencies)
     syllables = load_character_syllables(args.chars_dict)
-    zrm_words = load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 2)
-    zrm_words.update(load_base_words(ROOT / "mohu_zrm.base.dict.yaml", 3))
-    flypy_words = load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 2)
-    flypy_words.update(load_base_words(ROOT / "mohu_flypy.base.dict.yaml", 3))
+    zrm_words = load_inject_words(ROOT / "mohu_zrm.base.dict.yaml")
+    flypy_words = load_inject_words(ROOT / "mohu_flypy.base.dict.yaml")
     zrm_rows = build_rows(rows, "zrm", syllables, zrm_words)
     fly_rows = build_rows(rows, "flypy", syllables, flypy_words)
     write_rows(args.zrm_output, zrm_rows)

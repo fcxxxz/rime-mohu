@@ -165,6 +165,19 @@ local text_lexicon_weight_default = 6.5
 -- 噪声；码内线性占比增强同码高权重词的排序证据。0 关闭。
 local word_form_weight_default = 6.5
 
+-- 长句内部个人词边封顶默认值（nats）：仅作用于「命中静态同码真词」的
+-- 个人词——词典已认识该词时，用户提交不拥有改写长句首选的力度（实测
+-- 认得×3 (+5.5) 即翻「人人的脸都憋得发紫」，正解边距仅 3.44 nats）；
+-- OOV 自造词（魔虎只有这条通道进句）、注入词、整段命中边与单字调频
+-- 保持全额。12=旧行为，0=该类内部边零分。
+local personal_edge_internal_cap_default = 1.5
+
+-- BOS 上下文用户增益封顶默认值（nats）：词级独立提交（rfde+空格）会把
+-- 每个提交当「句子开头」喂用户模型，路径头两字的增益可被单词重复提交
+-- 灌满而翻无关键；句中 interior 学习与整词边通道不受此预算影响。
+-- 0 关闭（不封顶）。
+local bos_user_gain_cap_default = 1.5
+
 local function report_engine_error(message)
   engine_error = message
   if not engine_error_logged then
@@ -461,6 +474,29 @@ local function ensure_engine(env)
   end
   if type(tigerengine.set_word_form_weight) == "function" then
     pcall(tigerengine.set_word_form_weight, h, word_form_weight)
+  end
+  -- 长句内部个人词边封顶：tiger/personal_edge_internal_cap。旧 ABI dylib
+  -- 无该函数时静默保持引擎内建默认；非法值回退默认。
+  local personal_edge_internal_cap =
+    tonumber(conf("personal_edge_internal_cap"))
+  if personal_edge_internal_cap == nil or
+      not finite_number(personal_edge_internal_cap) or
+      personal_edge_internal_cap < 0 or personal_edge_internal_cap > 12 then
+    personal_edge_internal_cap = personal_edge_internal_cap_default
+  end
+  if type(tigerengine.set_personal_edge_internal_cap) == "function" then
+    pcall(tigerengine.set_personal_edge_internal_cap, h,
+      personal_edge_internal_cap)
+  end
+  -- BOS 上下文用户增益封顶：tiger/bos_user_gain_cap。旧 ABI dylib 无该
+  -- 函数时静默保持引擎内建默认；非法值回退默认。
+  local bos_user_gain_cap = tonumber(conf("bos_user_gain_cap"))
+  if bos_user_gain_cap == nil or not finite_number(bos_user_gain_cap) or
+      bos_user_gain_cap < 0 or bos_user_gain_cap > 32 then
+    bos_user_gain_cap = bos_user_gain_cap_default
+  end
+  if type(tigerengine.set_bos_user_gain_cap) == "function" then
+    pcall(tigerengine.set_bos_user_gain_cap, h, bos_user_gain_cap)
   end
   engine_handle = h
   engine_signature = signature
@@ -791,6 +827,7 @@ end
 -- 持久化（默认 mohu/config/user-ngram.snapshot；发行包预建目录但不含
 -- 快照，更新时不会覆盖用户数据）。旧 ABI dylib（无 update_user_model）自动停用本层。
 local user_model_weight_default = 0.85
+local user_model_gain_cap_default = 6.0
 local user_model_snapshot_interval_default = 64
 
 local function user_model_available()
@@ -876,6 +913,14 @@ local function init_user_model(env)
     weight = user_model_weight_default
   end
   env._tiger_user_model_weight = weight
+  local gain_cap = tonumber(config_string(cfg, "tiger/user_model_gain_cap")) or
+    user_model_gain_cap_default
+  if not finite_number(gain_cap) or gain_cap < 0 or gain_cap > 32 then
+    gain_cap = user_model_gain_cap_default
+  end
+  if type(tigerengine.set_user_model_gain_cap) == "function" then
+    pcall(tigerengine.set_user_model_gain_cap, engine_handle, gain_cap)
+  end
   if not env._tiger_user_model_on then return end
   -- 旧 ABI dylib：静默停用（非错误，升级 dylib 后自然恢复）。
   if not user_model_available() then

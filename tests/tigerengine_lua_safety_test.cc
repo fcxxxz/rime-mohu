@@ -177,6 +177,42 @@ int main() {
   expect_lua_error(state, "set_word_form_weight", 2);
   expect_valid_decode(state, handle);
 
+  push_method(state, "set_user_model_gain_cap");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 6.0);
+  assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+  assert(lua_toboolean(state, -1));
+  lua_settop(state, 0);
+  push_method(state, "set_user_model_gain_cap");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 32.5);
+  expect_lua_error(state, "set_user_model_gain_cap", 2);
+  expect_valid_decode(state, handle);
+
+  push_method(state, "set_personal_edge_internal_cap");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 1.5);
+  assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+  assert(lua_toboolean(state, -1));
+  lua_settop(state, 0);
+  push_method(state, "set_personal_edge_internal_cap");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 12.5);
+  expect_lua_error(state, "set_personal_edge_internal_cap", 2);
+  expect_valid_decode(state, handle);
+
+  push_method(state, "set_bos_user_gain_cap");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 1.5);
+  assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+  assert(lua_toboolean(state, -1));
+  lua_settop(state, 0);
+  push_method(state, "set_bos_user_gain_cap");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 32.5);
+  expect_lua_error(state, "set_bos_user_gain_cap", 2);
+  expect_valid_decode(state, handle);
+
   push_method(state, "free");
   lua_pushinteger(state, handle);
   assert(lua_pcall(state, 1, 0, 0) == LUA_OK);

@@ -383,6 +383,60 @@ int l_set_user_model_weight(lua_State* L) {
   return 1;
 }
 
+int l_set_user_model_gain_cap(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double cap = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_user_model_gain_cap((int)handle_value, cap);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "user model gain cap update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+int l_set_personal_edge_internal_cap(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double cap = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_personal_edge_internal_cap((int)handle_value, cap);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "personal edge internal cap update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+int l_set_bos_user_gain_cap(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double cap = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_bos_user_gain_cap((int)handle_value, cap);
+    if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "bos user gain cap update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
 int l_set_reading_prior_weight(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -672,6 +726,9 @@ int luaopen_tigerengine(lua_State* L) {
       {"context_word_scores", l_context_word_scores},
       {"context_char_scores", l_context_char_scores},
       {"set_user_model_weight", l_set_user_model_weight},
+      {"set_user_model_gain_cap", l_set_user_model_gain_cap},
+      {"set_personal_edge_internal_cap", l_set_personal_edge_internal_cap},
+      {"set_bos_user_gain_cap", l_set_bos_user_gain_cap},
       {"set_reading_prior_weight", l_set_reading_prior_weight},
       {"set_word_edge_weight", l_set_word_edge_weight},
       {"set_text_lexicon_weight", l_set_text_lexicon_weight},

@@ -61,7 +61,15 @@
 - **用户调频层**：native 解码默认读取 `mohu/config/user-ngram.snapshot`，按
   `tiger/user_model_weight`（默认 0.85）将个人上屏三元统计与 V5 概率融合。因而
   纯模型的首选与实际首选可能不同；排查模型排序时应先将权重设为 `1.0` 或关闭
-  `tiger/user_model`，再比较 native 输出。
+  `tiger/user_model`，再比较 native 输出。**2026-10-02 用户层三道闸门**：
+  ①`tiger/user_model_gain_cap`（6.0）路径正增益封顶——原实现饱和后泄漏
+  （后续字符全额留在 score，9 字路径可漏 +8.8），已修成饱和即归零；
+  ②`tiger/personal_edge_internal_cap`（1.5）——个人词命中静态同码真词
+  （rank<90，注入词 99 不算）时长句内部边 boost 封顶，OOV 自造词（魔虎）/
+  注入词/整段命中/单字调频保持全额（认得×3 曾翻「人人的脸都憋得发紫」，
+  边距仅 3.44）；③`tiger/bos_user_gain_cap`（1.5）——词级独立提交的 BOS
+  锚定（路径头两字）正增益封顶。残留：同一词独立提交 ×50-200 可经词内
+  bigram 回退翻句（0.84 nats），属自造词浮出同机制，不再收紧。
 - **个人词融合**：不按输入长度切换候选所有权。smart userdb 是提交事实来源，
   native 句图同时接收用户造词和静态已学习词；静态命中只更新原词条先验而
   不复制边。native 候选提交后通过 `adjust_personal` 立即更新内存词边，完整

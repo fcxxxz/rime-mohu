@@ -1351,6 +1351,14 @@ struct LexEntry {
   bool abbrev = false;
   bool abbrev_exact = false;
   double personal_boost = 0.0;
+  // from_static：来自码表文件装载（静态基线）；个人词新增条目为 false。
+  // personal_static_word：个人词命中静态同码真词（from_static 且 rank<90，
+  // 注入词 rank 99 不算）时置位——词典已认识该词时，用户边不再拥有改写
+  // 长句首选的力度（认得 挤进「人人的脸都憋得发紫」），长句内部边 boost
+  // 受 personal_internal_cap 封顶；OOV 自造词（魔虎）、注入词、整段命中
+  // 边与单字调频保持全额。
+  bool from_static = true;
+  bool personal_static_word = false;
   // 读音先验 log P(该读音|该字)：由码表可选第 5 列（读音条件简频）在
   // 装载期按 (字, 双拼) 去重归一得出，如「万」mò ≈ log(1/1.2M) 而
   // wàn ≈ 0。缺列（旧码表、多字词、个人词）保持 0 = 中性。
@@ -1666,6 +1674,7 @@ struct Lexicon {
       if (existing.text == row.text) {
         existing.personal_boost = row.boost;
         existing.personal = true;
+        existing.personal_static_word = existing.from_static && existing.rank < 90;
         existing.personal_full_syllables = personal_has_full_syllables(row.code, existing.chars);
         return;
       }
@@ -1674,6 +1683,8 @@ struct Lexicon {
     entry.text = row.text;
     entry.rank = 1;
     entry.personal = true;
+    entry.from_static = false;
+    entry.personal_static_word = false;
     entry.personal_boost = row.boost;
     for (auto& ch : utf8_split(row.text)) {
       uint32_t cp;
@@ -1736,6 +1747,7 @@ struct Lexicon {
         if (static_keys.count(key)) {
           it->personal_boost = 0.0;
           it->personal = false;
+          it->personal_static_word = false;
           it->personal_full_syllables = false;
         } else {
           bucket->second.erase(it);
@@ -1935,6 +1947,9 @@ struct State {
   // 用户层融合增益累计（log 域）：该路径上每个 trigram 的
   // log(融合分) − log(静态分) 之和。仅用户调频层显著抬升的路径为正。
   double user_gain = 0;
+  // BOS 上下文用户增益的已付预算（nats）：路径头两个字符（prev2==kBOS 的
+  // trigram）实际计入 score 的正增益累计，受 bos_user_gain_cap 封顶。
+  double bos_gain = 0;
   // 组合读音罚分累计：路径上单字边因次读音参与多段组合而付出的
   // composed_reading_prior 之和。>0 表示该路径宣称了与词典词不一致的
   // 读音组合（vgxju 的「整车」jū）——文本词典先验不再奖励这类路径
@@ -2259,6 +2274,21 @@ struct Engine {
   double blend_alpha = 0.6;  // 主模型权重
   UserNgram user;            // 用户调频层（提交文本的 trigram 计数）
   double user_weight = 0.85; // 静态模型（含 blend 后）权重；>=1 等价关闭用户层
+  // 用户层路径累计正增益封顶（nats）：0=关闭。限制历史 trigram 对整条
+  // 解码路径的放大，不删除用户计数，也不削弱个人词边；默认由 Lua 设为 6。
+  double user_gain_cap = 6.0;
+  // BOS 上下文用户增益封顶（nats）：0=关闭。词级独立提交（rfde+空格 上屏
+  // 「认得」）会把每个提交都当「句子开头」喂给用户模型（BOS 锚定），
+  // 路径头两个字符的用户增益可被单个词的重复提交灌满；长句首 1-2 字的
+  // BOS 上下文增益单独封顶后，句中 interior 学习、整词边通道与真句首
+  // 习惯（≤1.5）不受影响。实测真实快照 +「认得」独立提交 ×200 或
+  // 边×50+trigram×50 均不再翻「人人的脸都憋得发紫」。
+  double bos_user_gain_cap = 1.5;
+  // 长句内部个人词边 boost 封顶（nats）：仅作用于 personal_static_word 类
+  // （命中静态同码真词）的个人词。词典已认识的词不需要用户边改写长句
+  // 首选；OOV 自造词、注入词、整段命中边与单字调频不受影响。12=等效
+  // 旧行为，0=该类内部边零 boost。
+  double personal_internal_cap = 1.5;
   // 读音先验权重：把码表第 5 列推导的 log P(读音|字) 加进路径分，
   // 补上字符级模型「只认字频、不认读音」的盲区（万 mò 类罕用读音）。
   double reading_prior_weight = 1.0;
@@ -2749,6 +2779,7 @@ struct Engine {
               has_terminal_phrase_states = true;
             double score = item->score;
             double user_gain = item->user_gain;
+            double bos_gain = item->bos_gain;
             uint32_t prev2 = item->prev2, prev1 = item->prev1;
             uint32_t pw2 = item->pw2, pw1 = item->pw1;
             if (word_mode) {
@@ -2764,7 +2795,31 @@ struct Engine {
               for (uint32_t cp : cand.chars) {
                 score += logp(prev2, prev1, cp);
                 score += kCharReward;
-                user_gain += cached_user_gain(prev2, prev1, cp);
+                const double gain = cached_user_gain(prev2, prev1, cp);
+                const double previous_gain = user_gain;
+                const double previous_bos_gain = bos_gain;
+                const bool bos_context = (prev2 == kBOS);
+                user_gain += gain;
+                if (user_gain_cap > 0.0 && user_gain > user_gain_cap)
+                  user_gain = user_gain_cap;
+                // 正增益的「实际计入」同时受两道预算约束：整条路径的
+                // user_gain_cap，以及 BOS 上下文（路径头两个字符，词级
+                // 独立提交的锚定证据）的 bos_user_gain_cap。饱和后正增益
+                // 整段扣掉——只在预算内回填，否则 cap 之后的字符仍把全额
+                // 增益留在 score 里（实测 9 字路径可漏到 +8.8 > cap 6）。
+                // 负增益不调整（留在 score 里，并可释放 user_gain 预算）。
+                if (gain > 0.0) {
+                  double paid = gain;
+                  if (user_gain_cap > 0.0)
+                    paid = std::min(paid, std::max(0.0, user_gain_cap - previous_gain));
+                  if (bos_user_gain_cap > 0.0 && bos_context)
+                    paid = std::min(paid, std::max(0.0, bos_user_gain_cap - previous_bos_gain));
+                  if (paid != gain) {
+                    score -= gain;
+                    score += paid;
+                  }
+                  if (bos_context) bos_gain += paid;
+                }
                 prev2 = prev1;
                 prev1 = cp;
               }
@@ -2809,7 +2864,19 @@ struct Engine {
               composed_paid = composed_reading_prior_weight * cand.reading_prior;
               score += composed_paid;
             }
-            score += cand.personal_boost;
+            // 个人词边 boost：长句内部边上的「静态同码真词」类受
+            // personal_internal_cap 封顶——词典已认识该词时用户提交不再
+            // 拥有改写长句首选的力度（认得×3 即可把「人人的脸都憋得发紫」
+            // 翻成「人认得…」，实测边距仅 3.44 nats）；OOV 自造词（魔虎
+            // 只有这条通道能进句）、注入词（夜莺 rank 99）、整段命中边
+            // 与单字调频保持全额。
+            double personal_paid = cand.personal_boost;
+            if (cand.personal_static_word && !whole_input_edge &&
+                cand.chars.size() > 1 &&
+                personal_internal_cap < personal_paid) {
+              personal_paid = personal_internal_cap;
+            }
+            score += personal_paid;
             std::string piece = raw.substr(pos, consumed_end - pos);
             if (cand.personal_full_syllables) {
               piece.clear();
@@ -2840,6 +2907,7 @@ struct Engine {
             s2->raw_length = consumed_end;
             s2->personal = item->personal || cand.personal;
             s2->user_gain = user_gain;
+            s2->bos_gain = bos_gain;
             s2->composed_penalty = item->composed_penalty + composed_paid;
             // 魔然对齐（2026-09-20 方案 A）：词形查询的两字组合终态（整段
             // 覆盖输入、恰两字、两音节+辅助码形态）必须是词表词条——
@@ -3736,6 +3804,71 @@ int tiger_engine_set_user_model_weight(int handle, double static_weight) {
     return 1;
   } catch (...) {
     set_error("user model weight update failed");
+    return -1;
+  }
+}
+
+int tiger_engine_set_user_model_gain_cap(int handle, double cap) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(cap >= 0.0 && cap <= 32.0)) {
+      set_error("user model gain cap must be in [0, 32]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->user_gain_cap == cap) return 0;
+    e->user_gain_cap = cap;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("user model gain cap update failed");
+    return -1;
+  }
+}
+
+int tiger_engine_set_bos_user_gain_cap(int handle, double cap) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(cap >= 0.0 && cap <= 32.0)) {
+      set_error("bos user gain cap must be in [0, 32]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->bos_user_gain_cap == cap) return 0;
+    e->bos_user_gain_cap = cap;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("bos user gain cap update failed");
+    return -1;
+  }
+}
+
+int tiger_engine_set_personal_edge_internal_cap(int handle, double cap) {  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(cap >= 0.0 && cap <= 12.0)) {
+      set_error("personal edge internal cap must be in [0, 12]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->personal_internal_cap == cap) return 0;
+    e->personal_internal_cap = cap;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("personal edge internal cap update failed");
     return -1;
   }
 }

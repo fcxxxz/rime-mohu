@@ -1,6 +1,7 @@
 // 用户调频层引擎测试：真实模型上的候选翻转、快照导出/导入回环、
 // 权重开关、损坏快照整体拒绝。模型或词表缺失时打印 skip 并通过，
 // 便于无模型环境跑 `make test`；TIGER_NGRAM / TIGER_LEXICON 可覆盖路径。
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -42,6 +43,37 @@ std::vector<std::string> decode_candidates(int handle, const char* raw) {
   return texts;
 }
 
+// 取指定文本在菜单中的分值（用于层开关/快照回环的精确断言）。
+bool score_of(int handle, const char* raw, const std::string& want,
+              double* out) {
+  static char out_buf[1 << 22];
+  const int rc = tiger_decode(handle, raw, 0, out_buf, sizeof(out_buf), nullptr);
+  if (rc <= 0) return false;
+  const char* p = strchr(out_buf, '\n');
+  if (!p) return false;
+  p += 1;
+  while (*p) {
+    const char* line_end = strchr(p, '\n');
+    if (!line_end) line_end = p + strlen(p);
+    const char* tab = static_cast<const char*>(memchr(p, '\t', line_end - p));
+    if (!tab) break;
+    if (want == std::string(p, tab - p)) {
+      // 行格式：text \t segmented \t score \t confidence \t maxrank \t …
+      const char* s = tab + 1;
+      const char* s_tab = static_cast<const char*>(memchr(s, '\t', line_end - s));
+      if (!s_tab) return false;
+      s = s_tab + 1;
+      s_tab = static_cast<const char*>(memchr(s, '\t', line_end - s));
+      if (!s_tab) return false;
+      *out = atof(std::string(s, s_tab - s).c_str());
+      return true;
+    }
+    if (!*line_end) break;
+    p = line_end + 1;
+  }
+  return false;
+}
+
 }  // namespace
 
 int main() {
@@ -76,6 +108,12 @@ int main() {
   const std::string& first = baseline[0];
   const std::string& second = baseline[1];
 
+  double second_baseline_score = 0.0;
+  if (!score_of(h1, "ufqyhfmimh", second, &second_baseline_score)) {
+    printf("fail: baseline score lookup for the runner-up\n");
+    return 1;
+  }
+
   // Personal lexical edges are updated synchronously and become preferred
   // after repeated selections, without requiring a full snapshot refresh.
   for (int i = 0; i < 5; ++i) {
@@ -97,15 +135,32 @@ int main() {
       return 1;
     }
   }
+  // 2026-10-02 BOS 预算后新契约：神情/申请 只差头两字，纯 trigram 喂入
+  // 不再靠 BOS 锚定翻首选（词级独立提交的锚定证据被封顶），学习效果改由
+  // 分数断言承载；生产双通道翻转（整段个人边）见文件末尾。
   std::vector<std::string> fed = decode_candidates(h1, "ufqyhfmimh");
-  if (fed.empty() || fed[0] != second) {
-    printf("fail: feeding the runner-up must flip the ranking\n");
+  if (fed.empty() || fed[0] != first) {
+    printf("fail: head-only trigram anchoring must not flip the ranking\n");
     return 1;
   }
 
-  // 静态权重 1.0 关闭用户层 → 完全回到基线首选。
+  double second_fed_score = 0.0;
+  if (!score_of(h1, "ufqyhfmimh", second, &second_fed_score) ||
+      second_fed_score <= second_baseline_score + 0.5) {
+    printf("fail: feeding must measurably lift the runner-up score (%.3f -> %.3f)\n",
+           second_baseline_score, second_fed_score);
+    return 1;
+  }
+  // 静态权重 1.0 关闭用户层 → 分数精确回到基线、排序回到基线首选。
   if (tiger_engine_set_user_model_weight(h1, 1.0) != 1) {
     printf("fail: set weight\n");
+    return 1;
+  }
+  double second_static_score = 0.0;
+  if (!score_of(h1, "ufqyhfmimh", second, &second_static_score) ||
+      fabs(second_static_score - second_baseline_score) > 1e-6) {
+    printf("fail: weight 1.0 must restore the exact static score (%.6f vs %.6f)\n",
+           second_static_score, second_baseline_score);
     return 1;
   }
   fed = decode_candidates(h1, "ufqyhfmimh");
@@ -133,8 +188,16 @@ int main() {
     return 1;
   }
   const std::vector<std::string> restored = decode_candidates(h2, "ufqyhfmimh");
-  if (restored.empty() || restored[0] != second) {
-    printf("fail: import must restore the fed ranking\n");
+  if (restored.empty() || restored[0] != first) {
+    printf("fail: import must keep the protected ranking\n");
+    return 1;
+  }
+  double h1_score = 0.0, h2_score = 0.0;
+  if (!score_of(h1, "ufqyhfmimh", second, &h1_score) ||
+      !score_of(h2, "ufqyhfmimh", second, &h2_score) ||
+      fabs(h1_score - h2_score) > 1e-6) {
+    printf("fail: import must restore the fed scores (%.6f vs %.6f)\n",
+           h1_score, h2_score);
     return 1;
   }
 
@@ -144,7 +207,7 @@ int main() {
     return 1;
   }
   const std::vector<std::string> after_corrupt = decode_candidates(h2, "ufqyhfmimh");
-  if (after_corrupt.empty() || after_corrupt[0] != second) {
+  if (after_corrupt.empty() || after_corrupt[0] != first) {
     printf("fail: engine must survive a corrupt import\n");
     return 1;
   }
@@ -214,12 +277,25 @@ int main() {
     return 1;
   }
 
+  // 生产提交双通道契约：整段个人边（提交同步 adjust_personal，整段命中
+  // 保持全额 boost）+ trigram 必须能把次选推为首选——BOS 预算只封锚定
+  // 通道，不封真实学习闭环。
+  if (tiger_engine_adjust_personal(h1, "ufqyhfmimh", second.c_str(), 1) != 1) {
+    printf("fail: whole-input personal edge apply\n");
+    return 1;
+  }
+  const std::vector<std::string> promoted = decode_candidates(h1, "ufqyhfmimh");
+  if (promoted.empty() || promoted[0] != second) {
+    printf("fail: production dual-channel commit must promote the learned text\n");
+    return 1;
+  }
+
   free(blob);
   free(forgotten_blob);
   tiger_engine_free(h3);
   tiger_engine_free(h1);
   tiger_engine_free(h2);
-  printf("tigerengine user model tests passed (flip: %s <- %s)\n",
+  printf("tigerengine user model tests passed (dual-channel promote: %s <- %s)\n",
          second.c_str(), first.c_str());
   return 0;
 }

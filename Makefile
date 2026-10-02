@@ -272,6 +272,14 @@ tigerengine-word-form:
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_form_test
 	/tmp/tigerengine_word_form_test
 
+# 长句内部个人词边封顶：静态同码真词的用户 boost 不改写长句首选
+# （认得 vs 人人的脸都憋得发紫），OOV 自造词（魔虎）保持全额；
+# gain cap 饱和后正增益闭合。真实模型 + 码表断言；资源缺失时自动跳过。
+tigerengine-personal-internal:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_personal_internal_test.cc \
+		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_personal_internal_test
+	/tmp/tigerengine_personal_internal_test
+
 # Decode latency benchmark; pass the installed model explicitly, e.g.
 #   make tigerengine-bench TIGER_NGRAM=~/Library/Rime/mohu-sentence-ngram-v5.bin
 tigerengine-bench:

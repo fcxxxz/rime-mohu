@@ -40,6 +40,26 @@ int tiger_engine_update_user_model(int handle, const char* text);
 int tiger_engine_forget_text(int handle, const char* text, int times);
 /* static_weight is the static model's share in (0, 1]; 1 disables the layer. */
 int tiger_engine_set_user_model_weight(int handle, double static_weight);
+/* Cap the positive cumulative user-model gain on one decoded path, in nats.
+ * 0 disables the cap. This limits historical trigram amplification without
+ * removing user counts or personal lexical edges. Range [0, 32]. */
+int tiger_engine_set_user_model_gain_cap(int handle, double cap);
+/* Cap the user-model gain attributed to BOS-context trigrams (the first two
+ * chars of a fresh decode), in nats. Word-level standalone commits feed every
+ * commit as a "sentence start" into the user model, so repeated single-word
+ * commits can saturate the head of unrelated sentences; this budget bounds
+ * that anchoring while interior learning, whole-word personal edges and real
+ * sentence-start habits (within the cap) keep working. 0 disables the cap.
+ * Range [0, 32]. */
+int tiger_engine_set_bos_user_gain_cap(int handle, double cap);
+/* Cap the personal-word boost when the word rides as an internal edge inside
+ * a longer sentence, in nats. Only applies to personal words that match a
+ * genuine static entry at the same code (rank < 90): the dictionary already
+ * knows those, so user commits must not rewrite long-sentence first choices
+ * (认得 intruding into 人人的脸都憋得发紫). OOV coinages (魔虎), injected
+ * rank-99 words, whole-input edges and single-char reordering keep the full
+ * boost. Range [0, 12]; 12 matches the old behavior, 0 zeroes that class. */
+int tiger_engine_set_personal_edge_internal_cap(int handle, double cap);
 /* Reading prior weight in [0, 4]: scales the per-entry log P(reading|char)
  * prior derived from the lexicon's optional 5th column (reading-conditional
  * frequency). 0 disables, default 1.0. Returns 1 applied, 0 no change,

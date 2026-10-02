@@ -4536,9 +4536,16 @@ int tiger_semantic_http_score(const char* url, const char* context_text,
       body += buf;
     }
     body += "]}";
-    std::string request_path = path;
-    if (request_path.empty() || request_path.back() != '/') request_path += '/';
-    request_path += "rerank";
+    // path 可带 query（如 "/?model=3b"）：拆开拼 "/rerank"，query 置尾。
+    std::string pure_path = path, query;
+    const size_t qmark = path.find('?');
+    if (qmark != std::string::npos) {
+      pure_path = path.substr(0, qmark);
+      query = path.substr(qmark + 1);
+    }
+    if (!pure_path.empty() && pure_path.back() == '/') pure_path.pop_back();
+    std::string request_path = pure_path + "/rerank";
+    if (!query.empty()) request_path += "?" + query;
     std::string req = "POST " + request_path + " HTTP/1.0\r\n"
                       "Host: " + hostport + "\r\n"
                       "Content-Type: application/json\r\n"

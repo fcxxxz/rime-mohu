@@ -159,6 +159,14 @@ int tiger_semantic_score(int handle, const char* context_text,
                          const char* candidates, const double* native_scores,
                          int candidate_count, double* out_scores);
 void tiger_semantic_free(int handle);
+/* HTTP 语义后端：本机常驻 Qwen scorer（127.0.0.1）。url 形如
+ * http://127.0.0.1:8765；语义与 tiger_semantic_score 相同（混合分），
+ * 连接被拒时异步 kickstart 服务（LaunchAgent com.mohu.rerank），
+ * 350ms 超时 fail-open。 */
+int tiger_semantic_http_score(const char* url, const char* context_text,
+                              const char* candidates,
+                              const double* native_scores,
+                              int candidate_count, double* out_scores);
 /* Read/write snapshot files through UTF-8 paths. The writer uses a flushed
  * same-directory temporary file and atomically replaces an existing target.
  * The caller owns and must free() the read buffer. */

@@ -43,6 +43,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -55,8 +56,15 @@
 #include <io.h>
 #else
 #include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <spawn.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -4368,6 +4376,235 @@ void tiger_semantic_free(int handle) {
   if (handle >= 0 && handle < static_cast<int>(g_semantic_scorers.size()))
     g_semantic_scorers[handle].reset();
 }
+
+// ---- HTTP 语义重排后端（本机常驻 Qwen scorer 服务）----
+// POST /rerank {"context","candidates","native_scores"} → {"scores":[...]}。
+// 只允许环回地址；超时/失败返回 -1，调用方（lua 门控）fail-open。
+// 连接被拒时异步 kickstart LaunchAgent 服务（com.mohu.rerank），
+// 下次按键即可用——实现「菜单打开自动拉起、菜单关闭服务空闲自退」。
+
+namespace {
+
+std::string http_json_escape(const std::string& s) {
+  std::string out;
+  out.reserve(s.size() + 8);
+  for (unsigned char c : s) {
+    switch (c) {
+      case '"': out += "\\\""; break;
+      case '\\': out += "\\\\"; break;
+      case '\n': out += "\\n"; break;
+      case '\r': out += "\\r"; break;
+      case '\t': out += "\\t"; break;
+      default:
+        if (c < 0x20) {
+          char buf[8];
+          std::snprintf(buf, sizeof(buf), "\\u%04x", c);
+          out += buf;
+        } else {
+          out.push_back(static_cast<char>(c));
+        }
+    }
+  }
+  return out;
+}
+
+std::atomic<time_t> g_http_wake_at{0};
+
+void http_kickstart_service() {
+#ifdef __APPLE__
+  time_t now = std::time(nullptr);
+  time_t prev = g_http_wake_at.load();
+  if (now - prev < 5) return;  // 限频：5 秒内不重复唤醒
+  if (!g_http_wake_at.compare_exchange_strong(prev, now)) return;
+  // fire-and-forget：launchctl 由独立线程执行，按键路径零阻塞。
+  std::thread([] {
+    char uid[16];
+    std::snprintf(uid, sizeof(uid), "%u", static_cast<unsigned>(getuid()));
+    std::string target = std::string("gui/") + uid + "/com.mohu.rerank";
+    posix_spawn_file_actions_t fa;
+    posix_spawn_file_actions_init(&fa);
+    posix_spawn_file_actions_addopen(&fa, STDOUT_FILENO, "/dev/null",
+                                     O_WRONLY, 0);
+    posix_spawn_file_actions_addopen(&fa, STDERR_FILENO, "/dev/null",
+                                     O_WRONLY, 0);
+    const char* argv[] = {"/bin/launchctl", "kickstart", target.c_str(),
+                          nullptr};
+    pid_t pid = -1;
+    extern char** environ;
+    if (posix_spawn(&pid, argv[0], &fa, nullptr,
+                    const_cast<char* const*>(argv), environ) == 0 && pid > 0) {
+      int status = 0;
+      waitpid(pid, &status, 0);  // kickstart 通常 <50ms；后台线程无妨
+    }
+    posix_spawn_file_actions_destroy(&fa);
+  }).detach();
+#endif
+}
+
+}  // namespace
+
+int tiger_semantic_http_score(const char* url, const char* context_text,
+                              const char* candidates,
+                              const double* native_scores,
+                              int candidate_count, double* out_scores) {
+  try {
+    if (!url || !context_text || !candidates || !native_scores || !out_scores ||
+        candidate_count <= 0 || candidate_count > 20) {
+      set_error("semantic http arguments invalid");
+      return -1;
+    }
+    std::string u(url);
+    if (u.compare(0, 7, "http://") != 0) {
+      set_error("semantic http url must start with http://");
+      return -1;
+    }
+    std::string hostport = u.substr(7);
+    std::string path = "/";
+    const size_t slash = hostport.find('/');
+    if (slash != std::string::npos) {
+      path = hostport.substr(slash);
+      hostport = hostport.substr(0, slash);
+    }
+    if (hostport.rfind("127.0.0.1", 0) != 0) {
+      set_error("semantic http url must target 127.0.0.1");
+      return -1;
+    }
+    std::string host = hostport;
+    int port = 80;
+    const size_t colon = hostport.rfind(':');
+    if (colon != std::string::npos) {
+      host = hostport.substr(0, colon);
+      port = std::atoi(hostport.c_str() + colon + 1);
+    }
+
+    addrinfo hints{};
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    addrinfo* res = nullptr;
+    if (getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints,
+                    &res) != 0 ||
+        !res) {
+      set_error("semantic http resolve failed");
+      return -1;
+    }
+    int fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (fd < 0) {
+      freeaddrinfo(res);
+      set_error("semantic http socket failed");
+      return -1;
+    }
+    timeval tv{0, 350000};  // 350ms：门控在按键路径，超时即 fail-open
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    int one = 1;
+    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+    if (connect(fd, res->ai_addr, res->ai_addrlen) != 0) {
+      const int err = errno;
+      freeaddrinfo(res);
+      close(fd);
+      http_kickstart_service();  // 服务未跑：异步拉起，本次 fail-open
+      char buf[96];
+      std::snprintf(buf, sizeof(buf),
+                    "semantic http connect failed errno=%d (kickstarted)", err);
+      set_error(buf);
+      return -1;
+    }
+    freeaddrinfo(res);
+
+    std::string body = "{\"context\":\"" + http_json_escape(context_text) +
+                       "\",\"candidates\":[";
+    {
+      const char* cursor = candidates;
+      bool first = true;
+      for (int i = 0; i < candidate_count; ++i) {
+        const char* newline = std::strchr(cursor, '\n');
+        std::string text =
+            newline ? std::string(cursor, static_cast<size_t>(newline - cursor))
+                    : std::string(cursor);
+        if (!first) body.push_back(',');
+        first = false;
+        body += "\"" + http_json_escape(text) + "\"";
+        if (!newline) break;
+        cursor = newline + 1;
+      }
+    }
+    body += "],\"native_scores\":[";
+    for (int i = 0; i < candidate_count; ++i) {
+      if (i) body.push_back(',');
+      char buf[40];
+      std::snprintf(buf, sizeof(buf), "%.17g", native_scores[i]);
+      body += buf;
+    }
+    body += "]}";
+    std::string request_path = path;
+    if (request_path.empty() || request_path.back() != '/') request_path += '/';
+    request_path += "rerank";
+    std::string req = "POST " + request_path + " HTTP/1.0\r\n"
+                      "Host: " + hostport + "\r\n"
+                      "Content-Type: application/json\r\n"
+                      "Content-Length: " + std::to_string(body.size()) +
+                      "\r\n"
+                      "Connection: close\r\n\r\n" + body;
+    const char* out_ptr = req.data();
+    size_t left = req.size();
+    while (left > 0) {
+      const ssize_t n = send(fd, out_ptr, left, 0);
+      if (n <= 0) {
+        close(fd);
+        set_error("semantic http send failed");
+        return -1;
+      }
+      out_ptr += n;
+      left -= static_cast<size_t>(n);
+    }
+    std::string resp;
+    char buf[8192];
+    for (;;) {
+      const ssize_t n = recv(fd, buf, sizeof(buf), 0);
+      if (n <= 0) break;
+      resp.append(buf, static_cast<size_t>(n));
+    }
+    close(fd);
+    const size_t body_pos = resp.find("\r\n\r\n");
+    if (body_pos == std::string::npos) {
+      set_error("semantic http malformed response empty");
+      return -1;
+    }
+    const std::string rb = resp.substr(body_pos + 4);
+    const size_t skey = rb.find("\"scores\"");
+    if (skey == std::string::npos) {
+      set_error("semantic http response missing scores");
+      return -1;
+    }
+    const size_t arr = rb.find('[', skey);
+    const size_t end =
+        arr == std::string::npos ? std::string::npos : rb.find(']', arr);
+    if (arr == std::string::npos || end == std::string::npos) {
+      set_error("semantic http scores array invalid");
+      return -1;
+    }
+    int filled = 0;
+    size_t pos = arr + 1;
+    while (filled < candidate_count) {
+      while (pos < end && (rb[pos] == ',' || rb[pos] == ' ')) ++pos;
+      if (pos >= end) break;
+      char* endp = nullptr;
+      const double v = std::strtod(rb.c_str() + pos, &endp);
+      if (!endp || endp == rb.c_str() + pos) break;
+      out_scores[filled++] = v;
+      pos = static_cast<size_t>(endp - rb.c_str());
+    }
+    if (filled != candidate_count) {
+      set_error("semantic http scores count mismatch");
+      return -1;
+    }
+    return candidate_count;
+  } catch (...) {
+    set_error("semantic http failed");
+    return -1;
+  }
+}
+
 
 int tiger_engine_user_model_import(int handle, const char* blob, size_t blob_size) {
   try {

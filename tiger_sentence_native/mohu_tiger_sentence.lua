@@ -135,6 +135,7 @@ local semantic_handle = nil
 local semantic_model_path = nil
 local semantic_vocab_path = nil
 local semantic_load_failed = false
+local semantic_http_url = nil       -- tiger/semantic_http_url：本机 Qwen 服务优先
 
 -- 读音先验默认权重：码表第 5 列（读音条件简频）归一为 log P(读音|字)
 -- 并入路径分，补偿字符级模型不认读音的盲区（如「万」mò 拼「万虎」）。
@@ -336,9 +337,17 @@ local function ensure_engine(env)
   end
   semantic_model_path = semantic_model
   semantic_vocab_path = semantic_vocab
+  -- 本机 Qwen 语义重排服务（http 后端优先，ONNX 回退）。配置键形如
+  -- tiger/semantic_http_url: http://127.0.0.1:8765；留空 = 只走 ONNX。
+  local http_url = conf("semantic_http_url") or ""
+  if http_url ~= "" and http_url:sub(1, 7) == "http://127.0.0.1" then
+    semantic_http_url = http_url
+  else
+    semantic_http_url = nil
+  end
   local signature = table.concat(
     { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "",
-      semantic_model, semantic_vocab }, "\28")
+      semantic_model, semantic_vocab, semantic_http_url or "" }, "\28")
 
   -- The Windows loader does not search the engine DLL's own directory for its
   -- dependencies.  The build's dependency-closure collector emits a
@@ -1541,9 +1550,23 @@ function M.semantic_score(env, history, texts, native_scores)
   if not (context and context.get_option and context:get_option("neural_rerank")) then
     return nil
   end
+  -- HTTP 后端优先：本机常驻 Qwen 服务（失败自动回退进程内 ONNX 路径）。
+  -- 服务未跑时引擎会异步 kickstart（LaunchAgent），本次请求 fail-open，
+  -- 下一两次按键后服务即就绪。任何失败不关 neural_rerank 开关。
+  if semantic_http_url and tigerengine and
+      type(tigerengine.semantic_http_score) == "function" then
+    local ok, scores = pcall(tigerengine.semantic_http_score,
+      semantic_http_url, history, texts, native_scores)
+    if ok and type(scores) == "table" and #scores == #texts then
+      return scores
+    end
+  end
   if tigerengine == nil or type(tigerengine.semantic_create) ~= "function" or
       type(tigerengine.semantic_score) ~= "function" then
-    if context.set_option then context:set_option("neural_rerank", false) end
+    -- ONNX ABI 不在但 http 配置存在：开关保留（http 已在前面优先处理）。
+    if not semantic_http_url and context.set_option then
+      context:set_option("neural_rerank", false)
+    end
     return nil
   end
   if semantic_handle == nil and not semantic_load_failed then
@@ -1555,7 +1578,10 @@ function M.semantic_score(env, history, texts, native_scores)
       semantic_load_failed = true
       log_error("mohu_tiger_sentence: semantic model load failed: " ..
         tostring(why or handle))
-      if context.set_option then context:set_option("neural_rerank", false) end
+      -- ONNX 缺失不连坐 http：开关只在没有任何后端可用时关闭。
+      if not semantic_http_url and context.set_option then
+        context:set_option("neural_rerank", false)
+      end
       return nil
     end
   end

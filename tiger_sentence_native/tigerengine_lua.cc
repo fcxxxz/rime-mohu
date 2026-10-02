@@ -695,6 +695,49 @@ int l_semantic_free(lua_State* L) {
   return 0;
 }
 
+int l_semantic_http_score(lua_State* L) {
+  const char* url = luaL_checkstring(L, 1);
+  const char* context = luaL_checkstring(L, 2);
+  luaL_checktype(L, 3, LUA_TTABLE);
+  luaL_checktype(L, 4, LUA_TTABLE);
+  const lua_Integer count = luaL_len(L, 3);
+  luaL_argcheck(L, count >= 1 && count <= 20, 3,
+                "semantic candidate count out of range");
+  luaL_argcheck(L, luaL_len(L, 4) == count, 4,
+                "semantic score count mismatch");
+  std::string joined;
+  std::vector<double> native(static_cast<size_t>(count));
+  for (lua_Integer i = 1; i <= count; ++i) {
+    lua_rawgeti(L, 3, i);
+    const char* text = luaL_checkstring(L, -1);
+    if (i > 1) joined.push_back('\n');
+    joined.append(text);
+    lua_pop(L, 1);
+    lua_rawgeti(L, 4, i);
+    native[static_cast<size_t>(i - 1)] = luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  std::vector<double> scores(static_cast<size_t>(count));
+  int rc;
+  {
+    // HTTP 后端内部自带超时与网络锁无关；不占 g_lua_binding_mutex，
+    // 避免慢请求阻塞同进程其他引擎调用。
+    rc = tiger_semantic_http_score(url, context, joined.c_str(), native.data(),
+                                   static_cast<int>(count), scores.data());
+  }
+  if (rc < 0) {
+    lua_pushnil(L);
+    lua_pushstring(L, tiger_last_error());
+    return 2;
+  }
+  lua_createtable(L, static_cast<int>(count), 0);
+  for (lua_Integer i = 1; i <= count; ++i) {
+    lua_pushnumber(L, scores[static_cast<size_t>(i - 1)]);
+    lua_rawseti(L, -2, i);
+  }
+  return 1;
+}
+
 int l_last_error(lua_State* L) {
   char error[512] = {0};
   {
@@ -736,6 +779,7 @@ int luaopen_tigerengine(lua_State* L) {
       {"word_disagreement", l_word_disagreement},
       {"semantic_create", l_semantic_create},
       {"semantic_score", l_semantic_score},
+      {"semantic_http_score", l_semantic_http_score},
       {"semantic_free", l_semantic_free},
       {"user_model_export", l_user_model_export},
       {"user_model_import", l_user_model_import},

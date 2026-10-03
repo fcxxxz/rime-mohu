@@ -58,7 +58,10 @@ local function read_history(env)
       text:find("[\228-\233]") ~= nil then
     return text
   end
-  return nil
+  -- 无上屏历史（句子开头）也参与重排：返回空串继续走门控（V5 分差门
+  -- 照常节流，语义侧退化为句内流畅度，服务端自动加倍 native 权重）。
+  -- 开关关闭仍返回 nil 直通。
+  return ""
 end
 
 local function config_flag(cfg, key, default)

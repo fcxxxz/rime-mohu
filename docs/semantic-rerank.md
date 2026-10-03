@@ -8,11 +8,14 @@
 
 | 资产 | 说明 |
 |---|---|
-| `mohu-semantic-qwen2.5-0.5b.tar.part-*` | 默认档（+35 / ~1.2GB 内存） |
-| `mohu-semantic-qwen2.5-1.5b.tar.part-*` | +42 / ~3.5GB |
-| `mohu-semantic-qwen2.5-3b.tar.part-*` | +53 / ~6.5GB |
+| `qwen2.5-0.5b-4bit` | **轻量之王**：276MB / +34 / ~0.7GB 内存 |
+| `qwen2.5-1.5b-8bit` | 1.6GB / +41 / ~2.5GB 内存 |
+| `qwen2.5-3b-8bit` | **效果之王（推荐）**：3.1GB / +53（零损失）/ ~4GB 内存 |
+| `qwen2.5-0.5b / 1.5b / 3b` | bf16 原版（+35/+42/+53），体积最大，兼容非 MLX 环境 |
 
-Qwen 档解压到 `~/.cache/modelscope/models/`（保持 `Qwen--…/snapshots/master/` 目录结构）。安装命令见 release 页说明。
+量化实测（零泄漏 438 句）：**8bit 三档零损失**、0.5B-4bit 仅 -1 分、3bit 崩盘不发布。
+配置：`semantic_http_url: http://127.0.0.1:8765?model=3b-8bit`（量化档需本机已装 mlx-lm，服务自动识别 MLX 目录）。
+Qwen 档解压到 `~/.cache/modelscope/models/`（保持 `…/snapshots/master/` 目录结构）。安装命令见 release 页说明。
 
 ## 这是什么
 

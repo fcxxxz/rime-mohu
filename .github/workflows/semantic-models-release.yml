@@ -1,20 +1,18 @@
 name: semantic-models-release
 
-# 在 runner 上下载 Qwen2.5 并把分卷传到 release semantic-models-v1。
-# 触发：手动（workflow_dispatch，选择要发布的档位）。
+# 在 runner 上下载模型并把分卷传到 release semantic-models-v1。
+# 触发：手动（workflow_dispatch，选择 bf16 原版 / MLX 量化档）。
+# 量化档实测（零泄漏 438 句）：8bit 三档零损失（+35/+41/+53）、
+# 0.5B-4bit -1 分（+34）；3bit 已判死不发布。
 on:
   workflow_dispatch:
     inputs:
-      m05:
-        description: '发布 0.5B'
+      run_bf16:
+        description: '发布 bf16 原版三档'
         type: boolean
-        default: true
-      m15:
-        description: '发布 1.5B'
-        type: boolean
-        default: true
-      m3:
-        description: '发布 3B'
+        default: false
+      run_quant:
+        description: '发布 MLX 量化三档（0.5b-4bit/1.5b-8bit/3b-8bit）'
         type: boolean
         default: true
 
@@ -27,15 +25,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [0.5B, 1.5B, 3B]
+        include:
+          - {tag: "0.5b",       repo: "Qwen/Qwen2.5-0.5B-Instruct",        kind: "bf16"}
+          - {tag: "1.5b",       repo: "Qwen/Qwen2.5-1.5B-Instruct",        kind: "bf16"}
+          - {tag: "3b",         repo: "Qwen/Qwen2.5-3B-Instruct",          kind: "bf16"}
+          - {tag: "0.5b-4bit",  repo: "mlx-community/Qwen2.5-0.5B-Instruct-4bit", kind: "mlx"}
+          - {tag: "1.5b-8bit",  repo: "mlx-community/Qwen2.5-1.5B-Instruct-8bit", kind: "mlx"}
+          - {tag: "3b-8bit",    repo: "mlx-community/Qwen2.5-3B-Instruct-8bit",   kind: "mlx"}
     timeout-minutes: 90
     env:
-      MODEL: ${{ matrix.model }}
-      RUN_FLAG: ${{ (matrix.model == '0.5B' && inputs.m05) || (matrix.model == '1.5B' && inputs.m15) || (matrix.model == '3B' && inputs.m3) }}
+      TAG: ${{ matrix.tag }}
+      REPO: ${{ matrix.repo }}
+      RUN_FLAG: ${{ (matrix.kind == 'bf16' && inputs.run_bf16) || (matrix.kind == 'mlx' && inputs.run_quant) }}
     steps:
       - name: Skip if not selected
         if: env.RUN_FLAG != 'true'
-        run: echo "skipping ${MODEL}"
+        run: echo "skipping ${TAG} (${REPO})"
 
       - name: Set up Python
         if: env.RUN_FLAG == 'true'
@@ -53,8 +58,7 @@ jobs:
           set -e
           python - <<'EOF'
           import os, shutil, glob
-          model = os.environ["MODEL"]
-          repo = f"Qwen/Qwen2.5-{model}-Instruct"
+          repo = os.environ["REPO"]
           patterns = ["*.json", "*.txt", "*.jinja", "*.safetensors"]
           try:
               from huggingface_hub import snapshot_download
@@ -77,10 +81,9 @@ jobs:
         if: env.RUN_FLAG == 'true'
         run: |
           set -e
-          tag=$(echo "$MODEL" | tr 'A-Z' 'a-z')
           mkdir -p /tmp/vol
           cd /tmp/model
-          tar -cf - . | split -b 1900m - "/tmp/vol/mohu-semantic-qwen2.5-${tag}.tar.part-"
+          tar -cf - . | split -b 1900m - "/tmp/vol/mohu-semantic-qwen2.5-${TAG}.tar.part-"
           ls -la /tmp/vol/
 
       - name: Upload to release
@@ -90,7 +93,6 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -e
-          tag=$(echo "$MODEL" | tr 'A-Z' 'a-z')
           for f in /tmp/vol/*; do
             name=$(basename "$f")
             if gh release view semantic-models-v1 --json assets \
@@ -99,4 +101,4 @@ jobs:
             fi
           done
           gh release upload semantic-models-v1 /tmp/vol/* --clobber
-          echo "uploaded ${MODEL}"
+          echo "uploaded ${TAG}"

@@ -8,10 +8,9 @@
 
 | 资产 | 说明 |
 |---|---|
-| `mohu-semantic-qwen2.5-0.5b.zip` | 默认档（+35 / ~1.2GB 内存） |
-| `mohu-semantic-qwen2.5-1.5b.tar.part-*` | +42 / ~3.5GB（2 卷全下） |
-| `mohu-semantic-qwen2.5-3b.tar.part-*` | +53 / ~6.5GB（4 卷全下） |
-| `mohu-semantic-c2-onnx.zip` | 轻量回退：进程内 ONNX（+6，75MB，解压到用户目录 `mohu_semantic/`） |
+| `mohu-semantic-qwen2.5-0.5b.tar.part-*` | 默认档（+35 / ~1.2GB 内存） |
+| `mohu-semantic-qwen2.5-1.5b.tar.part-*` | +42 / ~3.5GB |
+| `mohu-semantic-qwen2.5-3b.tar.part-*` | +53 / ~6.5GB |
 
 Qwen 档解压到 `~/.cache/modelscope/models/`（保持 `Qwen--…/snapshots/master/` 目录结构）。安装命令见 release 页说明。
 
@@ -98,4 +97,5 @@ Qwen 档解压到 `~/.cache/modelscope/models/`（保持 `Qwen--…/snapshots/ma
   启动预热，防 MPS Metal 竞争崩溃）。
 - 评分公式：候选按 `logP(候选|上文)/长度 + 0.5·native_z` 混合排序
   （权重经 held-out 验证；改权重 = 服务的 `RERANK_NATIVE_W` 环境变量）。
-- ONNX 进程内路径保留为回退（`mohu_semantic.onnx` 存在时可用），HTTP 优先。
+- 进程内 ONNX（旧 C2 学生）已被淘汰，不再提供下载；代码路径保留仅为
+  兼容旧安装，新装无需任何 ONNX 文件。

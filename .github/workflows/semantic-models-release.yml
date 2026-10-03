@@ -87,6 +87,7 @@ jobs:
         if: env.RUN_FLAG == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -e
           tag=$(echo "$MODEL" | tr 'A-Z' 'a-z')

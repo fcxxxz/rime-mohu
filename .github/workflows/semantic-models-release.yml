@@ -1,0 +1,90 @@
+name: semantic-models-release
+
+# 在 runner 上下载 Qwen2.5 并把分卷传到 release semantic-models-v1。
+# 触发：手动（workflow_dispatch）。本地网络对 uploads.github.com 断流时用。
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: '要发布的档位（逗号分隔：0.5B,1.5B,3B）'
+        required: true
+        default: '0.5B,1.5B,3B'
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(format('["{0}"]', join(fromJSON(format('[{0}]', inputs.models)), '","'))) }}
+    timeout-minutes: 90
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install downloaders
+        run: pip install -q huggingface_hub modelscope
+
+      - name: Download model (HF first, ModelScope fallback)
+        env:
+          MODEL: ${{ matrix.model }}
+        run: |
+          set -e
+          python - <<'EOF'
+          import os, shutil, sys
+          model = os.environ["MODEL"]
+          repo = f"Qwen/Qwen2.5-{model}-Instruct"
+          patterns = ["*.json", "*.txt", "*.jinja", "*.safetensors"]
+          # 首选 HF（runner 到 HF 内网级）
+          try:
+              from huggingface_hub import snapshot_download
+              p = snapshot_download(repo, allow_patterns=patterns)
+              print(f"HF ok: {p}")
+          except Exception as e:
+              print(f"HF failed ({type(e).__name__}), fallback ModelScope: {e}")
+              from modelscope import snapshot_download as ms_dl
+              p = ms_dl(repo)
+              print(f"ModelScope ok: {p}")
+          # 统一摊平到 /tmp/model（快照目录结构两层：snapshots/<hash>）
+          import glob
+          snap = glob.glob(os.path.join(p, "snapshots", "*"))
+          src = snap[0] if snap else p
+          os.makedirs("/tmp/model", exist_ok=True)
+          for f in os.listdir(src):
+              shutil.copy2(os.path.join(src, f), "/tmp/model/" + f)
+          print("files:", sorted(os.listdir("/tmp/model")))
+          EOF
+
+      - name: Split into volumes
+        env:
+          MODEL: ${{ matrix.model }}
+        run: |
+          set -e
+          tag=$(echo "$MODEL" | tr 'A-Z' 'a-z')   # 0.5B -> 0.5b
+          mkdir -p /tmp/vol
+          cd /tmp/model
+          tar -cf - . | split -b 1900m - "/tmp/vol/mohu-semantic-qwen2.5-${tag}.tar.part-"
+          ls -la /tmp/vol/
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL: ${{ matrix.model }}
+        run: |
+          set -e
+          tag=$(echo "$MODEL" | tr 'A-Z' 'a-z')
+          # 同名旧资产（可能残缺）先清理再传
+          for f in /tmp/vol/*; do
+            name=$(basename "$f")
+            if gh release view semantic-models-v1 --json assets \
+               -q '.assets[].name' | grep -qx "$name"; then
+              gh release delete-asset semantic-models-v1 "$name" --yes
+            fi
+          done
+          gh release upload semantic-models-v1 /tmp/vol/* --clobber
+          echo "uploaded ${MODEL}"

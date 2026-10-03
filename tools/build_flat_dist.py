@@ -117,23 +117,18 @@ def copy_macos_engine_dependencies(destination: Path) -> None:
 
 
 def copy_semantic_model(destination: Path) -> None:
-    """把魔虎语义 C2 模型与词表复制进包内 mohu_semantic/。
+    """语义模型一律不进默认包（体积考虑，全走按需下载）。
 
-    方案默认 `tiger/semantic_model|semantic_vocab` 指向该目录；漏拷时
-    「魔虎语义开」会在首次命中时加载失败并把开关退回「关」。缺文件时
-    显式报错，而不是发出一个语义功能装不上的包。
+    主路径：本机 Qwen HTTP 重排（tiger/semantic_http_url），模型从
+    release `semantic-models-v1` 下载（见 docs/semantic-rerank.md）。
+    轻量回退：进程内 C2 ONNX 同在该 release（mohu-semantic-c2-onnx.zip），
+    解压到用户目录 mohu_semantic/ 即生效。包内两者皆无时「魔虎语义开」
+    自动关闭，不影响其他功能。
     """
-    semantic_dir = ROOT / "mohu_semantic"
-    for name in ("mohu_semantic.onnx", "vocab.tsv"):
-        source = semantic_dir / name
-        if not source.is_file():
-            raise ValueError(
-                f"semantic model asset is missing: {source} "
-                "(see mohu_semantic/README.md)"
-            )
-        target = destination / "mohu_semantic" / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+    print("note: semantic models excluded from package "
+          "(optional download from release semantic-models-v1; "
+          "see docs/semantic-rerank.md)")
+    return
 
 
 def build_flat(

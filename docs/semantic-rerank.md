@@ -2,6 +2,19 @@
 
 > 版本：2026-10-03 · 部署环境：macOS (Apple Silicon) · 默认模型：Qwen2.5-0.5B
 
+## 模型下载
+
+默认安装包**不含任何语义模型**。从 GitHub Release [`semantic-models-v1`](https://github.com/fcxxxz/rime-mohu/releases/tag/semantic-models-v1) 按需下载：
+
+| 资产 | 说明 |
+|---|---|
+| `mohu-semantic-qwen2.5-0.5b.zip` | 默认档（+35 / ~1.2GB 内存） |
+| `mohu-semantic-qwen2.5-1.5b.tar.part-*` | +42 / ~3.5GB（2 卷全下） |
+| `mohu-semantic-qwen2.5-3b.tar.part-*` | +53 / ~6.5GB（4 卷全下） |
+| `mohu-semantic-c2-onnx.zip` | 轻量回退：进程内 ONNX（+6，75MB，解压到用户目录 `mohu_semantic/`） |
+
+Qwen 档解压到 `~/.cache/modelscope/models/`（保持 `Qwen--…/snapshots/master/` 目录结构）。安装命令见 release 页说明。
+
 ## 这是什么
 
 打开「魔虎语义开」后，V5 引擎对自己不自信的候选菜单（top-2 分差小，

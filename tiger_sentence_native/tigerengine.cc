@@ -4377,11 +4377,15 @@ void tiger_semantic_free(int handle) {
     g_semantic_scorers[handle].reset();
 }
 
-// ---- HTTP 语义重排后端（本机常驻 Qwen scorer 服务）----
+// ---- HTTP 语义重排后端（本机常驻 Qwen scorer 服务，macOS 专属）----
 // POST /rerank {"context","candidates","native_scores"} → {"scores":[...]}。
 // 只允许环回地址；超时/失败返回 -1，调用方（lua 门控）fail-open。
 // 连接被拒时异步 kickstart LaunchAgent 服务（com.mohu.rerank），
 // 下次按键即可用——实现「菜单打开自动拉起、菜单关闭服务空闲自退」。
+// 服务端依赖 MLX/MPS（Apple Silicon），Windows 不编译本后端：lua 侧
+// 检测不到 semantic_http_score 即走 ONNX 回退/直通，行为不受影响。
+
+#ifndef _WIN32
 
 namespace {
 
@@ -4611,6 +4615,8 @@ int tiger_semantic_http_score(const char* url, const char* context_text,
     return -1;
   }
 }
+
+#endif  // !_WIN32
 
 
 int tiger_engine_user_model_import(int handle, const char* blob, size_t blob_size) {

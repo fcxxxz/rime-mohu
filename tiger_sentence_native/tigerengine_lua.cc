@@ -695,6 +695,7 @@ int l_semantic_free(lua_State* L) {
   return 0;
 }
 
+#ifndef _WIN32
 int l_semantic_http_score(lua_State* L) {
   const char* url = luaL_checkstring(L, 1);
   const char* context = luaL_checkstring(L, 2);
@@ -737,6 +738,7 @@ int l_semantic_http_score(lua_State* L) {
   }
   return 1;
 }
+#endif  // !_WIN32
 
 int l_last_error(lua_State* L) {
   char error[512] = {0};
@@ -779,7 +781,9 @@ int luaopen_tigerengine(lua_State* L) {
       {"word_disagreement", l_word_disagreement},
       {"semantic_create", l_semantic_create},
       {"semantic_score", l_semantic_score},
+#ifndef _WIN32
       {"semantic_http_score", l_semantic_http_score},
+#endif
       {"semantic_free", l_semantic_free},
       {"user_model_export", l_user_model_export},
       {"user_model_import", l_user_model_import},

@@ -5,7 +5,7 @@
 
 ---
 name: mohu_flypy.wanxiang
-version: "b9a7e1765a95"
+version: "1ab558673980"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -495,6 +495,7 @@ columns:
 一份啊	yi;fi ff;jh aa;dt	657
 一份报	yi;fi ff;jh bc;uz	1188
 一份提案	yi;fi ff;jh ti;uo an;wb	418
+一份是	yi;fi ff;jh ui;ot	436
 一份水	yi;fi ff;jh uv;ks	1017
 一份表	yi;fi ff;jh bn;at	652
 一份送	yi;fi ff;jh ss;hm	639
@@ -3061,7 +3062,6 @@ columns:
 丁壬相合	dk;ad rf;tg xl;eq he;jd	212
 丁复	dk;ad fu;eo	418
 丁姐	dk;ad jp;bf	1300
-丁姨	dk;ad yi;bm	731
 丁字桥路	dk;ad zi;wh qn;et lu;ps	288
 丁字镇	dk;ad zi;wh vf;zn	228
 丁宁周至	dk;ad nk;wa vz;mg vi;yi	144
@@ -10507,7 +10507,7 @@ columns:
 不成啊	bu;cb ig;na aa;dt	616
 不成将	bu;cb ig;na jl;al	405
 不成就	bu;cb ig;na jq;gy	837
-不成想	bu;cb ig;na xl;eq	185
+不成想	bu;cb ig;na xl;eq	166
 不成文规	bu;cb ig;na wf;vw gv;he	554
 不成时	bu;cb ig;na ui;ok	334
 不成样了	bu;cb ig;na yh;eg le;rl	472
@@ -11101,6 +11101,7 @@ columns:
 不然能	bu;cb rj;vm ng;kv	594
 不照自己	bu;cb vc;op zi;oi ji;vj	270
 不熄的	bu;cb xi;co de;un	357
+不熔	bu;cb rs;cw	273
 不熔的	bu;cb rs;cw de;un	152
 不熟吧	bu;cb uu;gh ba;dm	432
 不熟啊	bu;cb uu;gh aa;dt	558
@@ -11759,6 +11760,7 @@ columns:
 不虐	bu;cb nt;zb	684
 不虚浮	bu;cb xu;zc fu;ky	279
 不蛮好的	bu;cb mj;zc hc;bh de;un	153
+不融	bu;cb rs;nc	188
 不融通物	bu;cb rs;nc ts;kt wu;qn	130
 不血腥	bu;cb xt;ta xk;vo	500
 不行不	bu;cb xk;px bu;cb	1188
@@ -13643,7 +13645,6 @@ columns:
 东前进	ds;ry qm;hv jb;qu	423
 东势区	ds;ry ui;uk qu;nb	570
 东势湖	ds;ry ui;uk hu;kc	230
-东勿刹	ds;ry wu;ne ua;be	446
 东化工厂	ds;ry hx;jv gs;ug ih;xc	248
 东北一区	ds;ry bw;av yi;fi qu;nb	194
 东北上	ds;ry bw;av uh;yf	648
@@ -15622,7 +15623,6 @@ columns:
 两点过	ll;ml dm;yd go;ku	486
 两点过了	ll;ml dm;yd go;ku le;rl	252
 两点间距	ll;ml dm;yd jm;ao ju;pn	356
-两熟	ll;ml uz;gh	3308
 两片吧	ll;ml pm;ap ba;dm	225
 两片的	ll;ml pm;ap de;un	544
 两片皮	ll;ml pm;ap pi;rp	288
@@ -18965,7 +18965,6 @@ columns:
 为不得已	ww;is bu;cb de;wo yi;vi	454
 为不称职	ww;is bu;cb if;xx vi;qd	450
 为东汉	ww;is ds;ry hj;kr	178
-为丞相	ww;is ig;ak xl;eq	752
 为个这	ww;is ge;jg ve;vu	378
 为中华之	ww;is vs;dg hx;jv vi;ri	598
 为临时	ww;is lb;pr ui;ok	1026
@@ -19158,6 +19157,7 @@ columns:
 为啥子要	ww;is ua;dj zi;hi yc;vb	360
 为啥来	ww;is ua;dj ld;ah	500
 为啥没	ww;is ua;dj mw;kr	950
+为啥涨	ww;is ua;dj vh;kb	112
 为啥的	ww;is ua;dj de;un	441
 为啥米	ww;is ua;dj mi;pm	554
 为啥能	ww;is ua;dj ng;kv	666
@@ -19352,7 +19352,6 @@ columns:
 为知	ww;is vi;od	489
 为确立	ww;is qt;mx li;il	490
 为社会	ww;is ue;fg hv;jb	1539
-为神马	ww;is uf;fo ma;nm	900
 为祸一方	ww;is ho;fd yi;fi fh;lf	369
 为私家车	ww;is si;xk jx;wj ie;yc	504
 为秦宫人	ww;is qb;ai gs;wd rf;jr	212
@@ -19371,7 +19370,6 @@ columns:
 为者败之	ww;is ve;qo bd;oh vi;ri	270
 为而弗恃	ww;is er;le fu;tf ui;hg	220
 为背景的	ww;is bw;av jk;og de;un	1040
-为胜吧	ww;is ug;vl ba;dm	220
 为臣	ww;is if;qc	198
 为臣不易	ww;is if;qc bu;cb yi;on	180
 为节度使	ww;is jp;lz du;xl ui;jf	585
@@ -21315,7 +21313,6 @@ columns:
 乔夫区	qn;tm fu;hf qu;nb	572
 乔妹	qn;tm mw;ba	752
 乔姐	qn;tm jp;bf	570
-乔姨	qn;tm yi;bm	357
 乔安	qn;tm an;wb	1452
 乔家堡	qn;tm jx;wj bc;jd	151
 乔家大少	qn;tm jx;wj da;md uc;yt	207
@@ -21941,7 +21938,7 @@ columns:
 九月风暴	jq;kj yt;vy fg;ob bc;ol	171
 九朝会	jq;kj ic;no hv;jb	382
 九朝律考	jq;kj ic;no lv;wb kc;qf	130
-九朵	jq;kj do;oe	5333
+九朵	jq;kj do;oe	1333
 九条兼实	jq;kj tn;he jm;hb ui;ww	369
 九条巷	jq;kj tn;he xl;lh	230
 九条胡同	jq;kj tn;he hu;cv ts;mf	234
@@ -23992,6 +23989,7 @@ columns:
 乱开始	lr;aa kd;fl ui;bk	590
 乱德民神	lr;aa de;wn mb;dm uf;fo	171
 乱志乱萃	lr;aa vi;gh lr;aa cv;lz	202
+乱情	lr;aa qk;ha	544
 乱想乱想	lr;aa xl;eq lr;aa xl;eq	144
 乱想了	lr;aa xl;eq le;rl	783
 乱感觉	lr;aa gj;nf jt;kw	590
@@ -24024,6 +24022,7 @@ columns:
 乱步地狱	lr;aa bu;ss di;ge yu;ms	153
 乱死了	lr;aa si;gv le;rl	482
 乱涂一气	lr;aa tu;kj yi;fi qi;vq	202
+乱清	lr;aa qk;ka	331
 乱港	lr;aa gh;kl	540
 乱炖	lr;aa dy;cf	940
 乱炖一气	lr;aa dy;cf yi;fi qi;vq	153
@@ -28300,7 +28299,7 @@ columns:
 亚述君主	ya;fc uu;ei jy;bt vu;in	230
 亚述学	ya;fc uu;ei xt;kw	414
 亚通	ya;fc ts;kt	454
-亚速	ya;fc su;xu	181
+亚速	ya;fc su;xu	197
 亚速尔	ya;fc su;xu er;xy	774
 亚邦集团	ya;fc bh;at ji;ue tr;rn	202
 亚酸盐	ya;fc sr;yk yj;gy	117
@@ -42675,7 +42674,7 @@ columns:
 他成就	ta;je ig;na jq;gy	590
 他成年	ta;je ig;na nm;ev	688
 他成日	ta;je ig;na ri;or	279
-他成熟	ta;je ig;na uz;gh	704
+他成熟	ta;je ig;na uu;gh	670
 他成立	ta;je ig;na li;il	760
 他成绩	ta;je ig;na ji;ia	285
 他戒备	ta;je jp;pl bw;hq	252
@@ -44616,7 +44615,7 @@ columns:
 他早死	ta;je zc;on si;gv	400
 他早泄	ta;je zc;on xp;kl	312
 他早点	ta;je zc;on dm;yd	734
-他早熟	ta;je zc;on uz;gh	624
+他早熟	ta;je zc;on uu;gh	356
 他早生	ta;je zc;on ug;ls	324
 他早知	ta;je zc;on vi;od	526
 他早被	ta;je zc;on bw;tr	288
@@ -45658,7 +45657,7 @@ columns:
 他没完	ta;je mw;kr wj;wm	612
 他没对	ta;je mw;kr dv;rk	446
 他没少	ta;je mw;kr uc;yt	513
-他没带	ta;je mw;kr dd;lw	327
+他没带	ta;je mw;kr dd;lw	558
 他没帮	ta;je mw;kr bh;at	297
 他没干	ta;je mw;kr gj;eg	572
 他没得	ta;je mw;kr de;wo	562
@@ -45667,7 +45666,7 @@ columns:
 他没惹	ta;je mw;kr re;ln	243
 他没戏	ta;je mw;kr xi;rp	279
 他没我	ta;je mw;kr wo;tu	454
-他没戴	ta;je mw;kr dd;np	558
+他没戴	ta;je mw;kr dd;np	327
 他没打	ta;je mw;kr da;ua	567
 他没找	ta;je mw;kr vc;up	544
 他没把	ta;je mw;kr ba;um	580
@@ -46159,11 +46158,11 @@ columns:
 他熄灭	ta;je xi;co mp;fc	288
 他熟悉	ta;je uu;gh xi;tp	819
 他熟睡	ta;je uu;gh uv;ql	472
-他熟知	ta;je uz;gh vi;od	848
-他熟稔	ta;je uz;gh rf;xj	390
+他熟知	ta;je uu;gh vi;od	446
+他熟稔	ta;je uu;gh rf;xj	256
 他熟练	ta;je uu;gh lm;ir	594
 他熟络	ta;je uu;gh lo;is	236
-他熟识	ta;je uz;gh ui;sd	808
+他熟识	ta;je uu;gh ui;sd	166
 他熟读	ta;je uz;gh du;sn	570
 他熬了	ta;je ao;ap le;rl	477
 他熬夜	ta;je ao;ap ye;zj	472
@@ -50870,7 +50869,7 @@ columns:
 他长叹	ta;je ih;pc tj;dr	293
 他长吁	ta;je ih;pc xu;df	315
 他长在	ta;je vh;pc zd;ng	284
-他长姐	ta;je ih;pc jp;bf	202
+他长姐	ta;je vh;pc jp;bf	202
 他长子	ta;je vh;pc zi;hi	333
 他长寿	ta;je ih;pc uz;ak	410
 他长年	ta;je ih;pc nm;ev	433
@@ -52105,7 +52104,6 @@ columns:
 以内吧	yi;vj nw;mj ba;dm	639
 以冬柏花	yi;vj ds;hw bd;eu hx;lj	220
 以冲击	yi;vj is;wd ji;um	590
-以分时	yi;vj ff;hp ui;ok	436
 以刑为主	yi;vj xk;fl ww;is vu;in	117
 以刚发	yi;vj gh;mb fa;sr	180
 以利合者	yi;vj li;xp he;jd ve;qo	153
@@ -56209,7 +56207,7 @@ columns:
 会崩盘	hv;jb bg;vv pj;ia	747
 会左右	hv;jb zo;nu yz;nd	738
 会巩固	hv;jb gs;uo gu;rc	477
-会差	hv;jb ia;gu	1359
+会差	hv;jb ia;gu	522
 会差点	hv;jb ia;gu dm;yd	603
 会差距	hv;jb ia;gu ju;pn	576
 会已经	hv;jb yi;vi jk;ir	1210
@@ -58059,6 +58057,7 @@ columns:
 会染病	hv;jb rj;kk bk;af	405
 会柔软	hv;jb rz;it rr;ye	410
 会柔道	hv;jb rz;it dc;ho	670
+会查	hv;jb ia;eo	1359
 会查出	hv;jb ia;eo iu;sm	621
 会查到	hv;jb ia;eo dc;yp	616
 会查找	hv;jb ia;eo vc;up	504
@@ -69959,7 +69958,6 @@ columns:
 何大河	he;jz da;md he;kz	328
 何姐	he;jz jp;bf	160
 何姓家族	he;jz xk;bl jx;wj zu;le	144
-何姨	he;jz yi;bm	157
 何姿	he;jz zi;we	153
 何婆婆	he;jz po;kr po;kr	477
 何嫂	he;jz sc;bp	441
@@ -70752,7 +70750,6 @@ columns:
 佟国器	ts;jh go;rn qi;dd	176
 佟图赖	ts;jh tu;rh ld;xx	338
 佟姐	ts;jh jp;bf	158
-佟姨	ts;jh yi;bm	361
 佟守本	ts;jh uz;wk bf;ef	400
 佟忠义	ts;jh vs;dg yi;ib	194
 佟景易	ts;jh jk;og yi;on	333
@@ -85281,7 +85278,7 @@ columns:
 你长嘴	ni;jx ih;pc zv;ds	230
 你长在	ni;jx vh;pc zd;ng	270
 你长大	ni;jx vh;pc da;md	1012
-你长姐	ni;jx ih;pc jp;bf	392
+你长姐	ni;jx vh;pc jp;bf	392
 你长官	ni;jx vh;pc gr;wk	144
 你长寿	ni;jx ih;pc uz;ak	350
 你长得	ni;jx ih;pc de;wo	1071
@@ -86569,7 +86566,6 @@ columns:
 侯大明白	hz;jn da;md mk;ov bd;ub	130
 侯姐	hz;jn jp;bf	430
 侯姝	hz;jn uu;bt	112
-侯姨	hz;jn yi;bm	504
 侯媛媛	hz;jn yr;by yr;by	428
 侯宇	hz;jn yu;wf	229
 侯宏澜	hz;jn hs;wn lj;ka	414
@@ -88557,7 +88553,6 @@ columns:
 倪大宏	ni;jp da;md hs;wn	184
 倪天增	ni;jp tm;fm zg;gh	243
 倪姐	ni;jp jp;bf	148
-倪姨	ni;jp yi;bm	391
 倪子冈	ni;jp zi;hi gh;mb	194
 倪家营	ni;jp jx;wj yk;lw	333
 倪家营子	ni;jp jx;wj yk;lw zi;hi	261
@@ -89186,7 +89181,6 @@ columns:
 做人的	zo;jc rf;jr de;un	1184
 做人要善	zo;jc rf;jr yc;vb uj;gh	378
 做人要诚	zo;jc rf;jr yc;vb ig;sn	549
-做人还是	zo;jc rf;jr hd;cu ui;ot	706
 做什么咯	zo;jc uf;jn me;tk lo;ds	144
 做什么捏	zo;jc uf;jn me;tk np;uo	144
 做什么撒	zo;jc uf;jn me;tk sa;ul	117
@@ -92369,7 +92363,6 @@ columns:
 党妈妈	dh;sp ma;bn ma;bn	251
 党委政法	dh;sp ww;xb vg;fs fa;kg	675
 党委确定	dh;sp ww;xb qt;mx dk;wt	202
-党姨	dh;sp yi;bm	1202
 党守素	dh;sp uz;wk su;ai	252
 党家岔	dh;sp jx;wj ia;hp	202
 党家庄站	dh;sp jx;wj vl;xg vj;iy	207
@@ -94090,7 +94083,6 @@ columns:
 公孙晃	gs;hk sy;hy hl;om	261
 公孙景茂	gs;hk sy;hy jk;og mc;ln	207
 公孙楚	gs;hk sy;hy iu;ee	342
-公孙武	gs;hk sy;hy wu;fp	297
 公孙武达	gs;hk sy;hy wu;fp da;mu	230
 公孙段	gs;hk sy;hy dr;uf	378
 公孙申	gs;hk sy;hy uf;og	225
@@ -94789,7 +94781,7 @@ columns:
 六级吧	lq;al ji;ic ba;dm	292
 六纬路口	lq;al ww;ig lu;ps kz;dk	117
 六线鱼	lq;al xm;if yu;wv	122
-六缸	lq;al gh;au	882
+六缸	lq;al gh;au	1182
 六羊山	lq;al yh;gy uj;vs	220
 六群比丘	lq;al qy;bt bi;vv qq;tf	194
 六羰基	lq;al th;gv ji;zh	428
@@ -95353,7 +95345,6 @@ columns:
 关头时	gr;hm tz;wm ui;ok	308
 关好了	gr;hm hc;bh le;rl	608
 关妮薇尔	gr;hm ni;bc ww;lw er;xy	180
-关姨	gr;hm yi;bm	1224
 关孝和	gr;hm xn;qh he;xd	293
 关学	gr;hm xt;kw	996
 关学曾	gr;hm xt;kw cg;hr	118
@@ -100237,7 +100228,7 @@ columns:
 几则	ji;oj ze;op	734
 几到几	ji;oj dc;yp ji;oj	518
 几加几	ji;oj jx;sd ji;oj	824
-几勺	ji;oj uc;ni	11341
+几勺	ji;oj uc;ni	341
 几包盐	ji;oj bc;nv yj;gy	162
 几十万倍	ji;oj ui;ns wj;fp bw;ji	342
 几十万发	ji;oj ui;ns wj;fp fa;sr	162
@@ -101931,6 +101922,7 @@ columns:
 分不清了	ff;hp bu;cb qk;ka le;rl	657
 分不清白	ff;hp bu;cb qk;ka bd;ub	369
 分与分	ff;hp yu;fa ff;hp	464
+分两种	ff;hp ll;ml vs;xd	151
 分两集	ff;hp ll;ml ji;ue	333
 分中分	ff;hp vs;dg ff;hp	468
 分中央	ff;hp vs;dg yh;mm	765
@@ -102123,6 +102115,7 @@ columns:
 分布图表	ff;hp bu;nr tu;rh bn;at	423
 分布在	ff;hp bu;nr zd;ng	1598
 分布导数	ff;hp bu;nr dc;vk uu;pb	117
+分布开	ff;hp bu;nr kd;fl	157
 分布式网	ff;hp bu;nr ui;pu wh;mb	752
 分布律	ff;hp bu;nr lv;wb	306
 分布族	ff;hp bu;nr zu;le	315
@@ -103781,8 +103774,8 @@ columns:
 初步草图	iu;tp bu;ss cc;lo tu;rh	212
 初步陈述	iu;tp bu;ss if;tr uu;ei	117
 初烧	iu;tp uc;cp	549
-初熟	iu;tp uz;gh	2315
-初熟的	iu;tp uz;gh de;un	1272
+初熟	iu;tp uu;gh	198
+初熟的	iu;tp uu;gh de;un	279
 初版时	iu;tp bj;ax ui;ok	224
 初生之时	iu;tp ug;ls vi;ri ui;ok	251
 初生叶	iu;tp ug;ls ye;dn	274
@@ -103876,6 +103869,7 @@ columns:
 删掉点	uj;ip dn;uy dm;yd	266
 删文	uj;ip wf;vw	914
 删歌	uj;ip ge;zz	343
+删点	uj;ip dm;yd	916
 删的	uj;ip de;un	1984
 删角色	uj;ip jt;xt se;xm	297
 删评	uj;ip pk;se	329
@@ -106660,7 +106654,7 @@ columns:
 券商吧	qr;hh uh;im ba;dm	252
 券门	qr;hh mf;am	666
 券面	qr;hh mm;bm	153
-刹一刹	ua;be yi;fi ia;be	207
+刹一刹	ua;be yi;fi ua;be	207
 刹一脚	ua;be yi;fi jn;vg	288
 刹停	ua;be tk;jg	698
 刹带	ua;be dd;lw	274
@@ -106730,7 +106724,7 @@ columns:
 刺杀林肯	ci;em ua;be lb;ee kf;sv	310
 刺杀游戏	ci;em ua;be yz;kl xi;rp	130
 刺松藻	ci;em ss;eh zc;lk	144
-刺果	ci;em go;qe	1152
+刺果	ci;em go;qe	1002
 刺果松	ci;em go;qe ss;eh	279
 刺果树	ci;em go;qe uu;er	144
 刺果瓜	ci;em go;qe gx;yg	194
@@ -108276,6 +108270,7 @@ columns:
 办卡吗	bj;sh ka;yf ma;dn	302
 办卡吧	bj;sh ka;yf ba;dm	338
 办号	bj;sh hc;df	196
+办哇	bj;sh wa;dg	131
 办哪家	bj;sh na;da jx;wj	320
 办啥	bj;sh ua;dj	508
 办啥子	bj;sh ua;dj zi;hi	266
@@ -109009,7 +109004,7 @@ columns:
 加蒂斯	jx;sd di;li si;zh	369
 加蒂耶尔	jx;sd di;li ye;qt er;xy	171
 加蒂诺	jx;sd di;li no;sl	450
-加蒜	jx;sd sr;lf	1179
+加蒜	jx;sd sr;lf	1005
 加蓝听海	jx;sd lj;lp tk;dt hd;ke	225
 加蓬外交	jx;sd pg;lh wd;ly jn;ab	234
 加薪吗	jx;sd xb;li ma;dn	333
@@ -110249,7 +110244,6 @@ columns:
 包头矿	bc;nv tz;wm kl;mx	189
 包头西	bc;nv tz;wm xi;vx	396
 包好了	bc;nv hc;bh le;rl	788
-包姨	bc;nv yi;bm	222
 包娜娜	bc;nv na;ba na;ba	220
 包子上	bc;nv zi;hi uh;yf	630
 包子吧	bc;nv zi;hi ba;dm	585
@@ -113541,6 +113535,7 @@ columns:
 升级啊	ug;tl ji;ic aa;dt	634
 升级四级	ug;tl ji;ic si;ys ji;ic	130
 升级快么	ug;tl ji;ic kk;hn me;tk	153
+升级的	ug;tl ji;ic de;un	936
 升级秘药	ug;tl ji;ic mi;xh yc;li	130
 升级等级	ug;tl ji;ic dg;rg ji;ic	270
 升级过	ug;tl ji;ic go;ku	837
@@ -115341,7 +115336,6 @@ columns:
 单头套机	dj;hq tz;wm tc;mp ji;eo	238
 单女	dj;hq nv;bn	806
 单姐	dj;hq jp;bf	648
-单姨	dj;hq yi;bm	106
 单子了	dj;hq zi;hi le;rl	626
 单子会	dj;hq zi;hi hv;jb	400
 单子吧	dj;hq zi;hi ba;dm	410
@@ -117098,7 +117092,7 @@ columns:
 南辛庄街	nj;nm xb;nx vl;xg jp;pg	189
 南辛庄路	nj;nm xb;nx vl;xg lu;ps	252
 南辛店	nj;nm xb;nx dm;xy	315
-南辰	nj;nm if;fc	1179
+南辰	nj;nm if;fc	1008
 南辰啊	nj;nm if;fc aa;dt	261
 南边是	nj;nm bm;su ui;ot	684
 南边路	nj;nm bm;su lu;ps	356
@@ -119316,6 +119310,7 @@ columns:
 压缩形变	ya;xg so;iw xk;fl bm;zc	153
 压缩态	ya;xg so;iw td;mi	292
 压缩成形	ya;xg so;iw ig;na xk;fl	171
+压缩效率	ya;xg so;iw xn;ab lv;zi	207
 压缩时	ya;xg so;iw ui;ok	648
 压缩映射	ya;xg so;iw yk;om ue;zk	306
 压缩曲线	ya;xg so;iw qu;yq xm;if	270
@@ -119348,6 +119343,7 @@ columns:
 压迫了	ya;xg po;uu le;rl	675
 压迫时	ya;xg po;uu ui;ok	403
 压迫疗法	ya;xg po;uu ln;ar fa;kg	279
+压速	ya;xg su;xu	181
 压金	ya;xg jb;zj	187
 压铸车间	ya;xg vu;za ie;yc jm;ao	202
 压锅	ya;xg go;zd	1107
@@ -123364,7 +123360,7 @@ columns:
 双烯体	ul;rr xi;cb ti;je	351
 双煞	ul;rr ua;xb	1041
 双熊	ul;rr xs;kv	512
-双燕	ul;rr yj;ld	7547
+双燕	ul;rr yj;ld	447
 双燕归来	ul;rr yj;ld gv;pb ld;ah	207
 双燕楼	ul;rr yj;ld lz;ep	288
 双爪	ul;rr vc;ya	585
@@ -124253,6 +124249,7 @@ columns:
 发卡人	fa;sr ka;yf rf;jr	248
 发去了	fa;sr qu;gk le;rl	738
 发发照片	fa;sr fa;sr vc;op pm;ap	364
+发句	fa;sr ju;gj	209
 发吗	fa;sr ma;dn	1264
 发呆了	fa;sr dd;de le;rl	693
 发呆吧	fa;sr dd;de ba;dm	364
@@ -127623,7 +127620,7 @@ columns:
 可愁死	ke;zk iz;xc si;gv	382
 可感动	ke;zk gj;nf ds;bs	423
 可成了	ke;zk ig;na le;rl	765
-可成熟	ke;zk ig;na uz;gh	988
+可成熟	ke;zk ig;na uu;gh	680
 可我看	ke;zk wo;tu kj;uq	774
 可打电话	ke;zk da;ua dm;oa hx;sa	544
 可扩充的	ke;zk ko;ux is;bp de;un	310
@@ -128065,7 +128062,7 @@ columns:
 可谁想到	ke;zk uv;su xl;eq dc;yp	450
 可谁有	ke;zk uv;su yz;nv	306
 可谁知	ke;zk uv;su vi;od	940
-可调扳手	ke;zk dn;sm bj;ux uz;us	153
+可调扳手	ke;zk tn;sm bj;ux uz;us	153
 可调的	ke;zk tn;sm de;un	693
 可调速的	ke;zk tn;sm su;xu de;un	194
 可谈不上	ke;zk tj;sc bu;cb uh;yf	320
@@ -128317,6 +128314,7 @@ columns:
 台服点卡	td;kd fu;vz dm;yd ka;yf	180
 台村河	td;kd cy;ek he;kz	180
 台板上	td;kd bj;ex uh;yf	432
+台案	td;kd an;wb	377
 台歌	td;kd ge;zz	983
 台民视	td;kd mb;dm ui;fe	356
 台江区人	td;kd jl;ku qu;nb rf;jr	202
@@ -128737,7 +128735,6 @@ columns:
 叶姆察河	ye;dn mu;bk ia;wh he;kz	117
 叶姐	ye;dn jp;bf	576
 叶姓家族	ye;dn xk;bl jx;wj zu;le	153
-叶姨	ye;dn yi;bm	560
 叶姵延	ye;dn pw;bo yj;ts	382
 叶婷婷	ye;dn tk;bg tk;bg	315
 叶嫂	ye;dn sc;bp	130
@@ -130310,7 +130307,7 @@ columns:
 合俊集团	he;jd jy;jk ji;ue tr;rn	153
 合信医疗	he;jd xb;js yi;no ln;ar	207
 合做	he;jd zo;jc	1490
-合入	he;jd ru;ju	1498
+合入	he;jd ru;ju	1127
 合兴里	he;jd xk;kh li;dl	243
 合兵	he;jd bk;th	684
 合击战术	he;jd ji;um vj;yd uu;ei	153
@@ -130937,6 +130934,7 @@ columns:
 吊鲜	dn;dr xm;wg	514
 吊鲜味	dn;dr xm;wg ww;da	482
 吊龙	dn;dr ls;tl	914
+同一个吗	ts;mf yi;fi ge;jg ma;dn	117
 同一主族	ts;mf yi;fi vu;in zu;le	270
 同一事物	ts;mf yi;fi ui;fd wu;qn	648
 同一人物	ts;mf yi;fi rf;jr wu;qn	490
@@ -134482,7 +134480,7 @@ columns:
 周冲水库	vz;mg is;wd uv;ks ku;xy	117
 周刚	vz;mg gh;mb	918
 周刚教授	vz;mg gh;mb jn;qh uz;uy	117
-周初	vz;mg iu;tp	2887
+周初	vz;mg iu;tp	887
 周利用	vz;mg li;xp ys;ty	396
 周到吧	vz;mg dc;yp ba;dm	428
 周到啊	vz;mg dc;yp aa;dt	603
@@ -134541,7 +134539,6 @@ columns:
 周奎	vz;mg kv;mg	108
 周奕彤	vz;mg yi;zc ts;mz	122
 周姐	vz;mg jp;bf	702
-周姨	vz;mg yi;bm	596
 周娇	vz;mg jn;bt	318
 周嫂	vz;mg sc;bp	472
 周子	vz;mg zi;hi	109
@@ -134853,7 +134850,7 @@ columns:
 味酸	ww;da sr;yk	565
 味醂	ww;da lj;ye	416
 味醇	ww;da iy;yg	932
-味重	ww;da vs;ld	285
+味重	ww;da vs;ld	357
 味重了	ww;da vs;ld le;rl	752
 味飘香	ww;da pn;vf xl;xo	450
 味餐厅	ww;da cj;gr tk;xa	860
@@ -135479,7 +135476,7 @@ columns:
 和婶	he;xd uf;bw	552
 和媳妇	he;xd xi;bo fu;bb	976
 和子空间	he;xd zi;hi ks;eu jm;ao	189
-和子饭	he;xd zi;hi fj;qx	225
+和子饭	ho;xd zi;hi fa;qx	225
 和孕激素	he;xd yy;vh ji;ku su;ai	662
 和孝公主	he;xd xn;qh gs;hk vu;in	400
 和孝心	he;xd xn;qh xb;hx	405
@@ -136511,7 +136508,6 @@ columns:
 品阶	pb;dd jp;tj	722
 品项	pb;dd xl;uw	610
 品餐厅	pb;dd cj;gr tk;xa	590
-品饮	pb;dd yb;qe	5238
 品香	pb;dd xl;xo	763
 品高	pb;dd gc;gg	1102
 品鹤线	pb;dd he;wu xm;if	482
@@ -136668,7 +136664,6 @@ columns:
 哈姆达尼	ha;dj mu;bk da;mu ni;cv	284
 哈姆达拉	ha;dj mu;bk da;mu la;ui	338
 哈姐	ha;dj jp;bf	603
-哈姨	ha;dj yi;bm	180
 哈宝宝	ha;dj bc;wn bc;wn	436
 哈宝泉	ha;dj bc;wn qr;uk	230
 哈宾斯基	ha;dj bb;wt si;zh ji;zh	117
@@ -137169,7 +137164,7 @@ columns:
 哪个讲的	na;da ge;jg jl;sq de;un	130
 哪个说	na;da ge;jg uo;sh	528
 哪个说的	na;da ge;jg uo;sh de;un	400
-哪个贵	na;da ge;jg gv;co	448
+哪个贵	na;da ge;jg gv;co	747
 哪个路	na;da ge;jg lu;ps	567
 哪个路径	na;da ge;jg lu;ps jk;wr	194
 哪个问题	na;da ge;jg wf;ad ti;ot	644
@@ -137225,7 +137220,6 @@ columns:
 哪几门	na;da ji;oj mf;am	580
 哪出	na;da iu;sm	137
 哪出啊	na;da iu;sm aa;dt	432
-哪去吧	na;da qu;gk ba;dm	201
 哪去呢	na;da qu;gk ne;dc	477
 哪去啊	na;da qu;gk aa;dt	477
 哪双	na;da ul;rr	2240
@@ -137331,9 +137325,11 @@ columns:
 哪里可以	na;da li;dl ke;zk yi;vj	1296
 哪里可爱	na;da li;dl ke;zk ai;yw	382
 哪里可能	na;da li;dl ke;zk ng;kv	621
+哪里号码	na;da li;dl hc;df ma;mn	157
 哪里吧	na;da li;dl ba;dm	747
 哪里哦	na;da li;dl oo;dt	472
 哪里在	na;da li;dl zd;ng	896
+哪里好吗	na;da li;dl hc;bh ma;dn	435
 哪里好耍	na;da li;dl hc;bh ux;lb	144
 哪里存在	na;da li;dl cy;ng zd;ng	428
 哪里打工	na;da li;dl da;ua gs;ug	364
@@ -137526,7 +137522,7 @@ columns:
 唐人眼镜	th;xb rf;jr yj;qi jk;zx	202
 唐人科技	th;xb rf;jr ke;xj ji;uc	153
 唐人通服	th;xb rf;jr ts;kt fu;vz	117
-唐仁	th;xb rf;jm	175
+唐仁	th;xb rf;jm	114
 唐仁廉	th;xb rf;jm lm;xh	180
 唐代农民	th;xb dd;jp ns;wt mb;dm	130
 唐代变文	th;xb dd;jp bm;zc wf;vw	130
@@ -137596,7 +137592,6 @@ columns:
 唐奕	th;xb yi;zc	324
 唐奕聪	th;xb yi;zc cs;qh	428
 唐姐	th;xb jp;bf	698
-唐姨	th;xb yi;bm	132
 唐娜	th;xb na;ba	1239
 唐娜薇	th;xb na;ba ww;lw	360
 唐嫣吧	th;xb yj;bf ba;dm	194
@@ -140972,6 +140967,7 @@ columns:
 四种吧	si;ys vs;xd ba;dm	333
 四种姓	si;ys vs;xd xk;bl	315
 四种涅槃	si;ys vs;xd np;ko pj;ir	153
+四税	si;ys uv;xh	251
 四窗岩	si;ys il;et yj;vm	256
 四站地	si;ys vj;iy di;ge	324
 四站路	si;ys vj;iy lu;ps	342
@@ -141235,7 +141231,6 @@ columns:
 回到没	hv;rd dc;yp mw;kr	410
 回到现在	hv;rd dc;yp xm;ne zd;ng	684
 回劝了	hv;rd qr;rs le;rl	450
-回勇	hv;rd ys;kt	15291
 回包头	hv;rd bc;nv tz;wm	315
 回北京吗	hv;rd bw;av jk;gy ma;dn	202
 回北京吧	hv;rd bw;av jk;gy ba;dm	288
@@ -141991,7 +141986,7 @@ columns:
 回话了	hv;rd hx;sa le;rl	504
 回话吧	hv;rd hx;sa ba;dm	194
 回话我	hv;rd hx;sa wo;tu	374
-回说	hv;rd uo;sh	16916
+回说	hv;rd uo;sh	6916
 回课	hv;rd ke;sq	332
 回课室	hv;rd ke;sq ui;wy	221
 回货款	hv;rd ho;jv kr;gf	464
@@ -146311,7 +146306,7 @@ columns:
 在常平	zd;ng ih;sr pk;eh	828
 在常德	zd;ng ih;sr de;wn	608
 在常温下	zd;ng ih;sr wf;ko xx;fy	824
-在常熟	zd;ng ih;sr uz;gh	668
+在常熟	zd;ng ih;sr uu;gh	666
 在干了	zd;ng gj;eg le;rl	490
 在干吗的	zd;ng gj;eg ma;dn de;un	201
 在干啥	zd;ng gj;eg ua;dj	824
@@ -146583,6 +146578,7 @@ columns:
 在扶风	zd;ng fu;uh fg;ob	346
 在批评	zd;ng pi;uv pk;se	878
 在找了	zd;ng vc;up le;rl	630
+在找人	zd;ng vc;up rf;jr	235
 在承德	zd;ng ig;ak de;wn	644
 在投篮时	zd;ng tz;ur lj;rp ui;ok	410
 在抚远	zd;ng fu;ud yr;mp	224
@@ -150781,7 +150777,6 @@ columns:
 埃及政变	ai;gk ji;cj vg;fs bm;zc	333
 埃及猿	ai;gk ji;cj yr;mg	243
 埃及电力	ai;gk ji;cj dm;oa li;sl	194
-埃及的水	ai;gk ji;cj de;un uv;ks	189
 埃吉斯托	ai;gk ji;gd si;zh to;ut	144
 埃吉迪奥	ai;gk ji;gd di;du ao;tm	270
 埃唐普	ai;gk th;xb pu;hc	522
@@ -153649,7 +153644,6 @@ columns:
 夏姆扎区	xx;fo mu;bk va;ua qu;nb	189
 夏姐	xx;fo jp;bf	166
 夏姓家族	xx;fo xk;bl jx;wj zu;le	117
-夏姨	xx;fo yi;bm	628
 夏威夷岩	xx;fo ww;nf yi;mb yj;vm	220
 夏威夷衫	xx;fo ww;nf yi;mb uj;te	279
 夏威夷豆	xx;fo ww;nf yi;mb dz;zd	220
@@ -155348,7 +155342,6 @@ columns:
 多烯鱼油	do;ll xi;cb yu;wv yz;kd	117
 多照	do;ll vc;op	222
 多熟了	do;ll uz;gh le;rl	794
-多熟期	do;ll uz;gh qi;zh	230
 多爽了	do;ll ul;mb le;rl	531
 多爽啊	do;ll ul;mb aa;dt	544
 多爽的	do;ll ul;mb de;un	351
@@ -157073,7 +157066,7 @@ columns:
 大只了	da;md vi;dh le;rl	436
 大只啊	da;md vi;dh aa;dt	418
 大只广	da;md vi;dh gl;xg	194
-大召	da;md vc;pd	9784
+大召	da;md vc;pd	284
 大召前街	da;md vc;pd qm;hv jp;pg	162
 大叮当	da;md dk;da dh;yb	153
 大可河	da;md ke;zk he;kz	144
@@ -157886,6 +157879,7 @@ columns:
 大家人	da;md jx;wj rf;jr	722
 大家会	da;md jx;wj hv;jb	1246
 大家先	da;md jx;wj xm;qp	1040
+大家写	da;md jx;wj xp;wf	109
 大家冲	da;md jx;wj is;wd	522
 大家凑合	da;md jx;wj cz;wa he;jd	675
 大家吧	da;md jx;wj ba;dm	774
@@ -165642,7 +165636,6 @@ columns:
 女怀清台	nv;bn hk;hc qk;ka td;kd	248
 女性与性	nv;bn xk;hl yu;fa xk;hl	194
 女性了	nv;bn xk;hl le;rl	666
-女性交	nv;bn xk;hl jn;ab	698
 女性优越	nv;bn xk;hl yz;jo yt;pn	180
 女性体形	nv;bn xk;hl ti;je xk;fl	225
 女性元首	nv;bn xk;hl yr;mp uz;ho	130
@@ -166408,7 +166401,7 @@ columns:
 好些事	hc;bh xp;sv ui;fd	626
 好些吧	hc;bh xp;sv ba;dm	734
 好些啊	hc;bh xp;sv aa;dt	459
-好享来	hc;bh xl;gh ld;ah	878
+好享来	hc;bh xl;gh ld;ah	524
 好享购	hc;bh xl;gh gz;on	392
 好享购物	hc;bh xl;gh gz;on wu;qn	297
 好亲密啊	hc;bh qb;ie mi;wh aa;dt	144
@@ -168435,7 +168428,6 @@ columns:
 姚天福	yc;bp tm;fm fu;ff	270
 姚奠中	yc;bp dm;hy vs;dg	351
 姚姐	yc;bp jp;bf	238
-姚姨	yc;bp yi;bm	486
 姚孟电厂	yc;bp mg;ha dm;oa ih;xc	117
 姚学甲	yc;bp xt;kw jx;sj	152
 姚学锋	yc;bp xt;kw fg;zh	180
@@ -168549,7 +168541,6 @@ columns:
 姜女庙	jl;gb nv;bn mn;xd	454
 姜妍	jl;gb yj;bf	191
 姜姐	jl;gb jp;bf	308
-姜姨	jl;gb yi;bm	722
 姜婶	jl;gb uf;bw	367
 姜婷婷	jl;gb tk;bg tk;bg	152
 姜嫂	jl;gb sc;bp	441
@@ -169508,7 +169499,6 @@ columns:
 孔多蒂街	ks;ha do;ll di;li jp;pg	189
 孔夫人	ks;ha fu;hf rf;jr	392
 孔夷	ks;ha yi;mb	110
-孔姨	ks;ha yi;bm	153
 孔子不见	ks;ha zi;hi bu;cb jm;ej	162
 孔子东游	ks;ha zi;hi ds;ry yz;kl	356
 孔子也	ks;ha zi;hi ye;ey	338
@@ -169996,7 +169986,6 @@ columns:
 孙女吧	sy;hy nv;bn ba;dm	387
 孙女啊	sy;hy nv;bn aa;dt	500
 孙姗	sy;hy uj;bi	116
-孙姨	sy;hy yi;bm	139
 孙娟	sy;hy jr;bd	153
 孙婶	sy;hy uf;bw	194
 孙嫂	sy;hy sc;bp	378
@@ -170226,7 +170215,6 @@ columns:
 孟哥	mg;ha ge;zz	1052
 孟姐	mg;ha jp;bf	783
 孟姑集	mg;ha gu;bc ji;ue	202
-孟姨	mg;ha yi;bm	135
 孟婆神	mg;ha po;kr uf;fo	256
 孟婶	mg;ha uf;bw	143
 孟嫂	mg;ha sc;bp	117
@@ -171103,7 +171091,6 @@ columns:
 宁姆尔	nk;wa mu;bk er;xy	612
 宁姐	nk;wa jp;bf	700
 宁姜公路	nk;wa jl;gb gs;hk lu;ps	130
-宁姨	nk;wa yi;bm	328
 宁宁啊	nk;wa nk;wa aa;dt	292
 宁安铁路	nk;wa an;wb tp;zt lu;ps	162
 宁家埠店	nk;wa jx;wj bu;gt dm;xy	144
@@ -171250,6 +171237,7 @@ columns:
 它何时	ta;wv he;jz ui;ok	226
 它便于	ta;wv bm;jf yu;fn	192
 它保证	ta;wv bc;jd vg;sf	494
+它俩	ta;wv lx;jm	410
 它做了	ta;wv zo;jc le;rl	341
 它关了	ta;wv gr;hm le;rl	109
 它写了	ta;wv xp;wf le;rl	163
@@ -171339,6 +171327,7 @@ columns:
 它还可以	ta;wv hd;cu ke;zk yi;vj	1084
 它这时	ta;wv ve;vu ui;ok	107
 它通过	ta;wv ts;kt go;ku	1007
+它采用	ta;wv cd;ye ys;ty	297
 它除了	ta;wv iu;tj le;rl	162
 它随时	ta;wv sv;tn ui;ok	324
 它隐藏	ta;wv yb;tx ch;ln	467
@@ -172743,7 +172732,6 @@ columns:
 完毕时	wj;wm bi;vv ui;ok	626
 完活了	wj;wm ho;ka le;rl	356
 完满群	wj;wm mj;kl qy;bt	180
-完熟	wj;wm uz;gh	129
 完片	wj;wm pm;ap	429
 完白山人	wj;wm bd;ub uj;vs rf;jr	194
 完的了	wj;wm de;un le;rl	255
@@ -174710,7 +174698,6 @@ columns:
 宣城的	xr;wf ig;gn de;un	518
 宣城石油	xr;wf ig;gn ui;ms yz;kd	207
 宣姐	xr;wf jp;bf	459
-宣姨	xr;wf yi;bm	324
 宣威仓	xr;wf ww;nf ch;jz	144
 宣威将军	xr;wf ww;nf jl;al jy;wy	405
 宣威沙漠	xr;wf ww;nf ua;ky mo;kl	212
@@ -177463,6 +177450,7 @@ columns:
 寻常吧	xy;bk ih;sr ba;dm	252
 寻常景物	xy;bk ih;sr jk;og wu;qn	256
 寻常狼疮	xy;bk ih;sr lh;mi il;aj	202
+寻常的	xy;bk ih;sr de;un	352
 寻常行处	xy;bk ih;sr xk;px iu;hy	302
 寻常重点	xy;bk ih;sr vs;ld dm;yd	117
 寻幽探	xy;bk yz;vi tj;uw	490
@@ -186631,7 +186619,7 @@ columns:
 小哥吧	xn;yx ge;zz ba;dm	288
 小哥大	xn;yx ge;zz da;md	223
 小哨	xn;yx uc;dy	466
-小哲	xn;yx ve;ut	7857
+小哲	xn;yx ve;ut	857
 小唐菜	xn;yx th;xb cd;ly	500
 小唾液腺	xn;yx to;dl ye;kz xm;vu	189
 小商品厅	xn;yx uh;im pb;dd tk;xa	144
@@ -189023,7 +189011,7 @@ columns:
 少关系	uc;yt gr;hm xi;ti	702
 少关节炎	uc;yt gr;hm jp;lz yj;cc	261
 少典之子	uc;yt dm;ih vi;ri zi;hi	346
-少写	uc;yt xp;wf	1285
+少写	uc;yt xp;wf	1014
 少写了	uc;yt xp;wf le;rl	567
 少出门的	uc;yt iu;sm mf;am de;un	378
 少划水	uc;yt hx;pp uv;ks	130
@@ -189623,7 +189611,6 @@ columns:
 尤利廷区	yz;oy li;xp tk;tg qu;nb	220
 尤善画	yz;oy uj;gh hx;fq	252
 尤夫股份	yz;oy fu;hf gu;vr ff;jh	464
-尤姨	yz;oy yi;bm	335
 尤尼乌斯	yz;oy ni;cv wu;xu si;zh	500
 尤庄村	yz;oy vl;xg cy;ek	229
 尤店乡	yz;oy dm;xy xl;ix	172
@@ -190101,7 +190088,7 @@ columns:
 就回南京	jq;gy hv;rd nj;nm jk;gy	225
 就回去的	jq;gy hv;rd qu;gk de;un	405
 就回吧	jq;gy hv;rd ba;dm	364
-就回复了	jq;gy hv;rd fu;eo le;rl	580
+就回复了	jq;gy hv;rd fu;eo le;rl	133
 就回复你	jq;gy hv;rd fu;eo ni;jx	270
 就回复我	jq;gy hv;rd fu;eo wo;tu	392
 就回家了	jq;gy hv;rd jx;wj le;rl	914
@@ -190225,6 +190212,7 @@ columns:
 就完了呢	jq;gy wj;wm le;rl ne;dc	279
 就完了嘛	jq;gy wj;wm le;rl ma;dz	164
 就完美了	jq;gy wj;wm mw;gm le;rl	1098
+就定	jq;gy dk;wt	1900
 就定下	jq;gy dk;wt xx;fy	860
 就定了	jq;gy dk;wt le;rl	932
 就定时	jq;gy dk;wt ui;ok	369
@@ -190345,6 +190333,7 @@ columns:
 就急了	jq;gy ji;xb le;rl	832
 就急眼	jq;gy ji;xb yj;qi	450
 就怪了	jq;gy gk;hr le;rl	702
+就恢复了	jq;gy hv;hn fu;eo le;rl	580
 就恨	jq;gy hf;hi	950
 就恼了	jq;gy nc;hz le;rl	426
 就恼火	jq;gy nc;hz ho;ch	454
@@ -191545,7 +191534,7 @@ columns:
 尼加拉河	ni;cv jx;sd la;ui he;kz	162
 尼可勒梅	ni;cv ke;zk le;ts mw;ee	284
 尼坤	ni;cv ky;go	702
-尼堪	ni;cv kj;gz	48611
+尼堪	ni;cv kj;gz	611
 尼尔松	ni;cv er;xy ss;eh	482
 尼尼微人	ni;cv ni;cv ww;wv rf;jr	256
 尼山	ni;cv uj;vs	850
@@ -192473,7 +192462,6 @@ columns:
 山东华瑞	uj;vs ds;ry hx;jv rv;nv	248
 山东博汇	uj;vs ds;ry bo;nn hv;kn	518
 山东博润	uj;vs ds;ry bo;nn ry;ka	189
-山东友谊	uj;vs ds;ry yz;nr yi;sw	261
 山东叛乱	uj;vs ds;ry pj;hu lr;aa	179
 山东后	uj;vs ds;ry hz;xf	468
 山东吧	uj;vs ds;ry ba;dm	230
@@ -192485,15 +192473,11 @@ columns:
 山东大道	uj;vs ds;ry da;md dc;ho	144
 山东天海	uj;vs ds;ry tm;fm hd;ke	144
 山东孔庙	uj;vs ds;ry ks;ha mn;xd	180
-山东学子	uj;vs ds;ry xt;kw zi;hi	230
 山东宁海	uj;vs ds;ry nk;wa hd;ke	274
 山东官员	uj;vs ds;ry gr;wk yr;do	252
 山东屯	uj;vs ds;ry ty;fs	252
 山东张	uj;vs ds;ry vh;bp	392
-山东总兵	uj;vs ds;ry zs;hd bk;th	234
 山东技师	uj;vs ds;ry ji;uc ui;pf	230
-山东政治	uj;vs ds;ry vg;fs vi;kk	202
-山东文艺	uj;vs ds;ry wf;vw yi;la	382
 山东时	uj;vs ds;ry ui;ok	399
 山东昌乐	uj;vs ds;ry ih;oo le;by	410
 山东村民	uj;vs ds;ry cy;ek mb;dm	171
@@ -192520,10 +192504,8 @@ columns:
 山东神光	uj;vs ds;ry uf;fo gl;mg	450
 山东秧歌	uj;vs ds;ry yh;xm ge;zz	144
 山东篮球	uj;vs ds;ry lj;rp qq;nf	130
-山东组织	uj;vs ds;ry zu;if vi;id	230
 山东细犬	uj;vs ds;ry xi;iq qr;mq	202
 山东胶南	uj;vs ds;ry jn;va nj;nm	234
-山东语言	uj;vs ds;ry yu;sw yj;sy	144
 山东路南	uj;vs ds;ry lu;ps nj;nm	387
 山东路店	uj;vs ds;ry lu;ps dm;xy	328
 山东轻工	uj;vs ds;ry qk;yr gs;ug	351
@@ -192613,8 +192595,6 @@ columns:
 山县武光	uj;vs xm;fk wu;fp gl;mg	171
 山参	uj;vs uf;km	180
 山叔	uj;vs uu;yf	108
-山口县岩	uj;vs kz;dk xm;fk yj;vm	441
-山口县第	uj;vs kz;dk xm;fk di;rt	279
 山口岩	uj;vs kz;dk yj;vm	266
 山口教吉	uj;vs kz;dk jn;qh ji;gd	122
 山口教继	uj;vs kz;dk jn;qh ji;ip	266
@@ -193352,7 +193332,6 @@ columns:
 岐江河	qi;vc jl;ku he;kz	243
 岐阳王	qi;vc yh;to wh;nw	292
 岑叔	cf;vj uu;yf	338
-岑姨	cf;vj yi;bm	360
 岑子	cf;vj zi;hi	603
 岑小林	cf;vj xn;yx lb;ee	515
 岑山	cf;vj uj;vs	526
@@ -193697,7 +193676,6 @@ columns:
 岳城水库	yt;tf ig;gn uv;ks ku;xy	338
 岳壁乡	yt;tf bi;cd xl;ix	175
 岳姐	yt;tf jp;bf	421
-岳姨	yt;tf yi;bm	792
 岳宗泰岱	yt;tf zs;wf td;ai dd;jp	202
 岳家军在	yt;tf jx;wj jy;wy zd;ng	212
 岳家大院	yt;tf jx;wj da;md yr;tw	117
@@ -193996,7 +193974,6 @@ columns:
 崔大笨	cv;vu da;md bf;re	212
 崔天琪	cv;vu tm;fm qi;nz	216
 崔姐	cv;vu jp;bf	428
-崔姨	cv;vu yi;bm	526
 崔娜	cv;vu na;ba	621
 崔安潜	cv;vu an;wb qm;kh	396
 崔家	cv;vu jx;wj	927
@@ -194401,7 +194378,6 @@ columns:
 州长助理	vz;oo vh;pc vu;fs li;nd	220
 州长时	vz;oo vh;pc ui;ok	405
 州际商务	vz;oo ji;tf uh;im wu;hs	315
-巡场的	xy;ou ih;ga de;un	374
 巡城	xy;ou ig;gn	706
 巡城御史	xy;ou ig;gn yu;wa ui;db	418
 巡夜人	xy;ou ye;zj rf;jr	320
@@ -194708,7 +194684,6 @@ columns:
 工薪税	gs;ug xb;li uv;xh	423
 工藤君	gs;ug tg;lv jy;bt	256
 工藤氏	gs;ug tg;lv ui;bs	288
-工藤真	gs;ug tg;lv vf;nq	378
 工藤遥	gs;ug tg;lv yc;ya	441
 工蚁队长	gs;ug yi;ci dv;tj vh;pc	212
 工行卡转	gs;ug hh;px ka;yf vr;ym	153
@@ -197934,7 +197909,6 @@ columns:
 巴音查干	ba;mb yb;xy ia;eo gj;eg	117
 巴音沟河	ba;mb yb;xy gz;kn he;kz	207
 巴音河	ba;mb yb;xy he;kz	291
-巴音浩日	ba;mb yb;xy hc;kq ri;or	180
 巴音淖尔	ba;mb yb;xy nc;ky er;xy	153
 巴音郭勒	ba;mb yb;xy go;gh le;ts	220
 巴音锡勒	ba;mb yb;xy xi;zo le;ts	153
@@ -198757,7 +198731,7 @@ columns:
 帅的吧	uk;pr de;un ba;dm	346
 帅的啦	uk;pr de;un la;du	288
 帅酷	uk;pr ku;yq	693
-帅锅	uk;pr go;zd	5000
+帅锅	uk;pr go;zd	1000
 帅颜保	uk;pr yj;ix bc;jd	270
 帆布桶	fj;ro bu;nr ts;ek	117
 帆布画	fj;ro bu;nr hx;fq	234
@@ -199855,7 +199829,6 @@ columns:
 常备武器	ih;sr bw;hq wu;fp qi;dd	220
 常外	ih;sr wd;ly	578
 常姐	ih;sr jp;bf	468
-常姨	ih;sr yi;bm	148
 常嫂	ih;sr sc;bp	130
 常存	ih;sr cy;ng	652
 常宁二中	ih;sr nk;wa er;me vs;dg	130
@@ -199981,7 +199954,6 @@ columns:
 常温时	ih;sr wf;ko ui;ok	396
 常满	ih;sr mj;kl	1611
 常点	ih;sr dm;yd	1132
-常熟人	ih;sr uz;gh rf;jr	170
 常熟历史	ih;sr uu;gh li;xs ui;db	153
 常熟哪里	ih;sr uu;gh na;da li;dl	202
 常熟支行	ih;sr uu;gh vi;ci hh;px	266
@@ -202716,7 +202688,6 @@ columns:
 庄头北	vl;xg tz;wm bw;av	288
 庄奴	vl;xg nu;br	922
 庄妮	vl;xg ni;bc	108
-庄姨	vl;xg yi;bm	194
 庄嫂	vl;xg sc;bp	171
 庄子吧	vl;xg zi;hi ba;dm	234
 庄子妻死	vl;xg zi;hi qi;fb si;gv	153
@@ -204091,7 +204062,6 @@ columns:
 康妇特栓	kh;xb fu;bb te;qg ur;ej	162
 康妈妈	kh;xb ma;bn ma;bn	472
 康姐	kh;xb jp;bf	423
-康姨	kh;xb yi;bm	276
 康威河	kh;xb ww;nf he;kz	171
 康婷	kh;xb tk;bg	549
 康宁克通	kh;xb nk;wa ke;cp ts;kt	266
@@ -204345,7 +204315,6 @@ columns:
 廖哥	ln;xz ge;zz	212
 廖士涵	ln;xz ui;gs hj;ka	342
 廖姐	ln;xz jp;bf	240
-廖姨	ln;xz yi;bm	896
 廖娟	ln;xz jr;bd	126
 廖学广	ln;xz xt;kw gl;xg	414
 廖宇杰	ln;xz yu;wf jp;ec	157
@@ -206006,7 +205975,7 @@ columns:
 异源性	yi;vl yr;kx xk;hl	135
 异炔诺酮	yi;vl qt;cn no;sl ts;ym	207
 异烟酸	yi;vl yj;cr sr;yk	266
-异熟识	yi;vl uz;gh ui;sd	2274
+异熟识	yi;vl uu;gh ui;sd	290
 异燕麦	yi;vl yj;ld md;ah	328
 异父同母	yi;vl fu;hb ts;mf mu;km	266
 异牟寻	yi;vl mz;kq xy;bk	508
@@ -208475,7 +208444,6 @@ columns:
 彭埠立交	pg;he bu;gt li;il jn;ab	324
 彭埠站	pg;he bu;gt vj;iy	364
 彭墩	pg;he dy;gg	230
-彭姨	pg;he yi;bm	626
 彭子晴	pg;he zi;hi qk;oa	288
 彭宠	pg;he is;wt	500
 彭客网	pg;he ke;ws wh;mb	180
@@ -211127,7 +211095,7 @@ columns:
 很熟稔	hf;wi uu;gh rf;xj	423
 很熟练	hf;wi uu;gh lm;ir	954
 很熟络	hf;wi uu;gh lo;is	518
-很熟识	hf;wi uz;gh ui;sd	484
+很熟识	hf;wi uu;gh ui;sd	410
 很燃	hf;wi rj;cv	603
 很燃但	hf;wi rj;cv dj;jo	482
 很燃很	hf;wi rj;cv hf;wi	423
@@ -212579,7 +212547,7 @@ columns:
 得紧	de;wo jb;pr	1300
 得紧了	de;wo jb;pr le;rl	566
 得紧啊	de;wo jb;pr aa;dt	392
-得给	de;wo gw;ij	1480
+得给	de;wo gw;ij	1576
 得罪人了	de;wo zv;yr rf;jr le;rl	594
 得罪他了	de;wo zv;yr ta;je le;rl	508
 得罪你了	de;wo zv;yr ni;jx le;rl	626
@@ -214559,7 +214527,7 @@ columns:
 忘得很快	wh;fh de;wo hf;wi kk;hn	328
 忘忧岛	wh;fh yz;ho dc;xv	252
 忘忧果	wh;fh yz;ho go;qe	477
-忘忧清乐	wh;fh yz;ho qk;ka le;by	248
+忘忧清乐	wh;fh yz;ho qk;ka yt;by	248
 忘忧石	wh;fh yz;ho ui;ms	175
 忘忧萱草	wh;fh yz;ho xr;lw cc;lo	130
 忘怀了	wh;fh hk;hc le;rl	361
@@ -217394,7 +217362,7 @@ columns:
 总类	zs;hd lw;pm	720
 总纠结	zs;hd jq;ii jp;ig	400
 总线争用	zs;hd xm;if vg;xb ys;ty	130
-总经	zs;hd jk;ir	1980
+总经	zs;hd jk;ir	1834
 总经理部	zs;hd jk;ir li;nd bu;id	513
 总结一下	zs;hd jp;ig yi;fi xx;fy	1444
 总结上报	zs;hd jp;ig uh;yf bc;uz	238
@@ -219717,7 +219685,7 @@ columns:
 想欺负我	xl;eq qi;zh fu;xo wo;tu	482
 想此处	xl;eq ci;sv iu;hy	338
 想此时	xl;eq ci;sv ui;ok	554
-想歪	xl;eq wd;cf	6029
+想歪	xl;eq wd;cf	1029
 想死了吧	xl;eq si;gv le;rl ba;dm	189
 想死呢	xl;eq si;gv ne;dc	441
 想死的	xl;eq si;gv de;un	954
@@ -220013,7 +219981,7 @@ columns:
 惹事了	re;ln ui;fd le;rl	585
 惹他了	re;ln ta;je le;rl	477
 惹你了	re;ln ni;jx le;rl	724
-惹兰勿刹	re;ln lj;ht wu;ne ua;be	333
+惹兰勿刹	re;ln lj;ht wu;ne ia;be	333
 惹出了	re;ln iu;sm le;rl	558
 惹到了	re;ln dc;yp le;rl	706
 惹到你	re;ln dc;yp ni;jx	554
@@ -220988,7 +220956,6 @@ columns:
 懂点的	ds;hl dm;yd de;un	513
 懂球	ds;hl qq;nf	487
 懂的不多	ds;hl de;un bu;cb do;ll	567
-懂的了	ds;hl de;un le;rl	522
 懂的啊	ds;hl de;un aa;dt	450
 懂的太少	ds;hl de;un td;mi uc;yt	396
 懂的我	ds;hl de;un wo;tu	433
@@ -221455,7 +221422,6 @@ columns:
 成套电器	ig;na tc;mp dm;oa qi;dd	224
 成好多	ig;na hc;bh do;ll	567
 成好的	ig;na hc;bh de;un	900
-成姨	ig;na yi;bm	182
 成婚了	ig;na hy;bb le;rl	688
 成婚吧	ig;na hy;bb ba;dm	320
 成婚时	ig;na hy;bb ui;ok	508
@@ -221532,7 +221498,7 @@ columns:
 成忠郎	ig;na vs;dg lh;ii	279
 成恭皇后	ig;na gs;lh hl;un hz;xf	189
 成悲剧	ig;na bw;rh ju;cc	734
-成想	ig;na xl;eq	602
+成想	ig;na xl;eq	384
 成成中学	ig;na ig;na vs;dg xt;kw	374
 成扇	ig;na uj;mz	908
 成手	ig;na uz;us	7407
@@ -221614,7 +221580,6 @@ columns:
 成熟女	ig;na uu;gh nv;bn	891
 成熟女人	ig;na uu;gh nv;bn rf;jr	742
 成熟女性	ig;na uu;gh nv;bn xk;hl	738
-成熟很	ig;na uz;gh hf;wi	120
 成熟性	ig;na uu;gh xk;hl	528
 成熟技术	ig;na uu;gh ji;uc uu;ei	273
 成熟激素	ig;na uu;gh ji;ku su;ai	288
@@ -225683,7 +225648,6 @@ columns:
 我凯旋	wo;tu kd;vv xr;le	320
 我凳子	wo;tu dg;hz zi;hi	364
 我出丑	wo;tu iu;sm iz;ag	464
-我出世	wo;tu iu;sm ui;la	214
 我出个	wo;tu iu;sm ge;jg	711
 我出了	wo;tu iu;sm le;rl	904
 我出事	wo;tu iu;sm ui;fd	634
@@ -233485,7 +233449,7 @@ columns:
 我早死	wo;tu zc;on si;gv	405
 我早没	wo;tu zc;on mw;kr	297
 我早点	wo;tu zc;on dm;yd	936
-我早熟	wo;tu zc;on uz;gh	588
+我早熟	wo;tu zc;on uu;gh	378
 我早生	wo;tu zc;on ug;ls	450
 我早看	wo;tu zc;on kj;uq	513
 我早睡	wo;tu zc;on uv;ql	482
@@ -234915,6 +234879,7 @@ columns:
 我没这	wo;tu mw;kr ve;vu	770
 我没进	wo;tu mw;kr jb;qu	262
 我没追	wo;tu mw;kr vv;tk	436
+我没退	wo;tu mw;kr tv;iu	155
 我没送	wo;tu mw;kr ss;hm	333
 我没逗你	wo;tu mw;kr dz;zu ni;jx	180
 我没那	wo;tu mw;kr na;au	945
@@ -235356,9 +235321,8 @@ columns:
 我熟悉	wo;tu uu;gh xi;tp	918
 我熟的	wo;tu uu;gh de;un	428
 我熟睡	wo;tu uu;gh uv;ql	400
-我熟知	wo;tu uz;gh vi;od	686
+我熟知	wo;tu uu;gh vi;od	459
 我熟练	wo;tu uu;gh lm;ir	540
-我熟识	wo;tu uz;gh ui;sd	242
 我熬了	wo;tu ao;ap le;rl	558
 我熬夜	wo;tu ao;ap ye;zj	652
 我熬点	wo;tu ao;ap dm;yd	202
@@ -238399,6 +238363,7 @@ columns:
 我要能	wo;tu yc;vb ng;kv	540
 我要脱	wo;tu yc;vb to;vh	477
 我要脸	wo;tu yc;vb lm;vj	315
+我要补	wo;tu yc;vb bu;ty	121
 我要被	wo;tu yc;vb bw;tr	702
 我要装	wo;tu yc;vb vl;ag	594
 我要见	wo;tu yc;vb jm;ej	824
@@ -239701,7 +239666,7 @@ columns:
 我还放	wo;tu hd;cu fh;lh	490
 我还敢	wo;tu hd;cu gj;aq	580
 我还早	wo;tu hd;cu zc;on	464
-我还是得	wo;tu hd;cu ui;ot de;wo	293
+我还是得	wo;tu hd;cu ui;ot dw;wo	293
 我还是的	wo;tu hd;cu ui;ot de;un	747
 我还是说	wo;tu hd;cu ui;ot uo;sh	742
 我还晓得	wo;tu hd;cu xn;op de;wo	153
@@ -240668,7 +240633,7 @@ columns:
 我长发	wo;tu ih;pc fa;sr	648
 我长叹	wo;tu ih;pc tj;dr	369
 我长大	wo;tu vh;pc da;md	1102
-我长姐	wo;tu ih;pc jp;bf	356
+我长姐	wo;tu vh;pc jp;bf	356
 我长安	wo;tu ih;pc an;wb	243
 我长年	wo;tu ih;pc nm;ev	376
 我长得	wo;tu vh;pc de;wo	1080
@@ -242286,7 +242251,6 @@ columns:
 所灵场	so;mt lk;bc ih;ga	432
 所点	so;mt dm;yd	796
 所熟悉	so;mt uu;gh xi;tp	1030
-所熟知	so;mt uz;gh vi;od	290
 所爱吧	so;mt ai;yw ba;dm	594
 所献	so;mt xm;nm	554
 所生之处	so;mt ug;ls vi;ri iu;hy	238
@@ -245023,7 +244987,7 @@ columns:
 找回族	vc;up hv;rd zu;le	392
 找图	vc;up tu;rh	754
 找图了	vc;up tu;rh le;rl	436
-找地	vc;up di;ge	1811
+找地	vc;up di;ge	1557
 找地方吧	vc;up di;ge fh;lf ba;dm	302
 找地铁	vc;up di;ge tp;zt	580
 找坡	vc;up po;gr	428
@@ -253180,7 +253144,7 @@ columns:
 投石巨魔	tz;ur ui;ms ju;nn mo;za	144
 投石索	tz;ur ui;ms so;nw	405
 投石绳	tz;ur ui;ms ug;id	130
-投研	tz;ur yj;mf	2487
+投研	tz;ur yj;mf	1765
 投票了	tz;ur pn;vf le;rl	716
 投票啊	tz;ur pn;vf aa;dt	495
 投票席位	tz;ur pn;vf xi;xl ww;ji	144
@@ -255275,7 +255239,6 @@ columns:
 拎到了	lb;uj dc;yp le;rl	242
 拎包就住	lb;uj bc;nv jq;gy vu;ji	180
 拎回了	lb;uj hv;rd le;rl	423
-拎的清	lb;uj de;un qk;ka	310
 拎菜	lb;uj cd;ly	436
 拎走了	lb;uj zz;pz le;rl	414
 拎进了	lb;uj jb;qu le;rl	266
@@ -255809,7 +255772,7 @@ columns:
 拟赋范	ni;uv fu;of fj;lk	144
 拟距离	ni;uv ju;pn li;zb	138
 拟迷孔菌	ni;uv mi;pu ks;ha jy;lr	171
-拟邀	ni;uv yc;ul	98502
+拟邀	ni;uv yc;ul	8502
 拟金粉蕨	ni;uv jb;zj ff;ph jt;lx	144
 拟银杏	ni;uv yb;zi xk;ed	234
 拟锁瑚菌	ni;uv so;zy hu;nc jy;lr	252
@@ -256243,6 +256206,7 @@ columns:
 拿掉了	na;jd dn;uy le;rl	760
 拿掉吧	na;jd dn;uy ba;dm	320
 拿支票	na;jd vi;ci pn;vf	374
+拿本	na;jd bf;ef	511
 拿本本	na;jd bf;ef bf;ef	324
 拿来吹的	na;jd ld;ah iv;de de;un	194
 拿来就	na;jd ld;ah jq;gy	958
@@ -257084,7 +257048,6 @@ columns:
 按导向	an;uw dc;vk xl;tm	562
 按导演	an;uw dc;vk yj;kw	364
 按导航	an;uw dc;vk hh;iz	382
-按小右记	an;uw xn;yx yz;nd ji;sv	162
 按小学	an;uw xn;yx xt;kw	387
 按小组	an;uw xn;yx zu;if	342
 按小说	an;uw xn;yx uo;sh	410
@@ -258981,7 +258944,7 @@ columns:
 捣乱吧	dc;ux lr;aa ba;dm	279
 捣毁了	dc;ux hv;pu le;rl	702
 捣汁	dc;ux vi;kn	381
-捣泥	dc;ux ni;kc	13120
+捣泥	dc;ux ni;kc	220
 捣浆糊了	dc;ux jl;al hu;pc le;rl	230
 捣浆糊的	dc;ux jl;al hu;pc de;un	369
 捣碎了	dc;ux sv;mz le;rl	518
@@ -261466,7 +261429,7 @@ columns:
 摄动法	ue;uq ds;bs fa;kg	248
 摄动理论	ue;uq ds;bs li;nd ly;sj	346
 摄协	ue;uq xp;ns	223
-摄友	ue;uq yz;nr	731
+摄友	ue;uq yz;nr	431
 摄受	ue;uq uz;yw	657
 摄合口	ue;uq he;jd kz;dk	436
 摄善法戒	ue;uq uj;gh fa;kg jp;pl	220
@@ -262127,6 +262090,7 @@ columns:
 撞击面	vl;ui ji;um mm;bm	238
 撞到了	vl;ui dc;yp le;rl	1313
 撞到你	vl;ui dc;yp ni;jx	590
+撞到哪里	vl;ui dc;yp na;da li;dl	112
 撞到正	vl;ui dc;yp vg;fs	400
 撞向了	vl;ui xl;tm le;rl	621
 撞在了	vl;ui zd;ng le;rl	873
@@ -265359,7 +265323,6 @@ columns:
 文始真经	wf;vw ui;bk vf;nq jk;ir	171
 文姐	wf;vw jp;bf	889
 文委	wf;vw ww;xb	353
-文姨	wf;vw yi;bm	186
 文婷婷	wf;vw tk;bg tk;bg	225
 文字专题	wf;vw zi;wh vr;ma ti;ot	117
 文字了	wf;vw zi;wh le;rl	752
@@ -266050,6 +266013,7 @@ columns:
 斜棱柱	xp;jx lg;eg vu;ei	248
 斜歪	xp;jx wd;cf	396
 斜河涧	xp;jx he;kz jm;ka	238
+斜流	xp;jx lq;kb	594
 斜激波	xp;jx ji;ku bo;kr	328
 斜着写	xp;jx ve;gq xp;wf	266
 斜睨了	xp;jx ni;qp le;rl	555
@@ -266656,6 +266620,7 @@ columns:
 新典	xb;ie dm;ih	186
 新典路	xb;ie dm;ih lu;ps	202
 新写	xb;ie xp;wf	263
+新写的	xb;ie xp;wf de;un	236
 新军营	xb;ie jy;wy yk;lw	482
 新农合办	xb;ie ns;wt he;jd bj;sh	328
 新农场	xb;ie ns;wt ih;ga	396
@@ -267843,6 +267808,7 @@ columns:
 新线电影	xb;ie xm;if dm;oa yk;og	256
 新练习	xb;ie lm;ir xi;zx	454
 新组	xb;ie zu;if	1264
+新组件	xb;ie zu;if jm;jq	182
 新绛文庙	xb;ie jl;ih wf;vw mn;xd	117
 新维生素	xb;ie ww;iu ug;ls su;ai	234
 新绿溅溅	xb;ie lv;ib jm;ko jm;ko	130
@@ -272087,7 +272053,7 @@ columns:
 昌盛西街	ih;oo ug;na xi;vx jp;pg	225
 昌盛路号	ih;oo ug;na lu;ps hc;df	162
 昌盛集团	ih;oo ug;na ji;ue tr;rn	130
-昌硕	ih;oo uo;mw	12251
+昌硕	ih;oo uo;mw	251
 昌硕科技	ih;oo uo;mw ke;xj ji;uc	256
 昌福线	ih;oo fu;ff xm;if	320
 昌福铁路	ih;oo fu;ff tp;zt lu;ps	423
@@ -274186,7 +274152,7 @@ columns:
 是哈尔滨	ui;ot ha;dj er;xy bb;kw	932
 是哈市	ui;ot ha;dj ui;zr	428
 是哈市的	ui;ot ha;dj ui;zr de;un	194
-是哩	ui;ot li;dd	6166
+是哩	ui;ot li;dd	1166
 是哪一家	ui;ot na;da yi;fi jx;wj	778
 是哪一期	ui;ot na;da yi;fi qi;zh	423
 是哪一部	ui;ot na;da yi;fi bu;id	918
@@ -274925,7 +274891,7 @@ columns:
 是画家	ui;ot hx;fq jx;wj	860
 是留学	ui;ot lq;bq xt;kw	1035
 是病啊	ui;ot bk;af aa;dt	477
-是病得治	ui;ot bk;af de;wo vi;kk	680
+是病得治	ui;ot bk;af dw;wo vi;kk	680
 是瘦肉	ui;ot uz;ap rz;mj	824
 是登封	ui;ot dg;hz fg;gg	306
 是白羊	ui;ot bd;ub yh;gy	824
@@ -275896,7 +275862,6 @@ columns:
 晚点了	wj;ow dm;yd le;rl	783
 晚点再打	wj;ow dm;yd zd;fm da;ua	279
 晚点吧	wj;ow dm;yd ba;dm	369
-晚熟期	wj;ow uz;gh qi;zh	169
 晚熟的	wj;ow uu;gh de;un	513
 晚的了	wj;ow de;un le;rl	509
 晚的吧	wj;ow de;un ba;dm	144
@@ -275948,6 +275913,7 @@ columns:
 晦气了	hv;oe qi;vq le;rl	388
 晦气吧	hv;oe qi;vq ba;dm	220
 晦涩吧	hv;oe se;kp ba;dm	163
+晦涩的	hv;oe se;kp de;un	301
 晦聪禅师	hv;oe cs;qh ij;fh ui;pf	194
 晦魄环照	hv;oe po;ua hr;nc vc;op	162
 晨光化工	if;of gl;mg hx;jv gs;ug	270
@@ -277402,7 +277368,7 @@ columns:
 曲了拐弯	qu;yq le;rl gk;ud wj;zc	292
 曲云	qu;yq yy;by	5616
 曲云霞	qu;yq yy;by xx;tc	297
-曲亭	qu;yq tk;ga	9363
+曲亭	qu;yq tk;ga	363
 曲亭水库	qu;yq tk;ga uv;ks ku;xy	153
 曲什安河	qu;yq ui;jn an;wb he;kz	144
 曲伸	qu;yq uf;jo	150
@@ -278183,7 +278149,6 @@ columns:
 曾司长	zg;hr si;af vh;pc	130
 曾同时	cg;hr ts;mf ui;ok	567
 曾大爷	zg;hr da;md ye;hb	207
-曾姨	cg;hr yi;bm	1256
 曾子固	zg;hr zi;hi gu;rc	266
 曾子有疾	zg;hr zi;hi yz;nv ji;ao	130
 曾孙了	zg;hr sy;hy le;rl	292
@@ -279802,7 +279767,6 @@ columns:
 有妹子没	yz;nv mw;ba zi;hi mw;kr	207
 有妻	yz;nv qi;fb	147
 有姐	yz;nv jp;bf	196
-有姨	yz;nv yi;bm	141
 有娃	yz;nv wa;bg	609
 有娃了	yz;nv wa;bg le;rl	513
 有娃儿	yz;nv wa;bg er;pe	810
@@ -280994,6 +280958,7 @@ columns:
 有补格	yz;nv bu;ty ge;es	180
 有补课	yz;nv bu;ty ke;sq	338
 有补贴吗	yz;nv bu;ty tp;oy ma;dn	279
+有表	yz;nv bn;at	123
 有表哥	yz;nv bn;at ge;zz	464
 有袋	yz;nv dd;jp	371
 有被冒犯	yz;nv bw;tr mc;oq fj;mz	468
@@ -282366,6 +282331,7 @@ columns:
 未成线	ww;aw ig;na xm;if	414
 未扪及	ww;aw mf;ua ji;cj	212
 未批	ww;aw pi;uv	846
+未承想	ww;aw ig;ak xl;eq	152
 未指明的	ww;aw vi;uv mk;ov de;un	342
 未损	ww;aw sy;ud	734
 未换牙	ww;aw hr;ux ya;ly	159
@@ -283153,7 +283119,6 @@ columns:
 朱夫子	vu;ta fu;hf zi;hi	364
 朱姐	vu;ta jp;bf	140
 朱姓家族	vu;ta xk;bl jx;wj zu;le	117
-朱姨	vu;ta yi;bm	118
 朱婷	vu;ta tk;bg	1233
 朱嫂	vu;ta sc;bp	328
 朱子之	vu;ta zi;hi vi;ri	357
@@ -285396,7 +285361,7 @@ columns:
 来咱家	ld;ah zj;do jx;wj	590
 来咸宁	ld;ah xm;nf nk;wa	266
 来咸阳	ld;ah xm;nf yh;to	392
-来哈	ld;ah ha;dj	1174
+来哈	ld;ah ha;dj	1127
 来哈密	ld;ah ha;dj mi;wh	288
 来哈尔滨	ld;ah ha;dj er;xy bb;kw	698
 来哈市	ld;ah ha;dj ui;zr	338
@@ -285851,7 +285816,7 @@ columns:
 来拿吧	ld;ah na;jd ba;dm	522
 来挂了	ld;ah gx;ug le;rl	450
 来挖我	ld;ah wa;ue wo;tu	378
-来换	ld;ah hr;ux	1127
+来换	ld;ah hr;ux	1174
 来换了	ld;ah hr;ux le;rl	945
 来换吧	ld;ah hr;ux ba;dm	333
 来捣鼓	ld;ah dc;ux gu;hc	374
@@ -287904,7 +287869,7 @@ columns:
 极为艰苦	ji;ec ww;is jm;ri ku;lc	477
 极为认真	ji;ec ww;is rf;sj vf;nq	558
 极为难看	ji;ec ww;is nj;ru kj;uq	536
-极乐刹土	ji;ec le;by ua;be tu;gt	162
+极乐刹土	ji;ec le;by ia;be tu;gt	162
 极乐天使	ji;ec le;by tm;fm ui;jf	213
 极乐天师	ji;ec le;by tm;fm ui;pf	396
 极乐法会	ji;ec le;by fa;kg hv;jb	153
@@ -289144,7 +289109,6 @@ columns:
 柏壁之战	bd;eu bi;cd vi;ri vj;yd	243
 柏天尼	bd;eu tm;fm ni;cv	387
 柏姐	bd;eu jp;bf	629
-柏姨	bd;eu yi;bm	371
 柏子养心	bd;eu zi;hi yh;gi xb;hx	441
 柏宁队	bd;eu nk;wa dv;tj	212
 柏安卡格	bd;eu an;wb ka;yf ge;es	162
@@ -291949,7 +291913,6 @@ columns:
 梁墙	ll;kp ql;gg	266
 梁大同	ll;kp da;md ts;mf	441
 梁姐	ll;kp jp;bf	389
-梁姨	ll;kp yi;bm	190
 梁嫂	ll;kp sc;bp	224
 梁子村	ll;kp zi;hi cy;ek	219
 梁子湖畔	ll;kp zi;hi hu;kc pj;qh	153
@@ -297231,7 +297194,6 @@ columns:
 段内部	dr;uf nw;mj bu;id	414
 段哥	dr;uf ge;zz	752
 段姐	dr;uf jp;bf	113
-段姨	dr;uf yi;bm	164
 段子啊	dr;uf zi;hi aa;dt	522
 段宝岩	dr;uf bc;wn yj;vm	248
 段家	dr;uf jx;wj	986
@@ -298428,7 +298390,6 @@ columns:
 毛头牛蒡	mc;vm tz;wm nq;qn bh;li	130
 毛女啊	mc;vm nv;bn aa;dt	477
 毛姐	mc;vm jp;bf	178
-毛姨	mc;vm yi;bm	214
 毛娃娃	mc;vm wa;bg wa;bg	346
 毛嫱丽姬	mc;vm ql;bg li;fv ji;bq	212
 毛孟静	mc;vm mg;ha jk;av	562
@@ -300997,7 +300958,7 @@ columns:
 水石衣	uv;ks ui;ms yi;ti	122
 水石项链	uv;ks ui;ms xl;uw lm;zy	153
 水砷锌矿	uv;ks uf;mo xb;zn kl;mx	189
-水硕	uv;ks uo;mw	8203
+水硕	uv;ks uo;mw	203
 水碗	uv;ks wj;mw	206
 水碘含量	uv;ks dm;mi hj;ja ll;of	144
 水碱石	uv;ks jm;mn ui;ms	153
@@ -302755,7 +302716,6 @@ columns:
 江头建材	jl;ku tz;wm jm;bu cd;en	225
 江头西路	jl;ku tz;wm xi;vx lu;ps	117
 江如练	jl;ku ru;bd lm;ir	202
-江姨	jl;ku yi;bm	382
 江娥啼竹	jl;ku ee;bt ti;di vu;ru	162
 江嫂	jl;ku sc;bp	419
 江子	jl;ku zi;hi	116
@@ -303363,7 +303323,6 @@ columns:
 汤姆斯基	th;ka mu;bk si;zh ji;zh	144
 汤姆索亚	th;ka mu;bk so;nw ya;fc	662
 汤姐	th;ka jp;bf	420
-汤姨	th;ka yi;bm	105
 汤子星	th;ka zi;hi xk;ol	126
 汤守仁	th;ka uz;wk rf;jm	320
 汤宝珍	th;ka bc;wn vf;nj	333
@@ -304289,7 +304248,6 @@ columns:
 沙姆谢尔	ua;ky mu;bk xp;sz er;xy	189
 沙姆阵线	ua;ky mu;bk vf;ty xm;if	378
 沙姐	ua;ky jp;bf	873
-沙姨	ua;ky yi;bm	318
 沙子上	ua;ky zi;hi uh;yf	576
 沙子口东	ua;ky zi;hi kz;dk ds;ry	144
 沙子口的	ua;ky zi;hi kz;dk de;un	266
@@ -306421,7 +306379,7 @@ columns:
 没成亲	mw;kr ig;na qb;ie	585
 没成型	mw;kr ig;na xk;fl	536
 没成婚	mw;kr ig;na hy;bb	423
-没成想	mw;kr ig;na xl;eq	694
+没成想	mw;kr ig;na xl;eq	522
 没成效	mw;kr ig;na xn;ab	374
 没成本	mw;kr ig;na bf;ef	918
 没成立	mw;kr ig;na li;il	477
@@ -307182,7 +307140,7 @@ columns:
 没有歌	mw;kr yz;nv ge;zz	692
 没有武	mw;kr yz;nv wu;fp	654
 没有歪	mw;kr yz;nv wd;cf	486
-没有毒	mw;kr yz;nv du;ak	400
+没有毒	mw;kr yz;nv du;ak	1600
 没有比	mw;kr yz;nv bi;vv	1413
 没有比较	mw;kr yz;nv bi;vv jn;ya	1102
 没有毛	mw;kr yz;nv mc;vm	927
@@ -313910,7 +313868,7 @@ columns:
 浦口实小	pu;kn kz;dk ui;ww xn;yx	117
 浦口的	pu;kn kz;dk de;un	490
 浦口道	pu;kn kz;dk dc;ho	338
-浦和	pu;kn he;xd	1076
+浦和	pu;kn he;xd	1017
 浦哥	pu;kn ge;zz	810
 浦埃弗顿	pu;kn ai;gk fu;tf dy;fs	472
 浦城小区	pu;kn ig;gn xn;yx qu;nb	212
@@ -314580,7 +314538,6 @@ columns:
 海妖壳甲	hd;ke yc;bt ke;gw jx;sj	288
 海妖外壳	hd;ke yc;bt wd;ly ke;gw	130
 海姐	hd;ke jp;bf	1026
-海姨	hd;ke yi;bm	1191
 海威尔	hd;ke ww;nf er;xy	369
 海威科技	hd;ke ww;nf ke;xj ji;uc	207
 海娜号	hd;ke na;ba hc;df	536
@@ -314625,7 +314582,7 @@ columns:
 海尚国际	hd;ke uh;ss go;rn ji;tf	351
 海尚帆友	hd;ke uh;ss fj;ro yz;nr	220
 海尚杰座	hd;ke uh;ss jp;ec zo;xj	130
-海居	hd;ke ju;cc	1413
+海居	hd;ke ju;cc	1206
 海屯路	hd;ke ty;fs lu;ps	279
 海山二	hd;ke uj;vs er;me	477
 海山仙馆	hd;ke uj;vs xm;jv gr;qw	302
@@ -316451,7 +316408,7 @@ columns:
 淮阴故城	hk;ku yb;tv gu;ch ig;gn	130
 淮阴的	hk;ku yb;tv de;un	310
 深不下去	uf;kw bu;cb xx;fy qu;gk	171
-深业	uf;kw ye;cy	10541
+深业	uf;kw ye;cy	541
 深业中心	uf;kw ye;cy vs;dg xb;hx	130
 深业花园	uf;kw ye;cy hx;lj yr;rm	117
 深了吧	uf;kw le;rl ba;dm	407
@@ -317047,7 +317004,7 @@ columns:
 清冷的	qk;ka lg;wj de;un	1112
 清净三业	qk;ka jk;wx sj;ts ye;cy	117
 清净了	qk;ka jk;wx le;rl	765
-清净刹土	qk;ka jk;wx ua;be tu;gt	130
+清净刹土	qk;ka jk;wx ia;be tu;gt	130
 清净吧	qk;ka jk;wx ba;dm	108
 清净啊	qk;ka jk;wx aa;dt	418
 清净园	qk;ka jk;wx yr;rm	333
@@ -317842,7 +317799,7 @@ columns:
 渗水井	uf;kk uv;ks jk;qj	175
 渗水系数	uf;kk uv;ks xi;ti uu;pb	194
 渗流水	uf;kk lq;kb uv;ks	153
-渗液	uf;kk ye;kz	11126
+渗液	uf;kk ye;kz	1126
 渗满了	uf;kk mj;kl le;rl	351
 渗漉法	uf;kk lu;kx fa;kg	162
 渗漏损失	uf;kk lz;kc sy;ud ui;th	153
@@ -318037,7 +317994,6 @@ columns:
 温奕哲	wf;ko yi;zc ve;ut	180
 温如言	wf;ko ru;bd yj;sy	616
 温妮	wf;ko ni;bc	257
-温姨	wf;ko yi;bm	129
 温婉型的	wf;ko wj;bw xk;fl de;un	171
 温存了	wf;ko cy;ng le;rl	410
 温宗仁	wf;ko zs;wf rf;jm	220
@@ -318515,7 +318471,6 @@ columns:
 游天涯	yz;kl tm;fm ya;kx	356
 游天龙	yz;kl tm;fm ls;tl	472
 游奕灵官	yz;kl yi;zc lk;bc gr;wk	252
-游姨	yz;kl yi;bm	109
 游子吧	yz;kl zi;hi ba;dm	152
 游子远	yz;kl zi;hi yr;mp	360
 游学时	yz;kl xt;kw ui;ok	428
@@ -318896,7 +318851,7 @@ columns:
 湖滨站	hu;kc bb;kw vj;iy	162
 湖滨西街	hu;kc bb;kw xi;vx jp;pg	270
 湖滩上	hu;kc tj;kr uh;yf	225
-湖熟	hu;kc uz;gh	924
+湖熟	hu;kc uu;gh	310
 湖畔佳苑	hu;kc pj;qh jx;jg yr;ll	274
 湖畔天城	hu;kc pj;qh tm;fm ig;gn	320
 湖畔宽邸	hu;kc pj;qh kr;wl di;bi	130
@@ -319987,7 +319942,6 @@ columns:
 满天风雪	mj;kl tm;fm fg;ob xt;tb	171
 满头乱发	mj;kl tz;wm lr;aa fa;sr	328
 满好额	mj;kl hc;bh ee;ws	454
-满姨	mj;kl yi;bm	565
 满宝馄饨	mj;kl bc;wn hy;qo ty;qf	162
 满客	mj;kl ke;ws	742
 满室生辉	mj;kl ui;wy ug;ls hv;mw	243
@@ -320738,7 +320692,6 @@ columns:
 潘天舒	pj;kt tm;fm uu;ja	234
 潘姐	pj;kt jp;bf	1048
 潘姓家族	pj;kt xk;bl jx;wj zu;le	130
-潘姨	pj;kt yi;bm	518
 潘婷吧	pj;kt tk;bg ba;dm	180
 潘子	pj;kt zi;hi	666
 潘存德堂	pj;kt cy;ng de;wn th;sg	162
@@ -321184,58 +321137,7 @@ columns:
 澳蜓	ao;kt tk;ct	100
 澳超	ao;kt ic;pp	666
 澳都橱柜	ao;kt dz;qo iu;ex gv;en	189
-澳门中央	ao;kt mf;am vs;dg yh;mm	288
-澳门中银	ao;kt mf;am vs;dg yb;zi	328
-澳门主题	ao;kt mf;am vu;in ti;ot	238
-澳门乡村	ao;kt mf;am xl;ix cy;ek	207
-澳门产业	ao;kt mf;am ij;ix ye;cy	220
-澳门会展	ao;kt mf;am hv;jb vj;cl	256
-澳门作家	ao;kt mf;am zo;jw jx;wj	207
-澳门八号	ao;kt mf;am ba;hb hc;df	117
-澳门公共	ao;kt mf;am gs;hk gs;lh	621
-澳门分行	ao;kt mf;am ff;hp hh;px	522
-澳门动物	ao;kt mf;am ds;bs wu;qn	130
-澳门医院	ao;kt mf;am yi;no yr;tw	220
-澳门台风	ao;kt mf;am td;kd fg;ob	130
-澳门司法	ao;kt mf;am si;af fa;kg	360
 澳门吧	ao;kt mf;am ba;dm	248
-澳门品牌	ao;kt mf;am pb;dd pd;au	306
-澳门地方	ao;kt mf;am di;ge fh;lf	306
-澳门填海	ao;kt mf;am tm;gn hd;ke	248
-澳门女性	ao;kt mf;am nv;bn xk;hl	212
-澳门导演	ao;kt mf;am dc;vk yj;kw	144
-澳门小吃	ao;kt mf;am xn;yx ii;de	356
-澳门展览	ao;kt mf;am vj;cl lj;pr	144
-澳门律师	ao;kt mf;am lv;wb ui;pf	292
-澳门总督	ao;kt mf;am zs;hd du;yf	598
-澳门手信	ao;kt mf;am uz;us xb;js	356
-澳门教堂	ao;kt mf;am jn;qh th;sg	144
-澳门文学	ao;kt mf;am wf;vw xt;kw	378
-澳门新城	ao;kt mf;am xb;ie ig;gn	266
-澳门景点	ao;kt mf;am jk;og dm;yd	162
-澳门条约	ao;kt mf;am tn;he yt;in	117
-澳门标志	ao;kt mf;am bn;ef vi;gh	202
-澳门气象	ao;kt mf;am qi;vq xl;wx	693
-澳门海事	ao;kt mf;am hd;ke ui;fd	297
-澳门港口	ao;kt mf;am gh;kl kz;dk	180
-澳门演员	ao;kt mf;am yj;kw yr;do	162
-澳门环境	ao;kt mf;am hr;nc jk;gx	220
-澳门电视	ao;kt mf;am dm;oa ui;fe	414
-澳门画家	ao;kt mf;am hx;fq jx;wj	171
-澳门的水	ao;kt mf;am de;un uv;ks	194
-澳门监狱	ao;kt mf;am jm;pr yu;ms	261
-澳门社会	ao;kt mf;am ue;fg hv;jb	572
-澳门科技	ao;kt mf;am ke;xj ji;uc	693
-澳门篮球	ao;kt mf;am lj;rp qq;nf	266
-澳门组合	ao;kt mf;am zu;if he;jd	144
-澳门维基	ao;kt mf;am ww;iu ji;zh	202
-澳门艺术	ao;kt mf;am yi;la uu;ei	495
-澳门证件	ao;kt mf;am vg;sf jm;jq	117
-澳门诗人	ao;kt mf;am ui;sg rf;jr	171
-澳门货币	ao;kt mf;am ho;jv bi;tr	212
-澳门金融	ao;kt mf;am jb;zj rs;nc	490
-澳门食品	ao;kt mf;am ui;qs pb;dd	225
-澳门餐厅	ao;kt mf;am cj;gr tk;xa	414
 澳雪国际	ao;kt xt;tb go;rn ji;tf	180
 澳鳕	ao;kt xt;wt	100
 澳龙	ao;kt ls;tl	729
@@ -322440,6 +322342,7 @@ columns:
 灼热了	vo;cn re;uk le;rl	382
 灼痛了	vo;cn ts;ak le;rl	328
 灼艾	vo;cn ai;lb	266
+灾前	zd;wc qm;hv	970
 灾区吧	zd;wc qu;nb ba;dm	236
 灾后生活	zd;wc hz;xf ug;ls ho;ka	171
 灾害医学	zd;wc hd;wa yi;no xt;kw	153
@@ -324044,6 +323947,7 @@ columns:
 烫一些	th;ka yi;fi xp;sv	351
 烫个纹理	th;ka ge;jg wf;iv li;nd	162
 烫了吧	th;ka le;rl ba;dm	428
+烫人	th;ka rf;jr	344
 烫伤了	th;ka uh;je le;rl	774
 烫伤药膏	th;ka uh;je yc;li gc;gv	333
 烫到了	th;ka dc;yp le;rl	729
@@ -325088,6 +324992,7 @@ columns:
 照顾啊	vc;op gu;xz aa;dt	508
 照顾娃	vc;op gu;xz wa;bg	360
 照顾时	vc;op gu;xz ui;ok	540
+照骂不误	vc;op ma;dd bu;cb wu;sd	180
 照骗吧	vc;op pm;nm ba;dm	179
 煨牛肉	ww;cq nq;qn rz;mj	544
 煮一杯	vu;qo yi;fi bw;ec	229
@@ -325421,7 +325326,6 @@ columns:
 熟人作案	uu;gh rf;jr zo;jw an;wb	562
 熟人吧	uu;gh rf;jr ba;dm	459
 熟人啊	uu;gh rf;jr aa;dt	486
-熟制	uz;gh vi;qr	1154
 熟化毛皮	uu;gh hx;jv mc;vm pi;rp	364
 熟口熟面	uu;gh kz;dk uu;gh mm;bm	243
 熟后	uz;gh hz;xf	1043
@@ -325429,7 +325333,6 @@ columns:
 熟大黄	uu;gh da;md hl;nh	230
 熟女未满	uu;gh nv;bn ww;aw mj;kl	225
 熟女系	uu;gh nv;bn xi;ti	432
-熟女网	uz;gh nv;bn wh;mb	170
 熟女风情	uu;gh nv;bn fg;ob qk;ha	152
 熟女魅力	uu;gh nv;bn mw;aa li;sl	220
 熟客吧	uu;gh ke;ws ba;dm	342
@@ -325469,7 +325372,7 @@ columns:
 熟睡的	uu;gh uv;ql de;un	1035
 熟知的	uu;gh vi;od de;un	1336
 熟石膏粉	uu;gh ui;ms gc;gv ff;ph	189
-熟稔了	uz;gh rf;xj le;rl	502
+熟稔了	uu;gh rf;xj le;rl	334
 熟筋	uz;gh jb;rv	500
 熟练了	uz;gh lm;ir le;rl	1010
 熟练于	uz;gh lm;ir yu;fn	606
@@ -325494,7 +325397,6 @@ columns:
 熟视不睹	uu;gh ui;fe bu;cb du;qq	252
 熟识了	uu;gh ui;sd le;rl	456
 熟词	uu;gh ci;sa	6085
-熟语料	uz;gh yu;sw ln;pj	760
 熟读了	uu;gh du;sn le;rl	693
 熟透了	uu;gh tz;xv le;rl	801
 熟透时	uu;gh tz;xv ui;ok	399
@@ -327087,7 +326989,6 @@ columns:
 牛奶醪糟	nq;qn nd;bv lc;yz zc;pf	288
 牛始埔路	nq;qn ui;bk pu;gn lu;ps	144
 牛姐	nq;qn jp;bf	940
-牛姨	nq;qn yi;bm	603
 牛嫂	nq;qn sc;bp	540
 牛子厚	nq;qn zi;hi hz;xo	310
 牛存节	nq;qn cy;ng jp;lz	297
@@ -328679,7 +328580,6 @@ columns:
 狗一样的	gz;mg yi;fi yh;eg de;un	720
 狗为什么	gz;mg ww;is uf;jn me;tk	688
 狗主	gz;mg vu;in	348
-狗了吧	gz;mg le;rl ba;dm	285
 狗仔队员	gz;mg zd;jh dv;tj yr;do	117
 狗儿的	gz;mg er;pe de;un	450
 狗到了	gz;mg dc;yp le;rl	513
@@ -329550,6 +329450,7 @@ columns:
 献丑了	xm;nm iz;ag le;rl	801
 献丑吧	xm;nm iz;ag ba;dm	207
 献为燔祭	xm;nm ww;is fj;ct ji;hf	220
+献予	xm;nm yu;iv	110
 献仙音	xm;nm xm;jv yb;xy	117
 献公	xm;nm gs;hk	468
 献出了	xm;nm iu;sm le;rl	494
@@ -332497,7 +332398,6 @@ columns:
 琴声和	qb;nn ug;gc he;xd	432
 琴头	qb;nn tz;wm	757
 琴姐	qb;nn jp;bf	1013
-琴姨	qb;nn yi;bm	134
 琴子	qb;nn zi;hi	668
 琴学	qb;nn xt;kw	255
 琴家	qb;nn jx;wj	1034
@@ -333179,7 +333079,6 @@ columns:
 甘城光辉	gj;zg ig;gn gl;mg hv;mw	297
 甘多野	gj;zg do;ll ye;di	410
 甘女士	gj;zg nv;bn ui;gs	580
-甘姨	gj;zg yi;bm	110
 甘子河	gj;zg zi;hi he;kz	279
 甘孜日报	gj;zg zi;hh ri;or bc;uz	162
 甘孜踢踏	gj;zg zi;hh ti;po ta;pk	207
@@ -333838,7 +333737,7 @@ columns:
 生机之水	ug;ls ji;eo vi;ri uv;ks	130
 生机了	ug;ls ji;eo le;rl	327
 生机吧	ug;ls ji;eo ba;dm	186
-生机的	ug;ls ji;eo de;un	936
+生机的	ug;ls ji;eo de;un	313
 生杜仲	ug;ls du;eg vs;jd	351
 生来了	ug;ls ld;ah le;rl	505
 生来彷徨	ug;ls ld;ah ph;wl hl;wu	504
@@ -334195,7 +334094,6 @@ columns:
 生龙骨	ug;ls ls;tl gu;fg	374
 用一个词	ys;ty yi;fi ge;jg ci;sa	868
 用一年	ys;ty yi;fi nm;ev	1035
-用一时	ys;ty yi;fi ui;ok	752
 用一阵	ys;ty yi;fi vf;ty	580
 用丁桂儿	ys;ty dk;ad gv;eg er;pe	306
 用万象	ys;ty wj;fp xl;wx	220
@@ -334441,6 +334339,7 @@ columns:
 用惊雷	ys;ty jk;hg lw;tq	364
 用意何为	ys;ty yi;xh he;jz ww;is	144
 用意吧	ys;ty yi;xh ba;dm	346
+用意是	ys;ty yi;xh ui;ot	282
 用意识	ys;ty yi;xh ui;sd	391
 用感叹号	ys;ty gj;nf tj;dr hc;df	531
 用成品	ys;ty ig;na pb;dd	504
@@ -337013,7 +336912,7 @@ columns:
 留法学生	lq;bq fa;kg xt;kw ug;ls	423
 留泗路	lq;bq si;ky lu;ps	194
 留波姆	lq;bq bo;kr mu;bk	270
-留港	lq;bq gh;kl	395
+留港	lq;bq gh;kl	895
 留澳	lq;bq ao;kt	567
 留点神	lq;bq dm;yd uf;fo	482
 留点给我	lq;bq dm;yd gw;ij wo;tu	270
@@ -341011,7 +340910,6 @@ columns:
 盖地	gd;ga di;ge	780
 盖均无贫	gd;ga jy;gn wu;du pb;hp	153
 盖好了的	gd;ga hc;bh le;rl de;un	194
-盖姨	gd;ga yi;bm	117
 盖娅战记	gd;ga ya;bf vj;yd ji;sv	248
 盖子吧	gd;ga zi;hi ba;dm	202
 盖孜河	gd;ga zi;hh he;kz	284
@@ -341384,7 +341282,7 @@ columns:
 盛泰	ug;na td;ai	582
 盛泰路	ug;na td;ai lu;ps	122
 盛泰道	ug;na td;ai dc;ho	277
-盛泽	ug;na ze;kr	1156
+盛泽	ug;na ze;kr	1124
 盛泽人	ug;na ze;kr rf;jr	220
 盛泽医院	ug;na ze;kr yi;no yr;tw	328
 盛泽广场	ug;na ze;kr gl;xg ih;ga	189
@@ -342374,9 +342272,8 @@ columns:
 相长干涉	xl;eq ih;pc gj;eg ue;ks	382
 相门	xl;eq mf;am	562
 相门站	xl;eq mf;am vj;iy	274
-相问	xl;eq wf;ad	4503
+相问	xl;eq wf;ad	503
 相间电压	xl;eq jm;ao dm;oa ya;xg	153
-相闻	xl;eq wf;aq	8913
 相隔久远	xl;eq ge;tn jq;xi yr;mp	238
 相隔了	xl;eq ge;tn le;rl	441
 相隔太	xl;eq ge;tn td;mi	580
@@ -343997,7 +343894,7 @@ columns:
 真滋润	vf;nq zi;kh ry;ka	310
 真滑稽	vf;nq hx;kf ji;xo	396
 真滤子	vf;nq lv;kz zi;hi	189
-真滴	vf;nq di;ki	1557
+真滴	vf;nq di;ki	106
 真滴不	vf;nq di;ki bu;cb	518
 真滴是	vf;nq di;ki ui;ot	536
 真漂亮了	vf;nq pn;kv ll;go le;rl	117
@@ -344685,7 +344582,6 @@ columns:
 着啥急呢	ve;gq ua;dj ji;xb ne;dc	171
 着地面	vc;gq di;ge mm;bm	940
 着墙壁	ve;gq ql;gg bi;cd	909
-着大眼睛	ve;gq da;md yj;qi jk;qa	842
 着大舌头	ve;gq da;md ue;as tz;wm	230
 着孤独	ve;gq gu;hy du;mc	684
 着实不易	vo;gq ui;ww bu;cb yi;on	688
@@ -344902,9 +344798,8 @@ columns:
 睡觉在	uv;ql jn;kw zd;ng	670
 睡觉头	uv;ql jn;kw tz;wm	495
 睡觉带	uv;ql jn;kw dd;lw	446
-睡觉得了	uv;ql jn;kw de;wo ln;rl	207
+睡觉得了	uv;ql jn;kw de;wo le;rl	207
 睡觉来	uv;ql jn;kw ld;ah	576
-睡觉的了	uv;ql jn;kw de;un le;rl	256
 睡觉的吧	uv;ql jn;kw de;un ba;dm	220
 睡觉累	uv;ql jn;kw lw;qi	284
 睡觉觉了	uv;ql jn;kw jn;kw le;rl	396
@@ -349393,7 +349288,6 @@ columns:
 祖堂山	zu;ff th;sg uj;vs	333
 祖堂集	zu;ff th;sg ji;ue	315
 祖大典	zu;ff da;md dm;ih	630
-祖姨	zu;ff yi;bm	160
 祖孝孙	zu;ff xn;qh sy;hy	212
 祖宅	zu;ff vd;wt	778
 祖安奴	zu;ff an;wb nu;br	270
@@ -352268,7 +352162,6 @@ columns:
 秦女休行	qb;ai nv;bn xq;je xk;px	180
 秦妇吟	qb;ai fu;bb yb;dj	387
 秦姐	qb;ai jp;bf	536
-秦姨	qb;ai yi;bm	149
 秦娥	qb;ai ee;bt	211
 秦子涵	qb;ai zi;hi hj;ka	115
 秦安的	qb;ai an;wb de;un	387
@@ -352783,7 +352676,6 @@ columns:
 程吕底亚	ig;xd lv;dd di;xb ya;fc	230
 程哥	ig;xd ge;zz	429
 程姐	ig;xd jp;bf	454
-程姨	ig;xd yi;bm	148
 程婴救孤	ig;xd yk;oo jq;fk gu;hy	387
 程婶	ig;xd uf;bw	130
 程安汽修	ig;xd an;wb qi;kv xq;jg	117
@@ -354026,7 +353918,6 @@ columns:
 窦广国	dz;en gl;xg go;rn	396
 窦庠	dz;en xl;xg	178
 窦德妃	dz;en de;wn fw;bv	288
-窦性心	dz;en xk;hl xb;hx	788
 窦文场	dz;en wf;vw ih;ga	274
 窦树华	dz;en uu;er hx;jv	256
 窦氏	dz;en ui;bs	116
@@ -354588,7 +354479,6 @@ columns:
 童卫路号	ts;id ww;zf lu;ps hc;df	153
 童大爷	ts;id da;md ye;hb	288
 童姥	ts;id lc;bq	896
-童姨	ts;id yi;bm	148
 童婚	ts;id hy;bb	594
 童子吧	ts;id zi;hi ba;dm	207
 童子寺	ts;id zi;hi si;gk	225
@@ -355318,6 +355208,7 @@ columns:
 第一片叶	di;rt yi;fi pm;ap ye;dn	333
 第一球场	di;rt yi;fi qq;nf ih;ga	230
 第一甲	di;rt yi;fi jx;sj	122
+第一画	di;rt yi;fi hx;fq	754
 第一番	di;rt yi;fi fj;tp	1454
 第一眼镜	di;rt yi;fi yj;qi jk;zx	153
 第一码	di;rt yi;fi ma;mn	562
@@ -356259,7 +356150,7 @@ columns:
 等花了	dg;rg hx;lj le;rl	374
 等花纹	dg;rg hx;lj wf;iv	328
 等范畴	dg;rg fj;lk iz;qa	621
-等菜	dg;rg cd;ly	1143
+等菜	dg;rg cd;ly	1062
 等菜时	dg;rg cd;ly ui;ok	608
 等行为	dg;rg xk;px ww;is	1400
 等行人	dg;rg xk;px rf;jr	382
@@ -359994,7 +359885,7 @@ columns:
 红梅市场	hs;iu mw;ee ui;zr ih;ga	252
 红梅的	hs;iu mw;ee de;un	598
 红梅谷	hs;iu mw;ee gu;hg	482
-红梨	hs;iu li;xp	9263
+红梨	hs;iu li;xp	963
 红棉花	hs;iu mm;eu hx;lj	315
 红棉苑	hs;iu mm;eu yr;ll	180
 红棉道	hs;iu mm;eu dc;ho	342
@@ -361217,7 +361108,7 @@ columns:
 纵然似梦	zs;ij rj;vm si;jv mg;ee	117
 纵爱惜	zs;ij ai;yw xi;hl	130
 纵皱纹	zs;ij vz;xb wf;iv	346
-纵笔	zs;ij bi;rv	6568
+纵笔	zs;ij bi;rv	568
 纵筋	zs;ij jb;rv	518
 纵纹角鸮	zs;ij wf;iv jn;xt xn;df	153
 纵缝	zs;ij fg;ih	292
@@ -361250,7 +361141,7 @@ columns:
 纸书	vi;ib uu;aa	131
 纸介电容	vi;ib jp;jp dm;oa rs;wh	189
 纸元宝	vi;ib yr;mp bc;wn	405
-纸刊	vi;ib kj;ep	21656
+纸刊	vi;ib kj;ep	1656
 纸制玩具	vi;ib vi;qr wj;nm ju;qh	117
 纸包不住	vi;ib bc;nv bu;cb vu;ji	630
 纸包了	vi;ib bc;nv le;rl	418
@@ -361271,6 +361162,7 @@ columns:
 纸巾啊	vi;ib jb;rj aa;dt	454
 纸币时	vi;ib bi;tr ui;ok	285
 纸币邮票	vi;ib bi;tr yz;dt pn;vf	400
+纸帕	vi;ib pa;ru	169
 纸带记录	vi;ib dd;lw ji;sv lu;bk	117
 纸帽子	vi;ib mc;ro zi;hi	360
 纸张吧	vi;ib vh;bp ba;dm	396
@@ -361437,7 +361329,7 @@ columns:
 线下单	xm;if xx;fy dj;hq	475
 线下自证	xm;if xx;fy zi;oi vg;sf	153
 线不适合	xm;if bu;cb ui;au he;jd	328
-线丛	xm;if cs;jj	14390
+线丛	xm;if cs;jj	4390
 线了吧	xm;if le;rl ba;dm	260
 线位移	xm;if ww;ji yi;xl	356
 线偏振	xm;if pm;jm vf;uf	441
@@ -361864,7 +361756,7 @@ columns:
 绅士装	uf;io ui;gs vl;ag	315
 绅士雪茄	uf;io ui;gs xt;tb jx;ls	117
 绅士鞋	uf;io ui;gs xp;tg	207
-绅宝	uf;io bc;wn	11398
+绅宝	uf;io bc;wn	398
 绅宝车款	uf;io bc;wn ie;yc kr;gf	130
 细一些	xi;iq yi;fi xp;sv	456
 细不细腻	xi;iq bu;cb xi;iq ni;vp	144
@@ -365824,7 +365716,6 @@ columns:
 罗姆电子	lo;yl mu;bk dm;oa zi;hi	153
 罗姆苏丹	lo;yl mu;bk su;ls dj;mz	504
 罗姐	lo;yl jp;bf	1382
-罗姨	lo;yl yi;bm	109
 罗威	lo;yl ww;nf	1246
 罗娃	lo;yl wa;bg	724
 罗孚汽车	lo;yl fu;yh qi;kv ie;yc	338
@@ -366760,7 +366651,6 @@ columns:
 美拉德	mw;gm la;ui de;wn	107
 美拉提	mw;gm la;ui ti;uo	225
 美拉胂醇	mw;gm la;ui uf;vo iy;yg	130
-美摄影师	mw;gm ue;uq yk;og ui;pf	405
 美敏伪麻	mw;gm mb;ek ww;ji ma;zm	144
 美斯梅	mw;gm si;zh mw;ee	310
 美新娘	mw;gm xb;ie nl;bi	580
@@ -366946,7 +366836,7 @@ columns:
 美瞳眼镜	mw;gm ts;qi yj;qi jk;zx	171
 美知留	mw;gm vi;od lq;bq	293
 美短	mw;gm dr;oz	260
-美硕	mw;gm uo;mw	5676
+美硕	mw;gm uo;mw	2676
 美祢市	mw;gm mi;fx ui;zr	482
 美空网	mw;gm ks;eu wh;mb	500
 美签	mw;gm qm;rj	383
@@ -367202,7 +367092,7 @@ columns:
 群主在	qy;bt vu;in zd;ng	356
 群乐	qy;bt le;by	902
 群了	qy;bt le;rl	950
-群人	qy;bt rf;jr	1778
+群人	qy;bt rf;jr	1316
 群仙祝寿	qy;bt xm;jv vu;fd uz;ak	252
 群代数	qy;bt dd;jp uu;pb	333
 群众参与	qy;bt vs;jj cj;km yu;fa	860
@@ -368335,7 +368225,7 @@ columns:
 老川鲁	lc;ql ir;oc lu;wo	306
 老巢了	lc;ql ic;oq le;rl	328
 老巴	lc;ql ba;mb	598
-老巴刹	lc;ql ba;mb ua;be	418
+老巴刹	lc;ql ba;mb ia;be	418
 老巷	lc;ql xl;lh	280
 老市委	lc;ql ui;zr ww;xb	270
 老师不就	lc;ql ui;pf bu;cb jq;gy	378
@@ -370000,7 +369890,7 @@ columns:
 耿拆拆	gg;qc id;ut id;ut	238
 耿某	gg;qc mz;ze	486
 耿桂芳	gg;qc gv;eg fh;ll	320
-耿浩	gg;qc hc;kq	66637
+耿浩	gg;qc hc;kq	637
 耿淑仪	gg;qc uu;ky yi;ji	189
 耿直不	gg;qc vi;nq bu;cb	522
 耿直了	gg;qc vi;nq le;rl	255
@@ -370020,7 +369910,6 @@ columns:
 聂凌峰	np;qr lk;wg fg;vh	310
 聂危谷	np;qr ww;xx gu;hg	225
 聂叔	np;qr uu;yf	266
-聂姨	np;qr yi;bm	194
 聂宪藩	np;qr xm;wq fj;lk	153
 聂家	np;qr jx;wj	639
 聂家河	np;qr jx;wj he;kz	234
@@ -373529,6 +373418,7 @@ columns:
 能续	ng;kv xu;in	918
 能缓几天	ng;kv hr;iy ji;oj tm;fm	130
 能编	ng;kv bm;im	308
+能缩	ng;kv so;iw	114
 能考上不	ng;kv kc;qf uh;yf bu;cb	396
 能考了	ng;kv kc;qf le;rl	472
 能考第几	ng;kv kc;qf di;rt ji;oj	117
@@ -373596,6 +373486,7 @@ columns:
 能起来吗	ng;kv qi;pv ld;ah ma;dn	346
 能超时	ng;kv ic;pp ui;ok	387
 能跑了	ng;kv pc;pn le;rl	603
+能跑吗	ng;kv pc;pn ma;dn	436
 能跟上不	ng;kv gf;pi uh;yf bu;cb	230
 能跟您	ng;kv gf;pi nb;jx	490
 能跳舞吗	ng;kv tn;pp wu;el ma;dn	153
@@ -373906,6 +373797,7 @@ columns:
 脐部感染	qi;vq bu;id gj;nf rj;kk	292
 脑不对称	nc;vz bu;cb dv;rk if;xx	238
 脑乐静	nc;vz le;by jk;av	130
+脑仁	nc;vz rf;jm	370
 脑保健舞	nc;vz bc;jd jm;jb wu;el	144
 脑内科	nc;vz nw;mj ke;xj	252
 脑力宝	nc;vz li;sl bc;wn	153
@@ -374708,7 +374600,7 @@ columns:
 腻味死了	ni;vp ww;da si;gv le;rl	256
 腻味的	ni;vp ww;da de;un	361
 腻在	ni;vp zd;ng	780
-腻害	ni;vp hd;wa	15085
+腻害	ni;vp hd;wa	1085
 腻害吧	ni;vp hd;wa ba;dm	644
 腻害啊	ni;vp hd;wa aa;dt	360
 腻得慌	ni;vp de;wo hl;hl	549
@@ -375613,7 +375505,7 @@ columns:
 自然涌出	zi;oi rj;vm ys;kk iu;sm	441
 自然源	zi;oi rj;vm yr;kx	405
 自然演替	zi;oi rj;vm yj;kw ti;hh	238
-自然熟	zi;oi rj;vm uu;gh	1022
+自然熟	zi;oi rj;vm uu;gh	486
 自然爆炸	zi;oi rj;vm bc;co va;cw	243
 自然犯	zi;oi rj;vm fj;mz	338
 自然电位	zi;oi rj;vm dm;oa ww;ji	230
@@ -377680,18 +377572,15 @@ columns:
 芬陀利华	ff;lh to;tw li;xp hx;jv	144
 芬顿反应	ff;lh dy;fs fj;xr yk;xk	189
 芬马克	ff;lh ma;nm ke;cp	500
-芭东柏贤	ba;lm ds;ry bd;eu xm;pr	171
 芭兮代舞	ba;lm xi;hf dd;jp wu;el	171
 芭夯兔	ba;lm hh;ms tu;wt	418
 芭尔芭拉	ba;lm er;xy ba;lm la;ui	194
 芭提亚	ba;lm ti;uo ya;fc	320
 芭斯罗缤	ba;lm si;zh lo;yl bb;iw	526
-芭比上海	ba;lm bi;vv uh;yf hd;ke	117
 芭比女	ba;lm bi;vv nv;bn	315
 芭比特	ba;lm bi;vv te;qg	288
 芭比电影	ba;lm bi;vv dm;oa yk;og	189
 芭比酒吧	ba;lm bi;vv jq;ky ba;dm	117
-芭比馒头	ba;lm bi;vv mj;qo tz;wm	626
 芭瑞黎丝	ba;lm rv;nv li;xp si;ii	338
 芭田和家	ba;lm tm;qt he;xd jx;wj	153
 芭芘娃娃	ba;lm pi;lv wa;bg wa;bg	180
@@ -378584,7 +378473,6 @@ columns:
 苏大附中	su;ls da;md fu;tj vs;dg	130
 苏姐	su;ls jp;bf	792
 苏姗娜	su;ls uj;bi na;ba	351
-苏姨	su;ls yi;bm	233
 苏子与客	su;ls zi;hi yu;fa ke;ws	315
 苏子愀然	su;ls zi;hi qn;hx rj;vm	266
 苏子河	su;ls zi;hi he;kz	378
@@ -378963,7 +378851,6 @@ columns:
 苗头时	mn;lq tz;wm ui;ok	504
 苗女	mn;lq nv;bn	562
 苗姐	mn;lq jp;bf	914
-苗姨	mn;lq yi;bm	594
 苗家寨	mn;lq jx;wj vd;wq	234
 苗山	mn;lq uj;vs	209
 苗山冬青	mn;lq uj;vs ds;hw qk;av	130
@@ -379545,9 +379432,9 @@ columns:
 英大基金	yk;lm da;md ji;zh jb;zj	220
 英姿吧	yk;lm zi;we ba;dm	224
 英姿风采	yk;lm zi;we fg;ob cd;ye	153
-英媒	yk;lm mw;bz	6811
+英媒	yk;lm mw;bz	811
 英媒称	yk;lm mw;bz ig;xx	580
-英孚	yk;lm fu;yh	11398
+英孚	yk;lm fu;yh	1398
 英安岩	yk;lm an;wb yj;vm	428
 英安航空	yk;lm an;wb hh;iz ks;eu	180
 英宝格	yk;lm bc;wn ge;es	374
@@ -380366,14 +380253,6 @@ columns:
 荆山新居	jk;lf uj;vs xb;ie ju;cc	117
 荆山玉	jk;lf uj;vs yu;ni	297
 荆川公园	jk;lf ir;oc gs;hk yr;rm	243
-荆州军事	jk;lf vz;oo jy;wy ui;fd	153
-荆州刀兵	jk;lf vz;oo dc;pd bk;th	270
-荆州大道	jk;lf vz;oo da;md dc;ho	342
-荆州市人	jk;lf vz;oo ui;zr rf;jr	356
-荆州广播	jk;lf vz;oo gl;xg bo;ut	153
-荆州弓兵	jk;lf vz;oo gs;bg bk;th	261
-荆州文化	jk;lf vz;oo wf;vw hx;jv	130
-荆州文物	jk;lf vz;oo wf;vw wu;qn	144
 荆州港	jk;lf vz;oo gh;kl	180
 荆扬之争	jk;lf yh;ua vi;ri vg;xb	117
 荆树	jk;lf uu;er	153
@@ -380824,7 +380703,6 @@ columns:
 荣夫益子	rs;lw fu;hf yi;ka zi;hi	144
 荣夷公	rs;lw yi;mb gs;hk	284
 荣姐	rs;lw jp;bf	109
-荣姨	rs;lw yi;bm	785
 荣威车款	rs;lw ww;nf ie;yc kr;gf	248
 荣宁二公	rs;lw nk;wa er;me gs;hk	117
 荣宁二府	rs;lw nk;wa er;me fu;xj	315
@@ -381374,7 +381252,6 @@ columns:
 莫夫迪穆	mo;lo fu;hf di;du mu;xu	130
 莫如兄弟	mo;lo ru;bd xs;dp di;ht	153
 莫姐	mo;lo jp;bf	162
-莫姨	mo;lo yi;bm	990
 莫娘	mo;lo nl;bi	562
 莫宗江	mo;lo zs;wf jl;ku	292
 莫宣卿	mo;lo xr;wf qk;bi	270
@@ -383877,7 +383754,7 @@ columns:
 蒲汇塘桥	pu;lk hv;kn th;gx qn;et	171
 蒲江中学	pu;lk jl;ku vs;dg xt;kw	310
 蒲江的	pu;lk jl;ku de;un	302
-蒲河	pu;lk he;kz	1022
+蒲河	pu;lk he;kz	922
 蒲河大道	pu;lk he;kz da;md dc;ho	238
 蒲河新城	pu;lk he;kz xb;ie ig;gn	256
 蒲津关	pu;lk jb;kb gr;hm	207
@@ -384128,7 +384005,6 @@ columns:
 蓝天雄鹰	lj;lp tm;fm xs;nk yk;xj	144
 蓝天鹅	lj;lp tm;fm ee;tu	338
 蓝姐	lj;lp jp;bf	518
-蓝姨	lj;lp yi;bm	105
 蓝媒	lj;lp mw;bz	450
 蓝宇	lj;lp yu;wf	896
 蓝家	lj;lp jx;wj	932
@@ -384584,7 +384460,6 @@ columns:
 蔡士英	cd;lh ui;gs yk;lm	207
 蔡天铎	cd;lh tm;fm do;zr	243
 蔡姐	cd;lh jp;bf	580
-蔡姨	cd;lh yi;bm	203
 蔡威廉	cd;lh ww;nf lm;xh	288
 蔡子健	cd;lh zi;hi jm;jb	405
 蔡子民	cd;lh zi;hi mb;dm	356
@@ -385796,7 +385671,7 @@ columns:
 虽有急	sv;dc yz;nv ji;xb	400
 虽有时	sv;dc yz;nv ui;ok	414
 虽有智慧	sv;dc yz;nv vi;od hv;aa	279
-虽有槁暴	sv;dc yz;nv gc;eg bc;ol	297
+虽有槁暴	sv;dc yz;nv gc;eg pu;ol	297
 虽有荣观	sv;dc yz;nv rs;lw gr;re	189
 虽未与	sv;dc ww;aw yu;fa	288
 虽欲从之	sv;dc yu;he cs;jj vi;ri	212
@@ -388394,7 +388269,6 @@ columns:
 袁国林	yr;gd go;rn lb;ee	234
 袁大宸	yr;gd da;md if;wf	342
 袁姐	yr;gd jp;bf	175
-袁姨	yr;gd yi;bm	226
 袁守谦	yr;gd uz;wk qm;sh	338
 袁安	yr;gd an;wb	276
 袁安碑	yr;gd an;wb bw;mu	207
@@ -389332,6 +389206,7 @@ columns:
 装典美家	vl;ag dm;ih mw;gm jx;wj	162
 装出了	vl;ag iu;sm le;rl	467
 装到了	vl;ag dc;yp le;rl	647
+装到哪里	vl;ag dc;yp na;da li;dl	323
 装卸站	vl;ag xp;az vj;iy	292
 装反	vl;ag fj;xr	268
 装反了	vl;ag fj;xr le;rl	486
@@ -389624,7 +389499,6 @@ columns:
 裴士淹	pw;rt ui;gs yj;km	153
 裴夷直	pw;rt yi;mb vi;nq	212
 裴姐	pw;rt jp;bf	472
-裴姨	pw;rt yi;bm	396
 裴子野	pw;rt zi;hi ye;di	338
 裴存藩	pw;rt cy;ng fj;lk	220
 裴守真	pw;rt uz;wk vf;nq	256
@@ -402099,7 +401973,6 @@ columns:
 谈好莱坞	tj;sc hc;bh ld;la wu;gx	212
 谈妥了	tj;sc to;yb le;rl	698
 谈姐	tj;sc jp;bf	513
-谈姨	tj;sc yi;bm	130
 谈学斌	tj;sc xt;kw bb;vf	288
 谈完了	tj;sc wj;wm le;rl	662
 谈家渡	tj;sc jx;wj du;kx	297
@@ -402975,7 +402848,7 @@ columns:
 象征性的	xl;wx vg;wf xk;hl de;un	1035
 象恢复	xl;wx hv;hn fu;eo	342
 象房村路	xl;wx fh;ml cy;ek lu;ps	144
-象拔	xl;wx ba;un	13256
+象拔	xl;wx ba;un	256
 象数思维	xl;wx uu;pb si;qh ww;iu	171
 象数易学	xl;wx uu;pb yi;on xt;kw	248
 象数疗法	xl;wx uu;pb ln;ar fa;kg	346
@@ -403304,7 +403177,6 @@ columns:
 贝奥武	bw;ob ao;tm wu;fp	657
 贝妮迪妲	bw;ob ni;bc di;du da;bo	144
 贝姐	bw;ob jp;bf	235
-贝姨	bw;ob yi;bm	224
 贝娅塔席	bw;ob ya;bf ta;gl xi;xl	180
 贝娅塔波	bw;ob ya;bf ta;gl bo;kr	153
 贝娅特斯	bw;ob ya;bf te;qg si;zh	234
@@ -403399,7 +403271,6 @@ columns:
 贝思纳	bw;ob si;qh na;im	315
 贝恩哈	bw;ob en;rm ha;dj	468
 贝恩堡	bw;ob en;rm bc;jd	316
-贝恩维尔	bw;ob en;rm ww;iu er;xy	117
 贝恩资	bw;ob en;rm zi;we	522
 贝恩霍勒	bw;ob en;rm ho;tu le;ts	266
 贝戈县	bw;ob ge;pg xm;fk	142
@@ -404635,7 +404506,6 @@ columns:
 费奥多	fw;to ao;tm do;ll	855
 费奥多拉	fw;to ao;tm do;ll la;ui	360
 费姐	fw;to jp;bf	296
-费姨	fw;to yi;bm	354
 费密子	fw;to mi;wh zi;hi	202
 费尔伍德	fw;to er;xy wu;jw de;wn	117
 费尔伯恩	fw;to er;xy bo;ju en;rm	288
@@ -404773,7 +404643,6 @@ columns:
 贺圣朝	he;sd ug;rg ic;no	189
 贺城	he;sd ig;gn	154
 贺姐	he;sd jp;bf	102
-贺姨	he;sd yi;bm	120
 贺嫂	he;sd sc;bp	419
 贺宇杰	he;sd yu;wf jp;ec	558
 贺家兄弟	he;sd jx;wj xs;dp di;ht	117
@@ -405007,7 +404876,6 @@ columns:
 贾黄中	jx;vo hl;nh vs;dg	230
 贿赂丑闻	hv;on lu;os iz;ag wf;aq	392
 贿赂了	hv;on lu;os le;rl	558
-赃私狼籍	zh;ox si;xk lh;mi ji;ra	153
 资产化率	zi;we ij;ix hx;jv lv;zi	180
 资产吧	zi;we ij;ix ba;dm	364
 资产啊	zi;we ij;ix aa;dt	454
@@ -407774,6 +407642,7 @@ columns:
 跑在了	pc;pn zd;ng le;rl	268
 跑场子	pc;pn ih;ga zi;hi	405
 跑多了	pc;pn do;ll le;rl	446
+跑够	pc;pn gz;gl	144
 跑客运	pc;pn ke;ws yy;bu	256
 跑尸	pc;pn ui;cs	608
 跑工作	pc;pn gs;ug zo;jw	360
@@ -408290,7 +408159,6 @@ columns:
 路大华	lu;ps da;md hx;jv	328
 路头路尾	lu;ps tz;wm lu;ps ww;cv	130
 路姆西	lu;ps mu;bk xi;vx	392
-路姨	lu;ps yi;bm	156
 路威	lu;ps ww;nf	532
 路子吧	lu;ps zi;hi ba;dm	194
 路子啊	lu;ps zi;hi aa;dt	378
@@ -408828,7 +408696,7 @@ columns:
 蹲久了	dy;ph jq;xi le;rl	500
 蹲伏在	dy;ph fu;jm zd;ng	414
 蹲伏姿势	dy;ph fu;jm zi;we ui;uk	117
-蹲位	dy;ph ww;ji	1094
+蹲位	dy;ph ww;ji	439
 蹲到了	dy;ph dc;yp le;rl	504
 蹲在了	dy;ph zd;ng le;rl	680
 蹲在地上	dy;ph zd;ng di;ge uh;yf	1048
@@ -408988,7 +408856,7 @@ columns:
 躯体依赖	qu;zn ti;je yi;jt ld;xx	315
 躯体的	qu;zn ti;je de;un	698
 躯体虐待	qu;zn ti;je nt;zb dd;wg	130
-躯壳虽隳	qu;zn qn;gw sv;dc hv;tn	117
+躯壳虽隳	qu;zn ke;gw sv;dc hv;tn	117
 躯干烧伤	qu;zn gj;eg uc;cp uh;je	243
 躲入了	do;zo ru;ju le;rl	285
 躲出去	do;zo iu;sm qu;gk	927
@@ -412841,6 +412709,7 @@ columns:
 还一些	hd;cu yi;fi xp;sv	616
 还一天	hd;cu yi;fi tm;fm	468
 还一时	hd;cu yi;fi ui;ok	504
+还一样	hd;cu yi;fi yh;eg	860
 还一起	hd;cu yi;fi qi;pv	932
 还上不起	hd;cu uh;yf bu;cb qi;pv	162
 还上了	hr;cu uh;yf le;rl	1813
@@ -413565,7 +413434,7 @@ columns:
 还是建议	hd;cu ui;ot jm;bu yi;si	1287
 还是很低	hd;cu ui;ot hf;wi di;jb	684
 还是很好	hd;cu ui;ot hf;wi hc;bh	1580
-还是得你	hd;cu ui;ot de;wo ni;jx	428
+还是得你	hd;cu ui;ot dw;wo ni;jx	428
 还是快	hd;cu ui;ot kk;hn	999
 还是快了	hd;cu ui;ot kk;hn le;rl	306
 还是想想	hd;cu ui;ot xl;eq xl;eq	680
@@ -414328,6 +414197,7 @@ columns:
 这不就跟	ve;vu bu;cb jq;gy gf;pi	436
 这不带	ve;vu bu;cb dd;lw	342
 这不得了	ve;vu bu;cb de;wo ln;rl	356
+这不扯吗	ve;vu bu;cb ie;us ma;dn	103
 这不挺好	ve;vu bu;cb tk;ut hc;bh	513
 这不敢	ve;vu bu;cb gj;aq	374
 这不明天	ve;vu bu;cb mk;ov tm;fm	230
@@ -414998,6 +414868,7 @@ columns:
 这大年纪	ve;vu da;md nm;ev ji;iv	153
 这大早晨	ve;vu da;md zc;on if;of	202
 这大热天	ve;vu da;md re;uk tm;fm	616
+这大眼睛	ve;vu da;md yj;qi jk;qa	842
 这大过节	ve;vu da;md go;ku jp;lz	324
 这大长腿	ve;vu da;md ih;pc tv;vi	464
 这大雪天	ve;vu da;md xt;tb tm;fm	342
@@ -416420,7 +416291,6 @@ columns:
 连夸	lm;yu kx;mm	585
 连夺	lm;yu do;mk	729
 连姐	lm;yu jp;bf	449
-连姨	lm;yu yi;bm	458
 连家	lm;yu jx;wj	190
 连射攻击	lm;yu ue;zk gs;uh ji;um	189
 连射速度	lm;yu ue;zk su;xu du;xl	189
@@ -419948,7 +419818,6 @@ columns:
 邓处讷	dg;rt iu;hy ne;sm	266
 邓夫人	dg;rt fu;hf rf;jr	414
 邓如雯	dg;rt ru;bd wf;tv	374
-邓姨	dg;rt yi;bm	153
 邓婉媚	dg;rt wj;bw mw;bc	230
 邓婶	dg;rt uf;bw	160
 邓子瑜	dg;rt zi;hi yu;nj	252
@@ -420599,7 +420468,6 @@ columns:
 那姐们	na;au jp;bf mf;ja	405
 那姐们儿	na;au jp;bf mf;ja er;pe	288
 那姐妹	na;au jp;bf mw;ba	400
-那姨	na;au yi;bm	352
 那娃	na;au wa;bg	554
 那娃娃	na;au wa;bg wa;bg	428
 那存在	na;au cy;ng zd;ng	414
@@ -421619,7 +421487,6 @@ columns:
 郑姐	vg;hm jp;bf	182
 郑姓宗祠	vg;hm xk;bl zs;wf ci;fa	292
 郑姓家族	vg;hm xk;bl jx;wj zu;le	117
-郑姨	vg;hm yi;bm	152
 郑嫂	vg;hm sc;bp	279
 郑宅村	vg;hm vd;wt cy;ek	112
 郑宅镇	vg;hm vd;wt vf;zn	159
@@ -424813,7 +424680,7 @@ columns:
 醇氧化酶	iy;yg yh;vg hx;jv mw;ye	153
 醇溶液	iy;yg rs;kw ye;kz	608
 醇溶蛋白	iy;yg rs;kw dj;tc bd;ub	328
-醇熟	iy;yg uz;gh	764
+醇熟	iy;yg uu;gh	297
 醇燃料	iy;yg rj;cv ln;pj	513
 醇脱氢酶	iy;yg to;vh qk;vr mw;ye	652
 醇艺白	iy;yg yi;la bd;ub	297
@@ -426253,7 +426120,7 @@ columns:
 野葡萄根	ye;di pu;ln tc;ln gf;ei	130
 野葡萄藤	ye;di pu;ln tc;ln tg;lv	346
 野葫芦引	ye;di hu;lc lu;lm yb;bg	202
-野葱	ye;di cs;ln	7491
+野葱	ye;di cs;ln	491
 野蒜	ye;di sr;lf	424
 野薄荷	ye;di bo;lk he;lj	338
 野蛞蝓	ye;di ko;ca yu;cj	279
@@ -426372,6 +426239,7 @@ columns:
 量血压	ll;of xt;ta ya;xg	1017
 量表检查	ll;of bn;at jm;ej ia;eo	144
 量表测查	ll;of bn;at ce;ko ia;eo	144
+量角度	ll;of jn;xt du;xl	138
 量计算	ll;of ji;sn sr;rq	1134
 量词消去	ll;of ci;sa xn;ky qu;gk	207
 量质并重	ll;of vi;xn bk;hl vs;ld	144
@@ -430658,7 +430526,6 @@ columns:
 铲除积雪	ij;zi iu;tj ji;xd xt;tb	162
 铲雪铲	ij;zi xt;tb ij;zi	117
 铲齿象	ij;zi ii;lc xl;wx	324
-铵化合物	an;zw hx;jv he;jd wu;qn	180
 铵明矾	an;zw mk;ov fj;mo	288
 铵油炸药	an;zw yz;kd va;cw yc;li	202
 铵矾	an;zw fj;mo	130
@@ -434123,7 +433990,6 @@ columns:
 闲没事	xm;ae mw;kr ui;fd	432
 闲疯了	xm;ae fg;ao le;rl	252
 闲白儿	xm;ae bd;ub er;pe	279
-闲的不	xm;ae de;un bu;cb	536
 闲的不行	xm;ae de;un bu;cb xk;px	302
 闲的吧	xm;ae de;un ba;dm	450
 闲的我	xm;ae de;un wo;tu	339
@@ -434249,7 +434115,6 @@ columns:
 闵嗣鹤	mb;av si;di he;wu	252
 闵天浩	mb;av tm;fm hc;kq	235
 闵姐	mb;av jp;bf	349
-闵姨	mb;av yi;bm	487
 闵子骞曰	mb;av zi;hi qm;wq yt;or	144
 闵子骞路	mb;av zi;hi qm;wq lu;ps	320
 闵家桥	mb;av jx;wj qn;et	220
@@ -435314,7 +435179,7 @@ columns:
 阴漂	yb;tv pn;kv	203
 阴潜阳	yb;tv qm;kh yh;to	490
 阴澍雨	yb;tv uu;kh yu;tv	315
-阴灵	yb;tv lk;bc	6554
+阴灵	yb;tv lk;bc	594
 阴狠了	yb;tv hf;mi le;rl	315
 阴生植物	yb;tv ug;ls vi;en wu;qn	288
 阴生阳长	yb;tv ug;ls yh;to ih;pc	144
@@ -436761,6 +436626,7 @@ columns:
 限量版的	xm;ti ll;of bj;ax de;un	837
 限面体	xm;ti mm;bm ti;je	500
 限领	xm;ti lk;jk	236
+限额了	xm;ti ee;ws le;rl	436
 限额内	xm;ti ee;ws nw;mj	680
 限额制	xm;ti ee;ws vi;qr	328
 限额时	xm;ti ee;ws ui;ok	382
@@ -437022,7 +436888,7 @@ columns:
 险企	xm;tj qi;js	323
 险境时	xm;tj jk;gx ui;ok	472
 险境求生	xm;tj jk;gx qq;fk ug;ls	189
-险恶了	xm;tj ee;fc le;rl	436
+险恶了	xm;tj ee;fc le;rl	111
 险恶啊	xm;tj ee;fc aa;dt	450
 险情时	xm;tj qk;ha ui;ok	441
 险战丛林	xm;tj vj;yd cs;jj lb;ee	544
@@ -437125,7 +436991,6 @@ columns:
 陶圩镇	tc;tn ww;gf vf;zn	139
 陶堰镇	tc;tn yj;gn vf;zn	199
 陶姐	tc;tn jp;bf	778
-陶姨	tc;tn yi;bm	188
 陶家	tc;tn jx;wj	304
 陶家寨	tc;tn jx;wj vd;wq	159
 陶家小学	tc;tn jx;wj xn;yx xt;kw	144
@@ -439671,7 +439536,6 @@ columns:
 霍姆岛	ho;tu mu;bk dc;xv	243
 霍姆湾	ho;tu mu;bk wj;kz	324
 霍姐	ho;tu jp;bf	860
-霍姨	ho;tu yi;bm	283
 霍守业	ho;tu uz;wk ye;cy	302
 霍家	ho;tu jx;wj	1054
 霍家了	ho;tu jx;wj le;rl	306
@@ -442399,7 +442263,7 @@ columns:
 韭菜沟	jq;rf cd;ly gz;kn	288
 韭菜田	jq;rf cd;ly tm;qt	261
 韭菜肉	jq;rf cd;ly rz;mj	662
-韭葱	jq;rf cs;ln	10581
+韭葱	jq;rf cs;ln	581
 韭闪石	jq;rf uj;aj ui;ms	153
 韮崎市	jq;lr qi;vm ui;zr	203
 音不同	yb;xy bu;cb ts;mf	707
@@ -445712,6 +445576,7 @@ columns:
 香叶树	xl;xo ye;dn uu;er	225
 香叶烯	xl;xo ye;dn xi;cb	261
 香君	xl;xo jy;bt	152
+香吧	xl;xo ba;dm	673
 香味了	xl;xo ww;da le;rl	814
 香味吧	xl;xo ww;da ba;dm	400
 香味啊	xl;xo ww;da aa;dt	554
@@ -445897,53 +445762,30 @@ columns:
 香港乱噏	xl;xo gh;kl lr;aa xi;dj	387
 香港争议	xl;xo gh;kl vg;xb yi;si	130
 香港会计	xl;xo gh;kl kk;jb ji;sn	562
-香港佛教	xl;xo gh;kl fo;jt jn;qh	526
-香港供电	xl;xo gh;kl gs;jl dm;oa	162
-香港保安	xl;xo gh;kl bc;jd an;wb	477
 香港偶像	xl;xo gh;kl ou;jq xl;jw	248
-香港公共	xl;xo gh;kl gs;hk gs;lh	670
 香港公园	xl;xo gh;kl gs;hk yr;rm	522
 香港军营	xl;xo gh;kl jy;wy yk;lw	162
-香港动物	xl;xo gh;kl ds;bs wu;qn	243
-香港北京	xl;xo gh;kl bw;av jk;gy	644
 香港医务	xl;xo gh;kl yi;no wu;hs	400
 香港医学	xl;xo gh;kl yi;no xt;kw	558
-香港博物	xl;xo gh;kl bo;nn wu;qn	468
 香港卡拉	xl;xo gh;kl ka;yf la;ui	212
 香港厅	xl;xo gh;kl tk;xa	274
-香港反恐	xl;xo gh;kl fj;xr ks;uo	153
-香港发明	xl;xo gh;kl fa;sr mk;ov	248
 香港唐楼	xl;xo gh;kl th;xb lz;ep	162
 香港啊	xl;xo gh;kl aa;dt	441
 香港圣殿	xl;xo gh;kl ug;rg dm;cl	212
-香港地形	xl;xo gh;kl di;ge xk;fl	162
 香港奖项	xl;xo gh;kl jl;al xl;uw	144
 香港学会	xl;xo gh;kl xt;kw hv;jb	171
 香港审判	xl;xo gh;kl uf;wo pj;hu	117
-香港富丽	xl;xo gh;kl fu;wf li;fv	163
 香港小包	xl;xo gh;kl xn;yx bc;nv	238
 香港小厨	xl;xo gh;kl xn;yx iu;xz	266
-香港帮派	xl;xo gh;kl bh;at pd;kx	144
 香港广播	xl;xo gh;kl gl;xg bo;ut	490
-香港惩教	xl;xo gh;kl ig;wf jn;qh	486
-香港成人	xl;xo gh;kl ig;na rf;jr	320
-香港房屋	xl;xo gh;kl fh;ml wu;cy	792
-香港扶贫	xl;xo gh;kl fu;uh pb;hp	153
 香港批发	xl;xo gh;kl pi;uv fa;sr	171
 香港护士	xl;xo gh;kl hu;um ui;gs	342
-香港报人	xl;xo gh;kl bc;uz rf;jr	130
-香港报社	xl;xo gh;kl bc;uz ue;fg	144
-香港改革	xl;xo gh;kl gd;vh ge;tg	194
 香港文件	xl;xo gh;kl wf;vw jm;jq	130
 香港文物	xl;xo gh;kl wf;vw wu;qn	387
 香港文革	xl;xo gh;kl wf;vw ge;tg	202
 香港早晨	xl;xo gh;kl zc;on if;of	549
 香港时	xl;xo gh;kl ui;ok	965
 香港智库	xl;xo gh;kl vi;od ku;xy	180
-香港板球	xl;xo gh;kl bj;ex qq;nf	274
-香港标志	xl;xo gh;kl bn;ef vi;gh	225
-香港残疾	xl;xo gh;kl cj;gf ji;ao	338
-香港比利	xl;xo gh;kl bi;vv li;xp	144
 香港水务	xl;xo gh;kl uv;ks wu;hs	302
 香港海事	xl;xo gh;kl hd;ke ui;fd	477
 香港海防	xl;xo gh;kl hd;ke fh;tl	414
@@ -445952,16 +445794,11 @@ columns:
 香港游艇	xl;xo gh;kl yz;kl tk;it	400
 香港湛江	xl;xo gh;kl vj;kz jl;ku	117
 香港湾区	xl;xo gh;kl wj;kz qu;nb	117
-香港潮商	xl;xo gh;kl ic;kn uh;im	306
 香港灏天	xl;xo gh;kl hc;ko tm;fm	130
 香港炮台	xl;xo gh;kl pc;cn td;kd	171
 香港牙医	xl;xo gh;kl ya;ly yi;no	279
-香港电子	xl;xo gh;kl dm;oa zi;hi	549
-香港百佳	xl;xo gh;kl bd;fu jx;jg	306
-香港的汤	xl;xo gh;kl de;un th;ka	171
 香港盲人	xl;xo gh;kl mh;fq rf;jr	356
 香港破坏	xl;xo gh;kl po;mr hk;gc	230
-香港粉面	xl;xo gh;kl ff;ph mm;bm	117
 香港纪念	xl;xo gh;kl ji;iv nm;ja	189
 香港纱厂	xl;xo gh;kl ua;iy ih;xc	252
 香港细辛	xl;xo gh;kl xi;iq xb;nx	171
@@ -445978,7 +445815,6 @@ columns:
 香港酒吧	xl;xo gh;kl jq;ky ba;dm	252
 香港锦田	xl;xo gh;kl jb;zu tm;qt	130
 香港饮料	xl;xo gh;kl yb;qe ln;pj	153
-香港饼店	xl;xo gh;kl bk;qh dm;xy	144
 香港鱼类	xl;xo gh;kl yu;wv lw;pm	279
 香溢紫郡	xl;xo yi;kk zi;sv jy;bt	288
 香溢花城	xl;xo yi;kk hx;lj ig;gn	225
@@ -446432,7 +446268,6 @@ columns:
 马套村	ma;nm tc;mp cy;ek	239
 马女	ma;nm nv;bn	760
 马姐	ma;nm jp;bf	579
-马姨	ma;nm yi;bm	341
 马威	ma;nm ww;nf	232
 马嫂	ma;nm sc;bp	382
 马子洛	ma;nm zi;hi lo;ks	222
@@ -447434,6 +447269,7 @@ columns:
 骗人啊	pm;nm rf;jr aa;dt	585
 骗人家	pm;nm rf;jr jx;wj	639
 骗他了	pm;nm ta;je le;rl	356
+骗他们	pm;nm ta;je mf;ja	486
 骗他们的	pm;nm ta;je mf;ja de;un	472
 骗他的	pm;nm ta;je de;un	684
 骗住了	pm;nm vu;ji le;rl	342
@@ -449378,7 +449214,7 @@ columns:
 魂丢了	hy;ba dq;tg le;rl	410
 魂之利刃	hy;ba vi;ri li;xp rf;pi	162
 魂儿	hy;ba er;pe	756
-魂力	hy;ba li;sl	6903
+魂力	hy;ba li;sl	903
 魂力啊	hy;ba li;sl aa;dt	224
 魂印	hy;ba yb;bf	571
 魂器	hy;ba qi;dd	215
@@ -450380,6 +450216,7 @@ columns:
 鲜草	xm;wg cc;lo	102
 鲜菇	xm;wg gu;lb	958
 鲜菌	xm;wg jy;lr	147
+鲜葱	xm;wg cs;ln	744
 鲜蒜	xm;wg sr;lf	733
 鲜蔬	xm;wg uu;lt	540
 鲜蘑	xm;wg mo;lz	631
@@ -450672,8 +450509,6 @@ columns:
 鸡块吧	ji;rx kk;gn ba;dm	266
 鸡头实	ji;rx tz;wm ui;ww	225
 鸡头山	ji;rx tz;wm uj;vs	243
-鸡头掰脸	ji;rx tz;wm bd;uh lm;vj	110
-鸡头白脸	ji;rx tz;wm bd;ub lm;vj	225
 鸡头蛇	ji;rx tz;wm ue;cw	256
 鸡头黄精	ji;rx tz;wm hl;nh jk;pa	153
 鸡奸罪	ji;rx jm;be zv;yr	346
@@ -453223,7 +453058,6 @@ columns:
 黄铭德	hl;nh mk;zl de;wn	209
 黄铭正	hl;nh mk;zl vg;fs	129
 黄银	hl;nh yb;zi	226
-黄银二城	hl;nh yb;zi er;me ig;gn	117
 黄链霉素	hl;nh lm;zy mw;te su;ai	130
 黄锑矿	hl;nh ti;zh kl;mx	171
 黄锡	hl;nh xi;zo	142
@@ -453362,7 +453196,7 @@ columns:
 黎光廉	li;xp gl;mg lm;xh	180
 黎兵	li;xp bk;th	770
 黎凡特海	li;xp fj;oi te;qg hd;ke	202
-黎刹公园	li;xp ua;be gs;hk yr;rm	324
+黎刹公园	li;xp ia;be gs;hk yr;rm	324
 黎北海	li;xp bw;av hd;ke	270
 黎友焕	li;xp yz;nr hr;cx	288
 黎双富	li;xp ul;rr fu;wf	234

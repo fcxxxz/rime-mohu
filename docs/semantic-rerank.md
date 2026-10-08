@@ -15,7 +15,12 @@
 
 量化实测（零泄漏 438 句）：**8bit 三档零损失**、0.5B-4bit 仅 -1 分、3bit 崩盘不发布。
 配置：`semantic_http_url: http://127.0.0.1:8765?model=3b-8bit`（量化档需本机已装 mlx-lm，服务自动识别 MLX 目录）。
-Qwen 档解压到 `~/.cache/modelscope/models/`（保持 `…/snapshots/master/` 目录结构）。安装命令见 release 页说明。
+
+**模型安装位置**（二选一，Rime 目录优先）：
+1. `~/Library/Rime/mohu/models/` —— 推荐，自包含随 Rime 备份迁移
+2. `~/.cache/modelscope/models/` —— ModelScope 下载缓存（开发机回退）
+
+解压后目录形如 `…/models/mlx-community--Qwen2.5-3B-Instruct-8bit/snapshots/master/`（release 解包即此结构，无需改动）；平铺放模型文件（config.json 在模型目录第一层）也支持。安装命令见 release 页说明。
 
 ## 这是什么
 

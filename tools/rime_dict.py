@@ -25,13 +25,13 @@ def read_compact_dict(filename):
 
 
 def base_dict():
-    return read_compact_dict('mohu_zrm.base.dict.yaml')
+    return read_compact_dict('tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml')
 
 
 def base_dict_freq() -> dict[str, int]:
     RE_COMPACT_DICT_LINE = re.compile(r"^(.+)\t([ ;a-z]+)\t(\d*)$")
     ret: dict[str, int] = defaultdict(int)
-    with open('mohu_zrm.base.dict.yaml', 'r') as f:
+    with open('tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml', 'r') as f:
         for l in f:
             l = l.rstrip()
             matches = RE_COMPACT_DICT_LINE.findall(l)
@@ -46,7 +46,7 @@ def base_dict_freq_normalized() -> dict[str, int]:
     cc = OpenCC('t2s.json')
     RE_COMPACT_DICT_LINE = re.compile(r"^(.+)\t([ ;a-z]+)\t(\d*)$")
     ret: dict[str, int] = defaultdict(int)
-    with open('mohu_zrm.base.dict.yaml', 'r') as f:
+    with open('tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml', 'r') as f:
         for l in f:
             l = l.rstrip()
             matches = RE_COMPACT_DICT_LINE.findall(l)
@@ -81,11 +81,11 @@ def read_fixed(path: str) -> pd.DataFrame:
 
 
 def fixed_trad_dict() -> pd.DataFrame:
-    return read_fixed('mohu_zrm_fixed.dict.yaml')
+    return read_fixed('mohu_zrm.dict.yaml')
 
 
 def fixed_simp_dict() -> pd.DataFrame:
-    return read_fixed('mohu_zrm_fixed.dict.yaml')
+    return read_fixed('mohu_zrm.dict.yaml')
 
 
 def latest_essay() -> pd.DataFrame:

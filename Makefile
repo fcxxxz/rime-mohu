@@ -28,33 +28,34 @@ ORT_DEFINES =
 TIGER_EXTRA_LDFLAGS = -framework Accelerate
 endif
 
-quick: classics tiger_aux fixed_tiger sync_flykey chars pinyin_reverse zrmdb chaifen opencc
+quick: classics tiger_aux sync_flykey check-code-table chars pinyin_reverse zrmdb chaifen opencc
 	uv run tools/build_flypy_assets.py
 	$(MAKE) mohu_lexicons
 
-dict: classics tiger_aux chars fixed_tiger sync_flykey update-compact-dicts
+dict: classics tiger_aux chars sync_flykey update-compact-dicts check-code-table
 	uv run tools/build_flypy_assets.py
 	$(MAKE) mohu_lexicons
 
 all: quick dict
 
-sync_flykey: tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/sync_flykey_config.py tools/sync_flykey_quickcodes.py fixed_tiger
+sync_flykey: tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/sync_flykey_config.py tools/sync_flykey_quickcodes.py
 	uv run python tools/sync_flykey_config.py --apply
-	uv run python tools/sync_flykey_quickcodes.py --apply
 
 flykey-check: tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/sync_flykey_config.py tools/sync_flykey_quickcodes.py
 	uv run python tools/sync_flykey_config.py --check
-	uv run python tools/sync_flykey_quickcodes.py --check
-	uv run python tools/sync_flykey_quickcodes.py --check --scheme flypy mohu_flypy_fixed.dict.yaml mohu_flypy_fixed_legacy.dict.yaml
+	uv run python tools/sync_flykey_quickcodes.py --check --scheme flypy mohu_flypy.dict.yaml
 
 mohu_flypy_custom_phrases.txt: mohu_zrm_custom_phrases.txt tools/build_flypy_assets.py
 	uv run tools/build_flypy_assets.py --custom-phrases-only
 
 mohu_lexicons: tiger_sentence_native/mohu_tiger.lexicon.txt tools/build_mohu_lexicons.py tools/flypyify.py tools/zrmify.py
-	test -f mohu_zrm.chars.dict.yaml
+	test -f tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml
 	uv run tools/build_mohu_lexicons.py
 	test -f tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
 	test -f tiger_sentence_native/data/flypy/mohu_flypy.lexicon.txt
+
+check-code-table:
+	uv run python tools/check_code_table.py
 
 lint-python:
 	uv run --with ruff ruff check tools
@@ -62,10 +63,10 @@ lint-python:
 ############
 # 單字信息 #
 ############
-chars_output := mohu_zrm.chars.dict.yaml opencc/mohu_chaifen.txt lua/zrmdb.txt
+chars_output := tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml opencc/mohu_chaifen.txt lua/zrmdb.txt
 tiger_rank_output := lua/tiger_rank.txt
 tiger_aux: tools/data/tiger_aux.txt
-chars: mohu_zrm.chars.dict.yaml
+chars: tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml
 pinyin_reverse: mohu_pinyin.dict.yaml
 zrmdb: lua/zrmdb.txt
 chaifen: opencc/mohu_chaifen.txt
@@ -73,7 +74,7 @@ chaifen: opencc/mohu_chaifen.txt
 
 tools/data/tiger_aux.txt: tiger.dict.yaml tools/data/chars.txt tools/data/chars.dict.yaml tools/data/tiger_chaifen.txt tools/gen_tiger_aux.py tools/tiger_aux.py
 	uv run tools/gen_tiger_aux.py > $@
-mohu_zrm.chars.dict.yaml: tools/data/tiger_compatibility_chars.txt tiger.dict.yaml tools/data/chars.txt tools/data/chars.dict.yaml tools/data/tiger_aux.txt tools/data/pinyin_simp.txt tools/gen_chars.py tools/modern_readings.py tools/tiger_aux.py tools/tiger_compatibility.py tools/utils.py tools/write_if_changed.py
+tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml: tools/data/tiger_compatibility_chars.txt tiger.dict.yaml tools/data/chars.txt tools/data/chars.dict.yaml tools/data/tiger_aux.txt tools/data/pinyin_simp.txt tools/gen_chars.py tools/modern_readings.py tools/tiger_aux.py tools/tiger_compatibility.py tools/utils.py tools/write_if_changed.py
 	uv run tools/gen_chars.py --simplified | uv run tools/write_if_changed.py $@ --ignore-version
 mohu_pinyin.dict.yaml: tools/data/pinyin_simp.txt tools/build_pinyin_reverse.py
 	uv run tools/build_pinyin_reverse.py > $@
@@ -106,11 +107,6 @@ check-classics:
 update-compact-dicts:
 	uv run ./tools/update_compact_dicts.sh
 
-fixed_tiger: tiger_aux tiger.dict.yaml tools/data/pinyin_simp.txt tools/data/simp_chars.txt tools/data/tiger_race_profile.tsv tools/data/mohu_fixed_code_claims.tsv tools/data/mohu_fixed_secondary_codes.tsv tools/data/mohu_fixed_simp_legacy_chars.txt tools/data/mohu_fixed_char_code_overrides.tsv tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/modern_readings.py tools/tiger_compatibility.py
-	uv run tools/rebuild_fixed_tiger.py
-
-tools/data/tiger_compatibility_chars.txt: fixed_tiger
-
 sync-essay:
 	uv run tools/sync_essay.py
 
@@ -132,7 +128,7 @@ mohu.mdx: tools/data/chars.txt tools/data/mohu_chai.txt tools/gen_mdx.py
 dazhu:
 	uv run tools/dazhu.py > dazhu-hant2s.txt
 	uv run tools/dazhu.py -c='' > dazhu-hant.txt
-	uv run tools/dazhu.py -c='' --dict mohu_zrm_fixed.dict.yaml > dazhu-hans.txt
+	uv run tools/dazhu.py -c='' --dict mohu_zrm.dict.yaml > dazhu-hans.txt
 
 clean:
 	rm -rf mdict-out
@@ -310,7 +306,7 @@ model-dist:
 	mkdir -p model-dist/mohu/model
 	install -m 0644 "$(TIGER_NGRAM)" model-dist/mohu/model/mohu-sentence-ngram-v5.bin
 
-test: dist-zrm dist-flypy mohu_lexicons
+test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-safety
 	$(MAKE) tigerengine-lua-safety
 	$(MAKE) tigerengine-snapshot-io
@@ -327,7 +323,7 @@ test: dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-word-score
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
-	uv run python -m unittest tests.test_tiger_aux -v
+	uv run python -m unittest tests.test_tiger_aux tests.test_unified_dictionary -v
 	uv run python -m unittest tests.test_qwen_semantic_rerank -v
 	uv run --with torch python -m unittest tests.test_semantic_pipeline_model -v
 	uv run python -m unittest tests.test_tiger_lexicon_fly -v
@@ -342,66 +338,37 @@ test: dist-zrm dist-flypy mohu_lexicons
 	uv run python -m unittest tests.test_tiger_symbol_workflow -v
 	uv run python -m unittest tests.test_merge_emoji -v
 	bash tests/rime_sync_conf_test.sh
-	lua tests/mohu_candidate_override_test.lua
-	lua tests/mohu_candidate_weight_reset_test.lua
-	lua tests/mohu_pin_store_test.lua
-	lua tests/option_sync_test.lua
-	lua tests/mohu_tab_nav_test.lua
-	lua tests/mohu_candidate_manager_test.lua
-	lua tests/mohu_candidate_manager_config_test.lua
-	lua tests/mohu_tiger_sentence_native_test.lua
-	lua tests/mohu_tiger_log_compat_test.lua
-	lua tests/mohu_tiger_user_model_test.lua
-	lua tests/mohu_tiger_context_test.lua
-	lua tests/mohu_tiger_two_char_test.lua
-	lua tests/mohu_personal_lexicon_test.lua
-	lua tests/mohu_path_test.lua
-	lua tests/mohu_model_version_test.lua
-	lua tests/mohu_tiger_no_early_commit_test.lua
-	lua tests/mohu_tiger_selected_segment_test.lua
-	lua tests/mohu_reorder_filter_lexicon_test.lua
-	lua tests/mohu_word_order_filter_test.lua
-	lua tests/mohu_sentence_visibility_filter_test.lua
-	lua tests/mohu_semantic_meta_test.lua
-	lua tests/mohu_semantic_producer_test.lua
-	lua tests/mohu_semantic_gate_filter_test.lua
-	lua tests/mohu_freestyle_config_test.lua
-	lua tests/mohu_contextual_translator_test.lua
-	lua tests/mohu_charset_filter_test.lua
-	lua tests/mohu_hint_filter_runtime_test.lua
-	lua tests/mohu_express_tiger_test.lua
-	lua tests/mohu_pin_test.lua
-	lua tests/mohu_symbol_commands_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_config_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_override_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_weight_reset_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_pin_store_test.lua
-	$(MOHU_LUA_BIN) tests/option_sync_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_tab_nav_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_candidate_manager_config_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_tiger_sentence_native_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_tiger_log_compat_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_tiger_user_model_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_tiger_context_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_tiger_two_char_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_personal_lexicon_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_path_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_charset_filter_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_contextual_translator_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_freestyle_config_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_hint_filter_runtime_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_model_version_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_path_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_personal_lexicon_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_pin_store_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_pin_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_reorder_filter_lexicon_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_semantic_gate_filter_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_semantic_meta_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_semantic_producer_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_sentence_visibility_filter_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_symbol_commands_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tab_nav_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_context_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_log_compat_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_tiger_no_early_commit_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_tiger_selected_segment_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_reorder_filter_lexicon_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_sentence_native_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_two_char_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_tiger_user_model_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_word_order_filter_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_freestyle_config_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_contextual_translator_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_charset_filter_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_hint_filter_runtime_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_pin_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_symbol_commands_test.lua
-	cp -a /usr/share/opencc/* dist/opencc       2>/dev/null || true
-	cp -a /usr/local/share/opencc/* dist/opencc 2>/dev/null || true
-	cp -a /opt/homebrew/share/opencc/* dist/opencc 2>/dev/null || true
-	test -f dist/opencc/t2tw.json || (echo "Error: cannot find shared opencc data!" && exit 1)
+	$(MOHU_LUA_BIN) tests/option_sync_test.lua
+	$(MOHU_LUA_BIN) tests/tiger_aux_config_test.lua
 
 	mira -C /tmp/mira-cache tests/mohu_zrm.test.yaml
 	mira -C /tmp/mira-cache tests/mohu_semantic_gate.test.yaml
@@ -413,5 +380,4 @@ test: dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-user-model tigerengine-context tigerengine-semantic tigerengine-word-score tigerengine-word-edge tigerengine-word-gate tigerengine-bench dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy test lint-python
-.PHONY: quick all dict mohu_lexicons tiger_aux fixed_tiger chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python
+.PHONY: quick all dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python

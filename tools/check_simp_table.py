@@ -15,7 +15,7 @@ def special(word):
 maybe_wrong = []
 warning = []
 
-with open('mohu_zrm_fixed.dict.yaml') as f:
+with open('mohu_zrm.dict.yaml') as f:
     for l in f:
         m = RE_ENTRY.match(l)
         if not m: continue

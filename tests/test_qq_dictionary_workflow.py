@@ -35,7 +35,7 @@ class QqDictionaryWorkflowTest(unittest.TestCase):
         self.assertIn("Acquire::Retries=3", script)
         self.assertIn("timeout 180s", script)
         self.assertNotIn("azure.archive.ubuntu.com", script)
-        self.assertIn("tools/install_opencc_ubuntu.sh", build)
+        self.assertIn("brew install opencc onnxruntime", build)
         self.assertIn("tools/install_opencc_ubuntu.sh", batch)
 
 

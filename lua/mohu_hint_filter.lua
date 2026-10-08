@@ -12,7 +12,7 @@
 --
 -- 0.3.0: 增加 quick_code_hint_indicator 选项
 --
--- 0.2.0: 若开启 inject_fixed_words ，则提示长词
+-- 0.2.0: 若开启 inject_table_words ，则提示长词
 --
 -- 0.1.0: 合并原 mohu_aux_hint 和 mohu_quick_code_hint
 --
@@ -26,7 +26,6 @@ function Module.init(env)
     env.is_auxfilter = env.name_space == "auxfilter"
     env.aux_priority_indicator = env.engine.schema.config:get_string("mohu/aux_priority_indicator") or "▾"
     env.quick_code_hint_dictionary = env.engine.schema.config:get_string("mohu/quick_code_hint_dictionary")
-        or env.engine.schema.config:get_string("fixed/dictionary")
         or env.engine.schema.config:get_string("translator/dictionary")
     env.quick_code_hint_reverse = nil
     env.quick_code_hint_skip_chars = env.engine.schema.config:get_bool("mohu/quick_code_hint_skip_chars") or false
@@ -38,8 +37,8 @@ function Module.init(env)
         env.quick_code_hint_indicator = "⚡"
     end
 
-    -- 若开启 inject_fixed_words，则可以提示长词（>=3）
-    env.inject_fixed_words = env.engine.schema.config:get_bool("mohu/inject_fixed_words") or false
+    -- 若开启 inject_table_words，则可以提示长词（>=3）
+    env.inject_table_words = env.engine.schema.config:get_bool("mohu/inject_table_words") or false
     -- NOTE: 暂不提示二字词
 end
 
@@ -124,7 +123,7 @@ function Module.get_quickcode_hint(env, cand, gcand)
     local in_use = false
     local codes = {}
     for code in all_codes:gmatch("%S+") do
-        if #code < 4 or (env.inject_fixed_words and len >= 3) then
+        if #code < 4 or (env.inject_table_words and len >= 3) then
             if code == cand.preedit:gsub("%s", "") then
                 in_use = true
             else

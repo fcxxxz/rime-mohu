@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 SCHEMA_MAP = {
-    "moran_fixed": "mohu_zrm_fixed",
+    "moran_fixed": "mohu_zrm",
     "moran_sentence": "mohu_zrm_sentence",
     "moran_aux": "mohu_zrm_aux",
     "moran": "mohu_zrm",
@@ -44,13 +44,13 @@ REMOVED_SCHEMA_IDS = (
 
 FILE_MAP = {
     "moran.custom.yaml": "mohu_zrm.custom.yaml",
-    "moran_fixed.custom.yaml": "mohu_zrm_fixed.custom.yaml",
+    "moran_fixed.custom.yaml": "mohu_zrm.custom.yaml",
     "moran_sentence.custom.yaml": "mohu_zrm_sentence.custom.yaml",
     "moran_aux.custom.yaml": "mohu_zrm_aux.custom.yaml",
 }
 
 DB_PREFIX_MAP = {
-    "moran_fixed_tiger_prefix2": "mohu_zrm_fixed_tiger_prefix2",
+    "moran_fixed_tiger_prefix2": "mohu_zrm_tiger_prefix2",
     "moran_sentence_tiger_prefix2": "mohu_zrm_sentence_tiger_prefix2",
     "moran_aux_tiger_prefix2": "mohu_zrm_aux_tiger_prefix2",
     "moran_tiger_prefix2": "mohu_zrm_tiger_prefix2",
@@ -60,7 +60,7 @@ DB_PREFIX_MAP = {
 }
 
 IDENTIFIER_MAP = {
-    "moran.extended": "mohu_zrm.extended",
+    "moran.extended": "mohu_zrm.words",
     "moran.chars": "mohu_zrm.chars",
     "moran.base": "mohu_zrm.base",
     "moran.words": "mohu_zrm.words",
@@ -193,7 +193,11 @@ def apply_migration(
         details = ", ".join(f"{path.name}:{token}" for path, token in plan.unknown_references)
         raise ValueError(f"unknown legacy references: {details}")
 
+    destinations: set[Path] = set()
     for source, target in plan.renames.items():
+        if target in destinations:
+            raise FileExistsError(f"multiple legacy files map to one target: {target}")
+        destinations.add(target)
         if target.exists() and target != source:
             raise FileExistsError(f"migration target already exists: {target}")
 

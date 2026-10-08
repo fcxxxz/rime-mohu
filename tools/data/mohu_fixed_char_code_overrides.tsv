@@ -1,8 +1,0 @@
-# character	natural_code	flypy_code
-# 生僻字三码独占用；不要拿它做喂/右/文/方 这类换位（会封死二码前缀）。见 docs/fixed-code-swap.md。
-𤭢	czz	cwz
-欻	iwc	ixc
-挼	rwu	rxu
-扽	dfu	dfu
-𰻝	bde	ble
-咱	zjd	zjd

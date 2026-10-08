@@ -13,19 +13,22 @@
    错音表按设计携带非规范读音供打错音出词，引擎不应学习。
 """
 
+import re
 import unittest
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 LEXICON = ROOT / "tiger_sentence_native" / "mohu_tiger.lexicon.txt"
 CUOYIN_WORDS = ROOT / "tools/data/wanxiang/cuoyin_words.txt"
 TABLES = [
-    "mohu_zrm.base.dict.yaml",
-    "mohu_zrm.words.dict.yaml",
-    "mohu_zrm.tencent.dict.yaml",
-    "mohu_zrm.moe.dict.yaml",
-    "mohu_zrm.classics.dict.yaml",
-    "mohu_zrm.wanxiang.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.tencent.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.moe.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml",
 ]
 READING_COVERAGE_MIN_WEIGHT = 100
 
@@ -64,27 +67,62 @@ def _load_cuoyin_words() -> set[str]:
     }
 
 
+def _declared_memory_aliases() -> set[tuple[str, str]]:
+    """A configured memory-code alias is not a new Mandarin pronunciation.
+
+    Derive only exact four-key -> two-key rules already declared by the schema,
+    and identify their characters in the actual master table. No hardcoded
+    character or reading whitelist is introduced.
+    """
+    config = yaml.safe_load((ROOT / "mohu.yaml").read_text())
+    def strings(value):
+        if isinstance(value, str):
+            yield value
+        elif isinstance(value, dict):
+            for child in value.values():
+                yield from strings(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from strings(child)
+
+    aliases = {}
+    for rule in strings(config.get("algebra", {})):
+        match = re.fullmatch(r"derive/\^([a-z]{4})\$?/([a-z]{2})/", rule)
+        if match:
+            aliases[match.group(1)] = match.group(2)
+    result = set()
+    for line in (ROOT / "mohu_zrm.dict.yaml").read_text().splitlines():
+        fields = line.split("\t")
+        if len(fields) >= 2 and len(fields[0]) == 1 and fields[1] in aliases:
+            result.add((fields[0], aliases[fields[1]]))
+    return result
+
+
 def _collect_missing() -> dict[tuple[str, str], int]:
     """返回 (字, 音节) -> 使用该缺读的最高词权。"""
     covered = _load_covered_syllables()
     engine_chars = _load_engine_chars()
     cuoyin_words = _load_cuoyin_words()
+    memory_aliases = _declared_memory_aliases()
     missing: dict[tuple[str, str], int] = {}
     for name in TABLES:
         path = ROOT / name
         if not path.exists():
             continue
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if not line or line.startswith("#") or line == "...":
+        header, body = path.read_text(encoding="utf-8").split("\n...\n", 1)
+        columns = yaml.safe_load(header).get("columns", ["text", "code", "weight"])
+        positions = {key: columns.index(key) for key in ("text", "code", "weight")}
+        for line in body.splitlines():
+            if not line or line.startswith("#"):
                 continue
             fields = line.split("\t")
-            if len(fields) < 3:
+            if len(fields) <= max(positions.values()):
                 continue
-            word, code = fields[0], fields[1]
+            word, code = fields[positions["text"]], fields[positions["code"]]
             if word in cuoyin_words:
                 continue
             try:
-                weight = int(fields[2] or 0)
+                weight = int(float(fields[positions["weight"]] or 0))
             except ValueError:
                 continue
             syllables = [tok.split(";", 1)[0] for tok in code.split()]
@@ -93,7 +131,7 @@ def _collect_missing() -> dict[tuple[str, str], int]:
             for char, syllable in zip(word, syllables):
                 if char not in engine_chars:
                     continue
-                if (char, syllable) not in covered:
+                if (char, syllable) not in covered and (char, syllable) not in memory_aliases:
                     key = (char, syllable)
                     if weight > missing.get(key, -1):
                         missing[key] = weight
@@ -101,6 +139,10 @@ def _collect_missing() -> dict[tuple[str, str], int]:
 
 
 class WordReadingCoverageTest(unittest.TestCase):
+    def test_memory_aliases_are_derived_from_existing_rules_and_master(self):
+        self.assertIn(("未", "we"), _declared_memory_aliases())
+        self.assertNotIn(("饭", "fa"), _declared_memory_aliases())
+
     def test_high_weight_word_readings_are_reachable(self) -> None:
         missing = _collect_missing()
         severe = {

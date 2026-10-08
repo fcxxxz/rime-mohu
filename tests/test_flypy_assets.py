@@ -8,29 +8,32 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import build_flypy_assets  # noqa: E402
+import fly_keys  # noqa: E402
+import sync_flykey_quickcodes  # noqa: E402
 from build_flypy_assets import (  # noqa: E402
-    FIXED_DICTIONARIES,
-    convert_fixed_code,
+    CODE_DICTIONARIES,
     convert_spelling_code,
+    convert_table_code,
 )
 
 
 class FlypyAssetConversionTest(unittest.TestCase):
-    def test_flypy_extended_dictionary_labels_flypy_character_table(self) -> None:
-        text = (ROOT / "mohu_flypy.extended.dict.yaml").read_text(encoding="utf-8")
-        self.assertIn("mohu_flypy.chars      # 小鹤单字表", text)
+    def test_flypy_sentence_dictionary_contains_character_source(self):
+        text = (ROOT / "mohu_flypy.words.dict.yaml").read_text(encoding="utf-8")
+        self.assertIn("# Source: mohu_flypy.chars.dict.yaml", text)
+        self.assertNotIn("import_tables:", text.split("\n...\n", 1)[0])
 
     def test_classics_dictionary_is_a_generated_flypy_asset(self) -> None:
         self.assertEqual(
             "mohu_flypy.classics",
-            build_flypy_assets.ZRM_DICTIONARIES["mohu_zrm.classics.dict.yaml"],
+            build_flypy_assets.ZRM_DICTIONARIES["tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml"],
         )
-        zrm = (ROOT / "mohu_zrm.classics.dict.yaml").read_text(encoding="utf-8")
-        flypy = (ROOT / "mohu_flypy.classics.dict.yaml").read_text(encoding="utf-8")
+        zrm = (ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml").read_text(encoding="utf-8")
+        flypy = (ROOT / "tools/data/lexicon_sources/flypy/mohu_flypy.classics.dict.yaml").read_text(encoding="utf-8")
         self.assertEqual(
             flypy,
             build_flypy_assets.convert_dictionary(
-                "mohu_zrm.classics.dict.yaml", "mohu_flypy.classics"
+                "tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml", "mohu_flypy.classics"
             ),
         )
         self.assertEqual(
@@ -39,8 +42,8 @@ class FlypyAssetConversionTest(unittest.TestCase):
         )
 
     def test_native_flypy_fixed_table_is_not_a_converted_asset(self) -> None:
-        self.assertNotIn("mohu_zrm_tiger_fixed.dict.yaml", FIXED_DICTIONARIES)
-        self.assertNotIn("mohu_zrm_tiger_fixed_legacy.dict.yaml", FIXED_DICTIONARIES)
+        self.assertNotIn("mohu_zrm_tiger_fixed.dict.yaml", CODE_DICTIONARIES)
+        self.assertNotIn("mohu_zrm_tiger_fixed_legacy.dict.yaml", CODE_DICTIONARIES)
 
     def test_converts_double_pinyin_and_preserves_tiger_auxiliary_code(self) -> None:
         self.assertEqual("yz;ab", convert_spelling_code("yb;ab"))
@@ -52,20 +55,24 @@ class FlypyAssetConversionTest(unittest.TestCase):
         self.assertEqual("yz;ab ld;cd", convert_spelling_code("yb;ab ll;cd"))
 
     def test_converts_fixed_code_shapes(self) -> None:
-        self.assertEqual("yza", convert_fixed_code("有", "yba"))
-        self.assertEqual("yzld", convert_fixed_code("有来", "ybll"))
-        self.assertEqual("yzl", convert_fixed_code("有来", "ybl"))
-        self.assertEqual("mry", convert_fixed_code("默认", "mry"))
-        self.assertEqual("ylld", convert_fixed_code("有来来", "ylll"))
-        self.assertEqual("yllx", convert_fixed_code("有来小心", "yllx"))
+        self.assertEqual("yza", convert_table_code("有", "yba"))
+        self.assertEqual("yzld", convert_table_code("有来", "ybll"))
+        self.assertEqual("yzl", convert_table_code("有来", "ybl"))
+        self.assertEqual("mry", convert_table_code("默认", "mry"))
+        self.assertEqual("ylld", convert_table_code("有来来", "ylll"))
+        self.assertEqual("yllx", convert_table_code("有来小心", "yllx"))
 
     def test_builds_flypy_custom_phrases_without_rewriting_source(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
+
+            (root / "tools/data/lexicon_sources/zrm").mkdir(parents=True, exist_ok=True)
+
+            (root / "tools/data/lexicon_sources/flypy").mkdir(parents=True, exist_ok=True)
             source = root / "mohu_zrm_custom_phrases.txt"
             original = (
                 "#@db/db_name\tmohu_zrm_custom_phrases\n"
-                "# add entries to mohu_zrm.extended.dict.yaml\n"
+                "# add entries to mohu_zrm.words.dict.yaml\n"
                 "自定义\tzdy\t0\n"
             )
             source.write_text(original, encoding="utf-8")
@@ -77,112 +84,39 @@ class FlypyAssetConversionTest(unittest.TestCase):
                 encoding="utf-8"
             )
             self.assertIn("mohu_flypy_custom_phrases", generated)
-            self.assertIn("mohu_flypy.extended.dict.yaml", generated)
+            self.assertIn("mohu_flypy.words.dict.yaml", generated)
             self.assertIn("自定义\tzdy\t0", generated)
 
-    def test_fixed_dictionary_keeps_priority_words_before_generated_characters(
-        self,
-    ) -> None:
+    def test_code_table_converts_all_rows_and_keeps_source_unchanged(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "mohu_zrm_fixed.dict.yaml").write_text(
-                "---\n"
-                "name: mohu_zrm_fixed\n"
-                'version: "1"\n'
-                "sort: original\n"
-                "...\n"
-                "\n"
-                "#----------置顶词----------#\n"
-                "哪里\tnal\n"
-                "\n"
-                "#----------生成单字----------#\n"
-                "𦰡\tnal\t\t0\n"
-                "\n"
-                "#----------词库----------#\n"
-                "哪里\tnali\n",
-                encoding="utf-8",
-            )
-            (root / "mohu_flypy_tiger_fixed.dict.yaml").write_text(
-                "# Generated\n"
-                "---\n"
-                "name: mohu_flypy_tiger_fixed\n"
-                'version: "1"\n'
-                "sort: by_weight\n"
-                "columns:\n"
-                "  - text\n"
-                "  - code\n"
-                "  - weight\n"
-                "...\n"
-                "\n"
-                "𦰡\tnal\t0\n",
-                encoding="utf-8",
-            )
-            with mock.patch.object(build_flypy_assets, "ROOT", root):
-                converted = build_flypy_assets.convert_fixed_dictionary(
-                    "mohu_zrm_fixed.dict.yaml", "mohu_flypy_fixed"
-                )
 
-        priority = converted.index("#----------置顶词----------#")
-        generated = converted.index("#----------生成单字----------#")
-        words = converted.index("#----------词库----------#")
-        self.assertLess(priority, generated)
-        self.assertLess(generated, words)
-        self.assertIn("哪里\tnal\n", converted[priority:generated])
-        self.assertIn("𦰡\tnal\t\t0", converted[generated:words])
+            (root / "tools/data/lexicon_sources/zrm").mkdir(parents=True, exist_ok=True)
 
-
-    def test_fixed_dictionary_regenerates_all_configured_fly_blocks(self) -> None:
-        with TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "mohu_zrm_fixed.dict.yaml").write_text(
-                "---\n"
-                "name: mohu_zrm_fixed\n"
-                'version: "1"\n'
-                "sort: original\n"
-                "...\n\n"
-                "#----------词库----------#\n"
-                "罢休\tbaxq\n"
-                "且\tqw\n"
-                "安居\tanju\n"
-                "暗语\tanyu\n"
-                "# 开始飞键 xq -> xo\n"
-                "旧\t旧\n"
-                "# 结束飞键\n"
-                "# 开始飞键 wz -> wk\n"
-                "旧\t旧\n"
-                "# 结束飞键\n",
-                encoding="utf-8",
-            )
-            (root / "mohu_flypy_tiger_fixed.dict.yaml").write_text(
-                "# Generated\n---\n"
-                "name: mohu_flypy_tiger_fixed\n"
-                'version: "1"\n'
-                "sort: by_weight\n"
-                "columns:\n  - text\n  - code\n  - weight\n...\n\n"
-                "𦰡\tnal\t0\n",
-                encoding="utf-8",
-            )
-            with mock.patch.object(build_flypy_assets, "ROOT", root):
-                converted = build_flypy_assets.convert_fixed_dictionary(
-                    "mohu_zrm_fixed.dict.yaml", "mohu_flypy_fixed"
-                )
-
-        # 小鹤飞键块数随 mohu_fly_keys.tsv 走（2026-09-21 起含 po->pd 共 5 块）。
-        self.assertEqual(
-            len(build_flypy_assets.fly_keys.FLY_FLYPY),
-            converted.count("开始飞键"),
-        )
-        self.assertNotIn("MOHU_FLY_SECTION", converted)
-        for source, target in build_flypy_assets.fly_keys.FLY_FLYPY.items():
-            self.assertIn(f"# 开始飞键 {source} -> {target}", converted)
-        self.assertIn("且\tqo", converted)
-        self.assertIn("安居\tanjv", converted)
-        self.assertIn("暗语\tanyv", converted)
+            (root / "tools/data/lexicon_sources/flypy").mkdir(parents=True, exist_ok=True)
+            source = root / "mohu_zrm.dict.yaml"
+            source.write_text("---\nname: mohu_zrm\nsort: original\n...\n哪里\tnal\n式\tuipu\n师\tuipf\n喂\twzd\n")
+            before = source.read_bytes()
+            old_root = build_flypy_assets.ROOT
+            try:
+                build_flypy_assets.ROOT = root
+                converted = build_flypy_assets.convert_code_table("mohu_zrm.dict.yaml", "mohu_flypy")
+            finally:
+                build_flypy_assets.ROOT = old_root
+            self.assertEqual(before, source.read_bytes())
+            self.assertIn("name: mohu_flypy", converted)
+            self.assertIn("式\tuipu", converted)
+            self.assertIn("师\tuipf", converted)
+            self.assertIn("喂\twwd", converted)
+            self.assertLess(converted.index("哪里\tnal"), converted.index("式\tuipu"))
+            expected = sync_flykey_quickcodes.build_expected(converted.splitlines(), sync_flykey_quickcodes.find_blocks(converted.splitlines()), fly_keys.FLY_FLYPY)
+            for lines in expected.values():
+                for line in lines:
+                    self.assertIn(line, converted)
 
     def test_flypy_schemas_wire_fly_flypy_before_generate_code(self) -> None:
         for name in (
             "mohu_flypy.schema.yaml",
-            "mohu_flypy_core.schema.yaml",
             "mohu_flypy_sentence_core.schema.yaml",
         ):
             text = (ROOT / name).read_text(encoding="utf-8")
@@ -196,7 +130,6 @@ class FlypyAssetConversionTest(unittest.TestCase):
             )
         for name in (
             "mohu_zrm.schema.yaml",
-            "mohu_zrm_core.schema.yaml",
             "mohu_zrm_sentence_core.schema.yaml",
         ):
             text = (ROOT / name).read_text(encoding="utf-8")

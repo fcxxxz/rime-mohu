@@ -4,14 +4,13 @@
 from __future__ import annotations
 
 import ctypes
-from ctypes import wintypes
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from ctypes import wintypes
+from pathlib import Path
 from typing import Any
-
 
 PROCESS_QUERY_INFORMATION = 0x0400
 PROCESS_VM_READ = 0x0010

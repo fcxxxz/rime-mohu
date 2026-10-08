@@ -3,7 +3,7 @@
 
 打法口径（与方案默认设置一致，候选位置来自真实 librime 引擎）：
 
-1. 有简出简：单字在固顶码表（mohu_*_fixed.dict.yaml 的「生成单字」）中
+1. 有简出简：单字在固顶码表（mohu_zrm.dict.yaml）中
    拥有 1~3 键简码时，字提只给最短简码，记作 ``简码_``（下划线表示空格上屏）。
 2. 四码让词：其余单字的音码+虎码前两码共四键。默认（动词）模式下四码时
    词组/智能组句优先，单字在首页的真实位置决定打法：
@@ -51,7 +51,7 @@ PAGE = 5  # 方案默认 menu/page_size: 5，首页数字键 1~5
 
 def parse_fixed(variant: str) -> dict[str, list[str]]:
     """固顶码表单字 -> 全部编码（含 stem），供「有简出简」取最短简码。"""
-    path = REPO / f"mohu_{variant}_fixed.dict.yaml"
+    path = REPO / f"mohu_{variant}.dict.yaml"
     codes: dict[str, list[str]] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith("#") or not line.strip():
@@ -71,7 +71,7 @@ def parse_fixed(variant: str) -> dict[str, list[str]]:
 
 def parse_chars(variant: str) -> dict[str, list[str]]:
     """chars 词典单字 -> 全码列表（yy;xx 去掉分号），按词频降序。"""
-    path = REPO / f"mohu_{variant}.chars.dict.yaml"
+    path = REPO / "tools/data/lexicon_sources" / variant / f"mohu_{variant}.chars.dict.yaml"
     codes: dict[str, list[str]] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith("#"):

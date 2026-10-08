@@ -161,25 +161,12 @@ class FlatDistributionTest(unittest.TestCase):
                 )
             )
 
-    def test_flat_packages_ship_semantic_model_assets(self) -> None:
-        # 魔虎语义进程内 C2 推理必需模型与词表；漏拷时「魔虎语义开」
-        # 首次命中即加载失败并把开关退回「关」，表现为功能装了不生效。
+    def test_flat_packages_exclude_optional_semantic_model_assets(self):
         with tempfile.TemporaryDirectory() as tmp:
             destination = Path(tmp) / "zrm"
             self.build("zrm", destination)
-            semantic = destination / "mohu_semantic"
-            model = semantic / "mohu_semantic.onnx"
-            vocab = semantic / "vocab.tsv"
-            self.assertTrue(model.is_file())
-            self.assertTrue(vocab.is_file())
-            self.assertTrue(
-                filecmp.cmp(ROOT / "mohu_semantic" / "mohu_semantic.onnx",
-                            model, shallow=False)
-            )
-            self.assertTrue(
-                filecmp.cmp(ROOT / "mohu_semantic" / "vocab.tsv",
-                            vocab, shallow=False)
-            )
+            self.assertFalse((destination / "mohu_semantic").exists())
+            self.assertFalse(any(destination.rglob("*.onnx")))
 
     def test_windows_runtime_requires_engine_entry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -5,9 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MOHU_SCHEMAS = (
     "mohu_zrm",
     "mohu_flypy",
-    "mohu_flypy_fixed",
-    "mohu_flypy_sentence_core",
-    "mohu_flypy_aux",
+    "mohu_flypy",
 )
 EXPECTED_QUICK = {
     ";q": "：“",
@@ -45,7 +43,7 @@ def read(path: str) -> str:
 
 def quick_entries() -> dict[str, list[str]]:
     entries: dict[str, list[str]] = {}
-    for line in read("mohu_fixed.symbols.dict.yaml").splitlines():
+    for line in read("mohu_zrm.dict.yaml").splitlines():
         if not line or line.startswith("#") or "\t" not in line:
             continue
         text, code, *_ = line.split("\t")

@@ -18,7 +18,6 @@ if str(REPO_ROOT) not in sys.path:
 
 from tools.evaluate_tiger_reranker import DEFAULT_BOOTSTRAP_SAMPLES, DEFAULT_SEED
 from tools.qwen_semantic_rerank import (
-    FORMAT_VERSION,
     SemanticMenuValidationError,
     eligible_menu_indices,
     make_scoring_request,

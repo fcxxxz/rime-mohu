@@ -75,40 +75,24 @@ class SplitDistributionTest(unittest.TestCase):
 
                 self.assertEqual(expected_schemas, schema_ids(output / "default.yaml"))
                 self.assertEqual(expected_schemas, visible_schema_ids(output))
-                schema_entries = (
-                    f"mohu_{scheme}_core.schema.yaml",
-                    f"mohu_{scheme}_fixed.schema.yaml",
-                    f"mohu_{scheme}_fixed_legacy.schema.yaml",
-                    f"mohu_{scheme}_sentence_core.schema.yaml",
-                )
                 for relative in (
                     f"mohu_{scheme}.schema.yaml",
-                    *schema_entries,
-                    f"mohu_{scheme}.extended.dict.yaml",
-                    f"mohu_{scheme}.classics.dict.yaml",
-                    f"mohu_{scheme}.base.dict.yaml",
-                    f"mohu_{scheme}.chars.dict.yaml",
-                    f"mohu_{scheme}_fixed.dict.yaml",
-                    f"mohu_{scheme}_fixed_legacy.dict.yaml",
-                    "mohu.yaml",
-                    "mohu_charset.schema.yaml",
-                    "mohu_pinyin.schema.yaml",
-                    "tiger.schema.yaml",
-                    "lua/zrmdb.txt",
-                    "opencc/mohu_chaifen.ocd2",
+                    f"mohu_{scheme}_sentence_core.schema.yaml",
+                    f"mohu_{scheme}.dict.yaml",
+                    f"mohu_{scheme}.words.dict.yaml",
+                    "mohu.yaml", "mohu_charset.schema.yaml", "mohu_pinyin.schema.yaml",
+                    "tiger.schema.yaml", "lua/zrmdb.txt", "opencc/mohu_chaifen.ocd2",
                     "opencc/mohu_emoji.ocd2",
                 ):
                     self.assertTrue((output / relative).is_file(), relative)
+                expected_dicts = {f"mohu_{scheme}.dict.yaml", f"mohu_{scheme}.words.dict.yaml",
+                                  "mohu_charset.dict.yaml", "mohu_pinyin.dict.yaml", "tiger.dict.yaml"}
+                self.assertEqual({p.name for p in output.glob("*.dict.yaml")}, expected_dicts)
+                word_header = (output / f"mohu_{scheme}.words.dict.yaml").read_text().split("\n...\n", 1)[0]
+                self.assertNotIn("import_tables", yaml.safe_load(word_header))
 
                 for schema_id in RETIRED_SCHEMAS[scheme]:
-                    with self.subTest(scheme=scheme, retired=schema_id):
-                        retired = yaml.safe_load(
-                            (output / f"{schema_id}.schema.yaml").read_text(
-                                encoding="utf-8"
-                            )
-                        )["schema"]
-                        self.assertEqual(schema_id, retired["schema_id"])
-                        self.assertNotIn("name", retired)
+                    self.assertFalse((output / f"{schema_id}.schema.yaml").exists())
 
                 self.assertEqual([], sorted(output.glob(f"mohu_{other}*")))
                 self.assertTrue(

@@ -19,54 +19,19 @@ end
 
 assert_contains("mohu.yaml", "pin:\n  enable: true")
 assert_contains("mohu.yaml", "    freestyle: true")
+assert_contains("mohu.yaml", '    infix: "//"')
 
-for _, path in ipairs({
-    "mohu_zrm.schema.yaml",
-    "mohu_zrm_fixed.schema.yaml",
-    "mohu_flypy.schema.yaml",
-    "mohu_flypy_aux.schema.yaml",
-    "mohu_flypy_fixed.schema.yaml",
-    "mohu_flypy_sentence_core.schema.yaml",
-}) do
+for _, path in ipairs({ "mohu_zrm.schema.yaml", "mohu_flypy.schema.yaml" }) do
     assert_contains(path, "  pin:\n    __include: mohu:/pin")
-    assert_before(
-        path,
-        "    - lua_processor@*mohu_candidate_override*override_processor",
-        "    - lua_processor@*mohu_pin*pin_processor"
-    )
-    assert_before(
-        path,
-        "    - lua_processor@*mohu_pin*pin_processor",
-        "    - key_binder"
-    )
-    assert_before(
-        path,
-        "    - lua_processor@*mohu_pin*pin_processor",
-        "    - ascii_composer"
-    )
+    assert_before(path, "    - lua_processor@*mohu_pin*pin_processor", "    - ascii_composer")
+    assert_before(path, "    - ascii_composer", "    - lua_processor@*mohu_candidate_override*override_processor")
+    assert_before(path, "    - lua_processor@*mohu_pin*pin_processor", "    - key_binder")
 end
-
--- 自然码组的字词/整句方案仅作 compile-only 垫片保留，配置仍需正确
 for _, prefix in ipairs({ "mohu_zrm", "mohu_flypy" }) do
-    local fixed = prefix .. "_fixed.schema.yaml"
     local sentence = prefix .. "_sentence_core.schema.yaml"
-    assert_contains(fixed, [[  alphabet: 'abcdefghijklmnopqrstuvwxyz/=;']])
-    assert_contains(fixed, "  auto_select_pattern: ^;(\\w|;)+")
-    assert_contains(fixed, [[    panacea: "^[a-z]*/{1,2}[a-z']*$"]])
-    assert_contains(sentence, "    - lua_processor@*mohu_pin*pin_processor")
-    assert_contains(sentence, "    - lua_translator@*mohu_pin*panacea_translator")
-    assert_contains(sentence, "    - lua_filter@*mohu_pin*pin_filter")
-    assert_contains(sentence, [[    panacea: "^[a-z]*/{1,2}[a-z']*$"]])
-    assert_before(
-        sentence,
-        "    - lua_processor@*mohu_candidate_override*override_processor",
-        "    - lua_processor@*mohu_pin*pin_processor"
-    )
-    assert_before(
-        sentence,
-        "    - lua_filter@*mohu_pin*pin_filter",
-        "    - lua_filter@*mohu_candidate_override*override_order_filter"
-    )
+    assert_contains(sentence, "script_translator")
+    assert(not read_file(sentence):find("pin_processor", 1, true))
+    assert(not read_file(sentence):find("pin_filter", 1, true))
 end
 
 print("guided word creation schema configuration tests passed")

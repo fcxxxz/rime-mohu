@@ -77,9 +77,9 @@ assert(ctx_b:get_option("quick_code_hint") == true, "B 会话按键后跟随 A �
 local env_d, ctx_d = make_env("mohu_zrm")
 option_sync.init(env_d)
 fake_ms = fake_ms + 1000
-ctx_a:set_option("multi_short_code", true)
+ctx_a:set_option("quick_code_hint", true)
 option_sync.func(key_press, env_d)
-assert(ctx_d:get_option("multi_short_code") == true, "通用开关跨方案同步")
+assert(ctx_d:get_option("quick_code_hint") == true, "通用开关跨方案同步")
 
 for _, schema_id in ipairs({ "mohu_zrm", "mohu_flypy", "other_schema" }) do
     local count = 0

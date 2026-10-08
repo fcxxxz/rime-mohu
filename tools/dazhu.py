@@ -107,16 +107,8 @@ def main(args):
         for (word, stem) in deferred:
             table.add(word, stem)
 
-    # additional symbols
-    with open('mohu_fixed.symbols.dict.yaml', 'r') as f:
-        for l in f:
-            matches = re.findall(r'(.*)\t(o[a-z]+)', l)
-            if not matches: continue
-            char, code = matches[0]
-            table.add(char, code)
-
     # additional chars
-    with open('mohu_zrm.chars.dict.yaml', 'r') as f:
+    with open('tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml', 'r') as f:
         for l in f:
             matches = re.findall(r'^([^\t]+)\t([a-z]+;[a-z]+)\t(\d+)', l)
             if not matches: continue
@@ -154,7 +146,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dict', default='mohu_zrm_fixed.dict.yaml', help='简码码表文件')
+    parser.add_argument('--dict', default='mohu_zrm.dict.yaml', help='简码码表文件')
     parser.add_argument('--opencc', '-c',
                         default='mohu_t2s.json',
                         help='轉換詞表（空表示不轉換）')

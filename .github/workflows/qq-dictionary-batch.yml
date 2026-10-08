@@ -75,7 +75,7 @@ jobs:
           PY
           git config user.name 'Qing Dictionary Bot'
           git config user.email 'qing-dictionary-bot@users.noreply.github.com'
-          git add mohu_zrm*.dict.yaml mohu_flypy*.dict.yaml tools/data/pinyin_simp.txt opencc/mohu_pinyinhint.txt
+          git add mohu_zrm.dict.yaml mohu_flypy.dict.yaml tools/data/lexicon_sources/zrm/ tools/data/pinyin_simp.txt opencc/mohu_pinyinhint.txt
           git diff --cached --quiet && exit 4
           git commit -m "dict: apply QQ batch $(cat "$RUNNER_TEMP/batch-id")"
           git push origin HEAD:${GITHUB_REF_NAME}

@@ -9,6 +9,8 @@ from pathlib import Path
 
 from tools.qwen_semantic_menu_observation import (
     FORMAT_VERSION as OBSERVATION_FORMAT_VERSION,
+)
+from tools.qwen_semantic_menu_observation import (
     SemanticMenuObservationError,
     load_observations,
     parse_observation_lines,
@@ -24,7 +26,6 @@ from tools.qwen_semantic_rerank import (
     validate_menu_record,
     validate_scoring_response,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools" / "evaluate_qwen_semantic_reranker.py"

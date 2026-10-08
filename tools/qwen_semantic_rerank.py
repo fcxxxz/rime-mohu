@@ -11,7 +11,6 @@ import json
 import math
 import unicodedata
 from collections.abc import Mapping, Sequence
-from typing import Any
 
 FORMAT_VERSION = "qwen-semantic-rerank/v1"
 MAX_CANDIDATES = 64

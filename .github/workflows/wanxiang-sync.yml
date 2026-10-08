@@ -335,7 +335,7 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|tools/data/wanxiang/cuoyin_words\.txt|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
+          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|tools/data/wanxiang/cuoyin_words\.txt|tools/data/lexicon_sources/zrm/mohu_zrm\.wanxiang\.dict\.yaml)$' || true)"
           if [[ -n "$unexpected" ]]; then
             echo 'build changed an unexpected tracked file:' >&2
             printf '%s\n' "$unexpected" >&2
@@ -364,7 +364,7 @@ jobs:
             echo "main moved during synchronization; retry against $base_sha" >&2
             exit 1
           fi
-          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|tools/data/wanxiang/cuoyin_words\.txt|mohu_zrm\.wanxiang\.dict\.yaml|mohu_flypy\.wanxiang\.dict\.yaml)$' || true)"
+          unexpected="$(git diff --name-only | grep -Ev '^(tools/data/wanxiang/manifest\.json|tools/data/wanxiang/SOURCE\.md|tools/data/wanxiang/sync_report\.md|tools/data/wanxiang/cuoyin_words\.txt|tools/data/lexicon_sources/zrm/mohu_zrm\.wanxiang\.dict\.yaml)$' || true)"
           if [[ -n "$unexpected" ]]; then
             echo 'synchronizer changed an unexpected tracked file:' >&2
             printf '%s\n' "$unexpected" >&2
@@ -380,8 +380,7 @@ jobs:
             tools/data/wanxiang/SOURCE.md \
             tools/data/wanxiang/sync_report.md \
             tools/data/wanxiang/cuoyin_words.txt \
-            mohu_zrm.wanxiang.dict.yaml \
-            mohu_flypy.wanxiang.dict.yaml
+            tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml
           git diff --cached --check
           git commit -m "dict: sync wanxiang dictionaries ${revision}"
           head_sha="$(git rev-parse HEAD)"

@@ -184,7 +184,7 @@ local fixed_char = { text = "佳", type = "table", preedit = "jwrg", comment = "
 function fixed_char:get_genuine() return self end
 local fixed_env = {
     engine = { context = { get_option = function() return true end } },
-    runtime_primary = {},
+    code_table = {},
     quick_code_indicator = "`F",
 }
 translator.output_begin(fixed_env)
@@ -200,9 +200,23 @@ local fixed_provenance = semantic_meta.resolve(fixed_yielded[1])
 assert(type(fixed_provenance) == "table" and
     fixed_provenance.provenance_version == "mohu-lexical/v1" and
     fixed_provenance.source == "fixed" and
-    fixed_provenance.lexical_translator == "fixed_primary" and
+    fixed_provenance.lexical_translator == "code_table" and
     fixed_provenance.candidate_type == "table" and
     fixed_provenance.native_score_kind == "unavailable_rime_lexical",
     "fixed candidates must retain lexical provenance at the query boundary")
+
+-- Short-code rows are the authority for both characters and words. Do not
+-- silently promote a character ahead of a word placed first by the maintainer.
+local table_rows = {}
+yield = function(candidate) table_rows[#table_rows + 1] = candidate end
+local order_env = { code_table = {}, quick_code_indicator = "⚡" }
+translator.output_begin(order_env)
+translator.output_table_order(order_env, fake_translation({ mock_candidate("哪里"), mock_candidate("𦰡") }), false)
+assert(table_rows[1].text == "哪里" and table_rows[2].text == "𦰡", "table row order must include words")
+table_rows = {}
+translator.output_begin(order_env)
+translator.output_table_order(order_env, fake_translation({ mock_candidate("哪里"), mock_candidate("𦰡") }), true)
+assert(#table_rows == 1 and table_rows[1].text == "𦰡", "partial sentence selection must retain its char-only constraint")
+yield = original_yield
 
 print("Mohu express IJRQ ordering tests passed")

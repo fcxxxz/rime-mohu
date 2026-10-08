@@ -94,6 +94,17 @@ class MohuMigrationTest(unittest.TestCase):
             self.assertNotIn("moran_fixed", plan.text_edits[source])
             self.assertNotIn("mohu_zrm_fixed", plan.text_edits[source])
 
+    def test_colliding_old_custom_files_are_blocked_before_any_write(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            for filename in ("moran.custom.yaml", "moran_fixed.custom.yaml"):
+                (root / filename).write_text("patch: {}\n")
+            plan = plan_migration(root)
+            with self.assertRaises(FileExistsError):
+                apply_migration(root, plan, timestamp="test")
+            self.assertFalse((root / "mohu_zrm.custom.yaml").exists())
+            self.assertFalse((root / "mohu-migration-backup-test").exists())
+
     def test_apply_backs_up_and_renames_config_and_userdb(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)

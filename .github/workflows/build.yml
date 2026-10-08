@@ -13,7 +13,7 @@ permissions:
 jobs:
   flykey-drift:
     # 飞键派生层漂移检查：对提交状态跑 make flykey-check（不重新生成）。
-    # 改过 fixed 词典主区却未重跑 sync_flykey 的提交会在此红掉，
+    # 主表与小鹤派生码表必须一致；整句合并产物由构建生成，不入 Git。
     # 避免 2026-09-20 尾/wkcv 类"部署了过期飞键块"的问题进仓库。
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +27,10 @@ jobs:
         run: uv sync --locked
 
       - name: Fly-key drift check
-        run: make flykey-check
+        run: make check-code-table flykey-check
+
+      - name: Validate editable code-table contract
+        run: uv run python -m unittest tests.test_unified_dictionary -v
 
   windows-runtime:
     runs-on: windows-latest
@@ -230,6 +233,12 @@ jobs:
         run: |
           make dist-zrm dist-flypy ZRM_DESTDIR=dist-zrm FLYPY_DESTDIR=dist-flypy \
             TIGER_WINDOWS_RUNTIME=windows-runtime
+
+      - name: Validate dictionary and source contracts
+        run: |
+          uv run python -m unittest tests.test_sentence_dictionary tests.test_flypy_assets tests.test_mohu_config -v
+          uv run python tools/check_distribution.py zrm dist-zrm
+          uv run python tools/check_distribution.py flypy dist-flypy
 
       - name: Validate flat packages
         run: |

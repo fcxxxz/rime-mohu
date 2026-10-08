@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LEXICON = ROOT / "tiger_sentence_native" / "data" / "zrm" / "mohu_zrm.lexicon.txt"
-CHARS_DICT = ROOT / "mohu_zrm.chars.dict.yaml"
+CHARS_DICT = ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml"
 TOOL = ROOT / "tools" / "fix_tiger_lexicon_fly.py"
 
 

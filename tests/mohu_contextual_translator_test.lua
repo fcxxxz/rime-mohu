@@ -101,53 +101,6 @@ assert(env.static_translator == nil)
 assert(env.contextual_commit_notifier == nil)
 assert(commit_connection_disconnected)
 
-local runtime_mode = false
-local runtime_env = {
-    engine = {
-        context = {
-            get_option = function(_, name)
-                assert(name == "multi_short_code")
-                return runtime_mode
-            end,
-        },
-    },
-}
-
-selector.init_runtime_pair(
-    runtime_env,
-    "multi_short_code",
-    "table_translator@fixed",
-    "table_translator@fixed_legacy"
-)
-assert(#created == 2)
-assert(created[2] == "table_translator@fixed")
-assert(selector.get_runtime(runtime_env).name == "table_translator@fixed_legacy")
-
-runtime_mode = true
-assert(selector.get_runtime(runtime_env).name == "table_translator@fixed")
-assert(#created == 3)
-assert(selector.get_runtime(runtime_env).name == "table_translator@fixed")
-assert(#created == 3)
-
-runtime_mode = false
-assert(selector.get_runtime(runtime_env).name == "table_translator@fixed_legacy")
-selector.fini_runtime_pair(runtime_env)
-assert(runtime_env.runtime_primary == nil)
-assert(runtime_env.runtime_alternate == nil)
-
-local static_env = {
-    engine = runtime_env.engine,
-}
-selector.fixed_static_selector.init(static_env)
-assert(#created == 4)
-assert(created[4] == "table_translator@translator")
-assert(selector.get_runtime(static_env).name == "table_translator@translator_legacy")
-assert(#created == 5)
-assert(created[5] == "table_translator@translator_legacy")
-selector.fixed_static_selector.fini(static_env)
-assert(static_env.runtime_primary == nil)
-assert(static_env.runtime_alternate == nil)
-
 local threshold_env = {
     engine = {
         schema = {

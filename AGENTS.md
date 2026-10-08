@@ -4,7 +4,7 @@
 
 - Always consult **rime-workflow** _and_ **rime-gears** skills if available. Even if you think you know Rime, double check! Mohu is a set of modern and advanced Rime schemas. You need up-to-date Rime knowledge first to answer questions accurately.
 - If user's choice of mohu schema is undecided, confirm which schema the user is asking about, and always refer to the documentation.
-- Short-code swaps / 简码换位 / 三码固顶: consult **rime-mohu-fixed-code-swap** and `docs/fixed-code-swap.md`. Edit claims / secondary / archive source files, then `make dict`. Do not hand-edit generated `mohu_*_fixed*.dict.yaml`.
+- Character/word codes, short/full codes and same-code order: edit `mohu_zrm.dict.yaml` directly; read `docs/code-table.md`. The build must never overwrite this source. Flypy is derived.
 
 ## Dev environment
 
@@ -23,7 +23,7 @@
 - **mohu_fixed** options: https://zrmfans.cn/book/schemas/zici/features.md
 - **mohu_aux** options: https://zrmfans.cn/book/schemas/fushai/features.md
 - **mohu_sentence** is a cut-down version of mohu, see the yaml file and compare to mohu.schema.yaml
-- **简码换位**: `docs/fixed-code-swap.md`（skill: `docs/skills/rime-mohu-fixed-code-swap/SKILL.md`）
+- **字词码表维护**: `docs/code-table.md`（单一主表：`mohu_zrm.dict.yaml`）
 
 ## Project knowledge base
 
@@ -46,10 +46,10 @@
 ## Dictionary maintenance notes
 
 - Distinguish **adding/removing a code** from **adding/removing a word**. If a report says a candidate is duplicated or has an extra/wrong code, usually keep the word and only add/remove the specific code unless the issue explicitly asks to remove the word.
-- `mohu_fixed.dict.yaml` and `mohu_fixed_simp.dict.yaml` should normally be updated together. When changing simplified entries, check and apply the corresponding traditional entries too.
+- Maintain natural-code character/word entries in `mohu_zrm.dict.yaml`; generate Flypy through `make dict`, never edit the Flypy output independently.
 - Keep dictionary blocks sorted by the code column. Do not append entries to the end of the file unless that is the correct block and sorted position.
 - Respect block boundaries. Three-character words belong in the three-word block, longer phrases in the main phrase block, and special/test blocks should stay separate.
 - When editing entries whose code contains a fly-key pattern (`wz -> wk`, `xq -> xo`, `qx -> qo`), update the corresponding fly-key region as well. For example, changing the order of `ihwz` entries also requires checking the generated/parallel `ihwk` entries.
 - When adding a new decomposition for a character in `tools/data/mohu_chai.txt`, keep existing decompositions unless the issue explicitly says the old decomposition is wrong and should be removed.
-- For intelligent/sentence dictionary additions without an explicit code, add them to `mohu.words.dict.yaml` at the end of the first block after the YAML header.
-- For single-character short-code swaps (一简 / 二简 / 三码固顶 / 同码次选), do **not** edit the generated character block in `mohu_*_fixed*.dict.yaml`. Use the three source files documented in `docs/fixed-code-swap.md`: `tools/data/mohu_fixed_code_claims.tsv` (3-code pin), `tools/data/mohu_fixed_secondary_codes.tsv` (same-code last place), `tools/data/mohu_fixed_simp_legacy_chars.txt` (1–2-key archive). Then run `make dict`. Do not use `mohu_fixed_char_code_overrides.tsv` for these swaps.
+- For intelligent/sentence dictionary additions without an explicit code, add them to `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml` at the end of the first block after the YAML header.
+- For all short-code swaps, secondary candidates and full-code changes, edit rows in `mohu_zrm.dict.yaml`; there are no claims/secondary/archive/overrides inputs or unique/multiple mode. Run `make check-code-table` and `make dict`.

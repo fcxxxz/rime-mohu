@@ -69,7 +69,7 @@ deploy:
     tests:
       - send: tz
         assert: eq(cand[1].text, '忒') and eq(cand[2].text, '投资') and eq(cand[2].comment, '⚡️')
-      # 次级简码：同码低优先级追加，不抢占现有分配（tools/data/mohu_fixed_secondary_codes.tsv）
+      # 同码次选：直接在主码表中按行序维护
       - send: jw
         assert: eq(cand[1].text, '家') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '加') and eq(cand[2].comment, '⚡️')
       - send: jws

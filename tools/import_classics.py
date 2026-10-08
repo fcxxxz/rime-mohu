@@ -30,12 +30,12 @@ MANIFEST = DATA / "sources.yaml"
 ENTRIES = DATA / "entries.tsv"
 OVERRIDES = DATA / "pinyin_overrides.tsv"
 LONG_ENTRIES = DATA / "long_entries.txt"
-OUTPUT = ROOT / "mohu_zrm.classics.dict.yaml"
+OUTPUT = ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml"
 ACTIVE_TABLES = (
-    ROOT / "mohu_zrm.base.dict.yaml",
-    ROOT / "mohu_zrm.words.dict.yaml",
-    ROOT / "mohu_zrm.tencent.dict.yaml",
-    ROOT / "mohu_zrm.moe.dict.yaml",
+    ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml",
+    ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml",
+    ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.tencent.dict.yaml",
+    ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.moe.dict.yaml",
 )
 AUXILIARY = ROOT / "tools" / "data" / "tiger_aux.txt"
 READINGS = ROOT / "tools" / "data" / "pinyin_simp.txt"

@@ -59,7 +59,7 @@ master 分支可使用如下命令进行日常维护：
 
 ```bash
 make quick                           # 快速更新单字信息
-make dict                            # 更新词库中的辅助码
+make dict                            # 校验主码表并更新派生资源，不改写主码表
 make dist-zrm                        # 生成扁平自然码方案包目录
 make dist-flypy                      # 生成扁平小鹤方案包目录
 make test                            # 执行单元测试
@@ -68,7 +68,7 @@ make test                            # 执行单元测试
 
 注意：master 分支必须首先 `make quick` 后才能部署。
 
-日常个人定制（个人拼写别名、加词入口对照、自定义短语、哪些设置会自动保存）见 [个人定制与组词规则](docs/dingzhi-个人定制与组词规则.md)。单字简码换位（一简 / 二简 / 三码固顶 / 同码次选）见 [简码换位](docs/fixed-code-swap.md)。
+日常个人定制（个人拼写别名、加词入口对照、自定义短语、哪些设置会自动保存）见 [个人定制与组词规则](docs/dingzhi-个人定制与组词规则.md)。字词编码、简码与同码顺序直接维护在 `mohu_zrm.dict.yaml`，见 [字词码表维护](docs/code-table.md)。
 
 ### 万象 nightly
 
@@ -94,3 +94,5 @@ uv run tools/migrate_moran_to_mohu.py ~/Library/Rime --apply
 ```
 
 脚本会在用户目录中创建 `mohu-migration-backup-时间戳` 备份，把旧配置和学习数据迁入自然码组；小鹤组从空用户数据开始。遇到未知旧引用时脚本会在写入前停止。完成后重新部署 Rime。
+
+发布包的方案字词数据已收敛为 `mohu_<scheme>.dict.yaml`（字词码表）与 `mohu_<scheme>.words.dict.yaml`（合并整句词库）。构建原料留在 `tools/data/lexicon_sources/`，不随包分发；反查和字集分类的三个辅助词典仍保留。详见 [字词码表维护](docs/code-table.md)。

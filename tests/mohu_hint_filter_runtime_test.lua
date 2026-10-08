@@ -50,7 +50,7 @@ end
 local config = {
     get_bool = function(_, key)
         if key == "mohu/quick_code_hint_skip_chars" then return false end
-        if key == "mohu/inject_fixed_words" then return true end
+        if key == "mohu/inject_table_words" then return true end
         return false
     end,
     get_string = function(_, key)

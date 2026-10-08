@@ -35,7 +35,7 @@ new_base.loc[new_base['text'].isin(change_map.keys()), 'text'] = \
     new_base.loc[new_base['text'].isin(change_map.keys()), 'text'].map(change_map)
 
 print('Writing...')
-with open('../mohu_zrm.base.dict.yaml', 'w') as f:
+with open('../tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml', 'w') as f:
     for _, row in new_base.iterrows():
         if not row['is_entry']:
             f.write(f"{row['line']}\n")

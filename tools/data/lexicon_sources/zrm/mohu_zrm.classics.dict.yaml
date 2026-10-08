@@ -1,0 +1,37 @@
+# Rime dictionary
+# encoding: utf-8
+# license: CC-BY-SA 4.0
+# Generated from reviewed classical-text entries; see tools/data/classics/SOURCE.md
+
+---
+name: mohu_zrm.classics
+version: "34253d318833"
+sort: by_weight
+use_preset_vocabulary: false
+columns:
+  - text
+  - code
+  - weight
+...
+乍阴乍阳	va;wa yn;tv va;wa yh;to	1
+云髻峨峨	yp;by ji;pe ee;vt ee;vt	1
+修眉联娟	xq;jg mz;cq lm;qh jr;bd	1
+修短合度	xq;jg dr;oz he;jd du;xl	1
+光润玉颜	gd;mg rp;ka yu;ni yj;ix	1
+动无常则	ds;bs wu;du ih;sr ze;op	1
+延颈秀项	yj;ts jy;ru xq;xv xd;uw	1
+徙倚彷徨	xi;ws yi;jm ph;wl hd;wu	1
+皓质呈露	hk;uq vi;xn ig;dn lu;tp	1
+皓齿内鲜	hk;uq ii;lc nz;mj xm;wg	1
+神光离合	uf;fo gd;mg li;zb he;jd	1
+秾纤得衷	ns;xw xm;il de;wo vs;td	1
+肩若削成	jm;mv ro;ln xt;yv ig;na	1
+腰如约素	yk;vv ru;bd yt;in su;ai	1
+芳泽无加	fh;ll ze;kr wu;du jw;sd	1
+若危若安	ro;ln wz;xx ro;ln an;wb	1
+若往若还	ro;ln wh;wi ro;ln hr;cu	1
+转眄流精	vr;ym mm;qf lq;kb jy;pa	1
+进止难期	jn;qu vi;si nj;ru qi;zh	1
+铅华弗御	qm;zo hw;jv fu;tf yu;wa	1
+靥辅承权	ye;xm fu;yn ig;ak qr;er	1
+骨像应图	gu;fg xd;jw yy;xk tu;rh	1

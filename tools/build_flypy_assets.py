@@ -8,8 +8,9 @@ from pathlib import Path
 
 import fly_keys  # noqa: E402
 import flypyify
-from sync_flykey_quickcodes import build_expected  # noqa: E402
 import zrmify
+from build_sentence_dictionary import build as build_sentence_dictionaries
+from sync_flykey_quickcodes import build_expected  # noqa: E402
 from tiger_aux import load_auxiliary_tsv
 
 import opencc
@@ -18,78 +19,25 @@ ROOT = Path(__file__).resolve().parents[1]
 T2S = opencc.OpenCC("t2s")
 
 ZRM_DICTIONARIES = {
-    "mohu_zrm.chars.dict.yaml": "mohu_flypy.chars",
-    "mohu_zrm.base.dict.yaml": "mohu_flypy.base",
-    "mohu_zrm.words.dict.yaml": "mohu_flypy.words",
-    "mohu_zrm.tencent.dict.yaml": "mohu_flypy.tencent",
-    "mohu_zrm.moe.dict.yaml": "mohu_flypy.moe",
-    "mohu_zrm.classics.dict.yaml": "mohu_flypy.classics",
-    "mohu_zrm.wanxiang.dict.yaml": "mohu_flypy.wanxiang",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml": "mohu_flypy.chars",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml": "mohu_flypy.base",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml": "mohu_flypy.words",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.tencent.dict.yaml": "mohu_flypy.tencent",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.moe.dict.yaml": "mohu_flypy.moe",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml": "mohu_flypy.classics",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml": "mohu_flypy.wanxiang",
 }
 
-FIXED_DICTIONARIES = {
-    "mohu_zrm_fixed.dict.yaml": "mohu_flypy_fixed",
-    "mohu_zrm_fixed_legacy.dict.yaml": "mohu_flypy_fixed_legacy",
-}
-
-GENERATED_CHARACTER_MARKER = "#----------生成单字----------#\n"
-WORD_TABLE_MARKER = "#----------词库----------#\n"
-PRIORITY_WORD_MARKER = "#----------置顶词----------#\n"
+CODE_DICTIONARIES = {"mohu_zrm.dict.yaml": "mohu_flypy"}
 
 # 小鹤飞键集合（单一事实源 tools/fly_keys.py，清单见 mohu_fly_keys.tsv）。
 # 小鹤词典的飞键区块不镜像自然码母表（自然码 qx=qie 的
 # qx→qo 内容对小鹤语义是错的），而是在音节转换完成后从小鹤主区块
 # 全量再生成（tools/sync_flykey_quickcodes.py 的闭包逻辑）。
-FLY_SECTION_SENTINEL = "\x00MOHU_FLY_SECTION\x00"
 FLY_BLOCK_START = re.compile(r"^#\s*开始飞键\s*(\S+)\s*->\s*(\S+)")
 FLY_BLOCK_END = re.compile(r"^#\s*结束飞键")
 
-SCHEMAS = {
-    "mohu_zrm_core.schema.yaml": ("mohu_zrm_core", "魔虎·自然码"),
-    # 字词方案已从选单移除，但仍作为 compile-only 方案保留，
-    # 供 mohu_zrm 的 dependencies 编译固顶码表，并生成小鹤字词方案。
-    "mohu_zrm_fixed.schema.yaml": ("mohu_zrm_fixed", "字词·魔虎·自然码"),
-    # 整句方案同理：compile-only 垫片，负责编译 mohu_zrm.extended 码表。
-    "mohu_zrm_sentence_core.schema.yaml": ("mohu_zrm_sentence_core", "整句·魔虎·自然码"),
-}
-
-REMOVED_SECTIONS = {
-    "english",
-    "japanese",
-    "japanese_o",
-    "std_t2s",
-    "std_t2hk",
-    "std_t2tw",
-    "std_t2jp",
-    "std_t2dzing",
-    "reverse_universal",
-    "reverse_stroke",
-    "reverse_cangjie5",
-    "reverse_zrlf",
-    "reverse_bopomofo",
-    "reverse_tick",
-    "reverse_lookup",
-    "recognizer_secondary",
-}
-
-REMOVED_LINE_TOKENS = (
-    "mohu_english",
-    "mohu_japanese",
-    "mohu_reverse",
-    "affix_segmentor@japanese_o",
-    "matcher@recognizer_secondary",
-    "table_translator@english",
-    "table_translator@japanese",
-    "lua_filter@*mohu_english_filter",
-    "reverse_lookup_translator@reverse_tick",
-    "reverse_lookup_translator@reverse_universal",
-    "reverse_lookup_translator@reverse_stroke",
-    "reverse_lookup_translator@reverse_cangjie5",
-    "reverse_lookup_translator@reverse_zrlf",
-    "reverse_lookup_translator@reverse_bopomofo",
-    "simplifier@std_t2",
-    "mohu:/key_bindings/mohu_ctrl_s",
-)
+SENTENCE_SCHEMA = "mohu_zrm_sentence_core.schema.yaml"
 
 
 def convert_syllable(code: str) -> str:
@@ -133,7 +81,7 @@ def keep_primary_auxiliaries(
     return " ".join(result)
 
 
-def convert_fixed_code(word: str, code: str) -> str:
+def convert_table_code(word: str, code: str) -> str:
     if len(word) == 1 and len(code) > 1 and code[0] != "o":
         return convert_syllable(code[:2]) + code[2:]
     if len(word) == 2 and len(code) == 4:
@@ -159,7 +107,7 @@ def convert_dictionary(source_name: str, target_name: str) -> str:
     lines = []
     in_body = False
     primary_auxiliaries = None
-    if source_name == "mohu_zrm.chars.dict.yaml":
+    if source_name == "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml":
         primary_auxiliaries = {
             char: entry.codes()
             for char, entry in load_auxiliary_tsv(
@@ -199,24 +147,16 @@ def compose_fly_blocks(expected: dict, fly: dict[str, str]) -> list[str]:
     return blocks
 
 
-def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
+def convert_code_table(source_name: str, target_name: str) -> str:
+    """Convert the editable master directly; never allocate or overwrite its rows."""
     text = (ROOT / source_name).read_text(encoding="utf-8")
-    if GENERATED_CHARACTER_MARKER in text:
-        start = text.index(GENERATED_CHARACTER_MARKER)
-        end = text.index(WORD_TABLE_MARKER, start)
-        text = text[:start] + text[end:]
     text = replace_dictionary_name(text, target_name)
-    text = text.replace("mohu_zrm_tiger_fixed", "mohu_flypy_tiger_fixed")
     lines = []
     in_body = False
     fly_drop = False
-    fly_sentinel = False
     for raw in text.splitlines(keepends=True):
         if FLY_BLOCK_START.match(raw):
             fly_drop = True
-            if not fly_sentinel:
-                lines.append(FLY_SECTION_SENTINEL + "\n")
-                fly_sentinel = True
             continue
         if FLY_BLOCK_END.match(raw):
             fly_drop = False
@@ -225,55 +165,17 @@ def convert_fixed_dictionary(source_name: str, target_name: str) -> str:
             continue
         if raw.strip() == "...":
             in_body = True
-            lines.append(raw)
-            continue
-        if not in_body or raw.startswith("#") or "\t" not in raw:
-            lines.append(raw)
-            continue
-        fields = raw.rstrip("\n").split("\t")
-        if len(fields) >= 2 and fields[1] and re.fullmatch(r"[a-z]+", fields[1]):
-            fields[1] = convert_fixed_code(fields[0], fields[1])
-        lines.append("\t".join(fields) + ("\n" if raw.endswith("\n") else ""))
+        if in_body and not raw.startswith("#") and "\t" in raw:
+            fields = raw.rstrip("\n").split("\t")
+            if len(fields) >= 2 and re.fullmatch(r"[a-z]+", fields[1]):
+                fields[1] = convert_table_code(fields[0], fields[1])
+            raw = "\t".join(fields) + ("\n" if raw.endswith("\n") else "")
+        lines.append(raw)
     converted = "".join(lines)
-    table_name = (
-        "mohu_flypy_tiger_fixed_legacy"
-        if target_name.endswith("_legacy")
-        else "mohu_flypy_tiger_fixed"
-    )
-    _, native_rows = split_dictionary_body(ROOT / f"{table_name}.dict.yaml")
-    parent_rows = []
-    for raw in native_rows:
-        fields = raw.rstrip("\n").split("\t")
-        if len(fields) < 3:
-            raise ValueError(f"invalid generated character row: {raw!r}")
-        parent_rows.append(f"{fields[0]}\t{fields[1]}\t\t{fields[2]}\n")
-    generated = GENERATED_CHARACTER_MARKER + "".join(parent_rows) + "\n"
-
-    def backfill_fly_section(text: str) -> str:
-        # 在原飞键区位置回填从小鹤主区块（含生成单字）再生成的飞键区块。
-        if FLY_SECTION_SENTINEL + "\n" not in text:
-            return text
-        body = text.splitlines(keepends=True)
-        at = next(
-            index for index, line in enumerate(body)
-            if line == FLY_SECTION_SENTINEL + "\n"
-        )
-        bare = [line.rstrip("\n") for line in body
-                if line != FLY_SECTION_SENTINEL + "\n"]
-        expected = build_expected(bare, [], fly_keys.FLY_FLYPY)
-        blocks = compose_fly_blocks(expected, fly_keys.FLY_FLYPY)
-        return "".join(body[:at] + blocks + body[at + 1:])
-
-    # 置顶词块必须保持在生成单字之前，因此把单字块插到词库标记处。
-    priority_index = converted.find(PRIORITY_WORD_MARKER)
-    if priority_index != -1:
-        insert_at = converted.index(WORD_TABLE_MARKER, priority_index)
-        return backfill_fly_section(
-            converted[:insert_at] + generated + "\n" + converted[insert_at:]
-        )
-    return backfill_fly_section(
-        converted.replace("...\n", "...\n\n" + generated, 1)
-    )
+    expected = build_expected(converted.splitlines(), [], fly_keys.FLY_FLYPY)
+    return ("# 小鹤派生表；请修改 mohu_zrm.dict.yaml 后运行 make dict。\n"
+            + converted.rstrip() + "\n\n"
+            + "".join(compose_fly_blocks(expected, fly_keys.FLY_FLYPY)))
 
 
 def split_dictionary_body(path: Path) -> tuple[str, list[str]]:
@@ -290,119 +192,6 @@ def split_dictionary_body(path: Path) -> tuple[str, list[str]]:
     return header + marker, rows
 
 
-def remove_top_level_sections(text: str, names: set[str]) -> str:
-    result = []
-    skipping = False
-    for line in text.splitlines(keepends=True):
-        match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*):", line)
-        if match:
-            skipping = match.group(1) in names
-        if not skipping:
-            result.append(line)
-    return "".join(result)
-
-
-def remove_conversion_switch(text: str) -> str:
-    lines = text.splitlines(keepends=True)
-    result = []
-    skipping = False
-    for line in lines:
-        if re.match(r"^  - options: \[ std_[ts]", line):
-            skipping = True
-            continue
-        if skipping and re.match(r"^  - name:", line):
-            skipping = False
-        if not skipping:
-            result.append(line)
-    return "".join(result)
-
-
-def normalize_schema(path: Path, schema_id: str, display_name: str) -> str:
-    text = T2S.convert(path.read_text(encoding="utf-8"))
-    text = remove_top_level_sections(text, REMOVED_SECTIONS)
-    text = remove_conversion_switch(text)
-    text = "".join(
-        line
-        for line in text.splitlines(keepends=True)
-        if not any(token in line for token in REMOVED_LINE_TOKENS)
-        and line.strip() != "- reverse_lookup_translator"
-        and not re.match(
-            r"^\s+(reverse_(?:lookup|universal|tick|stroke|cangjie5|zrlf|bopomofo)|japanese_o|english):",
-            line,
-        )
-        and line.strip() not in {"- stroke", "- cangjie5", "- bopomofo", "- zrlf"}
-    )
-    text = re.sub(r"(?m)^  schema_id: \S+$", f"  schema_id: {schema_id}", text, count=1)
-    text = re.sub(r"(?m)^  name: .+$", f"  name: {display_name}", text, count=1)
-    text = text.replace("states: [ 通用, 增广 ]", "states: [ 常用字, 全字集 ]")
-    text = text.replace("states: [ 通用, 增廣 ]", "states: [ 常用字, 全字集 ]")
-    text = re.sub(r"(?m)^  charset: (?:both|trad)$", "  charset: simp", text)
-
-    if schema_id.endswith("_fixed"):
-        if "  dependencies:\n" not in text.split("\nswitches:\n", 1)[0]:
-            text = text.replace(
-                "\nswitches:\n",
-                "  dependencies:\n    - mohu_charset\n    - tiger\n\nswitches:\n",
-                1,
-            )
-        if "  - name: extended_charset\n" not in text:
-            text = text.replace(
-                "  - name: emoji\n    states: [ 🈚, 🈶 ]\n",
-                "  - name: emoji\n    states: [ 🈚, 🈶 ]\n"
-                "  - name: extended_charset\n    states: [ 常用字, 全字集 ]\n",
-                1,
-            )
-        if "lua_filter@*mohu_charset_filter" not in text:
-            text = text.replace(
-                "  filters:\n",
-                "  filters:\n    - lua_filter@*mohu_charset_filter\n",
-                1,
-            )
-        if "\nmohu:\n  charset: simp\n" not in text:
-            text = text.replace("\nmohu:\n", "\nmohu:\n  charset: simp\n", 1)
-
-    replacements = {
-        "mohu_fixed": "mohu_zrm_fixed",
-        "mohu_sentence": "mohu_zrm_sentence",
-        "mohu_aux": "mohu_zrm_aux",
-        "mohu.extended": "mohu_zrm.extended",
-        "mohu.chars": "mohu_zrm.chars",
-        "mohu_tiger_prefix2": "mohu_zrm_tiger_prefix2",
-        "mohu_sentence_tiger_prefix2": "mohu_zrm_sentence_tiger_prefix2",
-        "mohu_aux_tiger_prefix2": "mohu_zrm_aux_tiger_prefix2",
-        "mohu_fixed_tiger_prefix2": "mohu_zrm_fixed_tiger_prefix2",
-        "mohu_custom_phrases": "mohu_zrm_custom_phrases",
-        "prism: mohu_aux": "prism: mohu_zrm_aux",
-        "prism: mohu\n": "prism: mohu_zrm\n",
-    }
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-    text = text.replace("*mohu_zrm_aux_translator", "*mohu_aux_translator")
-
-    if "reverse_lookup_translator@reverse_tiger" not in text:
-        marker = "    - punct_translator\n"
-        text = text.replace(marker, marker + "    - reverse_lookup_translator@reverse_tiger\n", 1)
-    if "\nreverse_tiger:\n" not in text:
-        section = (
-            "\nreverse_tiger:\n"
-            "  tag: reverse_tiger\n"
-            "  dictionary: tiger\n"
-            "  enable_completion: true\n"
-            "  prefix: \"ohm\"\n"
-            "  tips: 〔虎码〕\n"
-            "  comment_format:\n"
-            "    - xform/(\\w\\w);(\\w\\w)/$1[$2]/\n"
-        )
-        text = text.replace("\npunctuator:\n", section + "\npunctuator:\n", 1)
-    if "    reverse_tiger:" not in text:
-        text = text.replace(
-            "  patterns:\n",
-            '  patterns:\n    reverse_tiger: "^ohm[a-z]+$"\n',
-            1,
-        )
-    return text
-
-
 def flypy_schema(zrm_text: str) -> str:
     text = zrm_text.replace("mohu_zrm", "mohu_flypy")
     text = text.replace("*mohu_flypy_aux_translator", "*mohu_aux_translator")
@@ -416,13 +205,14 @@ def flypy_schema(zrm_text: str) -> str:
 
 
 def write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
 
 def build_flypy_custom_phrases() -> None:
     custom = T2S.convert((ROOT / "mohu_zrm_custom_phrases.txt").read_text(encoding="utf-8"))
     custom = custom.replace("mohu_custom_phrases", "mohu_zrm_custom_phrases")
-    custom = custom.replace("mohu.extended", "mohu_zrm.extended")
+    custom = custom.replace("mohu.extended", "mohu_zrm.words").replace("mohu_zrm.extended", "mohu_zrm.words")
     write(
         ROOT / "mohu_flypy_custom_phrases.txt",
         custom.replace("mohu_zrm", "mohu_flypy"),
@@ -435,42 +225,25 @@ def build() -> None:
         zrm_text = source_path.read_text(encoding="utf-8")
         zrm_name = target_name.replace("mohu_flypy", "mohu_zrm")
         zrm_text = replace_dictionary_name(zrm_text, zrm_name)
-        zrm_text = zrm_text.replace("mohu_tiger_fixed_simp", "mohu_zrm_tiger_fixed")
         write(source_path, zrm_text)
-        target_path = ROOT / source.replace("mohu_zrm", "mohu_flypy")
+        target_path = ROOT / source.replace("lexicon_sources/zrm/", "lexicon_sources/flypy/").replace("mohu_zrm", "mohu_flypy")
         write(target_path, convert_dictionary(source, target_name))
 
-    for source, target_name in FIXED_DICTIONARIES.items():
-        source_path = ROOT / source
-        zrm_text = source_path.read_text(encoding="utf-8")
-        zrm_name = target_name.replace("mohu_flypy", "mohu_zrm")
-        write(source_path, replace_dictionary_name(zrm_text, zrm_name))
-        target_path = ROOT / source.replace("mohu_zrm", "mohu_flypy")
-        write(target_path, convert_fixed_dictionary(source, target_name))
+    for source, target_name in CODE_DICTIONARIES.items():
+        target_path = ROOT / source.replace("lexicon_sources/zrm/", "lexicon_sources/flypy/").replace("mohu_zrm", "mohu_flypy")
+        write(target_path, convert_code_table(source, target_name))
 
-    extended = (ROOT / "mohu_zrm.extended.dict.yaml").read_text(encoding="utf-8")
-    extended = T2S.convert(extended)
-    extended = replace_dictionary_name(extended, "mohu_zrm.extended")
-    extended = extended.replace("mohu.chars", "mohu_zrm.chars")
-    for suffix in ("base", "words", "tencent", "moe", "classics"):
-        extended = extended.replace(f"mohu.{suffix}", f"mohu_zrm.{suffix}")
-    write(ROOT / "mohu_zrm.extended.dict.yaml", extended)
-    flypy_extended = extended.replace("mohu_zrm", "mohu_flypy").replace(
-        "# 自然码单字表", "# 小鹤单字表"
-    )
-    write(ROOT / "mohu_flypy.extended.dict.yaml", flypy_extended)
+    build_sentence_dictionaries(ROOT)
 
     custom = T2S.convert((ROOT / "mohu_zrm_custom_phrases.txt").read_text(encoding="utf-8"))
     custom = custom.replace("mohu_custom_phrases", "mohu_zrm_custom_phrases")
-    custom = custom.replace("mohu.extended", "mohu_zrm.extended")
+    custom = custom.replace("mohu.extended", "mohu_zrm.words").replace("mohu_zrm.extended", "mohu_zrm.words")
     write(ROOT / "mohu_zrm_custom_phrases.txt", custom)
     build_flypy_custom_phrases()
 
-    for filename, (schema_id, display_name) in SCHEMAS.items():
-        path = ROOT / filename
-        zrm_text = normalize_schema(path, schema_id, display_name)
-        write(path, zrm_text)
-        write(ROOT / filename.replace("mohu_zrm", "mohu_flypy"), flypy_schema(zrm_text))
+    # Public schemes retain intentionally distinct per-scheme runtime settings.
+    zrm_text = (ROOT / SENTENCE_SCHEMA).read_text(encoding="utf-8")
+    write(ROOT / SENTENCE_SCHEMA.replace("mohu_zrm", "mohu_flypy"), flypy_schema(zrm_text))
 
 
 

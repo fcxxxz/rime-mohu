@@ -235,8 +235,8 @@ do
   assert(env._tiger_user_model_on == false,
     "a dylib without the user model ABI must disable the layer silently")
   assert(#calls.weights == 0 and #calls.imports == 0)
-  local segment = { start = 0, _end = 6, has_tag = function(_, tag) return tag == "abc" end }
   ctx.input = "ufqyhfmimh"
+  local segment = { start = 0, _end = #ctx.input, has_tag = function(_, tag) return tag == "abc" end }
   yielded = {}
   native.translator.func("ufqyhfmimh", segment, env)
   assert(#yielded == 1, "translation must keep working on the old ABI")

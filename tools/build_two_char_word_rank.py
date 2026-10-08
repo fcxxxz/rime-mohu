@@ -2,7 +2,7 @@
 """Generate the two-character word rank asset for four-code char-vs-word ordering.
 
 The authority list (e.g. 二字词表2.0.txt, format ``word<TAB>count``) provides the
-base ordering. Mohu's own ``mohu_zrm.base.dict.yaml`` word weights are used only
+base ordering. Mohu's own ``tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml`` word weights are used only
 to fill gaps: words absent from the authority list but whose base weight maps to
 an equivalent rank within ``--add-limit`` are inserted with the floor of that
 equivalent rank. Authority words keep their original line ranks untouched, so
@@ -130,7 +130,7 @@ def main() -> None:
     parser.add_argument(
         "--base",
         type=Path,
-        default=ROOT / "mohu_zrm.base.dict.yaml",
+        default=ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml",
         help="Mohu base dictionary used for gap filling",
     )
     parser.add_argument(

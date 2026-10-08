@@ -10,21 +10,6 @@ SCHEMES = {"zrm", "flypy"}
 SCHEMA_LINE = re.compile(r"^(\s*)- schema: (\S+)\s*$")
 SCHEMA_NAME_LINE = re.compile(r"^  name:\s")
 
-RETIRED_SCHEMAS = {
-    "zrm": (
-        "mohu_zrm_aux",
-        "mohu_zrm_core",
-        "mohu_zrm_sentence",
-        "mohu_llm_zrm",
-    ),
-    "flypy": (
-        "mohu_flypy_aux",
-        "mohu_flypy_core",
-        "mohu_flypy_sentence",
-        "mohu_llm_flypy",
-    ),
-}
-
 COMMON_ROOT_PATHS = (
     "README.md",
     "安装说明.md",
@@ -34,7 +19,6 @@ COMMON_ROOT_PATHS = (
     "mohu_defs.yaml",
     "mohu_charset.dict.yaml",
     "mohu_charset.schema.yaml",
-    "mohu_fixed.symbols.dict.yaml",
     "mohu_pinyin.dict.yaml",
     "mohu_pinyin.schema.yaml",
     "key_bindings.yaml",
@@ -121,24 +105,20 @@ def remove_schema_name(path: Path) -> None:
     )
 
 
-def write_retired_schema(path: Path, schema_id: str) -> None:
-    path.write_text(
-        "# Retired Mohu schema ID; kept only to overwrite older releases.\n"
-        "schema:\n"
-        f"  schema_id: {schema_id}\n"
-        '  version: "retired"\n',
-        encoding="utf-8",
-    )
-
-
 def hide_internal_schemas(scheme: str, destination: Path) -> None:
     public_schema = f"mohu_{scheme}"
     for path in sorted(destination.glob("*.schema.yaml")):
         if path.name != f"{public_schema}.schema.yaml":
             remove_schema_name(path)
 
-    for schema_id in RETIRED_SCHEMAS[scheme]:
-        write_retired_schema(destination / f"{schema_id}.schema.yaml", schema_id)
+
+
+def scheme_root_paths(scheme: str) -> tuple[str, ...]:
+    if scheme not in SCHEMES:
+        raise ValueError(f"unsupported scheme: {scheme}")
+    return (f"mohu_{scheme}.schema.yaml", f"mohu_{scheme}_sentence_core.schema.yaml",
+            f"mohu_{scheme}.dict.yaml", f"mohu_{scheme}.words.dict.yaml",
+            f"mohu_{scheme}_custom_phrases.txt")
 
 
 def build_distribution(scheme: str, destination: Path) -> None:
@@ -148,9 +128,8 @@ def build_distribution(scheme: str, destination: Path) -> None:
     recreate_destination(destination)
     for relative in COMMON_ROOT_PATHS:
         copy_path(ROOT / relative, destination / relative)
-    for source in sorted(ROOT.glob(f"mohu_{scheme}*")):
-        if source.is_file():
-            copy_path(source, destination / source.name)
+    for relative in scheme_root_paths(scheme):
+        copy_path(ROOT / relative, destination / relative)
     copy_runtime_directories(scheme, destination)
     write_filtered_default(scheme, destination / "default.yaml")
     hide_internal_schemas(scheme, destination)

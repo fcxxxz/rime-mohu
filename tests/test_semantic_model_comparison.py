@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_DIR = ROOT / "research" / "semantic_student"
 if str(MODULE_DIR) not in sys.path:

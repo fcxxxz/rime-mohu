@@ -9,11 +9,8 @@ schema:
   description: |
     基于小鹤双拼和虎码12字根做辅码的魔虎整句输入方案。
   dependencies:
-    - mohu_flypy_fixed
-    # 部署只会编译一级依赖的码表，因此 legacy 码表也需直接列出
-    - mohu_flypy_fixed_legacy
     # mohu_flypy_sentence_core 在发布包中为无名称的 compile-only 垫片：
-    # 本方案引擎均为 lua 翻译器，mohu_flypy.extended 码表与 mohu_flypy 棱镜
+    # 本方案引擎均为 lua 翻译器，mohu_flypy.words 码表与 mohu_flypy 棱镜
     # 依赖该方案的标准翻译器在部署时编译。
     - mohu_flypy_sentence_core
     - mohu_charset
@@ -51,8 +48,6 @@ switches:
     states: [ 简码提示关, 简码提示 ]
   - name: aux_hint
     states: [ 辅助码提示关, 辅助码提示 ]
-  - name: multi_short_code
-    states: [ 多重简字, 唯一简字 ]
   - name: candidate_override_management
     states: [ 常规, 候选管理 ]
     reset: 0
@@ -141,11 +136,11 @@ speller:
 
 # smart：主力智能翻译器。
 # 用户正常输入时，mohu_express_translator 会优先调用它。
-# 它使用 mohu_flypy.extended 词典，可以输出单字、词语和整句；也可以读取用户词典。
+# 它使用 mohu_flypy.words 词典，可以输出单字、词语和整句；也可以读取用户词典。
 # 它负责“按当前输入组织句子”和上下文排序，不等于固定码的前缀补全。
 smart:
   # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
-  dictionary: mohu_flypy.extended
+  dictionary: mohu_flypy.words
   # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: mohu_flypy_tiger_prefix2
   # 拼写索引名，负责将输入编码映射到词典音节；不是另一份词库。
@@ -182,7 +177,7 @@ smart:
 # 长输入或需要稳定对照结果时使用；它仍然可以补全和造句，区别只是没有用户调频。
 smart_static:
   # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
-  dictionary: mohu_flypy.extended
+  dictionary: mohu_flypy.words
   # 用户词典名，用于保存学习记录；是否启用还受 enable_user_dict 控制。
   user_dict: ""
   # 拼写索引名，负责将输入编码映射到词典音节；不是另一份词库。
@@ -207,46 +202,15 @@ smart_static:
   # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
 
-# fixed：唯一简字模式使用的固定码翻译器。
-# 它读取 mohu_flypy_fixed；菜单选「唯一简字」（multi_short_code=true）时使用此段。
-fixed:
-  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
-  dictionary: mohu_flypy_fixed
-  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
+# 单一字词码表；编码与同码初始顺序直接在 mohu_flypy.dict.yaml 维护。
+translator:
+  dictionary: mohu_flypy
+  prism: mohu_flypy.codes
   initial_quality: 100
-  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
   enable_completion: false
-  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
   enable_sentence: false
-  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
   enable_user_dict: false
-  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
   enable_encoder: false
-  # 是否利用上屏历史自动造词；依赖 enable_encoder，编码器关闭时仅设 true 不会生效。
-  encode_commit_history: true
-
-# fixed_legacy：多重简字模式使用的旧版固定码翻译器。
-# 它读取 mohu_flypy_fixed_legacy；菜单选「多重简字」（multi_short_code=false）时使用此段。
-# 所以只打开 fixed/enable_completion，对当前多重简字模式不会生效。
-fixed_legacy:
-  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
-  dictionary: mohu_flypy_fixed_legacy
-  # 候选初始质量分偏移；越大通常越靠前，最终顺序还受后续过滤器影响。
-  initial_quality: 100
-  # 是否输出未完成编码的补全候选；true 开启，false 关闭，仅作用于本翻译器。
-  enable_completion: false
-  # 是否按当前输入编码拼接词典字词自动造句；不是上屏后预测下一个词。
-  enable_sentence: false
-  # 是否使用用户词典学习与调频；false 不等于禁用系统词典。
-  enable_user_dict: false
-  # 是否启用自动造词编码器；码表需要相应编码规则，不是补全开关。
-  enable_encoder: false
-  # 是否利用上屏历史自动造词；依赖 enable_encoder，编码器关闭时仅设 true 不会生效。
-  encode_commit_history: true
-
-translator_legacy:
-  # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
-  dictionary: mohu_flypy_fixed_legacy
 
 custom_phrase: # 自定义短语
   # 系统词典名，对应同名 dict.yaml；空字符串表示不加载系统词典。
@@ -535,15 +499,15 @@ mohu:
   quick_code_hint_skip_chars: false
 
   # 输入四码时，如果固顶码表中含有对应条目，则注入到首选之后。
-  inject_fixed_chars: true    # 是否输出固顶码表单字，例：输入 cisa 时，首屏显示「词」
-  inject_fixed_words: true    # 是否输出简码码表词语，例：输入 lmsd 时，次选为「两面三刀」
+  inject_table_chars: true    # 是否输出固顶码表单字，例：输入 cisa 时，首屏显示「词」
+  inject_table_words: true    # 是否输出简码码表词语，例：输入 lmsd 时，次选为「两面三刀」
   # 输入四码时，固顶码表单字是否前置由静态字频决定：
   # tiger_rank 排名（越小越常用）大于该门槛的生僻字让位给词，由
-  # inject_fixed_chars 注入到首选之后；排名不超过门槛的高频字维持固顶。
+  # inject_table_chars 注入到首选之后；排名不超过门槛的高频字维持固顶。
   # 设为 0 时所有单字都让位（魔然行为）。
   four_code_char_yield_rank: 2000
   # 按字豁免上面的让位规则：列在这里的字即使排名超过门槛也在四码前置，
-  # 例如配合次级简码使用的「暮」（tools/data/mohu_flypy_fixed_secondary_codes.tsv）。
+  # 例如配合次级简码使用的「暮」（tools/data/mohu_flypy_secondary_codes.tsv）。
   four_code_char_yield_exempt: 暮
   # (仅*动词模式*) 是否优先输出单字或词组
   inject_prioritize: "any"    # char 优先单字, word 优先词组，其他取值理解为按码表顺序

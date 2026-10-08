@@ -17,7 +17,7 @@
 
 ### 1. 有简出简
 
-* 固顶码表 `mohu_*_fixed.dict.yaml`「生成单字」中的 1~3 键编码即简码，
+* 字词主码表 `mohu_zrm.dict.yaml` 中的 1~3 键编码即简码，
   同字取最短；被挤的简码字还带备用简码（如 万=`mof`/`wjf`、丁=`dya`/`vga`），
   全部参与探测，取引擎第 1 位者。
 * 有简码的字一律给简码打法，不给全码——方案「出简让全」（ijrq）会把
@@ -89,5 +89,4 @@
     # 隔离回放 v.txt 得 vout.txt
     uv run python tools/gen_ziti.py verify-check --file 魔虎.txt --result vout.txt --count 150 --only-real
 
-注意：`*_fixed_legacy` 方案必须列入 schema_list，否则 lua 翻译器加载
-legacy 词库时报错，四码/五码查询结果为空。
+主方案的 `translator/dictionary: mohu_zrm` 负责主表编译；整句依赖单独编译整句词典。不再需要旧的唯一／多重字词方案。

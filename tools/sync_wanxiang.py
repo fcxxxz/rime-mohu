@@ -30,7 +30,7 @@ MANIFEST = DATA / "manifest.json"
 ENTRIES = DATA / "entries.tsv"
 MORAN_SEED = DATA / "moran_seed.tsv"
 CUOYIN_WORDS = DATA / "cuoyin_words.txt"
-OUTPUT = ROOT / "mohu_zrm.wanxiang.dict.yaml"
+OUTPUT = ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml"
 REPORT = DATA / "sync_report.md"
 RAW_ROOT = DATA / "raw"
 # 万象上游词权门槛（2026-09-21）：<100 不导入——人名/生僻噪声
@@ -192,7 +192,7 @@ def active_words() -> set[str]:
     names = ("chars", "base", "words", "tencent", "moe", "classics")
     result: set[str] = set()
     for name in names:
-        path = ROOT / f"mohu_zrm.{name}.dict.yaml"
+        path = ROOT / "tools/data/lexicon_sources/zrm" / f"mohu_zrm.{name}.dict.yaml"
         if not path.exists():
             continue
         in_body = False
@@ -361,7 +361,7 @@ def render_dictionary(entries: list[Candidate], version: str, auxiliary: dict[st
 def build() -> dict[str, int]:
     entries, seed_rows, stats = prepare_rows()
     # 与已提交的生成词典对比增量：CI 的全新克隆里没有本地中间文件，
-    # 只有 mohu_zrm.wanxiang.dict.yaml 始终存在，才能算出真实的每日增删。
+    # 只有 tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml 始终存在，才能算出真实的每日增删。
     previous: dict[str, str] = {}
     if OUTPUT.exists():
         in_body = False

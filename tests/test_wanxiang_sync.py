@@ -45,6 +45,7 @@ class WanxiangEnvironment:
     def __enter__(self) -> Path:
         self.temp = TemporaryDirectory()
         self.root = Path(self.temp.name)
+        (self.root / "tools/data/lexicon_sources/zrm").mkdir(parents=True)
         self.patches = [
             mock.patch.object(sync_wanxiang, "ROOT", self.root),
             mock.patch.object(sync_wanxiang, "DATA", self.root / "tools/data/wanxiang"),
@@ -63,7 +64,7 @@ class WanxiangEnvironment:
                 self.root / "tools/data/wanxiang/cuoyin_words.txt",
             ),
             mock.patch.object(
-                sync_wanxiang, "OUTPUT", self.root / "mohu_zrm.wanxiang.dict.yaml"
+                sync_wanxiang, "OUTPUT", self.root / "tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml"
             ),
             mock.patch.object(
                 sync_wanxiang, "REPORT", self.root / "tools/data/wanxiang/sync_report.md"
@@ -193,7 +194,7 @@ class SelectCandidatesTest(unittest.TestCase):
                         "有": "yo",
                     },
                 )
-                (root / "mohu_zrm.base.dict.yaml").write_text(
+                (root / "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml").write_text(
                     "---\nname: base\n...\n\n已有\tyi vw\t1\n", encoding="utf-8"
                 )
                 selected, stats = sync_wanxiang.select_candidates()
@@ -318,7 +319,7 @@ class PrepareRowsTest(unittest.TestCase):
                     "已": "yi",
                 },
             )
-            (root / "mohu_zrm.base.dict.yaml").write_text(
+            (root / "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml").write_text(
                 "---\nname: base\n...\n\n已有\tyi vw\t1\n", encoding="utf-8"
             )
             (data / "moran_seed.tsv").write_text(
@@ -579,7 +580,7 @@ class BuildDeltaTest(unittest.TestCase):
             )
             write_snapshot(data / "raw/one.dict.yaml", ["新增\txin1 zeng1\t100"])
             write_aux(root, {"新": "xx", "增": "zz"})
-            (root / "mohu_zrm.wanxiang.dict.yaml").write_text(
+            (root / "tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml").write_text(
                 "---\nname: mohu_zrm.wanxiang\n...\n\n旧词\tjiu4 ci2\t20\n",
                 encoding="utf-8",
             )
@@ -588,7 +589,7 @@ class BuildDeltaTest(unittest.TestCase):
             self.assertEqual(stats["removed"], 1)
             self.assertEqual(stats["selected"], 1)
             self.assertEqual(stats["seed_merged"], 0)
-            output = (root / "mohu_zrm.wanxiang.dict.yaml").read_text(encoding="utf-8")
+            output = (root / "tools/data/lexicon_sources/zrm/mohu_zrm.wanxiang.dict.yaml").read_text(encoding="utf-8")
             self.assertIn("新增\txn;xx zg;zz\t100", output.splitlines())
             # 错音词库词面清单随构建落盘。
             self.assertEqual(

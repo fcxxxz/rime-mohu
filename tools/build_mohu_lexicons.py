@@ -402,7 +402,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path,
                         default=ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt")
-    parser.add_argument("--chars-dict", type=Path, default=ROOT / "mohu_zrm.chars.dict.yaml")
+    parser.add_argument("--chars-dict", type=Path, default=ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml")
     parser.add_argument("--zrm-output", type=Path,
                         default=ROOT / "tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt")
     parser.add_argument("--flypy-output", type=Path,
@@ -411,8 +411,8 @@ def main() -> int:
     reading_frequencies = load_reading_frequencies(args.chars_dict)
     rows = load_rows(args.source, reading_frequencies)
     syllables = load_character_syllables(args.chars_dict)
-    zrm_words = load_inject_words(ROOT / "mohu_zrm.base.dict.yaml")
-    flypy_words = load_inject_words(ROOT / "mohu_flypy.base.dict.yaml")
+    zrm_words = load_inject_words(ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml")
+    flypy_words = load_inject_words(ROOT / "tools/data/lexicon_sources/flypy/mohu_flypy.base.dict.yaml")
     zrm_rows = build_rows(rows, "zrm", syllables, zrm_words)
     fly_rows = build_rows(rows, "flypy", syllables, flypy_words)
     write_rows(args.zrm_output, zrm_rows)

@@ -13,8 +13,8 @@ def load_yaml(path: Path) -> dict:
 
 
 class MohuSchemaTest(unittest.TestCase):
-    CASES = (("zrm", "自然码", "mohu_zrm", "mohu_zrm_fixed"),
-             ("flypy", "小鹤", "mohu_flypy", "mohu_flypy_fixed"))
+    CASES = (("zrm", "自然码", "mohu_zrm", "mohu_zrm"),
+             ("flypy", "小鹤", "mohu_flypy", "mohu_flypy"))
 
     def test_each_schema_has_explicit_identity_and_lexicon(self) -> None:
         for scheme, label, dictionary, fixed in self.CASES:
@@ -23,7 +23,8 @@ class MohuSchemaTest(unittest.TestCase):
                 self.assertEqual(f"mohu_{scheme}", schema["schema"]["schema_id"])
                 self.assertEqual(f"魔虎·{label}", schema["schema"]["name"])
                 self.assertNotIn(dictionary, schema["schema"]["dependencies"])
-                self.assertIn(fixed, schema["schema"]["dependencies"])
+                self.assertEqual(dictionary, schema["translator"]["dictionary"])
+                self.assertIn(f"mohu_{scheme}_sentence_core", schema["schema"]["dependencies"])
                 self.assertEqual(scheme, schema["tiger"]["scheme"])
                 self.assertEqual(f"mohu/data/{scheme}/mohu_{scheme}.lexicon.txt", schema["tiger"]["lexicon"])
                 self.assertEqual(f"mohu_{scheme}", schema["tiger"]["candidate_type"])
@@ -48,10 +49,10 @@ class MohuSchemaTest(unittest.TestCase):
                 self.assertNotIn("__include", schema)
                 self.assertNotIn("octagram", str(schema).lower())
 
-    def test_native_quality_is_between_fixed_and_smart(self) -> None:
+    def test_native_quality_is_between_code_table_and_smart(self) -> None:
         for scheme, _label, _dictionary, _fixed in self.CASES:
             schema = load_yaml(ROOT / f"mohu_{scheme}.schema.yaml")
-            self.assertGreater(schema["fixed"]["initial_quality"], schema["tiger"]["initial_quality"])
+            self.assertGreater(schema["translator"]["initial_quality"], schema["tiger"]["initial_quality"])
             self.assertGreater(schema["tiger"]["initial_quality"], schema["smart"]["initial_quality"])
 
     def test_legacy_native_schema_is_removed(self) -> None:

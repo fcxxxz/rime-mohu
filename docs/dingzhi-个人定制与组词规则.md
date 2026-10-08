@@ -43,8 +43,8 @@
 
 | 管线 | 数据源 | 查询方式 | 参与组词组句 |
 |---|---|---|---|
-| 整句引擎（smart） | `mohu_zrm.extended`（chars/base/words/tencent 等汇总） | 按音节切分 | ✅ |
-| 字词码表（fixed） | `mohu_zrm_fixed.dict.yaml` | 整码精确匹配（`enable_sentence: false`） | ❌ |
+| 整句引擎（smart） | `mohu_zrm.words`（自包含合并整句词库） | 按音节切分 | ✅ |
+| 字词码表（fixed） | `mohu_zrm.dict.yaml` | 整码精确匹配（`enable_sentence: false`） | ❌ |
 | 自定义短语（custom_phrase） | `mohu_zrm_custom_phrases.txt` | 整码精确匹配 | ❌ |
 
 给一个字手写一条裸码（比如在码表里加 `命 mij`），只会让**打完整码时单独出这个字**，永远不能拼上后面的输入，原因有两层：
@@ -56,17 +56,17 @@
 
 | 需求 | 正确入口 | 参与组句 | 需重新部署 | 自动记录 |
 |---|---|---|---|---|
-| 加常用词 | `mohu_zrm.words.dict.yaml` 第一块末尾（无码加词） | ✅ | ✅ | ❌ 手动 |
+| 加常用词 | `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml` 第一块末尾（无码加词） | ✅ | ✅ | ❌ 手动 |
 | 给字加新辅码（拆分） | 仓库源数据 `tools/data/mohu_chai.txt`（保留旧拆分）+ `make all` | ✅ | ✅ | ❌ 手动 |
 | 个人速记短语 | `~/Library/Rime/mohu_zrm_custom_phrases.txt`（`文字<Tab>编码<Tab>权重`） | ❌ | ✅ | ❌ 手动 |
 | 个人拼写别名（见下节） | `~/Library/Rime/mohu.custom.yaml` | ✅ | ✅ | ❌ 手动 |
 | 候选调频 | 打字学习，存 `*.userdb` | — | 不需要 | ✅ 自动 |
 | 候选置顶/沉底 | 候选管理模式（开关 `candidate_override_management`） | — | 不需要 | ✅ 自动 |
-| 单字简码换位（一/二/三码固顶、同码次选） | 仓库三份源数据，见 [`docs/fixed-code-swap.md`](fixed-code-swap.md) | ❌ 只改码表 | ✅ | ❌ 手动 |
+| 字词编码、简码与同码顺序 | `mohu_zrm.dict.yaml`，见 [`字词码表维护`](code-table.md) | ✅ 直接改主表 | ✅ | ❌ 手动 |
 
 说明：
 
-- 安装包用户改 `mohu_zrm.words.dict.yaml` 不需要跑 make——把词加进用户目录里这份词表、重新部署即可（部署会重新编译词典）。但注意**重新从发布包覆盖安装会连同你的词表改动一起覆盖**，覆盖前记得备份合并；`mohu.custom.yaml` 和 `*.userdb` 不在发布包里，不受影响。
+- 安装包用户编辑的是用户目录中的 `mohu_zrm.words.dict.yaml`，不是源码原料目录；无需跑 make，追加一行词语后重新部署即可。发布词库列为 `text/code/weight`，无码且无指定词频时只写词语；指定频率时写 `词语<Tab><Tab>频率`。源码维护则改 `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml` 后运行 `make dict`。但注意**重新从发布包覆盖安装会连同你的词表改动一起覆盖**，覆盖前记得备份合并；`mohu.custom.yaml` 和 `*.userdb` 不在发布包里，不受影响。
 - 自定义短语文件随发布包分发（内容为空、只有注释头），覆盖安装同样注意备份。
 
 ## 四、个人拼写别名：给熟悉的打法加个别名

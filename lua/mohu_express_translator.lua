@@ -13,7 +13,7 @@
 --
 -- 0.13.0: 四码普通（动词）模式按静态字频决定固顶单字是否前置：
 -- tiger_rank 排名大于 mohu/four_code_char_yield_rank（默认 2000）的
--- 生僻字让位给词，改由 inject_fixed_chars 注入到首选之后；高频字
+-- 生僻字让位给词，改由 inject_table_chars 注入到首选之后；高频字
 -- 维持固顶。门槛设为 0 时全部让位（魔然行为）。
 --
 -- 0.12.2: 五码词辅候选消费辅码，未匹配时才回退到四码词
@@ -31,9 +31,8 @@
 --
 -- 0.10.0: 增加 inject_prioritize 支持。
 --
--- 0.9.0: show_words_anyway 和 show_chars_anyway 分别更名为
--- inject_fixed_words 和 inject_fixed_chars。为保持兼容性，原名还可以
--- 继续使用（优先级高于新名），但未来可能被删除。
+-- 主字词表配置统一使用 inject_table_chars / inject_table_words。
+-- 旧版注入配置别名已移除，不再维护两套命名。
 --
 -- 0.8.1: 支持 word_filter_match_indicator。
 --
@@ -100,14 +99,11 @@ end
 -- 语义谱系：fixed/smart 候选在离开查询边界前绑定不可变来源事实。
 -- 绑定失败不影响候选输出；二次绑定（缓冲重放）被静默忽略。
 local function lexical_translator_name(env, translator)
-    if translator == env.static_translator then
+    if translator ~= nil and translator == env.static_translator then
         return "smart_static"
     end
-    if translator == env.runtime_alternate then
-        return "fixed_alternate"
-    end
-    if translator == env.runtime_primary then
-        return "fixed_primary"
+    if translator ~= nil and translator == env.code_table then
+        return "code_table"
     end
     return "smart"
 end
@@ -148,25 +144,11 @@ local kWord = 2
 
 function top.init(env)
     -- Rime 组件
-    contextual.init_runtime_pair(
-        env,
-        "multi_short_code",
-        "table_translator@fixed",
-        "table_translator@fixed_legacy"
-    )
+    env.code_table = Component.Translator(env.engine, "", "table_translator@translator")
     contextual.init_pair(env, "smart")
-    env.rfixed_cache = {}
-    env.rfixed = function()
-        local multi = not env.engine.context:get_option("multi_short_code")
-        local key = multi and "legacy" or "unique"
-        if not env.rfixed_cache[key] then
-            local section = multi and "fixed_legacy" or "fixed"
-            local dictionary = env.engine.schema.config:get_string(section .. "/dictionary")
-                or (multi and "mohu_zrm_fixed_legacy" or "mohu_zrm_fixed")
-            env.rfixed_cache[key] = ReverseLookup(dictionary)
-        end
-        return env.rfixed_cache[key]
-    end
+    local dictionary = env.engine.schema.config:get_string("translator/dictionary") or "mohu_zrm"
+    env.code_table_reverse = ReverseLookup(dictionary)
+    env.rfixed = function() return env.code_table_reverse end
 
     -- 简快码相关配置项
     env.quick_code_indicator = env.engine.schema.config:get_string("mohu/quick_code_indicator") or "⚡️"
@@ -186,8 +168,8 @@ function top.init(env)
     env.ijrq_suffix = env.engine.schema.config:get_string("mohu/ijrq/suffix") or 'o'
     env.enable_word_filter = env.engine.schema.config:get_bool("mohu/enable_word_filter")
     env.word_filter_match_indicator = env.engine.schema.config:get_string("mohu/word_filter_match_indicator")
-    env.inject_fixed_chars = env.engine.schema.config:get_bool("mohu/show_chars_anyway") or env.engine.schema.config:get_bool("mohu/inject_fixed_chars")
-    env.inject_fixed_words = env.engine.schema.config:get_bool("mohu/show_words_anyway") or env.engine.schema.config:get_bool("mohu/inject_fixed_words")
+    env.inject_table_chars = env.engine.schema.config:get_bool("mohu/inject_table_chars")
+    env.inject_table_words = env.engine.schema.config:get_bool("mohu/inject_table_words")
 
     local inject_prioritize = env.engine.schema.config:get_string("mohu/inject_prioritize")
     if inject_prioritize == 'word' then
@@ -219,10 +201,10 @@ function top.init(env)
 end
 
 function top.fini(env)
-    contextual.fini_runtime_pair(env)
+    env.code_table = nil
     contextual.fini_pair(env)
     env.rfixed = nil
-    env.rfixed_cache = nil
+    env.code_table_reverse = nil
     env.output_injected_secondary = nil
     collectgarbage()
 end
@@ -253,17 +235,17 @@ function top.func(input, seg, env)
     -- 用户尚未选过字时，调用码表。
     local is_sentence_making = not (env.engine.context.input == input)
     if not is_sentence_making or env.quick_code_in_sentence_making then
-        local fixed_res = contextual.get_runtime(env):query(input, seg)
+        local fixed_res = env.code_table:query(input, seg)
         -- 如果输入长度为 4，只输出 2 字词。
         if fixed_res ~= nil then
             if (input_len == 4) then
-                if inflexible and env.inject_fixed_words and env.inject_fixed_chars then
-                    -- 如果固词, inject_fixed_words 和 inject_fixed_chars 同时打开，则理解为挂接用法，直接输出码表。
+                if inflexible and env.inject_table_words and env.inject_table_chars then
+                    -- 如果固词, inject_table_words 和 inject_table_chars 同时打开，则理解为挂接用法，直接输出码表。
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, function(_) return true end)
-                elseif inflexible and env.inject_fixed_words then
+                elseif inflexible and env.inject_table_words then
                     -- 固词 + 长词 = 只有词
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, false, function(_) return true end)
-                elseif inflexible and env.inject_fixed_chars then
+                elseif inflexible and env.inject_table_chars then
                     -- 固词 + 单字 = 只有单字和二字词
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, function(len) return len == 2 end)
                 elseif inflexible then
@@ -288,9 +270,9 @@ function top.func(input, seg, env)
                     -- 全码占据的多字词会整条不可见（如 yuhx 上「游手好闲」撞
                     -- 「鹆」yu+hx）。无字固顶的码不进此分支，仍由注入块放到
                     -- smart 首选之后，行为不变。
-                    if env.inject_fixed_words and env.output_i > 0 then
-                        local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
-                        for cand in mohu.query_translation(contextual.get_runtime(env), input, seg, nil) do
+                    if env.inject_table_words and env.output_i > 0 then
+                        local fixed_name = lexical_translator_name(env, env.code_table)
+                        for cand in mohu.query_translation(env.code_table, input, seg, nil) do
                             bind_lexical_provenance(env, cand, "fixed", fixed_name)
                             if utf8.len(cand.text) > 2 and not is_sentence_making then
                                 cand:get_genuine().comment = indicator
@@ -299,18 +281,13 @@ function top.func(input, seg, env)
                         end
                     end
                 end
-            elseif input_len < 4 then          -- 造句模式下，只使用固定单字（词语无法固定）
-                local words = nil
-                if not is_sentence_making then
-                    words = function(_) return true end
-                end
-                top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, words)
-            elseif not is_sentence_making then  -- input_len > 4，输出所有
-                local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
-                for cand in fixed_res:iter() do
-                    bind_lexical_provenance(env, cand, "fixed", fixed_name)
-                    top.output_from_fixed(env, cand, is_sentence_making)
-                end
+            elseif input_len < 4 then
+                -- Exact short-code candidates follow the editable table, including
+                -- word-before-character rows. During partial sentence selection,
+                -- retain the existing character-only restriction.
+                top.output_table_order(env, fixed_res, is_sentence_making)
+            elseif not is_sentence_making then
+                top.output_table_order(env, fixed_res, false)
             end
         end
 
@@ -319,7 +296,7 @@ function top.func(input, seg, env)
     local fixed_triggered = env.output_i > 0
 
     -- 注入到首选后的选项
-    -- 目前的用例：在动词模式下处理 inject_fixed_chars 和 inject_fixed_words
+    -- 目前的用例：在动词模式下处理 inject_table_chars 和 inject_table_words
     -- 注意，为了提高常规情况（inject_prioritize = kAny）的性能，
     -- (1) 在此种情况下，下面的代码会直接修改 env.output_injected_secondary
     -- (2) inject_prioritize != kAny 时会先把结果寄存在 inject_chars 和 inject_words 中
@@ -330,11 +307,11 @@ function top.func(input, seg, env)
     local inject_words = {}  -- valid only when inject_has_priority
     local num_injections = 0 -- valid only when inject_has_priority
     if (not fixed_triggered and input_len == 4) then
-        local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
-        for cand in mohu.query_translation(contextual.get_runtime(env), input, seg, nil) do
+        local fixed_name = lexical_translator_name(env, env.code_table)
+        for cand in mohu.query_translation(env.code_table, input, seg, nil) do
             bind_lexical_provenance(env, cand, "fixed", fixed_name)
             local cand_len = utf8.len(cand.text)
-            if (env.inject_fixed_chars and cand_len == 1) or (env.inject_fixed_words and cand_len > 2 and not is_sentence_making) then
+            if (env.inject_table_chars and cand_len == 1) or (env.inject_table_words and cand_len > 2 and not is_sentence_making) then
                 if cand_len ~= 1 or (cand_len == 1 and not env.quick_code_indicator_skip_chars) then
                     cand:get_genuine().comment = indicator
                 end
@@ -485,8 +462,8 @@ function top.func(input, seg, env)
 
     -- 最后：如果 smart 输出为空，并且 fixed 之前没有调用过，此时再尝试调用一下
     if env.output_i == 0 then
-        local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
-        for cand in mohu.query_translation(contextual.get_runtime(env), input, seg, nil) do
+        local fixed_name = lexical_translator_name(env, env.code_table)
+        for cand in mohu.query_translation(env.code_table, input, seg, nil) do
             bind_lexical_provenance(env, cand, "fixed", fixed_name)
             if not is_sentence_making or utf8.len(cand.text) == 1 then
                 cand.comment = indicator
@@ -664,10 +641,20 @@ function top.output_from_fixed(env, cand, is_sentence_making)
     end
 end
 
+function top.output_table_order(env, translation, is_sentence_making)
+    local name = lexical_translator_name(env, env.code_table)
+    for cand in translation:iter() do
+        if not is_sentence_making or utf8.len(cand.text) == 1 then
+            bind_lexical_provenance(env, cand, "fixed", name)
+            top.output_from_fixed(env, cand, is_sentence_making)
+        end
+    end
+end
+
 function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word, char_filter)
     local chars = {}
     local words = {}
-    local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
+    local fixed_name = lexical_translator_name(env, env.code_table)
     for cand in translation:iter() do
         bind_lexical_provenance(env, cand, "fixed", fixed_name)
         local cand_len = utf8.len(cand.text)

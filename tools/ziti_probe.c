@@ -15,8 +15,7 @@
 //   查询模式支持 "C:<编码>" 行：输入编码并按空格上屏首选，用于构造上屏历史。
 //
 // 部署目录需含方案全部 yaml/lua/opencc/gram 与 default.custom.yaml，
-// 并把 *_fixed_legacy 方案一并列入 schema_list，否则 lua 翻译器加载
-// legacy 词库时会报错导致四码/五码查询结果为空。
+// 主方案的编译依赖会同时编译主字词码表与整句词典，无需额外启用旧方案。
 #include <rime_api.h>
 #include <stdio.h>
 #include <stdlib.h>

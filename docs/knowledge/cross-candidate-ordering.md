@@ -8,6 +8,10 @@
 > [前报](../reports/2026-09-02-cross-candidate-ordering-benchmark.md)和
 > [旧全量审计](../reports/2026-09-02-cross-candidate-ordering-audit.md)保留为历史工程测量。
 
+## 当前词库布局补充（2026-10-08）
+
+两主方案的 `smart` / `smart_static` 及编译垫片现读取 `mohu_{scheme}.words`：它是原 `extended` 导入图的自包含合并产物。`tools/build_sentence_dictionary.py` 保留来源顺序、读音、编码、缺省值和重复行，不重新计算频率；根目录不再有 `chars/base/tencent/moe/classics/wanxiang/extended` 运行时分库。来源在 `tools/data/lexicon_sources/{zrm,flypy}/`，不进入发布包。native 的读音频率与 base 词注入算法仍读取同样的来源，只改了路径；二进制模型、词边信号、候选协议和用户词库命名不变。历史报告中的 `extended` / 分库路径描述的是当时版本，不回写历史结论。
+
 ## 1. 一页纸现状
 
 - **2026-09-16 V5 模型 u8 量化替换发布（TCSKNM04）**：V5（573MB）的后验

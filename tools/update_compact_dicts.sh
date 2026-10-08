@@ -5,10 +5,10 @@ STRICT="$1"
 echo Strict about errors? $STRICT
 
 compact_dicts=(
-    "mohu_zrm.base.dict.yaml"
-    "mohu_zrm.tencent.dict.yaml"
-    "mohu_zrm.moe.dict.yaml"
-    "mohu_zrm.words.dict.yaml"
+    "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml"
+    "tools/data/lexicon_sources/zrm/mohu_zrm.tencent.dict.yaml"
+    "tools/data/lexicon_sources/zrm/mohu_zrm.moe.dict.yaml"
+    "tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml"
 )
 
 UPDATE_LINE_RE=$'^.+\t'

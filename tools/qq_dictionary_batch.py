@@ -16,12 +16,12 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTIVE_WORD_TABLES = (
-    "mohu_zrm.base.dict.yaml",
-    "mohu_zrm.words.dict.yaml",
-    "mohu_zrm.tencent.dict.yaml",
-    "mohu_zrm.moe.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.tencent.dict.yaml",
+    "tools/data/lexicon_sources/zrm/mohu_zrm.moe.dict.yaml",
 )
-FIXED_TABLE = "mohu_zrm_fixed.dict.yaml"
+FIXED_TABLE = "mohu_zrm.dict.yaml"
 PYTHON_SOURCE = "tools/data/pinyin_simp.txt"
 PINYIN_HINTS = "opencc/mohu_pinyinhint.txt"
 MAX_OPERATIONS = 200

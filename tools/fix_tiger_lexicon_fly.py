@@ -12,7 +12,7 @@ mohu 方案的 speller algebra（mohu_defs.yaml:/fly）在音节层派生飞键�
 本脚本按以下规则补齐（与 mohu algebra 语义对齐）：
     单字条目（code 前两字母即音节）：前缀替换，辅码后缀原样保留。
     多字条目：仅当 code 长度 == 2×字数（全音节码，每两字母一个音节，
-    且每个音节都在 mohu_zrm.chars.dict.yaml 的音节表中）时，对音节做
+    且每个音节都在 tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml 的音节表中）时，对音节做
     飞键闭包；声母码（如 mwtt、ab）不动。
     已存在的 (code, text) 行不重复生成，rank/freq 列照抄来源行。
 
@@ -117,7 +117,7 @@ def main() -> int:
     ap.add_argument("--lexicon", type=Path,
                     default=REPO / "tiger_sentence_native/mohu_tiger.lexicon.txt")
     ap.add_argument("--chars-dict", type=Path,
-                    default=REPO / "mohu_zrm.chars.dict.yaml")
+                    default=REPO / "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml")
     ap.add_argument("--check", action="store_true", help="只统计，不写入")
     args = ap.parse_args()
 

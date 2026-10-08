@@ -62,7 +62,8 @@ columns:
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary_directory.name)
-        (self.root / "mohu_zrm_fixed.dict.yaml").write_text(
+        (self.root / "tools/data/lexicon_sources/zrm").mkdir(parents=True)
+        (self.root / "mohu_zrm.dict.yaml").write_text(
             table_text(
                 ("text", "code", "stem", "weight"),
                 [("甲", "abc", "", "0"), ("乙", "abc", "", "0"), ("丙", "abd", "", "0")],
@@ -106,11 +107,11 @@ columns:
             }
         )
         apply_batch(self.root, batch)
-        table = RimeTable.from_path(self.root / "mohu_zrm_fixed.dict.yaml")
+        table = RimeTable.from_path(self.root / "mohu_zrm.dict.yaml")
         self.assertEqual([row.text for row in table.rows_for_code("abc")], ["乙", "甲"])
 
     def test_fixed_reorder_conflict_does_not_write(self) -> None:
-        before = (self.root / "mohu_zrm_fixed.dict.yaml").read_bytes()
+        before = (self.root / "mohu_zrm.dict.yaml").read_bytes()
         batch = self.batch(
             {
                 "kind": "fixed_reorder",
@@ -123,7 +124,7 @@ columns:
         )
         with self.assertRaises(BatchConflict):
             apply_batch(self.root, batch)
-        self.assertEqual((self.root / "mohu_zrm_fixed.dict.yaml").read_bytes(), before)
+        self.assertEqual((self.root / "mohu_zrm.dict.yaml").read_bytes(), before)
 
     def test_fixed_add_and_delete_preserve_other_rows(self) -> None:
         added = self.batch(
@@ -136,7 +137,7 @@ columns:
             }
         )
         apply_batch(self.root, added)
-        table = RimeTable.from_path(self.root / "mohu_zrm_fixed.dict.yaml")
+        table = RimeTable.from_path(self.root / "mohu_zrm.dict.yaml")
         self.assertEqual([row.text for row in table.rows_for_code("abc")], ["甲", "乙", "丁"])
 
         deleted = self.batch(
@@ -149,7 +150,7 @@ columns:
             }
         )
         apply_batch(self.root, deleted)
-        table = RimeTable.from_path(self.root / "mohu_zrm_fixed.dict.yaml")
+        table = RimeTable.from_path(self.root / "mohu_zrm.dict.yaml")
         self.assertEqual([row.text for row in table.rows_for_code("abc")], ["甲", "丁"])
 
     def test_added_rows_do_not_write_trailing_empty_columns(self) -> None:
@@ -170,7 +171,7 @@ columns:
         )
         apply_batch(self.root, batch)
         fixed_line = next(
-            line for line in (self.root / "mohu_zrm_fixed.dict.yaml").read_text(encoding="utf-8").splitlines()
+            line for line in (self.root / "mohu_zrm.dict.yaml").read_text(encoding="utf-8").splitlines()
             if line.startswith("丁\t")
         )
         word_line = next(

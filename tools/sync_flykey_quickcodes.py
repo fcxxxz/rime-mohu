@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""生成 fixed 词典的飞键区块（全量闭包，纯派生数据）。
+"""生成派生词典的飞键区块（全量闭包，纯派生数据）。
 
 飞键区块是主区块的派生物：对主区块每个词条按 tools/fly_keys 的逐位
 闭包生成变体行。块内按（变体码、主区块出现序）排序，因此同码组会
-镜像主区块顺序。主区块和 ``tools/data/mohu_fixed_code_claims.tsv`` 是
-唯一的手工数据来源；飞键区块不要手工编辑。
+镜像主区块顺序。``mohu_zrm.dict.yaml`` 是唯一的字词码表源数据；飞键区块不要手工编辑。
 
 用法::
 
@@ -30,10 +29,7 @@ START = re.compile(r"^#\s*开始飞键\s*(\S+)\s*->\s*(\S+)")
 END = re.compile(r"^#\s*结束飞键\s*$")
 ENTRY = re.compile(r"^([^\t#]+)\t([a-z]+)(.*)$")
 
-DEFAULT_DICTS = (
-    "mohu_zrm_fixed.dict.yaml",
-    "mohu_zrm_fixed_legacy.dict.yaml",
-)
+DEFAULT_DICTS = ("mohu_flypy.dict.yaml",)
 
 
 def check_path(path: Path) -> None:

@@ -697,7 +697,7 @@ Every released profile includes:
    `four_code_yield_pairs` displacement, IJRQ deferral, quick-code
    placement, quality values) followed by the filter chain. Verified
    example: `yuyt` ranks 鱼书雁帖 first in raw decode, but 鱼书雁帖 is a
-   `mohu_zrm_fixed` four-code entry and production already serves the smart
+   `mohu_zrm` main-table four-code entry and production already serves the smart
    预约 first — no model needed. The +8pp is a decoder-layer delta only.
 2. **Wrong training distribution.** The student was trained on raw-decode
    menus (native candidates only, decode scores). Production menus mix

@@ -1,11 +1,6 @@
 local schemas = {
     "mohu_zrm.schema.yaml",
-    "mohu_zrm_fixed.schema.yaml",
-    "mohu_zrm_sentence_core.schema.yaml",
     "mohu_flypy.schema.yaml",
-    "mohu_flypy_aux.schema.yaml",
-    "mohu_flypy_sentence_core.schema.yaml",
-    "mohu_flypy_fixed.schema.yaml",
 }
 
 local function read(path)
@@ -32,7 +27,7 @@ local manager = read("lua/mohu_candidate_manager.lua")
 assert(not manager:find("空格查看", 1, true))
 
 local makefile = read("Makefile")
-assert(makefile:find("lua tests/mohu_candidate_manager_test.lua", 1, true))
-assert(makefile:find("lua tests/mohu_pin_store_test.lua", 1, true))
+assert(makefile:find("$(MOHU_LUA_BIN) tests/mohu_candidate_manager_test.lua", 1, true))
+assert(makefile:find("$(MOHU_LUA_BIN) tests/mohu_pin_store_test.lua", 1, true))
 
 print("candidate manager config: ok")

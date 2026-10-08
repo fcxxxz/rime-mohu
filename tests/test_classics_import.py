@@ -24,6 +24,7 @@ class ClassicsImportTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = TemporaryDirectory()
         self.root = Path(self.temp.name)
+        (self.root / "tools/data/lexicon_sources/zrm").mkdir(parents=True)
         self.data = self.root / "classics"
         self.raw = self.data / "raw" / "test-source" / "123.wikitext"
         self.raw.parent.mkdir(parents=True)
@@ -32,7 +33,7 @@ class ClassicsImportTest(unittest.TestCase):
         self.entries = self.data / "entries.tsv"
         self.overrides = self.data / "pinyin_overrides.tsv"
         self.long_entries = self.data / "long_entries.txt"
-        self.output = self.root / "mohu_zrm.classics.dict.yaml"
+        self.output = self.root / "tools/data/lexicon_sources/zrm/mohu_zrm.classics.dict.yaml"
         self.auxiliary = self.root / "tiger_aux.txt"
         self.readings = self.root / "pinyin_simp.txt"
         self.active = self.root / "active.dict.yaml"

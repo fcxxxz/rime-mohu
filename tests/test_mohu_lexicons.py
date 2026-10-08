@@ -3,7 +3,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 TOOL = ROOT / "tools" / "build_mohu_lexicons.py"
 
@@ -193,7 +192,7 @@ wz\t为\t2\t3
         }
         loaded = {scheme: self.tool.load_rows(path) for scheme, path in paths.items()}
         self.assertEqual({r[1] for r in loaded["zrm"]}, {r[1] for r in loaded["flypy"]})
-        chars_dict = ROOT / "mohu_zrm.chars.dict.yaml"
+        chars_dict = ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml"
         frequencies = self.tool.load_reading_frequencies(chars_dict)
         source = self.tool.load_rows(
             ROOT / "tiger_sentence_native/mohu_tiger.lexicon.txt", frequencies)
@@ -201,8 +200,8 @@ wz\t为\t2\t3
         # 词表注入与词重回填是构建的一部分（2026-09-20 方案 B 二字、
         # 2026-09-23 三字全码、2026-09-24 ≥4 字权重≥10）：与 main() 相同
         # 地传入两方案的注入词集，产物才能往返一致。
-        zrm_words = self.tool.load_inject_words(ROOT / "mohu_zrm.base.dict.yaml")
-        flypy_words = self.tool.load_inject_words(ROOT / "mohu_flypy.base.dict.yaml")
+        zrm_words = self.tool.load_inject_words(ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.base.dict.yaml")
+        flypy_words = self.tool.load_inject_words(ROOT / "tools/data/lexicon_sources/flypy/mohu_flypy.base.dict.yaml")
         self.assertEqual(loaded["zrm"],
                          self.tool.build_rows(source, "zrm", readings, zrm_words))
         self.assertEqual(loaded["flypy"],

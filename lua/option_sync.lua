@@ -27,7 +27,6 @@ local COMMON_OPTIONS = {
   "neural_rerank",
   "quick_code_hint",
   "aux_hint",
-  "multi_short_code",
 }
 
 local SCHEMA_OPTIONS = {
@@ -42,7 +41,6 @@ local SCHEMA_OPTIONS = {
     "neural_rerank",
     "quick_code_hint",
     "aux_hint",
-    "multi_short_code",
   },
   mohu_flypy = {
     "ascii_punct",
@@ -55,7 +53,6 @@ local SCHEMA_OPTIONS = {
     "neural_rerank",
     "quick_code_hint",
     "aux_hint",
-    "multi_short_code",
   },
 }
 

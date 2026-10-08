@@ -22,6 +22,7 @@ move_by_word_with_tab:
   __append:
     - { when: composing, accept: ISO_Left_Tab, send: Shift+Left }
     - { when: composing, accept: Shift+Tab, send: Shift+Left }
+    - { when: composing, accept: Shift+ISO_Left_Tab, send: Shift+Left }
     - { when: composing, accept: Tab, send: Shift+Right }
 
 paging_with_minus_equal:

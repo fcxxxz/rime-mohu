@@ -32,9 +32,11 @@ switches:
     states: [ 常用字, 全字集 ]
   - name: inflexible
     states: [ 动词, 固词 ] # 「固词」表示「固顶词」
-    # 默认情况下，输入 4 码时，会禁止码表输出（「动词」模式）。
-    # 这是因为码表最大码长为 4，可能会产生较低频的多字词，覆盖过用户自造的常用词语。
-    # 当固词模式启动后，输入 4 码时会优先输出码表中的二字词，这些输出带有「⚡️」标记。
+    # 默认情况下（「动词」模式），输入 4 码时：码表输出固顶单字，并在其后
+    # 补出 >2 字的码表简码词（带「⚡️」标记）；二字词不进码表输出，仍由
+    # 整句层按学习词频排——码表最大码长为 4，全量二字词会以低频多字词
+    # 覆盖用户自造的常用词语。当固词模式启动后，输入 4 码时会优先输出
+    # 码表中的二字词，这些输出带有「⚡️」标记。
   - name: chaifen
     states: [ 不拆, 扌斥 ]
   - name: pinyinhint
@@ -57,13 +59,15 @@ switches:
 
 engine:
   processors:
+    - lua_processor@*mohu_pin*pin_processor
+    # Squirrel 不投递普通键的 keyUp；捕获模式由 pin 独占 Shift，
+    # 其他模式须让 ascii_composer 先看到 Shift 组合键，避免误判为单敲 Shift。
+    - ascii_composer
     - lua_processor@*mohu_candidate_manager*manager_processor
     - lua_processor@*mohu_candidate_override*override_processor
-    - lua_processor@*mohu_pin*pin_processor
     - lua_processor@*option_sync
     - lua_processor@*mohu_tab_nav  # 方向键/Tab 音节导航与 Shift+字母补辅码：native 候选无 librime spans，1.16 navigator 跳不动，这里接管
     - key_binder
-    - ascii_composer
     - lua_processor@*mohu_processor
     - recognizer
     - speller

@@ -282,6 +282,22 @@ function top.func(input, seg, env)
                         end
                         return not peek.chars[cp]
                     end)
+                    -- 固顶单字已输出时，>2 字的码表词紧随字后补出。这些词原本
+                    -- 只能靠下方「码表零输出才注入」的兜底，而注入的 drain 发生
+                    -- 在首个候选之后、字一输出时机即过——码位被单字「双拼+辅码」
+                    -- 全码占据的多字词会整条不可见（如 yuhx 上「游手好闲」撞
+                    -- 「鹆」yu+hx）。无字固顶的码不进此分支，仍由注入块放到
+                    -- smart 首选之后，行为不变。
+                    if env.inject_fixed_words and env.output_i > 0 then
+                        local fixed_name = lexical_translator_name(env, contextual.get_runtime(env))
+                        for cand in mohu.query_translation(contextual.get_runtime(env), input, seg, nil) do
+                            bind_lexical_provenance(env, cand, "fixed", fixed_name)
+                            if utf8.len(cand.text) > 2 and not is_sentence_making then
+                                cand:get_genuine().comment = indicator
+                                top.output(env, cand)
+                            end
+                        end
+                    end
                 end
             elseif input_len < 4 then          -- 造句模式下，只使用固定单字（词语无法固定）
                 local words = nil

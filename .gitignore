@@ -166,3 +166,5 @@ nul
 /mohu/config/user-ngram.snapshot.tmp-*
 /tiger_sentence_native/*.bin
 /tiger_sentence_native/*.bin.zip
+# 语义学生重训工作区（数据集/ckpt，2GB+，仅本地）
+/semantic_student/

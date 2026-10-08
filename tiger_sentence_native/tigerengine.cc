@@ -4464,6 +4464,14 @@ int tiger_semantic_http_score(const char* url, const char* context_text,
     }
     std::string hostport = u.substr(7);
     std::string path = "/";
+    // query 可挂在无路径的 URL 上（http://127.0.0.1:8765?model=3b），
+    // 必须先从 hostport 剥离，否则端口解析侥幸通过而档位参数丢失。
+    std::string query;
+    const size_t qm = hostport.find('?');
+    if (qm != std::string::npos) {
+      query = hostport.substr(qm + 1);
+      hostport = hostport.substr(0, qm);
+    }
     const size_t slash = hostport.find('/');
     if (slash != std::string::npos) {
       path = hostport.substr(slash);
@@ -4540,13 +4548,17 @@ int tiger_semantic_http_score(const char* url, const char* context_text,
       body += buf;
     }
     body += "]}";
-    // path 可带 query（如 "/?model=3b"）：拆开拼 "/rerank"，query 置尾。
-    std::string pure_path = path, query;
-    const size_t qmark = path.find('?');
-    if (qmark != std::string::npos) {
-      pure_path = path.substr(0, qmark);
-      query = path.substr(qmark + 1);
+    // 拼请求路径：path 里的 query（"/?model=3b"）与 hostport 剥离的
+    // query 合并（无路径形式），统一置于 "/rerank" 之后。
+    {
+      const size_t qmark = path.find('?');
+      if (qmark != std::string::npos) {
+        std::string pq = path.substr(qmark + 1);
+        query = query.empty() ? pq : (pq + "&" + query);
+        path = path.substr(0, qmark);
+      }
     }
+    std::string pure_path = path;
     if (!pure_path.empty() && pure_path.back() == '/') pure_path.pop_back();
     std::string request_path = pure_path + "/rerank";
     if (!query.empty()) request_path += "?" + query;

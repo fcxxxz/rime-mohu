@@ -10,11 +10,14 @@ extern "C" {
 #include "lualib.h"
 }
 
+static const char* kUrl = "http://127.0.0.1:8765";
+
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::fprintf(stderr, "usage: %s <menus.json 摘要文件: 每行 ctx\\tcand1|cand2|...|native...>\n", argv[0]);
+    std::fprintf(stderr, "usage: %s <menus.tsv> [dylib] [url]\n", argv[0]);
     return 2;
   }
+  if (argc > 3) kUrl = argv[3];
   const char* dylib = argc > 2 ? argv[2]
       : "/Users/fuchuxuan/Library/Rime/mohu/runtime/libtigerengine.dylib";
   lua_State* L = luaL_newstate();
@@ -48,9 +51,9 @@ int main(int argc, char** argv) {
     char* expect_s = std::strtok(nullptr, "\t");
     if (!ctx || !cands_s || !nat_s || !expect_s) continue;
 
-    lua_getglobal(L, "tigerengine");
-    lua_getfield(L, -1, "semantic_http_score");
-    lua_pushstring(L, "http://127.0.0.1:8765");
+  lua_getglobal(L, "tigerengine");
+  lua_getfield(L, -1, "semantic_http_score");
+  lua_pushstring(L, kUrl);
     lua_pushstring(L, ctx);
     // candidates 表
     lua_createtable(L, 8, 0);

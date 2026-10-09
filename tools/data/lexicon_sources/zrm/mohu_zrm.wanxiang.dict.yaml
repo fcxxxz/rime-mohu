@@ -5,7 +5,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "1ab558673980"
+version: "8ea9620cc2fb"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -2272,6 +2272,7 @@ columns:
 一直不错	yi;fi vi;nq bu;cb co;zl	1071
 一直与	yi;fi vi;nq yu;fa	911
 一直也	yi;fi vi;nq ye;ey	1125
+一直以	yi;fi vi;nq yi;vj	702
 一直会	yi;fi vi;nq hv;jb	486
 一直去的	yi;fi vi;nq qu;gk de;un	891
 一直受到	yi;fi vi;nq ub;yw dk;yp	990
@@ -3397,7 +3398,6 @@ columns:
 七千里	qi;rq qm;lq li;dl	1269
 七只小虾	qi;rq vi;dh xc;yx xw;cf	130
 七只狐狸	qi;rq vi;dh hu;my li;md	212
-七台河的	qi;rq tl;kd he;kz de;un	194
 七台河站	qi;rq tl;kd he;kz vj;iy	238
 七叶皂	qi;rq ye;dn zk;ur	297
 七叶皂苷	qi;rq ye;dn zk;ur gj;lz	284
@@ -5750,17 +5750,11 @@ columns:
 三池渊郡	sj;ts ii;ke yr;kp jp;bt	284
 三沙交通	sj;ts ua;ky jc;ab ts;kt	117
 三沟酒业	sj;ts gb;kn jq;ky ye;cy	117
-三河一中	sj;ts he;kz yi;fi vs;dg	144
-三河三园	sj;ts he;kz sj;ts yr;rm	130
-三河二中	sj;ts he;kz er;me vs;dg	171
 三河场	sj;ts he;kz ih;ga	163
 三河大捷	sj;ts he;kz da;md jx;uf	230
-三河小学	sj;ts he;kz xc;yx xt;kw	152
-三河小炒	sj;ts he;kz xc;yx ik;cy	333
 三河尖	sj;ts he;kz jm;ym	270
 三河的	sj;ts he;kz de;un	500
 三河路	sj;ts he;kz lu;ps	213
-三河酒家	sj;ts he;kz jq;ky jw;wj	212
 三河马	sj;ts he;kz ma;nm	387
 三治三增	sj;ts vi;kk sj;ts zg;gh	153
 三泉公园	sj;ts qr;uk gs;hk yr;rm	171
@@ -6342,8 +6336,6 @@ columns:
 三锤之战	sj;ts iv;zl vi;ri vj;yd	194
 三镜	sj;ts jy;zx	668
 三长二短	sj;ts ih;pc er;me dr;oz	234
-三门峡的	sj;ts mf;am xw;vh de;un	454
-三门峡西	sj;ts mf;am xw;vh xi;vx	324
 三门河	sj;ts mf;am he;kz	220
 三门海	sj;ts mf;am hl;ke	446
 三门系	sj;ts mf;am xi;ti	144
@@ -13620,14 +13612,10 @@ columns:
 东关遗址	ds;ry gr;hm yi;co vi;gs	153
 东兴仓	ds;ry xy;kh ch;jz	117
 东兴寺	ds;ry xy;kh si;gk	252
-东兴小学	ds;ry xy;kh xc;yx xt;kw	153
-东兴市人	ds;ry xy;kh ui;zr rf;jr	428
 东兴桥	ds;ry xy;kh qc;et	297
 东兴社区	ds;ry xy;kh ue;fg qu;nb	238
 东兴路站	ds;ry xy;kh lu;ps vj;iy	180
-东兴铝业	ds;ry xy;kh lv;zd ye;cy	274
 东兴隆	ds;ry xy;kh ls;th	338
-东兴隆街	ds;ry xy;kh ls;th jx;pg	274
 东冈	ds;ry gh;mb	107
 东军	ds;ry jp;wy	1228
 东冠小学	ds;ry gr;wm xc;yx xt;kw	110
@@ -13804,13 +13792,9 @@ columns:
 东发学派	ds;ry fa;sr xt;kw pl;kx	171
 东叔	ds;ry uu;yf	580
 东古城	ds;ry gu;cg ig;gn	392
-东台中学	ds;ry tl;kd vs;dg xt;kw	279
-东台侍郎	ds;ry tl;kd ui;jg lh;ii	130
 东台山	ds;ry tl;kd uj;vs	662
-东台山人	ds;ry tl;kd uj;vs rf;jr	423
 东台的	ds;ry tl;kd de;un	260
 东台社区	ds;ry tl;kd ue;fg qu;nb	333
-东台西台	ds;ry tl;kd xi;vx tl;kd	144
 东台顶	ds;ry tl;kd dy;aw	266
 东吉屿	ds;ry ji;gd yu;vf	382
 东名阪	ds;ry my;ld bj;tx	495
@@ -14510,15 +14494,9 @@ columns:
 东清铁路	ds;ry qy;ka tx;zt lu;ps	549
 东渡站	ds;ry du;kx vj;iy	220
 东温市	ds;ry wf;ko ui;zr	320
-东港事件	ds;ry gh;kl ui;fd jm;jq	274
-东港区的	ds;ry gh;kl qu;nb de;un	171
 东港城	ds;ry gh;kl ig;gn	522
-东港渔港	ds;ry gh;kl yu;kw gh;kl	207
 东港湖	ds;ry gh;kl hu;kc	117
 东港的	ds;ry gh;kl de;un	436
-东港石油	ds;ry gh;kl ui;ms yb;kd	153
-东港花园	ds;ry gh;kl hw;lj yr;rm	122
-东港花苑	ds;ry gh;kl hw;lj yr;ll	153
 东港里	ds;ry gh;kl li;dl	171
 东湖三街	ds;ry hu;kc sj;ts jx;pg	117
 东湖丽岛	ds;ry hu;kc li;fv dk;xv	180
@@ -14696,22 +14674,8 @@ columns:
 东荣路	ds;ry rs;lw lu;ps	360
 东荷西柳	ds;ry he;lj xi;vx lq;eb	212
 东莒岛	ds;ry ju;ld dk;xv	369
-东莞一中	ds;ry gr;lw yi;fi vs;dg	297
 东莞仓	ds;ry gr;lw ch;jz	117
-东莞体育	ds;ry gr;lw ti;je yu;bv	454
-东莞卫校	ds;ry gr;lw wz;zf xc;ea	117
-东莞可园	ds;ry gr;lw ke;zk yr;rm	297
-东莞司法	ds;ry gr;lw si;af fa;kg	117
-东莞合宝	ds;ry gr;lw he;jd bk;wn	288
 东莞吧	ds;ry gr;lw ba;dm	212
-东莞哪里	ds;ry gr;lw na;da li;dl	405
-东莞国旅	ds;ry gr;lw go;rn lv;le	594
-东莞地理	ds;ry gr;lw di;ge li;nd	144
-东莞学校	ds;ry gr;lw xt;kw xc;ea	297
-东莞岭南	ds;ry gr;lw ly;vj nj;nm	171
-东莞广播	ds;ry gr;lw gd;xg bo;ut	513
-东莞水道	ds;ry gr;lw uv;ks dk;ho	189
-东莞道路	ds;ry gr;lw dk;ho lu;ps	171
 东莨菪	ds;ry lh;li dh;lw	508
 东莱海	ds;ry ll;la hl;ke	230
 东莱温泉	ds;ry ll;la wf;ko qr;uk	153
@@ -14920,24 +14884,14 @@ columns:
 东问西问	ds;ry wf;ad xi;vx wf;ad	441
 东闸口	ds;ry va;as kb;dk	306
 东阁街	ds;ry ge;as jx;pg	328
-东阳中学	ds;ry yh;to vs;dg xt;kw	396
-东阳二中	ds;ry yh;to er;me vs;dg	117
-东阳五金	ds;ry yh;to wu;wu jn;zj	117
-东阳光科	ds;ry yh;to gd;mg ke;xj	585
-东阳光铝	ds;ry yh;to gd;mg lv;zd	279
-东阳公主	ds;ry yh;to gs;hk vu;in	310
 东阳关	ds;ry yh;to gr;hm	333
-东阳卢宅	ds;ry yh;to lu;yc vl;wt	234
 东阳台	ds;ry yh;to tl;kd	266
-东阳技校	ds;ry yh;to ji;uc xc;ea	225
 东阳渡	ds;ry yh;to du;kx	252
 东阳湖	ds;ry yh;to hu;kc	238
 东阳王	ds;ry yh;to wh;nw	464
 东阳的	ds;ry yh;to de;un	612
 东阳社区	ds;ry yh;to ue;fg qu;nb	171
 东阳站	ds;ry yh;to vj;iy	320
-东阳竹编	ds;ry yh;to vu;ru bm;im	171
-东阳花园	ds;ry yh;to hw;lj yr;rm	130
 东阳话	ds;ry yh;to hw;sa	194
 东阳路	ds;ry yh;to lu;ps	248
 东阿县公	ds;ry ee;tz xm;fk gs;hk	189
@@ -17180,7 +17134,6 @@ columns:
 中尾武彦	vs;dg wz;cv wu;fp yj;ix	567
 中层吧	vs;dg cg;cb ba;dm	225
 中层状	vs;dg cg;cb vd;am	144
-中山一中	vs;dg uj;vs yi;fi vs;dg	292
 中山世谱	vs;dg uj;vs ui;la pu;sh	522
 中山九号	vs;dg uj;vs jq;kj hk;df	130
 中山优马	vs;dg uj;vs yb;jo ma;nm	423
@@ -17190,16 +17143,13 @@ columns:
 中山北里	vs;dg uj;vs bz;av li;dl	189
 中山区人	vs;dg uj;vs qu;nb rf;jr	360
 中山医	vs;dg uj;vs yi;no	638
-中山医学	vs;dg uj;vs yi;no xt;kw	598
 中山名座	vs;dg uj;vs my;ld zo;xj	130
 中山哀王	vs;dg uj;vs ai;td wh;nw	212
 中山哪里	vs;dg uj;vs na;da li;dl	346
 中山国中	vs;dg uj;vs go;rn vs;dg	495
-中山学校	vs;dg uj;vs xt;kw xc;ea	279
 中山宾馆	vs;dg uj;vs bn;wt gr;qw	122
 中山广播	vs;dg uj;vs gd;xg bo;ut	302
 中山彰规	vs;dg uj;vs vh;xn gv;he	162
-中山支路	vs;dg uj;vs vi;ci lu;ps	153
 中山旅游	vs;dg uj;vs lv;le yb;kl	297
 中山武公	vs;dg uj;vs wu;fp gs;hk	207
 中山河	vs;dg uj;vs he;kz	392
@@ -17210,13 +17160,11 @@ columns:
 中山简王	vs;dg uj;vs jm;ra wh;nw	220
 中山纪念	vs;dg uj;vs ji;iv nm;ja	850
 中山街南	vs;dg uj;vs jx;pg nj;nm	130
-中山西街	vs;dg uj;vs xi;vx jx;pg	117
 中山詹园	vs;dg uj;vs vj;xx yr;rm	243
 中山路了	vs;dg uj;vs lu;ps le;rl	207
 中山路号	vs;dg uj;vs lu;ps hk;df	738
 中山路的	vs;dg uj;vs lu;ps de;un	675
 中山路站	vs;dg uj;vs lu;ps vj;iy	369
-中山隧道	vs;dg uj;vs sv;th dk;ho	288
 中山首府	vs;dg uj;vs ub;ho fu;xj	153
 中岁	vs;dg sv;vl	1084
 中岛一贵	vs;dg dk;xv yi;fi gv;co	279
@@ -18588,9 +18536,6 @@ columns:
 临城中学	ln;pr ig;gn vs;dg xt;kw	238
 临城水库	ln;pr ig;gn uv;ks ku;xy	261
 临城的	ln;pr ig;gn de;un	522
-临夏县人	ln;pr xw;fo xm;fk rf;jr	171
-临夏市人	ln;pr xw;fo ui;zr rf;jr	220
-临夏市委	ln;pr xw;fo ui;zr wz;xb	153
 临夏黄酒	ln;pr xw;fo hd;nh jq;ky	153
 临头了	ln;pr tb;wm le;rl	369
 临安初雨	ln;pr an;wb iu;tp yu;tv	144
@@ -18701,8 +18646,6 @@ columns:
 临济寺	ln;pr ji;kq si;gk	396
 临济港	ln;pr ji;kq gh;kl	225
 临浮战役	ln;pr fu;ky vj;yd yi;wr	212
-临海大道	ln;pr hl;ke da;md dk;ho	117
-临海小镇	ln;pr hl;ke xc;yx vf;zn	230
 临海的	ln;pr hl;ke de;un	675
 临涣	ln;pr hr;kx	472
 临淄中学	ln;pr zi;ko vs;dg xt;kw	212
@@ -18720,7 +18663,6 @@ columns:
 临港管委	ln;pr gh;kl gr;rw wz;xb	153
 临湖路	ln;pr hu;kc lu;ps	279
 临湖轩	ln;pr hu;kc xr;ye	342
-临湘市委	ln;pr xd;ke ui;zr wz;xb	234
 临溪而渔	ln;pr xi;ky er;le yu;kw	202
 临漪亭	ln;pr yi;km ty;ga	200
 临潢大街	ln;pr hd;kn da;md jx;pg	153
@@ -20208,16 +20150,7 @@ columns:
 义之与比	yi;ib vi;ri yu;fa bi;vv	212
 义之端也	yi;ib vi;ri dr;iv ye;ey	234
 义之魂	yi;ib vi;ri hp;ba	306
-义乌中学	yi;ib wu;xu vs;dg xt;kw	351
-义乌二中	yi;ib wu;xu er;me vs;dg	171
-义乌会馆	yi;ib wu;xu hv;jb gr;qw	144
-义乌哪里	yi;ib wu;xu na;da li;dl	171
-义乌商贸	yi;ib wu;xu uh;im mk;bo	500
-义乌城投	yi;ib wu;xu ig;gn tb;ur	117
-义乌工商	yi;ib wu;xu gs;ug uh;im	414
 义乌江	yi;ib wu;xu jd;ku	405
-义乌车展	yi;ib wu;xu ie;yc vj;cl	153
-义乌这边	yi;ib wu;xu ve;vu bm;su	171
 义井东街	yi;ib jy;qj ds;ry jx;pg	171
 义井乡	yi;ib jy;qj xd;ix	529
 义以方外	yi;ib yi;vj fh;lf wl;ly	189
@@ -21102,7 +21035,6 @@ columns:
 乐巢酒吧	le;by ik;oq jq;ky ba;dm	153
 乐市乐座	le;by ui;zr le;by zo;xj	261
 乐平市公安局	le;by py;eh ui;zr gs;hk an;wb ju;ca	120
-乐平市委	le;by py;eh ui;zr wz;xb	153
 乐平的	le;by py;eh de;un	459
 乐库	yt;by ku;xy	860
 乐府双璧	yt;by fu;xj ud;rr bi;cd	297
@@ -21144,7 +21076,6 @@ columns:
 乐斯菲斯	le;by si;zh fz;lr si;zh	320
 乐旗队	le;by qi;le dv;tj	338
 乐无限	le;by wu;du xm;ti	657
-乐昌市委	le;by ih;oo ui;zr wz;xb	144
 乐是唯一	le;by ui;ot wz;du yi;fi	328
 乐普医疗	le;by pu;hc yi;no lc;ar	644
 乐普生	le;by pu;hc ug;ls	279
@@ -21178,9 +21109,6 @@ columns:
 乐浪海	le;by lh;ki hl;ke	130
 乐海	le;by hl;ke	824
 乐淘淘	le;by tk;kn tk;kn	522
-乐清中学	yt;by qy;ka vs;dg xt;kw	212
-乐清哪里	yt;by qy;ka na;da li;dl	130
-乐清市区	yt;by qy;ka ui;zr qu;nb	248
 乐清站	yt;by qy;ka vj;iy	180
 乐温公主	le;by wf;ko gs;hk vu;in	130
 乐游网	le;by yb;kl wh;mb	163
@@ -21257,7 +21185,6 @@ columns:
 乐金健康	le;by jn;zj jm;jb kh;xb	652
 乐金熊猫	le;by jn;zj xs;kv mk;ml	117
 乐队啊	yt;by dv;tj aa;dt	405
-乐陵小枣	lk;by ly;tg xc;yx zk;em	194
 乐陵的	lk;by ly;tg de;un	266
 乐陵路	lk;by ly;tg lu;ps	212
 乐雅苑	le;by ya;lu yr;ll	279
@@ -27075,7 +27002,6 @@ columns:
 五县一区	wu;wu xm;fk yi;fi qu;nb	212
 五县两区	wu;wu xm;fk ld;ml qu;nb	212
 五叉沟	wu;wu ia;ri gb;kn	320
-五叉路口	wu;wu ia;ri lu;ps kb;dk	209
 五叔	wu;wu uu;yf	158
 五取蕴	wu;wu qu;qr yp;li	387
 五台山了	wu;wu tl;kd uj;vs le;rl	220
@@ -29081,7 +29007,6 @@ columns:
 京安	jy;gy an;wb	364
 京局	jy;gy ju;ca	248
 京局丰段	jy;gy ju;ca fg;af dr;uf	180
-京山小学	jy;gy uj;vs xc;yx xt;kw	117
 京山的	jy;gy uj;vs de;un	284
 京岘山	jy;gy xm;ve uj;vs	243
 京州	jy;gy vb;oo	511
@@ -30714,8 +30639,6 @@ columns:
 什菌煲	ui;jn jp;lr bk;jd	320
 什蒂乡	ui;jn di;li xd;ix	402
 什蒂普	ui;jn di;li pu;hc	328
-什邡中学	ui;jn fh;lt vs;dg xt;kw	212
-什邡事件	ui;jn fh;lt ui;fd jm;jq	112
 什邡的	ui;jn fh;lt de;un	378
 什金娜	ui;jn jn;zj na;ba	328
 什锦丁香	ui;jn jn;zu dy;ad xd;xo	189
@@ -70185,10 +70108,8 @@ columns:
 余大喜曰	yu;jx da;md xi;hd yt;or	364
 余天锡	yu;jx tm;fm xi;zo	302
 余奕沛	yu;jx yi;zc pz;kf	378
-余姚中学	yu;jx yk;bp vs;dg xt;kw	396
 余姚北	yu;jx yk;bp bz;av	382
 余姚北站	yu;jx yk;bp bz;av vj;iy	320
-余姚市区	yu;jx yk;bp ui;zr qu;nb	194
 余姚江	yu;jx yk;bp jd;ku	284
 余姚牟山	yu;jx yk;bp mb;kq uj;vs	220
 余姚的	yu;jx yk;bp de;un	508
@@ -85940,9 +85861,6 @@ columns:
 佳文	jw;jg wf;vw	424
 佳旺超市	jw;jg wh;on ik;pp ui;zr	238
 佳景路	jw;jg jy;og lu;ps	369
-佳木斯人	jw;jg mu;em si;zh rf;jr	356
-佳木斯的	jw;jg mu;em si;zh de;un	410
-佳木斯道	jw;jg mu;em si;zh dk;ho	153
 佳木葱茏	jw;jg mu;em cs;ln ls;lt	266
 佳格食品	jw;jg ge;es ui;qs pn;dd	310
 佳梦关	jw;jg mg;ee gr;hm	500
@@ -86639,7 +86557,6 @@ columns:
 侯震	hb;jn vf;tf	116
 侯震旸	hb;jn vf;tf yh;oa	194
 侯马北站	hb;jn ma;nm bz;av vj;iy	171
-侯马市委	hb;jn ma;nm ui;zr wz;xb	225
 侯马的	hb;jn ma;nm de;un	220
 侯马站	hb;jn ma;nm vj;iy	194
 侯鲭录	hb;jn qy;wa lu;bk	266
@@ -92193,6 +92110,7 @@ columns:
 免单吧	mm;wp dj;hq ba;dm	297
 免去了	mm;wp qu;gk le;rl	936
 免去现职	mm;wp qu;gk xm;ne vi;qd	180
+免听	mm;wp ty;dt	103
 免唱券	mm;wp ih;do qr;hh	306
 免师	mm;wp ui;pf	138
 免得不好	mm;wp de;wo bu;cb hk;bh	207
@@ -93883,7 +93801,6 @@ columns:
 公主头像	gs;hk vu;in tb;wm xd;jw	130
 公主宝贝	gs;hk vu;in bk;wn bz;ob	171
 公主屯	gs;hk vu;in tp;fs	315
-公主岭的	gs;hk vu;in ly;vj de;un	266
 公主岭站	gs;hk vu;in ly;vj vj;iy	194
 公主平阳	gs;hk vu;in py;eh yh;to	180
 公主改嫁	gs;hk vu;in gl;vh jw;bw	356
@@ -94523,7 +94440,6 @@ columns:
 六升二降	lq;al ug;tl er;me jd;th	207
 六华镇	lq;al hw;jv vf;zn	295
 六厘	lq;al li;xd	133
-六叉路口	lq;al ia;ri lu;ps kb;dk	130
 六双	lq;al ud;rr	594
 六叔	lq;al uu;yf	1174
 六可能	lq;al ke;zk ng;kv	414
@@ -95586,12 +95502,10 @@ columns:
 兴丰大街	xy;kh fg;af da;md jx;pg	194
 兴丰路	xy;kh fg;af lu;ps	207
 兴义站	xy;kh yi;ib vj;iy	207
-兴义贵阳	xy;kh yi;ib gv;co yh;to	117
 兴乐中学	xy;kh le;by vs;dg xt;kw	130
 兴乐宫	xy;kh le;by gs;wd	220
 兴云	xy;kh yp;by	158
 兴亚建国	xy;kh ya;fc jm;bu go;rn	194
-兴仁中学	xy;kh rf;jm vs;dg xt;kw	117
 兴仁里	xy;kh rf;jm li;dl	428
 兴信公主	xy;kh xn;js gs;hk vu;in	117
 兴儿	xy;kh er;pe	592
@@ -95615,11 +95529,8 @@ columns:
 兴凯路	xy;kh kl;vv lu;ps	356
 兴利中心	xy;kh li;xp vs;dg xn;hx	346
 兴功惧暴	xy;kh gs;us ju;hq bk;ol	171
-兴化中学	xy;kh hw;jv vs;dg xt;kw	255
-兴化出口	xy;kh hw;jv iu;sm kb;dk	144
 兴化寺	xy;kh hw;jv si;gk	266
 兴化的	xy;kh hw;jv de;un	357
-兴化米粉	xy;kh hw;jv mi;pm ff;ph	238
 兴化粉	xy;kh hw;jv ff;ph	324
 兴化西里	xy;kh hw;jv xi;vx li;dl	144
 兴北路	xy;kh bz;av lu;ps	576
@@ -95662,10 +95573,7 @@ columns:
 兴国寺塔	xy;kh go;rn si;gk ta;gl	364
 兴国的	xy;kh go;rn de;un	590
 兴城河	xy;kh ig;gn he;kz	180
-兴城海滨	xy;kh ig;gn hl;ke bn;kw	230
-兴城温泉	xy;kh ig;gn wf;ko qr;uk	153
 兴城的	xy;kh ig;gn de;un	315
-兴城西路	xy;kh ig;gn xi;vx lu;ps	207
 兴塔小学	xy;kh ta;gl xc;yx xt;kw	252
 兴大酒店	xy;kh da;md jq;ky dm;xy	252
 兴奋了	xy;kh ff;mq le;rl	1035
@@ -95677,7 +95585,6 @@ columns:
 兴奋说	xy;kh ff;mq uo;sh	558
 兴奋鼓舞	xy;kh ff;mq gu;hc wu;el	238
 兴学街	xy;kh xt;kw jx;pg	189
-兴宁市人	xy;kh ny;wa ui;zr rf;jr	162
 兴宁陵	xy;kh ny;wa ly;tg	324
 兴安县人	xy;kh an;wb xm;fk rf;jr	270
 兴安屯	xy;kh an;wb tp;fs	252
@@ -100662,12 +100569,8 @@ columns:
 凤园路	fg;or yr;rm lu;ps	161
 凤图腾	fg;or tu;rh tg;vh	315
 凤在上	fg;or zl;ng uh;yf	248
-凤城一中	fg;or ig;gn yi;fi vs;dg	117
-凤城六路	fg;or ig;gn lq;al lu;ps	315
-凤城十路	fg;or ig;gn ui;ns lu;ps	194
 凤城湖	fg;or ig;gn hu;kc	202
 凤城的	fg;or ig;gn de;un	428
-凤城盛世	fg;or ig;gn ug;na ui;la	144
 凤塘	fg;or th;gx	190
 凤大高速	fg;or da;md gk;gg su;xu	130
 凤天	fg;or tm;fm	384
@@ -100815,7 +100718,6 @@ columns:
 凭栏听雨	py;jt lj;eh ty;dt yu;tv	248
 凭栏而坐	py;jt lj;eh er;le zo;jj	252
 凭添了	py;jt tm;kf le;rl	403
-凭祥海关	py;jt xd;fg hl;ke gr;hm	234
 凭票即付	py;jt pc;vf ji;iz fu;jk	414
 凭窗	py;jt id;et	562
 凭著	py;jt vu;lq	900
@@ -100983,13 +100885,9 @@ columns:
 凯通国际	kl;vv ts;kt go;rn ji;tf	144
 凯通驾校	kl;vv ts;kt jw;sd xc;ea	338
 凯邦亚湖	kl;vv bh;at ya;fc hu;kc	144
-凯里一中	kl;vv li;dl yi;fi vs;dg	207
-凯里城投	kl;vv li;dl ig;gn tb;ur	144
-凯里尼亚	kl;vv li;dl ni;cv ya;fc	364
 凯里森	kl;vv li;dl sf;ee	212
 凯里的	kl;vv li;dl de;un	657
 凯里站	kl;vv li;dl vj;iy	346
-凯里酸汤	kl;vv li;dl sr;yk th;ka	405
 凯里马	kl;vv li;dl ma;nm	194
 凯隆	kl;vv ls;th	899
 凯雪冷链	kl;vv xt;tb lg;wj lm;zy	189
@@ -110535,7 +110433,6 @@ columns:
 化学风化	hw;jv xt;kw fg;ob hw;jv	387
 化尸水	hw;jv ui;cs uv;ks	405
 化尸粉	hw;jv ui;cs ff;ph	231
-化州孔庙	hw;jv vb;oo ks;ha mc;xd	144
 化州的	hw;jv vb;oo de;un	284
 化州话	hw;jv vb;oo hw;sa	252
 化工厂区	hw;jv gs;ug ih;xc qu;nb	315
@@ -111699,9 +111596,7 @@ columns:
 北野井子	bz;av ye;di jy;qj zi;hi	117
 北野田	bz;av ye;di tm;qt	243
 北野町	bz;av ye;di ty;qa	558
-北镇中学	bz;av vf;zn vs;dg xt;kw	310
 北镇的	bz;av vf;zn de;un	378
-北镇鸭梨	bz;av vf;zn ya;sx li;xp	162
 北长安街	bz;av vh;pc an;wb jx;pg	248
 北长山岛	bz;av vh;pc uj;vs dk;xv	297
 北长河	bz;av vh;pc he;kz	162
@@ -114143,7 +114038,6 @@ columns:
 华亚公司	hw;jv ya;fc gs;hk si;af	297
 华亨名城	hw;jv hg;gr my;ld ig;gn	130
 华亨大厦	hw;jv hg;gr da;md ua;xf	180
-华亭人家	hw;jv ty;ga rf;jr jw;wj	256
 华亭寺	hw;jv ty;ga si;gk	310
 华亭湖	hw;jv ty;ga hu;kc	300
 华亭的	hw;jv ty;ga de;un	324
@@ -115964,17 +115858,8 @@ columns:
 南俊新街	nj;nm jp;jk xn;ie jx;pg	202
 南俊路	nj;nm jp;jk lu;ps	369
 南健太郎	nj;nm jm;jb tl;mi lh;ii	180
-南充一中	nj;nm is;bp yi;fi vs;dg	180
 南充东	nj;nm is;bp ds;ry	279
-南充九中	nj;nm is;bp jq;kj vs;dg	117
-南充公司	nj;nm is;bp gs;hk si;af	171
-南充军事	nj;nm is;bp jp;wy ui;fd	234
-南充十中	nj;nm is;bp ui;ns vs;dg	130
-南充教育	nj;nm is;bp jc;qh yu;bv	144
-南充文化	nj;nm is;bp wf;vw hw;jv	225
-南充旅游	nj;nm is;bp lv;le yb;kl	338
 南充的	nj;nm is;bp de;un	508
-南充经济	nj;nm is;bp jy;ir ji;kq	117
 南充西	nj;nm is;bp xi;vx	346
 南光	nj;nm gd;mg	1235
 南光公司	nj;nm gd;mg gs;hk si;af	270
@@ -116261,13 +116146,8 @@ columns:
 南宁河	nj;nm ny;wa he;kz	338
 南宁组织	nj;nm ny;wa zu;if vi;id	171
 南宁道路	nj;nm ny;wa dk;ho lu;ps	130
-南安公交	nj;nm an;wb gs;hk jc;ab	117
 南安城	nj;nm an;wb ig;gn	378
-南安寺塔	nj;nm an;wb si;gk ta;gl	270
-南安市区	nj;nm an;wb ui;zr qu;nb	207
 南安普	nj;nm an;wb pu;hc	1102
-南安机电	nj;nm an;wb ji;eo dm;oa	144
-南安板鸭	nj;nm an;wb bj;ex ya;sx	266
 南安的	nj;nm an;wb de;un	500
 南安街	nj;nm an;wb jx;pg	382
 南安路	nj;nm an;wb lu;ps	281
@@ -123313,10 +123193,7 @@ columns:
 双沟酒厂	ud;rr gb;kn jq;ky ih;xc	130
 双沟醉猿	ud;rr gb;kn zv;yz yr;mg	130
 双沪阳塘	ud;rr hu;km yh;to th;gx	234
-双河农场	ud;rr he;kz ns;wt ih;ga	189
 双河场	ud;rr he;kz ih;ga	266
-双河小学	ud;rr he;kz xc;yx xt;kw	162
-双河水库	ud;rr he;kz uv;ks ku;xy	207
 双河湾	ud;rr he;kz wj;kz	207
 双河社区	ud;rr he;kz ue;fg qu;nb	153
 双泉	ud;rr qr;uk	177
@@ -123539,8 +123416,6 @@ columns:
 双边理想	ud;rr bm;su li;nd xd;eq	297
 双边的	ud;rr bm;su de;un	576
 双边领域	ud;rr bm;su ly;jk yu;gp	382
-双辽农场	ud;rr lc;ru ns;wt ih;ga	153
-双辽支路	ud;rr lc;ru vi;ci lu;ps	171
 双运	ud;rr yp;bu	819
 双选	ud;rr xr;qp	1004
 双选吧	ud;rr xr;qp ba;dm	207
@@ -123626,7 +123501,6 @@ columns:
 双鸟	ud;rr nc;xn	477
 双鸟在林	ud;rr nc;xn zl;ng ln;ee	207
 双鸡堡	ud;rr ji;rx bk;jd	248
-双鸭山的	ud;rr ya;sx uj;vs de;un	288
 双鸭山站	ud;rr ya;sx uj;vs vj;iy	180
 双鸳鸯	ud;rr yr;lz yh;mm	328
 双鹤高科	ud;rr he;wu gk;gg ke;xj	117
@@ -126346,9 +126220,7 @@ columns:
 句子啊	ju;gj zi;hi aa;dt	405
 句子是	ju;gj zi;hi ui;ot	532
 句容人	ju;gj rs;wh rf;jr	400
-句容市委	ju;gj rs;wh ui;zr wz;xb	302
 句容的	ju;gj rs;wh de;un	306
-句容监狱	ju;gj rs;wh jm;pr yu;ms	189
 句式吧	ju;gj ui;pu ba;dm	252
 句意	ju;gj yi;xh	210
 句段	ju;gj dr;uf	155
@@ -128185,34 +128057,15 @@ columns:
 台上微笑	tl;kd uh;yf wz;wv xc;rt	374
 台上时	tl;kd uh;yf ui;ok	521
 台上是	tl;kd uh;yf ui;ot	711
-台东一路	tl;kd ds;ry yi;fi lu;ps	428
-台东万达	tl;kd ds;ry wj;fp da;mu	266
-台东三路	tl;kd ds;ry sj;ts lu;ps	364
-台东二路	tl;kd ds;ry er;me lu;ps	180
-台东五路	tl;kd ds;ry wu;wu lu;ps	212
-台东八路	tl;kd ds;ry ba;hb lu;ps	410
-台东六路	tl;kd ds;ry lq;al lu;ps	369
-台东利群	tl;kd ds;ry li;xp qp;bt	297
-台东医院	tl;kd ds;ry yi;no yr;tw	374
 台东山	tl;kd ds;ry uj;vs	342
-台东市人	tl;kd ds;ry ui;zr rf;jr	130
-台东师范	tl;kd ds;ry ui;pf fj;lk	310
 台东店	tl;kd ds;ry dm;xy	418
 台东站	tl;kd ds;ry vj;iy	418
-台东苏铁	tl;kd ds;ry su;ls tx;zt	288
 台东路	tl;kd ds;ry lu;ps	324
-台东那边	tl;kd ds;ry na;au bm;su	202
-台东附近	tl;kd ds;ry fu;tj jn;tu	333
 台中厅	tl;kd vs;dg ty;xa	738
 台中台	tl;kd vs;dg tl;kd	688
-台中国际	tl;kd vs;dg go;rn ji;tf	558
 台中女	tl;kd vs;dg nv;bn	486
-台中市立	tl;kd vs;dg ui;zr li;il	788
 台中广	tl;kd vs;dg gd;xg	477
-台中广三	tl;kd vs;dg gd;xg sj;ts	256
 台中盆	tl;kd vs;dg pf;hp	472
-台中精科	tl;kd vs;dg jy;pa ke;xj	117
-台中美食	tl;kd vs;dg mz;gm ui;qs	162
 台中路	tl;kd vs;dg lu;ps	428
 台主播	tl;kd vu;in bo;ut	819
 台了吧	tl;kd le;rl ba;dm	334
@@ -128225,31 +128078,18 @@ columns:
 台兰河	tl;kd lj;ht he;kz	175
 台内	tl;kd nz;mj	1107
 台农	tl;kd ns;wt	659
-台北县人	tl;kd bz;av xm;fk rf;jr	220
-台北台北	tl;kd bz;av tl;kd bz;av	508
 台北吧	tl;kd bz;av ba;dm	202
-台北商务	tl;kd bz;av uh;im wu;hs	486
 台北园	tl;kd bz;av yr;rm	243
-台北师范	tl;kd bz;av ui;pf fj;lk	549
 台北时	tl;kd bz;av ui;ok	407
 台北湖	tl;kd bz;av hu;kc	310
 台北的	tl;kd bz;av de;un	1035
-台北看雨	tl;kd bz;av kj;uq yu;tv	171
 台北纯	tl;kd bz;av ip;if	423
-台北美军	tl;kd bz;av mz;gm jp;wy	266
-台北花园	tl;kd bz;av hw;lj yr;rm	162
 台北莎罗	tl;kd bz;av ua;lk lo;yl	171
 台北街	tl;kd bz;av jx;pg	544
-台北袖珍	tl;kd bz;av xq;td vf;nj	180
 台北西站	tl;kd bz;av xi;vx vj;iy	364
 台北雅厨	tl;kd bz;av ya;lu iu;xz	171
 台区	tl;kd qu;nb	1238
-台南古都	tl;kd nj;nm gu;cg du;qo	225
-台南市立	tl;kd nj;nm ui;zr li;il	734
-台南师范	tl;kd nj;nm ui;pf fj;lk	513
 台南路	tl;kd nj;nm lu;ps	572
-台南铁路	tl;kd nj;nm tx;zt lu;ps	423
-台南阿辉	tl;kd nj;nm aa;tz hv;mw	117
 台卡	tl;kd ka;yf	123
 台历吧	tl;kd li;xs ba;dm	212
 台厦道	tl;kd ua;xf dk;ho	436
@@ -128280,13 +128120,9 @@ columns:
 台子湖	tl;kd zi;hi hu;kc	110
 台安医院	tl;kd an;wb yi;no yr;tw	378
 台尔曼	tl;kd er;xy mj;oy	126
-台山中街	tl;kd uj;vs vs;dg jx;pg	315
 台山公园	tl;kd uj;vs gs;hk yr;rm	209
-台山列岛	tl;kd uj;vs lx;gp dk;xv	378
 台山岛	tl;kd uj;vs dk;xv	324
-台山水库	tl;kd uj;vs uv;ks ku;xy	189
 台山街	tl;kd uj;vs jx;pg	428
-台山路口	tl;kd uj;vs lu;ps kb;dk	175
 台山黄	tl;kd uj;vs hd;nh	392
 台州一中	tl;kd vb;oo yi;fi vs;dg	252
 台州交通	tl;kd vb;oo jc;ab ts;kt	171
@@ -130879,8 +130715,6 @@ columns:
 吉非贝齐	ji;gd fz;rf bz;ob qi;qq	171
 吉顺	ji;gd up;ow	675
 吉顺街	ji;gd up;ow jx;pg	351
-吉首二中	ji;gd ub;ho er;me vs;dg	117
-吉首华泰	ji;gd ub;ho hw;jv tl;ai	130
 吉首站	ji;gd ub;ho vj;iy	230
 吉黑高速	ji;gd hz;ph gk;gg su;xu	171
 吊丝	dc;dr si;ii	756
@@ -130987,16 +130821,12 @@ columns:
 同人吧	ts;mf rf;jr ba;dm	252
 同人歌手	ts;mf rf;jr ge;zz ub;us	162
 同人祭	ts;mf rf;jr ji;hf	356
-同仁中学	ts;mf rf;jm vs;dg xt;kw	130
 同仁书店	ts;mf rf;jm uu;aa dm;xy	212
 同仁和	ts;mf rf;jm he;xd	486
 同仁堂的	ts;mf rf;jm th;sg de;un	680
-同仁学校	ts;mf rf;jm xt;kw xc;ea	180
-同仁小学	ts;mf rf;jm xc;yx xt;kw	153
 同仁眼镜	ts;mf rf;jm yj;qi jy;zx	162
 同仁药店	ts;mf rf;jm yk;li dm;xy	117
 同仁街	ts;mf rf;jm jx;pg	436
-同仁西街	ts;mf rf;jm xi;vx jx;pg	212
 同仁转债	ts;mf rf;jm vr;ym vl;ja	162
 同他们的	ts;mf ta;je mf;ja de;un	770
 同代	ts;mf dl;jp	474
@@ -131393,8 +131223,6 @@ columns:
 同步连接	ts;mf bu;ss lm;yu jx;ui	266
 同民医院	ts;mf mn;dm yi;no yr;tw	130
 同民族	ts;mf mn;dm zu;le	886
-同江医院	ts;mf jd;ku yi;no yr;tw	288
-同江海关	ts;mf jd;ku hl;ke gr;hm	117
 同沙水库	ts;mf ua;ky uv;ks ku;xy	252
 同治举人	ts;mf vi;kk ju;kh rf;jr	117
 同治重宝	ts;mf vi;kk vs;ld bk;wn	144
@@ -132488,12 +132316,8 @@ columns:
 吐露了	tu;dg lu;tp le;rl	369
 吐露港	tu;dg lu;tp gh;kl	706
 吐音	tu;dg yn;xy	402
-吐鲁番了	tu;dg lu;wo fj;tp le;rl	230
-吐鲁番汗	tu;dg lu;wo fj;tp hj;ke	360
-吐鲁番的	tu;dg lu;wo fj;tp de;un	662
 吐鲁番盆	tu;dg lu;wo fj;tp pf;hp	585
 吐鲁番站	tu;dg lu;wo fj;tp vj;iy	238
-吐鲁番路	tu;dg lu;wo fj;tp lu;ps	162
 向一端	xd;tm yi;fi dr;iv	270
 向上一级	xd;tm uh;yf yi;fi ji;ic	576
 向上凸起	xd;tm uh;yf tu;vf qi;pv	428
@@ -132858,8 +132682,6 @@ columns:
 吕林	lv;dd ln;ee	210
 吕根县	lv;dd gf;ei xm;fk	124
 吕根岛	lv;dd gf;ei dk;xv	446
-吕梁交通	lv;dd ld;kp jc;ab ts;kt	162
-吕梁政治	lv;dd ld;kp vg;fs vi;kk	130
 吕梁期	lv;dd ld;kp qi;zh	153
 吕梁的	lv;dd ld;kp de;un	200
 吕氏柏记	lv;dd ui;bs bl;eu ji;sv	144
@@ -133484,7 +133306,6 @@ columns:
 吮了吮	up;dk le;rl up;dk	252
 启世录	qi;md ui;la lu;bk	374
 启业邨	qi;md ye;cy cp;fs	495
-启东事件	qi;md ds;ry ui;fd jm;jq	153
 启东的	qi;md ds;ry de;un	374
 启东西站	qi;md ds;ry xi;vx vj;iy	144
 启东道	qi;md ds;ry dk;ho	248
@@ -133712,7 +133533,6 @@ columns:
 吴店村	wu;df dm;xy cp;ek	103
 吴建荣	wu;df jm;bu rs;lw	197
 吴德物次	wu;df de;wn wu;qn ci;we	153
-吴忠市委	wu;df vs;dg ui;zr wz;xb	252
 吴忻水	wu;df xn;ht uv;ks	133
 吴总	wu;df zs;hd	1238
 吴扎拉氏	wu;df va;ua la;ui ui;bs	117
@@ -133737,12 +133557,7 @@ columns:
 吴永安	wu;df ys;ik an;wb	144
 吴汉	wu;df hj;kr	145
 吴汉杀妻	wu;df hj;kr ua;be qi;fb	144
-吴江中学	wu;df jd;ku vs;dg xt;kw	180
-吴江之星	wu;df jd;ku vi;ri xy;ol	338
 吴江公园	wu;df jd;ku gs;hk yr;rm	256
-吴江发展	wu;df jd;ku fa;sr vj;cl	153
-吴江宾馆	wu;df jd;ku bn;wt gr;qw	252
-吴江日报	wu;df jd;ku ri;or bk;uz	536
 吴江的	wu;df jd;ku de;un	309
 吴河乡	wu;df he;kz xd;ix	155
 吴波	wu;df bo;kr	1053
@@ -134495,11 +134310,7 @@ columns:
 周发殷汤	vb;mg fa;sr yn;zr th;ka	252
 周叔	vb;mg uu;yf	1035
 周受	vb;mg ub;yw	525
-周口卫校	vb;mg kb;dk wz;zf xc;ea	117
-周口店河	vb;mg kb;dk dm;xy he;kz	153
-周口店路	vb;mg kb;dk dm;xy lu;ps	279
 周口的	vb;mg kb;dk de;un	441
-周口经济	vb;mg kb;dk jy;ir ji;kq	153
 周口镇	vb;mg kb;dk vf;zn	178
 周召二公	vb;mg vk;pd er;me gs;hk	162
 周吉芳	vb;mg ji;gd fh;ll	212
@@ -135733,14 +135544,12 @@ columns:
 和瑞艺术	he;xd rv;nv yi;la uu;ei	117
 和生产	he;xd ug;ls ij;ix	1516
 和生活费	he;xd ug;ls ho;ka fz;to	896
-和田中学	he;xd tm;qt vs;dg xt;kw	129
 和田事件	he;xd tm;qt ui;fd jm;jq	153
 和田仓	he;xd tm;qt ch;jz	270
 和田伯光	he;xd tm;qt bo;ju gd;mg	346
 和田县人	he;xd tm;qt xm;fk rf;jr	162
 和田归农	he;xd tm;qt gv;pb ns;wt	171
 和田惟政	he;xd tm;qt wz;hu vg;fs	351
-和田晓霞	he;xd tm;qt xc;op xw;tc	360
 和田玉产	he;xd tm;qt yu;ni ij;ix	342
 和田玉器	he;xd tm;qt yu;ni qi;dd	297
 和田玉雕	he;xd tm;qt yu;ni dc;mg	369
@@ -135967,8 +135776,6 @@ columns:
 和高中	he;xd gk;gg vs;dg	1089
 和高低	he;xd gk;gg di;jb	616
 和黛玉	he;xd dl;jp yu;ni	729
-和龙水库	he;xd ls;tl uv;ks ku;xy	162
-和龙铁路	he;xd ls;tl tx;zt lu;ps	171
 咏古	ys;di gu;cg	113
 咏喇叭	ys;di la;dx ba;dh	189
 咏孤石	ys;di gu;hy ui;ms	117
@@ -136681,33 +136488,7 @@ columns:
 哈尔测度	ha;dj er;xy ce;ko do;xl	360
 哈尔湖	ha;dj er;xy hu;kc	266
 哈尔满	ha;dj er;xy mj;kl	171
-哈尔滨不	ha;dj er;xy bn;kw bu;cb	513
-哈尔滨也	ha;dj er;xy bn;kw ye;ey	544
-哈尔滨了	ha;dj er;xy bn;kw le;rl	472
 哈尔滨仓	ha;dj er;xy bn;kw ch;jz	144
-哈尔滨你	ha;dj er;xy bn;kw ni;jx	369
-哈尔滨冷	ha;dj er;xy bn;kw lg;wj	202
-哈尔滨到	ha;dj er;xy bn;kw dk;yp	590
-哈尔滨办	ha;dj er;xy bn;kw bj;sh	306
-哈尔滨号	ha;dj er;xy bn;kw hk;df	323
-哈尔滨吗	ha;dj er;xy bn;kw ma;dn	171
-哈尔滨吧	ha;dj er;xy bn;kw ba;dm	266
-哈尔滨呢	ha;dj er;xy bn;kw ne;dc	207
-哈尔滨和	ha;dj er;xy bn;kw he;xd	603
-哈尔滨哪	ha;dj er;xy bn;kw na;da	395
-哈尔滨啊	ha;dj er;xy bn;kw aa;dt	288
-哈尔滨啦	ha;dj er;xy bn;kw la;du	180
-哈尔滨好	ha;dj er;xy bn;kw hk;bh	495
-哈尔滨就	ha;dj er;xy bn;kw jq;gy	482
-哈尔滨我	ha;dj er;xy bn;kw wo;tu	490
-哈尔滨有	ha;dj er;xy bn;kw yb;nv	698
-哈尔滨来	ha;dj er;xy bn;kw ll;ah	495
-哈尔滨玩	ha;dj er;xy bn;kw wj;nm	482
-哈尔滨的	ha;dj er;xy bn;kw de;un	1066
-哈尔滨被	ha;dj er;xy bn;kw bz;tr	387
-哈尔滨这	ha;dj er;xy bn;kw ve;vu	603
-哈尔滨那	ha;dj er;xy bn;kw na;au	495
-哈尔滨都	ha;dj er;xy bn;kw db;qo	472
 哈尔特	ha;dj er;xy te;qg	864
 哈尔琳	ha;dj er;xy ln;ne	292
 哈尔盖	ha;dj er;xy gl;ga	369
@@ -138659,10 +138440,6 @@ columns:
 啼鸟	ti;di nc;xn	648
 啾咪	jq;dx mi;dp	855
 啾咪啾咪	jq;dx mi;dp jq;dx mi;dp	153
-喀什历史	ka;dw ui;jn li;xs ui;db	180
-喀什地委	ka;dw ui;jn di;ge wz;xb	400
-喀什市人	ka;dw ui;jn ui;zr rf;jr	297
-喀什教育	ka;dw ui;jn jc;qh yu;bv	194
 喀和铁路	ka;dw he;xd tx;zt lu;ps	279
 喀嚓鱼	ka;dw ia;dw yu;wv	129
 喀山教堂	ka;dw uj;vs jc;qh th;sg	194
@@ -139031,7 +138808,6 @@ columns:
 喜欢在	xi;hd hr;re zl;ng	1616
 喜欢墨子	xi;hd hr;re mo;pg zi;hi	153
 喜欢太	xi;hd hr;re tl;mi	1066
-喜欢威尔	xi;hd hr;re wz;nf er;xy	284
 喜欢娘	xi;hd hr;re nd;bi	526
 喜欢字母	xi;hd hr;re zi;wh mu;km	202
 喜欢小乐	xi;hd hr;re xc;yx le;by	130
@@ -139521,7 +139297,6 @@ columns:
 嘉丝蒂	jw;hs si;ii di;li	310
 嘉丰公主	jw;hs fg;af gs;hk vu;in	153
 嘉丽	jw;hs li;fv	183
-嘉义大学	jw;hs yi;ib da;md xt;kw	644
 嘉乐	jw;hs le;by	184
 嘉乐堂	jw;hs le;by th;sg	144
 嘉乐庇	jw;hs le;by bi;xv	540
@@ -139625,10 +139400,7 @@ columns:
 嘉山之战	jw;hs uj;vs vi;ri vj;yd	117
 嘉山路	jw;hs uj;vs lu;ps	558
 嘉岛町	jw;hs dk;xv ty;qa	297
-嘉峪关人	jw;hs yu;vh gr;hm rf;jr	225
-嘉峪关的	jw;hs yu;vh gr;hm de;un	450
 嘉峪关站	jw;hs yu;vh gr;hm vj;iy	248
-嘉峪关路	jw;hs yu;vh gr;hm lu;ps	405
 嘉峰	jw;hs fg;vh	256
 嘉州花园	jw;hs vb;oo hw;lj yr;rm	137
 嘉州路	jw;hs vb;oo lu;ps	224
@@ -140386,7 +140158,6 @@ columns:
 四升五	si;ys ug;tl wu;wu	279
 四单位制	si;ys dj;hq wz;ji vi;qr	220
 四县三区	si;ys xm;fk sj;ts qu;nb	153
-四叉路口	si;ys ia;ri lu;ps kb;dk	186
 四友	si;ys yb;nr	568
 四双八拜	si;ys ud;rr ba;hb bl;uf	117
 四叠体	si;ys dx;rr ti;je	270
@@ -151604,9 +151375,7 @@ columns:
 基金裕隆	ji;zh jn;zj yu;th ls;th	382
 基金部	ji;zh jn;zj bu;id	634
 基金鸿阳	ji;zh jn;zj hs;ku yh;to	356
-基隆中街	ji;zh ls;th vs;dg jx;pg	117
 基隆街	ji;zh ls;th jx;pg	495
-基隆铁路	ji;zh ls;th tx;zt lu;ps	117
 基顿	ji;zh dp;fs	891
 基频率	ji;zh pn;ss lv;zi	122
 堀井真吾	ku;gc jy;qj vf;nq wu;wd	144
@@ -151902,9 +151671,6 @@ columns:
 塔喇氏	ta;gl la;dx ui;bs	342
 塔园路站	ta;gl yr;rm lu;ps vj;iy	212
 塔坪寺	ta;gl py;ge si;gk	207
-塔城市人	ta;gl ig;gn ui;zr rf;jr	194
-塔城市的	ta;gl ig;gn ui;zr de;un	180
-塔城机场	ta;gl ig;gn ji;eo ih;ga	171
 塔城的	ta;gl ig;gn de;un	400
 塔埔社区	ta;gl pu;gn ue;fg qu;nb	171
 塔基	ta;gl ji;zh	260
@@ -156792,12 +156558,9 @@ columns:
 大冲口站	da;md is;wd kb;dk vj;iy	180
 大冲龙	da;md is;wd ls;tl	180
 大冶人	da;md ye;wk rf;jr	346
-大冶六中	da;md ye;wk lq;al vs;dg	378
 大冶北	da;md ye;wk bz;av	392
-大冶市委	da;md ye;wk ui;zr wz;xb	238
 大冶的	da;md ye;wk de;un	297
 大冶站	da;md ye;wk vj;iy	137
-大冶钢厂	da;md ye;wk gh;zm ih;xc	234
 大冻山	da;md ds;wr uj;vs	166
 大冻结	da;md ds;wr jx;ig	266
 大准线	da;md vp;wu xm;if	266
@@ -157829,11 +157592,9 @@ columns:
 大安区人	da;md an;wb qu;nb rf;jr	162
 大安商厦	da;md an;wb uh;im ua;xf	297
 大安圳	da;md an;wb vf;go	279
-大安大厦	da;md an;wb da;md ua;xf	162
 大安寮	da;md an;wb lc;wm	297
 大安寺	da;md an;wb si;gk	454
 大安小区	da;md an;wb xc;yx qu;nb	117
-大安市人	da;md an;wb ui;zr rf;jr	144
 大安府	da;md an;wb fu;xj	274
 大安排	da;md an;wb pl;ur	459
 大安正街	da;md an;wb vg;fs jx;pg	144
@@ -159458,15 +159219,10 @@ columns:
 大班生	da;md bj;pn ug;ls	220
 大球球	da;md qq;nf qq;nf	346
 大球运动	da;md qq;nf yp;bu ds;bs	364
-大理一小	da;md li;nd yi;fi xc;yx	189
-大理二中	da;md li;nd er;me vs;dg	189
 大理人家	da;md li;nd rf;jr jw;wj	163
 大理佛教	da;md li;nd fo;jt jc;qh	130
-大理州人	da;md li;nd vb;oo rf;jr	356
-大理市人	da;md li;nd ui;zr rf;jr	410
 大理市委	da;md li;nd ui;zr wz;xb	369
 大理师范	da;md li;nd ui;pf fj;lk	230
-大理总管	da;md li;nd zs;hd gr;rw	364
 大理昆明	da;md li;nd kp;ov my;ov	464
 大理杜鹃	da;md li;nd du;eg jr;dv	144
 大理柳	da;md li;nd lq;eb	130
@@ -163004,7 +162760,6 @@ columns:
 天镜泉	tm;fm jy;zx qr;uk	189
 天镜禅师	tm;fm jy;zx ij;fh ui;pf	194
 天镜阁	tm;fm jy;zx ge;as	202
-天长中学	tm;fm ih;pc vs;dg xt;kw	248
 天长了	tm;fm ih;pc le;rl	436
 天长人	tm;fm ih;pc rf;jr	364
 天长的	tm;fm ih;pc de;un	540
@@ -168533,7 +168288,6 @@ columns:
 姜嘉俊	jd;gb jw;hs jp;jk	310
 姜埋奶	jd;gb ml;gd nl;bv	536
 姜堤乐园	jd;gb di;go le;by yr;rm	180
-姜堰中学	jd;gb yj;gn vs;dg xt;kw	369
 姜堰镇	jd;gb yj;gn vf;zn	150
 姜增伟	jd;gb zg;gh wz;jg	333
 姜太后	jd;gb tl;mi hb;xf	238
@@ -168879,8 +168633,6 @@ columns:
 娄宿增六	lb;pb xq;wj zg;gh lq;al	162
 娄山关站	lb;pb uj;vs gr;hm vj;iy	130
 娄庄中学	lb;pb vd;xg vs;dg xt;kw	117
-娄底一中	lb;pb di;xb yi;fi vs;dg	202
-娄底广播	lb;pb di;xb gd;xg bo;ut	117
 娄底的	lb;pb di;xb de;un	468
 娄底站	lb;pb di;xb vj;iy	315
 娄底话	lb;pb di;xb hw;sa	225
@@ -169468,7 +169220,6 @@ columns:
 子部件	zi;hi bu;id jm;jq	562
 子部分	zi;hi bu;id ff;hp	814
 子金皇朝	zi;hi jn;zj hd;un ik;no	270
-子长中学	zi;hi ih;pc vs;dg xt;kw	171
 子长煎饼	zi;hi ih;pc jm;hv by;qh	225
 子问题	zi;hi wf;ad ti;ot	1179
 子闺蜜	zi;hi gv;ag mi;wh	472
@@ -170106,10 +169857,8 @@ columns:
 孜然炒肉	zi;hh rj;vm ik;cy rb;mj	418
 孜然肉片	zi;hh rj;vm rb;mj pm;ap	279
 孜然面	zi;hh rj;vm mm;bm	338
-孝义中学	xc;qh yi;ib vs;dg xt;kw	220
 孝义为先	xc;qh yi;ib wz;is xm;qp	189
 孝义坊	xc;qh yi;ib fh;gl	225
-孝义市委	xc;qh yi;ib ui;zr wz;xb	248
 孝义河	xc;qh yi;ib he;kz	198
 孝义的	xc;qh yi;ib de;un	266
 孝义皇帝	xc;qh yi;ib hd;un di;iw	144
@@ -171052,8 +170801,6 @@ columns:
 宁嗽化痰	ny;wa sb;dx hw;jv tj;ac	248
 宁园	ny;wa yr;rm	546
 宁围初中	ny;wa wz;rg iu;tp vs;dg	117
-宁国中学	ny;wa go;rn vs;dg xt;kw	310
-宁国大道	ny;wa go;rn da;md dk;ho	212
 宁城县人	ny;wa ig;gn xm;fk rf;jr	189
 宁夏之役	ny;wa xw;fo vi;ri yi;wr	279
 宁夏交通	ny;wa xw;fo jc;ab ts;kt	360
@@ -171091,7 +170838,6 @@ columns:
 宁姐	ny;wa jx;bf	700
 宁姜公路	ny;wa jd;gb gs;hk lu;ps	130
 宁宁啊	ny;wa ny;wa aa;dt	292
-宁安铁路	ny;wa an;wb tx;zt lu;ps	162
 宁家埠店	ny;wa jw;wj bu;gt dm;xy	144
 宁家房子	ny;wa jw;wj fh;ml zi;hi	130
 宁家河	ny;wa jw;wj he;kz	171
@@ -172315,18 +172061,13 @@ columns:
 安足街	an;wb zu;pu jx;pg	266
 安足论	an;wb zu;pu lp;sj	342
 安路口	an;wb lu;ps kb;dk	544
-安达商场	an;wb da;mu uh;im ih;ga	202
 安达圣	an;wb da;mu ug;rg	238
 安达天下	an;wb da;mu tm;fm xw;fy	153
-安达小区	an;wb da;mu xc;yx qu;nb	230
-安达小学	an;wb da;mu xc;yx xt;kw	117
 安达拉	an;wb da;mu la;ui	428
 安达斯鲁	an;wb da;mu si;zh lu;wo	279
 安达木河	an;wb da;mu mu;em he;kz	225
-安达汽修	an;wb da;mu qi;kv xq;jg	117
 安达泰盛	an;wb da;mu tl;ai ug;na	288
 安达的	an;wb da;mu de;un	342
-安达石油	an;wb da;mu ui;ms yb;kd	180
 安达礁	an;wb da;mu jc;mu	405
 安达科技	an;wb da;mu ke;xj ji;uc	518
 安达站	an;wb da;mu vj;iy	279
@@ -173317,7 +173058,6 @@ columns:
 定山小学	dy;wt uj;vs xc;yx xt;kw	130
 定州人	dy;wt vb;oo rf;jr	468
 定州的	dy;wt vb;oo de;un	396
-定州贡院	dy;wt vb;oo gs;uo yr;tw	194
 定常	dy;wt ih;sr	1105
 定常流	dy;wt ih;sr lq;kb	302
 定常流动	dy;wt ih;sr lq;kb ds;bs	270
@@ -173488,16 +173228,8 @@ columns:
 宜信	yi;wf xn;js	226
 宜兰河	yi;wf lj;ht he;kz	382
 宜兰铁路	yi;wf lj;ht tx;zt lu;ps	261
-宜兴万达	yi;wf xy;kh wj;fp da;mu	225
-宜兴中学	yi;wf xy;kh vs;dg xt;kw	279
-宜兴人民	yi;wf xy;kh rf;jr mn;dm	369
-宜兴国际	yi;wf xy;kh go;rn ji;tf	220
-宜兴埠北	yi;wf xy;kh bu;gt bz;av	153
-宜兴宾馆	yi;wf xy;kh bn;wt gr;qw	130
 宜兴市公安局	yi;wf xy;kh ui;zr gs;hk an;wb ju;ca	179
-宜兴日报	yi;wf xy;kh ri;or bk;uz	171
 宜兴有	yi;wf xy;kh yb;nv	351
-宜兴毛笋	yi;wf xy;kh mk;vm sp;rb	153
 宜兴的	yi;wf xy;kh de;un	562
 宜兴话	yi;wf xy;kh hw;sa	248
 宜凤高速	yi;wf fg;or gk;gg su;xu	342
@@ -174691,11 +174423,7 @@ columns:
 宣告灭亡	xr;wf gk;qd mx;fc wh;fw	450
 宣和画院	xr;wf he;xd hw;fq yr;tw	202
 宣哥	xr;wf ge;zz	239
-宣城中学	xr;wf ig;gn vs;dg xt;kw	338
-宣城公主	xr;wf ig;gn gs;hk vu;in	315
-宣城历史	xr;wf ig;gn li;xs ui;db	130
 宣城的	xr;wf ig;gn de;un	518
-宣城石油	xr;wf ig;gn ui;ms yb;kd	207
 宣姐	xr;wf jx;bf	459
 宣威仓	xr;wf wz;nf ch;jz	144
 宣威将军	xr;wf wz;nf jd;al jp;wy	405
@@ -177430,6 +177158,7 @@ columns:
 寺院法	si;gk yr;tw fa;kg	396
 寻人了	xp;bk rf;jr le;rl	338
 寻仇了	xp;bk ib;jk le;rl	315
+寻优	xp;bk yb;jo	544
 寻像器	xp;bk xd;jw qi;dd	238
 寻到了	xp;bk dk;yp le;rl	342
 寻医无果	xp;bk yi;no wu;du go;qe	162
@@ -177965,8 +177694,6 @@ columns:
 射正	ue;zk vg;fs	157
 射死了	ue;zk si;gv le;rl	116
 射水市	ue;zk uv;ks ui;zr	376
-射洪中学	ue;zk hs;kl vs;dg xt;kw	220
-射洪县人	ue;zk hs;kl xm;fk rf;jr	297
 射电星系	ue;zk dm;oa xy;ol xi;ti	328
 射电暴	ue;zk dm;oa bk;ol	468
 射电源	ue;zk dm;oa yr;kx	110
@@ -189488,10 +189215,8 @@ columns:
 尚德邨	uh;ss de;wn cp;fs	554
 尚志公园	uh;ss vi;gh gs;hk yr;rm	189
 尚志堂	uh;ss vi;gh th;sg	202
-尚志大学	uh;ss vi;gh da;md xt;kw	152
 尚志民	uh;ss vi;gh mn;dm	513
 尚志的	uh;ss vi;gh de;un	441
-尚志胡同	uh;ss vi;gh hu;cv ts;mf	117
 尚志路	uh;ss vi;gh lu;ps	194
 尚思绍	uh;ss si;qh uk;ip	315
 尚思绍王	uh;ss si;qh uk;ip wh;nw	234
@@ -192169,8 +191894,6 @@ columns:
 屎黄	ui;cp hd;nh	311
 屏上	py;ch uh;yf	1635
 屏上切迹	py;ch uh;yf qx;rp ji;zc	130
-屏东中学	py;ch ds;ry vs;dg xt;kw	382
-屏东师范	py;ch ds;ry ui;pf fj;lk	396
 屏东路	py;ch ds;ry lu;ps	236
 屏勿视	py;ch wu;ne ui;fe	378
 屏大	py;ch da;md	846
@@ -192585,7 +192308,6 @@ columns:
 山区时	uj;vs qu;nb ui;ok	540
 山半腰	uj;vs bj;hu yk;vv	338
 山南坡	uj;vs nj;nm po;gr	598
-山南山北	uj;vs nj;nm uj;vs bz;av	333
 山卡卡	uj;vs ka;yf ka;yf	297
 山卡拉	uj;vs ka;yf la;ui	374
 山原义人	uj;vs yr;xu yi;ib rf;jr	225
@@ -194097,8 +193819,6 @@ columns:
 嵊县花猪	ug;vx xm;fk hw;lj vu;mq	180
 嵊山	ug;vx uj;vs	221
 嵊州的	ug;vx vb;oo de;un	324
-嵊州竹编	ug;vx vb;oo vu;ru bm;im	144
-嵊州越剧	ug;vx vb;oo yt;pn ju;cc	189
 嵌入了	qm;vz ru;ju le;rl	729
 嵌入定理	qm;vz ru;ju dy;wt li;nd	360
 嵌入性	qm;vz ru;ju xy;hl	258
@@ -194411,18 +194131,12 @@ columns:
 巡逻线	xp;ou lo;yl xm;if	320
 巡防艇	xp;ou fh;tl ty;it	346
 巢内	ik;oq nz;mj	238
-巢湖中路	ik;oq hu;kc vs;dg lu;ps	117
 巢湖人	ik;oq hu;kc rf;jr	400
-巢湖医院	ik;oq hu;kc yi;no yr;tw	117
-巢湖南路	ik;oq hu;kc nj;nm lu;ps	351
 巢湖地	ik;oq hu;kc di;ge	410
-巢湖市委	ik;oq hu;kc ui;zr wz;xb	274
-巢湖民歌	ik;oq hu;kc mn;dm ge;zz	153
 巢湖水	ik;oq hu;kc uv;ks	454
 巢湖的	ik;oq hu;kc de;un	432
 巢湖站	ik;oq hu;kc vj;iy	207
 巢湖边	ik;oq hu;kc bm;su	360
-巢湖边上	ik;oq hu;kc bm;su uh;yf	194
 巢湖闸	ik;oq hu;kc va;as	252
 巢湖龙	ik;oq hu;kc ls;tl	266
 巢燕	ik;oq yj;ld	325
@@ -195231,7 +194945,6 @@ columns:
 巩乃斯河	gs;uo nl;vn si;zh he;kz	374
 巩义东	gs;uo yi;ib ds;ry	238
 巩义南	gs;uo yi;ib nj;nm	207
-巩义支行	gs;uo yi;ib vi;ci hh;px	153
 巩义的	gs;uo yi;ib de;un	652
 巩义站	gs;uo yi;ib vj;iy	109
 巩俐演的	gs;uo li;jx yj;kw de;un	202
@@ -196882,7 +196595,6 @@ columns:
 已督促	yi;vi du;yf cu;jp	441
 已瞧出	yi;vi qc;qu iu;sm	356
 已矣哉	yi;vi yi;ko zl;np	153
-已知一	yi;vi vi;od yi;fi	702
 已知不	yi;vi vi;od bu;cb	449
 已知且	yi;vi vi;od qx;fq	432
 已知中	yi;vi vi;od vs;dg	828
@@ -199830,7 +199542,6 @@ columns:
 常姐	ih;sr jx;bf	468
 常嫂	ih;sr sk;bp	130
 常存	ih;sr cp;ng	652
-常宁二中	ih;sr ny;wa er;me vs;dg	130
 常守	ih;sr ub;wk	553
 常安公主	ih;sr an;wb gs;hk vu;in	122
 常安慰	ih;sr an;wb wz;cf	580
@@ -199953,16 +199664,8 @@ columns:
 常温时	ih;sr wf;ko ui;ok	396
 常满	ih;sr mj;kl	1611
 常点	ih;sr dm;yd	1132
-常熟历史	ih;sr uu;gh li;xs ui;db	153
-常熟哪里	ih;sr uu;gh na;da li;dl	202
-常熟支行	ih;sr uu;gh vi;ci hh;px	266
-常熟文化	ih;sr uu;gh wf;vw hw;jv	189
 常熟有	ih;sr uu;gh yb;nv	360
-常熟海关	ih;sr uu;gh hl;ke gr;hm	194
-常熟理工	ih;sr uu;gh li;nd gs;ug	500
-常熟电厂	ih;sr uu;gh dm;oa ih;xc	144
 常熟的	ih;sr uu;gh de;un	657
-常熟翁氏	ih;sr uu;gh wg;hk ui;bs	202
 常熟话	ih;sr uu;gh hw;sa	274
 常爱	ih;sr ai;yw	1372
 常理吧	ih;sr li;nd ba;dm	230
@@ -200800,10 +200503,7 @@ columns:
 平底帆船	py;eh di;xb fj;ro ir;io	153
 平底烧瓶	py;eh di;xb uk;cp py;hl	162
 平底雪橇	py;eh di;xb xt;tb qc;ev	194
-平度一中	py;eh du;xl yi;fi vs;dg	180
-平度九中	py;eh du;xl jq;kj vs;dg	117
 平度人	py;eh du;xl rf;jr	464
-平度市委	py;eh du;xl ui;zr wz;xb	266
 平度的	py;eh du;xl de;un	436
 平度路	py;eh du;xl lu;ps	243
 平康郡	py;eh kh;xb jp;bt	270
@@ -200922,7 +200622,6 @@ columns:
 平河路	py;eh he;kz lu;ps	274
 平治街	py;eh vi;kk jx;pg	202
 平泉站	py;eh qr;uk vj;iy	234
-平泉草木	py;eh qr;uk ck;lo mu;em	117
 平泉路	py;eh qr;uk lu;ps	261
 平法	py;eh fa;kg	824
 平泷路	py;eh ls;kt lu;ps	288
@@ -200936,11 +200635,7 @@ columns:
 平淡了	py;eh dj;kc le;rl	783
 平淡吧	py;eh dj;kc ba;dm	414
 平添了	py;eh tm;kf le;rl	900
-平湖东里	py;eh hu;kc ds;ry li;dl	248
-平湖中学	py;eh hu;kc vs;dg xt;kw	248
-平湖医院	py;eh hu;kc yi;no yr;tw	171
 平湖南	py;eh hu;kc nj;nm	500
-平湖大道	py;eh hu;kc da;md dk;ho	180
 平湖的	py;eh hu;kc de;un	508
 平滑曲线	py;eh hw;kf qu;yq xm;if	436
 平滑法	py;eh hw;kf fa;kg	698
@@ -201194,10 +200889,7 @@ columns:
 平面运动	py;eh mm;bm yp;bu ds;bs	346
 平面阵	py;eh mm;bm vf;ty	374
 平顶冰川	py;eh dy;aw by;wk ir;oc	153
-平顶山人	py;eh dy;aw uj;vs rf;jr	428
-平顶山的	py;eh dy;aw uj;vs de;un	446
 平顶山站	py;eh dy;aw uj;vs vj;iy	274
-平顶山路	py;eh dy;aw uj;vs lu;ps	130
 平顶庙	py;eh dy;aw mc;xd	153
 平顶式	py;eh dy;aw ui;pu	277
 平顶楼	py;eh dy;aw lb;ep	266
@@ -202923,9 +202615,6 @@ columns:
 庐山三石	lu;xm uj;vs sj;ts ui;ms	194
 庐山上	lu;xm uj;vs uh;yf	490
 庐山吧	lu;xm uj;vs ba;dm	189
-庐山国际	lu;xm uj;vs go;rn ji;tf	342
-庐山大道	lu;xm uj;vs da;md dk;ho	205
-庐山宾馆	lu;xm uj;vs bn;wt gr;qw	212
 庐山游记	lu;xm uj;vs yb;kl ji;sv	153
 庐山玩	lu;xm uj;vs wj;nm	338
 庐山的	lu;xm uj;vs de;un	698
@@ -204068,7 +203757,6 @@ columns:
 康宏小区	kh;xb hs;wn xc;yx qu;nb	207
 康宏广场	kh;xb hs;wn gd;xg ih;ga	256
 康宏理财	kh;xb hs;wn li;nd cl;on	194
-康定木兰	kh;xb dy;wt mu;em lj;ht	351
 康定的	kh;xb dy;wt de;un	490
 康宝浓汤	kh;xb bk;wn ns;kw th;ka	130
 康宝驹	kh;xb bk;wn ju;ng	230
@@ -204344,18 +204032,9 @@ columns:
 延冈藩	yj;ts gh;mb fj;lk	306
 延参法师	yj;ts cj;km fa;kg ui;pf	837
 延口残喘	yj;ts kb;dk cj;gf ir;dv	171
-延吉东路	yj;ts ji;gd ds;ry lu;ps	315
-延吉中路	yj;ts ji;gd vs;dg lu;ps	351
-延吉冷面	yj;ts ji;gd lg;wj mm;bm	558
-延吉旅游	yj;ts ji;gd lv;le yb;kl	162
 延吉河	yj;ts ji;gd he;kz	243
-延吉海关	yj;ts ji;gd hl;ke gr;hm	207
-延吉烧烤	yj;ts ji;gd uk;cp kk;cq	171
 延吉的	yj;ts ji;gd de;un	536
-延吉监狱	yj;ts ji;gd jm;pr yu;ms	288
 延吉站	yj;ts ji;gd vj;iy	212
-延吉路店	yj;ts ji;gd lu;ps dm;xy	225
-延吉餐厅	yj;ts ji;gd cj;gr ty;xa	369
 延后了	yj;ts hb;xf le;rl	634
 延命	yj;ts my;jd	176
 延命地藏	yj;ts my;jd di;ge zh;ln	207
@@ -205286,7 +204965,6 @@ columns:
 开干了	kl;fl gj;eg le;rl	522
 开干吧	kl;fl gj;eg ba;dm	333
 开干河	kl;fl gj;eg he;kz	130
-开平市人	kl;fl py;eh ui;zr rf;jr	302
 开平王	kl;fl py;eh wh;nw	315
 开平的	kl;fl py;eh de;un	414
 开年了	kl;fl nm;ev le;rl	414
@@ -206725,14 +206403,6 @@ columns:
 张宝义	vh;bp bk;wn yi;ib	155
 张宝雯	vh;bp bk;wn wf;tv	135
 张家乡	vh;bp jw;wj xd;ix	226
-张家口上	vh;bp jw;wj kb;dk uh;yf	230
-张家口了	vh;bp jw;wj kb;dk le;rl	248
-张家口到	vh;bp jw;wj kb;dk dk;yp	360
-张家口南	vh;bp jw;wj kb;dk nj;nm	495
-张家口呢	vh;bp jw;wj kb;dk ne;dc	144
-张家口的	vh;bp jw;wj kb;dk de;un	688
-张家口线	vh;bp jw;wj kb;dk xm;if	194
-张家口组	vh;bp jw;wj kb;dk zu;if	266
 张家嘴	vh;bp jw;wj zv;ds	206
 张家坊	vh;bp jw;wj fh;gl	145
 张家墩	vh;bp jw;wj dp;gg	596
@@ -206746,16 +206416,12 @@ columns:
 张家河	vh;bp jw;wj he;kz	221
 张家洼	vh;bp jw;wj wa;kg	226
 张家浜路	vh;bp jw;wj bh;kt lu;ps	153
-张家港的	vh;bp jw;wj gh;kl de;un	482
 张家湖	vh;bp jw;wj hu;kc	103
 张家湾站	vh;bp jw;wj wj;kz vj;iy	162
 张家湾路	vh;bp jw;wj wj;kz lu;ps	144
 张家溪	vh;bp jw;wj xi;ky	193
 张家潭	vh;bp jw;wj tj;kv	103
 张家畈	vh;bp jw;wj fj;qx	196
-张家界了	vh;bp jw;wj jx;qj le;rl	202
-张家界北	vh;bp jw;wj jx;qj bz;av	256
-张家界的	vh;bp jw;wj jx;qj de;un	814
 张家界站	vh;bp jw;wj jx;qj vj;iy	360
 张家畔	vh;bp jw;wj pj;qh	155
 张家的	vh;bp jw;wj de;un	1134
@@ -206829,7 +206495,6 @@ columns:
 张扬其事	vh;bp yh;ua qi;zh ui;fd	171
 张扬吧	vh;bp yh;ua ba;dm	220
 张拉	vh;bp la;ui	330
-张掖南酒	vh;bp ye;uz nj;nm jq;ky	153
 张掖吧	vh;bp ye;uz ba;dm	225
 张掖的	vh;bp ye;uz de;un	158
 张政委	vh;bp vg;fs wz;xb	315
@@ -208065,8 +207730,6 @@ columns:
 当铺里	dh;yb pu;zn li;dl	482
 当锤子	dh;yb iv;zl zi;hi	356
 当门子	dh;yb mf;am zi;hi	234
-当阳关陵	dh;yb yh;to gr;hm ly;tg	117
-当阳峪窑	dh;yb yh;to yu;vh yk;ea	230
 当阳的	dh;yb yh;to de;un	292
 当青春期	dh;yb qy;av ip;ai qi;zh	284
 当靠垫	dh;yb kk;qd dm;uk	315
@@ -208456,10 +208119,7 @@ columns:
 彭局长	pg;he ju;ca vh;pc	230
 彭山人	pg;he uj;vs rf;jr	266
 彭山的	pg;he uj;vs de;un	333
-彭州一中	pg;he vb;oo yi;fi vs;dg	153
-彭州中学	pg;he vb;oo vs;dg xt;kw	320
 彭州人	pg;he vb;oo rf;jr	338
-彭州支线	pg;he vb;oo vi;ci xm;if	230
 彭州的	pg;he vb;oo de;un	432
 彭干臣	pg;he gj;eg if;qc	207
 彭庆国案	pg;he qy;xm go;rn an;wb	130
@@ -208533,7 +208193,6 @@ columns:
 彭飞	pg;he fz;cf	1120
 彰信可汗	vh;xn xn;js ke;zk hj;ke	284
 彰化路	vh;xn hw;jv lu;ps	387
-彰化铁路	vh;xn hw;jv tx;zt lu;ps	243
 彰德道	vh;xn de;wn dk;ho	202
 彰显的	vh;xn xm;oc de;un	702
 彰武水库	vh;xn wu;fp uv;ks ku;xy	382
@@ -212199,31 +211858,13 @@ columns:
 徐山村	xu;wj uj;vs cp;ek	103
 徐岙乡	xu;wj ao;tm xd;ix	178
 徐川专线	xu;wj ir;oc vr;ma xm;if	266
-徐州三中	xu;wj vb;oo sj;ts vs;dg	171
-徐州三院	xu;wj vb;oo sj;ts yr;tw	189
-徐州交通	xu;wj vb;oo jc;ab ts;kt	446
 徐州仓	xu;wj vb;oo ch;jz	180
-徐州体育	xu;wj vb;oo ti;je yu;bv	342
-徐州公司	xu;wj vb;oo gs;hk si;af	144
 徐州到	xu;wj vb;oo dk;yp	263
 徐州北站	xu;wj vb;oo bz;av vj;iy	297
-徐州医院	xu;wj vb;oo yi;no yr;tw	117
 徐州吧	xu;wj vb;oo ba;dm	230
-徐州哪里	xu;wj vb;oo na;da li;dl	279
-徐州地理	xu;wj vb;oo di;ge li;nd	130
-徐州市里	xu;wj vb;oo ui;zr li;dl	117
-徐州师范	xu;wj vb;oo ui;pf fj;lk	410
-徐州广播	xu;wj vb;oo gd;xg bo;ut	364
-徐州广电	xu;wj vb;oo gd;xg dm;oa	418
-徐州教育	xu;wj vb;oo jc;qh yu;bv	212
-徐州文化	xu;wj vb;oo wf;vw hw;jv	230
 徐州有	xu;wj vb;oo yb;nv	242
 徐州梆子	xu;wj vb;oo bh;ea zi;hi	266
-徐州法院	xu;wj vb;oo fa;kg yr;tw	189
-徐州琴书	xu;wj vb;oo qn;nn uu;aa	117
-徐州相王	xu;wj vb;oo xd;eq wh;nw	306
 徐州网	xu;wj vb;oo wh;mb	405
-徐州软件	xu;wj vb;oo rr;ye jm;jq	207
 徐州这	xu;wj vb;oo ve;vu	144
 徐市镇	xu;wj ui;zr vf;zn	201
 徐平	xu;wj py;eh	247
@@ -213160,14 +212801,8 @@ columns:
 德克勒克	de;wn ke;cp le;ts ke;cp	369
 德克夏	de;wn ke;cp xw;fo	243
 德全不危	de;wn qr;jn bu;cb wz;xx	144
-德兴小学	de;wn xy;kh xc;yx xt;kw	189
-德兴火锅	de;wn xy;kh ho;ch go;zd	130
 德兴街	de;wn xy;kh jx;pg	256
-德兴酒家	de;wn xy;kh jq;ky jw;wj	153
-德兴酒楼	de;wn xy;kh jq;ky lb;ep	202
 德兴里	de;wn xy;kh li;dl	306
-德兴集团	de;wn xy;kh ji;ue tr;rn	153
-德兴面馆	de;wn xy;kh mm;bm gr;qw	369
 德兴馆	de;wn xy;kh gr;qw	626
 德内大街	de;wn nz;mj da;md jx;pg	342
 德农种业	de;wn ns;wt vs;xd ye;cy	162
@@ -216000,7 +215635,6 @@ columns:
 怀中枯萎	hy;hc vs;dg ku;ec wz;lx	171
 怀九河	hy;hc jq;kj he;kz	194
 怀仁东	hy;hc rf;jm ds;ry	225
-怀仁中学	hy;hc rf;jm vs;dg xt;kw	202
 怀仁的	hy;hc rf;jm de;un	300
 怀仁窑	hy;hc rf;jm yk;ea	266
 怀仁路	hy;hc rf;jm lu;ps	180
@@ -217922,10 +217556,6 @@ columns:
 恩斯克	en;rm si;zh ke;cp	346
 恩斯河	en;rm si;zh he;kz	320
 恩斯迈	en;rm si;zh ml;fp	230
-恩施市人	en;rm ui;le ui;zr rf;jr	153
-恩施晚报	en;rm ui;le wj;ow bk;uz	162
-恩施武汉	en;rm ui;le wu;fp hj;kr	153
-恩施高中	en;rm ui;le gk;gg vs;dg	261
 恩普雷斯	en;rm pu;hc lz;tq si;zh	194
 恩未报	en;rm wz;aw bk;uz	338
 恩格尔曼	en;rm ge;es er;xy mj;oy	320
@@ -220566,15 +220196,11 @@ columns:
 慈济文化	ci;hi ji;kq wf;vw hw;jv	266
 慈济高中	ci;hi ji;kq gk;gg vs;dg	162
 慈清寺	ci;hi qy;ka si;gk	200
-慈溪中学	ci;hi xi;ky vs;dg xt;kw	423
 慈溪华腾	ci;hi xi;ky hw;jv tg;vh	144
 慈溪周巷	ci;hi xi;ky vb;mg xd;lh	238
 慈溪宗汉	ci;hi xi;ky zs;wf hj;kr	153
 慈溪店	ci;hi xi;ky dm;xy	230
-慈溪日报	ci;hi xi;ky ri;or bk;uz	266
-慈溪横河	ci;hi xi;ky hg;en he;kz	144
 慈溪的	ci;hi xi;ky de;un	513
-慈溪论坛	ci;hi xi;ky lp;sj tj;gb	212
 慈溪龙山	ci;hi xi;ky ls;tl uj;vs	297
 慈灯寺	ci;hi dg;ca si;gk	279
 慈爱了	ci;hi ai;yw le;rl	320
@@ -243229,7 +242855,6 @@ columns:
 扎入了	va;ua ru;ju le;rl	454
 扎兰丁	va;ua lj;ht dy;ad	454
 扎兰季	va;ua lj;ht ji;xh	284
-扎兰屯的	va;ua lj;ht tp;fs de;un	212
 扎兰屯站	va;ua lj;ht tp;fs vj;iy	162
 扎兰营子	va;ua lj;ht yy;lw zi;hi	202
 扎到了	va;ua dk;yp le;rl	585
@@ -253565,7 +253190,6 @@ columns:
 抚生南路	fu;ud ug;ls nj;nm lu;ps	315
 抚生路口	fu;ud ug;ls lu;ps kb;dk	130
 抚过	fu;ud go;ku	176
-抚远口岸	fu;ud yr;mp kb;dk an;vx	117
 抚长剑	fu;ud ih;pc jm;jk	198
 抚长高速	fu;ud vh;pc gk;gg su;xu	346
 抚顺一中	fu;ud up;ow yi;fi vs;dg	153
@@ -262452,11 +262076,6 @@ columns:
 攀岩时	pj;eb yj;vm ui;ok	446
 攀德达杰	pj;eb de;wn da;mu jx;ec	117
 攀援茎	pj;eb yr;uy jy;lr	364
-攀枝花了	pj;eb vi;ec hw;lj le;rl	117
-攀枝花人	pj;eb vi;ec hw;lj rf;jr	436
-攀枝花店	pj;eb vi;ec hw;lj dm;xy	130
-攀枝花树	pj;eb vi;ec hw;lj uu;er	225
-攀枝花的	pj;eb vi;ec hw;lj de;un	518
 攀枝花站	pj;eb vi;ec hw;lj vj;iy	338
 攀氏螺	pj;eb ui;bs lo;cq	238
 攀爬时	pj;eb pa;ym ui;ok	450
@@ -264541,7 +264160,6 @@ columns:
 散骑	sj;lv qi;nm	307
 散黑穗病	sj;lv hz;ph sv;xn by;af	153
 敦仁里	dp;gh rf;jm li;dl	202
-敦化监狱	dp;gh hw;jv jm;pr yu;ms	130
 敦化站	dp;gh hw;jv vj;iy	382
 敦和投资	dp;gh he;xd tb;ur zi;we	162
 敦宗睦族	dp;gh zs;wf mu;qg zu;le	162
@@ -265386,8 +265004,6 @@ columns:
 文尾	wf;vw wz;cv	992
 文屏路	wf;vw py;ch lu;ps	342
 文展会	wf;vw vj;cl hv;jb	306
-文山州人	wf;vw uj;vs vb;oo rf;jr	252
-文山市人	wf;vw uj;vs ui;zr rf;jr	324
 文山郡	wf;vw uj;vs jp;bt	331
 文峰中学	wf;vw fg;vh vs;dg xt;kw	162
 文峰古街	wf;vw fg;vh gu;cg jx;pg	274
@@ -265862,7 +265478,6 @@ columns:
 斗亚兰	db;jd ya;fc lj;ht	356
 斗伯比	db;jd bo;ju bi;vv	315
 斗僵尸	db;jd jd;jf ui;cs	382
-斗六市人	db;jd lq;al ui;zr rf;jr	171
 斗六甲	db;jd lq;al jw;sj	306
 斗兽	db;jd ub;hq	226
 斗兽争霸	db;jd ub;hq vg;xb ba;tt	225
@@ -266659,14 +266274,8 @@ columns:
 新化快速	xn;ie hw;jv ky;hn su;xu	207
 新化的	xn;ie hw;jv de;un	504
 新化站	xn;ie hw;jv vj;iy	284
-新北区的	xn;ie bz;av qu;nb de;un	306
 新北园春	xn;ie bz;av yr;rm ip;ai	153
-新北实验	xn;ie bz;av ui;ww yj;nj	117
 新北川	xn;ie bz;av ir;oc	274
-新北市立	xn;ie bz;av ui;zr li;il	832
-新北市第	xn;ie bz;av ui;zr di;rt	666
-新北校区	xn;ie bz;av xc;ea qu;nb	189
-新北热电	xn;ie bz;av re;uk dm;oa	288
 新北环	xn;ie bz;av hr;nc	382
 新北界	xn;ie bz;av jx;qj	243
 新北的	xn;ie bz;av de;un	328
@@ -267779,8 +267388,6 @@ columns:
 新立河西	xn;ie li;il he;kz xi;vx	117
 新站路	xn;ie vj;iy lu;ps	256
 新竹园	xn;ie vu;ru yr;rm	266
-新竹市立	xn;ie vu;ru ui;zr li;il	585
-新竹师范	xn;ie vu;ru ui;pf fj;lk	428
 新竹街	xn;ie vu;ru jx;pg	540
 新笋	xn;ie sp;rb	436
 新第三纪	xn;ie di;rt sj;ts ji;iv	202
@@ -270637,7 +270244,6 @@ columns:
 日澳	ri;or ao;kt	1107
 日照大地	ri;or vk;op da;md di;ge	162
 日照小时	ri;or vk;op xc;yx ui;ok	428
-日照市区	ri;or vk;op ui;zr qu;nb	315
 日照标准	ri;or vk;op bc;ef vp;wu	356
 日照长度	ri;or vk;op ih;pc du;xl	180
 日照间距	ri;or vk;op jm;ao ju;pn	306
@@ -271859,19 +271465,13 @@ columns:
 昆士敦	kp;ov ui;gs dp;gh	346
 昆士柏	kp;ov ui;gs bl;eu	666
 昆士顿	kp;ov ui;gs dp;fs	270
-昆山三校	kp;ov uj;vs sj;ts xc;ea	202
-昆山中学	kp;ov uj;vs vs;dg xt;kw	324
 昆山仓	kp;ov uj;vs ch;jz	266
 昆山到	kp;ov uj;vs dk;yp	342
 昆山和	kp;ov uj;vs he;xd	410
-昆山哪里	kp;ov uj;vs na;da li;dl	202
-昆山市区	kp;ov uj;vs ui;zr qu;nb	248
 昆山有	kp;ov uj;vs yb;nv	526
 昆山来	kp;ov uj;vs ll;ah	288
-昆山玉碎	kp;ov uj;vs yu;ni sv;mz	297
 昆山的	kp;ov uj;vs de;un	711
 昆山里	kp;ov uj;vs li;dl	189
-昆山顾氏	kp;ov uj;vs gu;xz ui;bs	144
 昆嵩市	kp;ov ss;vg ui;zr	324
 昆嵩省	kp;ov ss;vg ug;yt	482
 昆州	kp;ov vb;oo	634
@@ -271916,7 +271516,6 @@ columns:
 昆河铁路	kp;ov he;kz tx;zt lu;ps	464
 昆洛路	kp;ov lo;ks lu;ps	328
 昆湖小学	kp;ov hu;kc xc;yx xt;kw	144
-昆玉铁路	kp;ov yu;ni tx;zt lu;ps	364
 昆瑞路	kp;ov rv;nv lu;ps	238
 昆电工	kp;ov dm;oa gs;ug	130
 昆盖河	kp;ov gl;ga he;kz	130
@@ -271999,8 +271598,6 @@ columns:
 昌南	ih;oo nj;nm	860
 昌原猎隼	ih;oo yr;xu lx;ml sp;un	144
 昌吉利	ih;oo ji;gd li;xp	320
-昌吉市委	ih;oo ji;gd ui;zr wz;xb	144
-昌吉师范	ih;oo ji;gd ui;pf fj;lk	144
 昌哥	ih;oo ge;zz	189
 昌国盐场	ih;oo go;rn yj;gy ih;ga	144
 昌图的	ih;oo tu;rh de;un	202
@@ -272065,12 +271662,7 @@ columns:
 昌记	ih;oo ji;sv	112
 昌达	ih;oo da;mu	122
 昌道郡	ih;oo dk;ho jp;bt	175
-昌邑一中	ih;oo yi;dm yi;fi vs;dg	243
 昌邑哀王	ih;oo yi;dm ai;td wh;nw	243
-昌邑市人	ih;oo yi;dm ui;zr rf;jr	144
-昌都战役	ih;oo du;qo vj;yd yi;wr	428
-昌都拉萨	ih;oo du;qo la;ui sa;lt	212
-昌都邦达	ih;oo du;qo bh;at da;mu	346
 昌金路	ih;oo jn;zj lu;ps	356
 昌陵	ih;oo ly;tg	290
 昌隆河	ih;oo ls;th he;kz	144
@@ -275533,8 +275125,6 @@ columns:
 晋室南渡	jn;fc ui;wy nj;nm du;kx	328
 晋室南迁	jn;fc ui;wy nj;nm qm;lu	202
 晋家门	jn;fc jw;wj mf;am	185
-晋州之战	jn;fc vb;oo vi;ri vj;yd	130
-晋州姜氏	jn;fc vb;oo jd;gb ui;bs	230
 晋州鱼	jn;fc vb;oo yu;wv	406
 晋平公主	jn;fc py;eh gs;hk vu;in	130
 晋惠帝时	jn;fc hv;nq di;iw ui;ok	414
@@ -275555,10 +275145,7 @@ columns:
 晋楚更霸	jn;fc iu;ee gg;fo ba;tt	162
 晋水源流	jn;fc uv;ks yr;kx lq;kb	200
 晋永嘉	jn;fc ys;ik jw;hs	495
-晋江专区	jn;fc jd;ku vr;ma qu;nb	356
-晋江大桥	jn;fc jd;ku da;md qc;et	266
 晋江的	jn;fc jd;ku de;un	585
-晋江石狮	jn;fc jd;ku ui;ms ui;mp	382
 晋江站	jn;fc jd;ku vj;iy	262
 晋源新城	jn;fc yr;kx xn;ie ig;gn	266
 晋灭东吴	jn;fc mx;fc ds;ry wu;df	202
@@ -276034,8 +275621,6 @@ columns:
 普天电缆	pu;hc tm;fm dm;oa lj;ip	144
 普天通信	pu;hc tm;fm ts;kt xn;js	266
 普天郡	pu;hc tm;fm jp;bt	270
-普宁大道	pu;hc ny;wa da;md dk;ho	162
-普宁洪阳	pu;hc ny;wa hs;kl yh;to	189
 普宁的	pu;hc ny;wa de;un	392
 普宁路	pu;hc ny;wa lu;ps	234
 普宜镇	pu;hc yi;wf vf;zn	344
@@ -276453,7 +276038,6 @@ columns:
 景泰蓝画	jy;og tl;ai lj;lp hw;fq	220
 景泰路	jy;og tl;ai lu;ps	256
 景泰陵	jy;og tl;ai ly;tg	320
-景洪农场	jy;og hs;kl ns;wt ih;ga	117
 景洪港	jy;og hs;kl gh;kl	243
 景洪路	jy;og hs;kl lu;ps	256
 景深不足	jy;og uf;kw bu;cb zu;pu	144
@@ -277511,9 +277095,7 @@ columns:
 曲边梯形	qu;yq bm;su ti;eh xy;fl	243
 曲速级	qu;yq su;xu ji;ic	310
 曲阑干	qu;yq lj;ax gj;eg	212
-曲阜一中	qu;yq fu;tk yi;fi vs;dg	117
 曲阜的	qu;yq fu;tk de;un	231
-曲阜香稻	qu;yq fu;tk xd;xo dk;xy	117
 曲阳公园	qu;yq yh;to gs;hk yr;rm	356
 曲阳医院	qu;yq yh;to yi;no yr;tw	306
 曲阳县人	qu;yq yh;to xm;fk rf;jr	220
@@ -281699,27 +281281,21 @@ columns:
 朝邑	ik;no yi;dm	114
 朝酒晚舞	ik;no jq;ky wj;ow wu;el	256
 朝门口	ik;no mf;am kb;dk	801
-朝阳一校	ik;no yh;to yi;fi xc;ea	297
 朝阳北塔	ik;no yh;to bz;av ta;gl	270
 朝阳北站	ik;no yh;to bz;av vj;iy	171
 朝阳区的	ik;no yh;to qu;nb de;un	756
-朝阳县委	ik;no yh;to xm;fk wz;xb	153
 朝阳号	ik;no yh;to hk;df	346
 朝阳吧	ik;no yh;to ba;dm	189
 朝阳城管	ik;no yh;to ig;gn gr;rw	360
 朝阳大悦	ik;no yh;to da;md yt;hh	832
 朝阳妇幼	ik;no yh;to fu;bb yb;is	153
-朝阳实验	ik;no yh;to ui;ww yj;nj	324
-朝阳市委	ik;no yh;to ui;zr wz;xb	324
 朝阳常照	ik;no yh;to ih;sr vk;op	194
 朝阳开发	ik;no yh;to kl;fl fa;sr	153
 朝阳桥站	ik;no yh;to qc;et vj;iy	117
-朝阳水库	ik;no yh;to uv;ks ku;xy	256
 朝阳河	ik;no yh;to he;kz	324
 朝阳洞路	ik;no yh;to ds;km lu;ps	258
 朝阳胶囊	ik;no yh;to jc;va nh;nd	144
 朝阳路西	ik;no yh;to lu;ps xi;vx	279
-朝阳镇的	ik;no yh;to vf;zn de;un	153
 朝阳陵园	ik;no yh;to ly;tg yr;rm	153
 朝霞路	vk;no xw;tc lu;ps	238
 朝露之城	vk;no lu;tp vi;ri ig;gn	207
@@ -283294,7 +282870,6 @@ columns:
 朱顶红花	vu;ta dy;aw hs;iu hw;lj	189
 朱颜绿发	vu;ta yj;ix lv;ib fa;sr	117
 朱颜老去	vu;ta yj;ix lk;ql qu;gk	117
-朱颜酡些	vu;ta yj;ix to;yw xx;sv	207
 朱颜青鬓	vu;ta yj;ix qy;av bn;pe	117
 朱高村	vu;ta gk;gg cp;ek	133
 朱鹏程	vu;ta pg;vv ig;xd	115
@@ -287628,7 +287203,6 @@ columns:
 松溪河	ss;eh xi;ky he;kz	261
 松滋侯	ss;eh zi;kh hb;jn	194
 松滋口	ss;eh zi;kh kb;dk	266
-松滋市委	ss;eh zi;kh ui;zr wz;xb	162
 松滋河	ss;eh zi;kh he;kz	328
 松潘乌头	ss;eh pj;kt wu;xu tb;wm	117
 松牙固定	ss;eh ya;ly gu;rc dy;wt	130
@@ -288432,7 +288006,6 @@ columns:
 林崇德	ln;ee is;vw de;wn	464
 林崎甚助	ln;ee qi;vm uf;zh vu;fs	162
 林嵩	ln;ee ss;vg	978
-林州一中	ln;ee vb;oo yi;fi vs;dg	288
 林左鸣	ln;ee zo;nu my;dx	178
 林巳奈夫	ln;ee si;vs nl;mf fu;hf	274
 林布丁	ln;ee bu;nr dy;ad	356
@@ -288614,7 +288187,6 @@ columns:
 林良	ln;ee ld;ii	808
 林良实	ln;ee ld;ii ui;ww	680
 林艳	ln;ee yj;ax	316
-林芝云杉	ln;ee vi;lr yp;by uj;ee	162
 林芝吧	ln;ee vi;lr ba;dm	207
 林花	ln;ee hw;lj	837
 林芳	ln;ee fh;ll	1843
@@ -288857,7 +288429,6 @@ columns:
 枣红皮	zk;em hs;iu pi;rp	360
 枣茶	zk;em ia;lj	706
 枣营南里	zk;em yy;lw nj;nm li;dl	130
-枣阳市委	zk;em yh;to ui;zr wz;xb	270
 枣香	zk;em xd;xo	393
 枪下游魂	qd;ej xw;fy yb;kl hp;ba	248
 枪全长	qd;ej qr;jn ih;pc	374
@@ -290432,17 +290003,12 @@ columns:
 栖禅寺	qi;ev ij;fh si;gk	225
 栖贤寺	qi;ev xm;pr si;gk	338
 栖隐寺	qi;ev yn;tx si;gk	374
-栖霞中学	qi;ev xw;tc vs;dg xt;kw	333
 栖霞人	qi;ev xw;tc rf;jr	400
-栖霞南街	qi;ev xw;tc nj;nm jx;pg	153
 栖霞坑	qi;ev xw;tc kg;gz	342
-栖霞大桥	qi;ev xw;tc da;md qc;et	117
 栖霞山站	qi;ev xw;tc uj;vs vj;iy	252
-栖霞市人	qi;ev xw;tc ui;zr rf;jr	544
 栖霞的	qi;ev xw;tc de;un	374
 栖霞组	qi;ev xw;tc zu;if	230
 栖霞道	qi;ev xw;tc dk;ho	252
-栖霞龙潭	qi;ev xw;tc ls;tl tj;kv	130
 栗东市	li;ve ds;ry ui;zr	351
 栗原典子	li;ve yr;xu dm;ih zi;hi	189
 栗原勇藏	li;ve yr;xu ys;kt ch;ln	144
@@ -291214,7 +290780,6 @@ columns:
 桃园厂	tk;ep yr;rm ih;xc	356
 桃园厅	tk;ep yr;rm ty;xa	572
 桃园县立	tk;ep yr;rm xm;fk li;il	544
-桃园宾馆	tk;ep yr;rm bn;wt gr;qw	207
 桃园小学	tk;ep yr;rm xc;yx xt;kw	220
 桃园市立	tk;ep yr;rm ui;zr li;il	788
 桃园广场	tk;ep yr;rm gd;xg ih;ga	152
@@ -291228,7 +290793,6 @@ columns:
 桃园酒家	tk;ep yr;rm jq;ky jw;wj	207
 桃园酒店	tk;ep yr;rm jq;ky dm;xy	209
 桃园雅居	tk;ep yr;rm ya;lu ju;cc	153
-桃园餐厅	tk;ep yr;rm cj;gr ty;xa	234
 桃城区的	tk;ep ig;gn qu;nb de;un	189
 桃威铁路	tk;ep wz;nf tx;zt lu;ps	243
 桃子吧	tk;ep zi;hi ba;dm	270
@@ -291448,14 +291012,9 @@ columns:
 桌面机	vo;yo mm;bm ji;eo	350
 桌面窗口	vo;yo mm;bm id;et kb;dk	292
 桌面音频	vo;yo mm;bm yn;xy pn;ss	117
-桐乡一中	ts;em xd;ix yi;fi vs;dg	130
 桐乡的	ts;em xd;ix de;un	436
 桐原洋介	ts;em yr;xu yh;kg jx;jp	392
 桐君山	ts;em jp;bt uj;vs	256
-桐城中学	ts;em ig;gn vs;dg xt;kw	396
-桐城南路	ts;em ig;gn nj;nm lu;ps	297
-桐城师范	ts;em ig;gn ui;pf fj;lk	202
-桐城绿苑	ts;em ig;gn lv;ib yr;ll	144
 桐壶帝	ts;em hu;gw di;iw	410
 桐子坳	ts;em zi;hi ao;gi	315
 桐子树	ts;em zi;hi uu;er	266
@@ -293524,10 +293083,6 @@ columns:
 楚辞校补	iu;ee ci;an xc;ea bu;ty	189
 楚邲之战	iu;ee bi;ht vi;ri vj;yd	248
 楚都郢	iu;ee db;qo yy;dn	387
-楚雄一中	iu;ee xs;nk yi;fi vs;dg	162
-楚雄大道	iu;ee xs;nk da;md dk;ho	117
-楚雄市委	iu;ee xs;nk ui;zr wz;xb	144
-楚雄旅游	iu;ee xs;nk lv;le yb;kl	144
 楚风	iu;ee fg;ob	654
 楚鲁松杰	iu;ee lu;wo ss;eh jx;ec	279
 楚鲁特	iu;ee lu;wo te;qg	230
@@ -296361,8 +295916,6 @@ columns:
 武兴路	wu;fp xy;kh lu;ps	166
 武内义雄	wu;fp nz;mj yi;ib xs;nk	207
 武内贞义	wu;fp nz;mj vf;yo yi;ib	144
-武冈云山	wu;fp gh;mb yp;by uj;vs	180
-武冈城际	wu;fp gh;mb ig;gn ji;tf	374
 武力拔寒	wu;fp li;sl ba;un hj;wq	243
 武力清场	wu;fp li;sl qy;ka ih;ga	364
 武力神将	wu;fp li;sl uf;fo jd;al	130
@@ -301376,36 +300929,20 @@ columns:
 永宁河	ys;ik ny;wa he;kz	288
 永宁的	ys;ik ny;wa de;un	392
 永宁西关	ys;ik ny;wa xi;vx gr;hm	153
-永安一中	ys;ik an;wb yi;fi vs;dg	153
-永安东街	ys;ik an;wb ds;ry jx;pg	162
-永安东里	ys;ik an;wb ds;ry li;dl	189
 永安中	ys;ik an;wb vs;dg	414
 永安亭	ys;ik an;wb ty;ga	252
-永安公墓	ys;ik an;wb gs;hk mu;lo	486
 永安区	ys;ik an;wb qu;nb	498
-永安医院	ys;ik an;wb yi;no yr;tw	225
 永安台	ys;ik an;wb tl;kd	230
-永安四中	ys;ik an;wb si;ys vs;dg	117
 永安坝	ys;ik an;wb ba;go	292
 永安堡	ys;ik an;wb bk;jd	126
 永安居	ys;ik an;wb ju;cc	297
 永安山	ys;ik an;wb uj;vs	432
 永安巷	ys;ik an;wb xd;lh	194
-永安市人	ys;ik an;wb ui;zr rf;jr	270
-永安旅游	ys;ik an;wb lv;le yb;kl	486
-永安永安	ys;ik an;wb ys;ik an;wb	288
 永安洲	ys;ik an;wb vb;ko	266
 永安湖	ys;ik an;wb hu;kc	153
-永安煤业	ys;ik an;wb mz;cz ye;cy	220
 永安的	ys;ik an;wb de;un	513
-永安石桥	ys;ik an;wb ui;ms qc;et	200
 永安站	ys;ik an;wb vj;iy	248
-永安纺织	ys;ik an;wb fh;il vi;id	171
-永安花苑	ys;ik an;wb hw;lj yr;ll	238
 永安行	ys;ik an;wb xy;px	405
-永安街口	ys;ik an;wb jx;pg kb;dk	153
-永安西里	ys;ik an;wb xi;vx li;dl	117
-永安财产	ys;ik an;wb cl;on ij;ix	207
 永宗岛	ys;ik zs;wf dk;xv	338
 永定一中	ys;ik dy;wt yi;fi vs;dg	256
 永定人	ys;ik dy;wt rf;jr	374
@@ -301447,9 +300984,7 @@ columns:
 永庆巷	ys;ik qy;xm xd;lh	194
 永庆街	ys;ik qy;xm jx;pg	130
 永庆路	ys;ik qy;xm lu;ps	281
-永康中学	ys;ik kh;xb vs;dg xt;kw	284
 永康区	ys;ik kh;xb qu;nb	682
-永康方岩	ys;ik kh;xb fh;lf yj;vm	297
 永康江	ys;ik kh;xb jd;ku	266
 永康的	ys;ik kh;xb de;un	616
 永康话	ys;ik kh;xb hw;sa	279
@@ -302207,9 +301742,7 @@ columns:
 汉密顿	hj;kr mi;wh dp;fs	382
 汉寿县人	hj;kr ub;ak xm;fk rf;jr	234
 汉尼巴尔	hj;kr ni;cv ba;mb er;xy	261
-汉川一中	hj;kr ir;oc yi;fi vs;dg	144
 汉川人	hj;kr ir;oc rf;jr	428
-汉川荷月	hj;kr ir;oc he;lj yt;vy	144
 汉巴味德	hj;kr ba;mb wz;da de;wn	288
 汉帝	hj;kr di;iw	205
 汉帝刘聪	hj;kr di;iw lq;vp cs;qh	207
@@ -302458,7 +301991,6 @@ columns:
 汝南周	ru;kb nj;nm vb;mg	324
 汝南袁	ru;kb nj;nm yr;gd	423
 汝叔	ru;kb uu;yf	122
-汝州文庙	ru;kb vb;oo wf;vw mc;xd	171
 汝州的	ru;kb vb;oo de;un	369
 汝当奉持	ru;kb dh;yb fg;ai ii;ug	130
 汝拉	ru;kb la;ui	1062
@@ -302670,20 +302202,7 @@ columns:
 江坝	jd;ku ba;go	504
 江坤宇	jd;ku kp;go yu;wf	284
 江垭镇	jd;ku ya;gf vf;zn	181
-江城三月	jd;ku ig;gn sj;ts yt;vy	202
-江城中学	jd;ku ig;gn vs;dg xt;kw	202
-江城国际	jd;ku ig;gn go;rn ji;tf	171
-江城壹号	jd;ku ig;gn yi;gw hk;df	189
-江城夏日	jd;ku ig;gn xw;fo ri;or	238
-江城大厦	jd;ku ig;gn da;md ua;xf	248
-江城学院	jd;ku ig;gn xt;kw yr;tw	230
-江城小学	jd;ku ig;gn xc;yx xt;kw	144
-江城广场	jd;ku ig;gn gd;xg ih;ga	130
-江城故事	jd;ku ig;gn gu;ch ui;fd	117
-江城明珠	jd;ku ig;gn my;ov vu;nt	220
-江城晚报	jd;ku ig;gn wj;ow bk;uz	508
 江城村	jd;ku ig;gn cp;ek	127
-江城美食	jd;ku ig;gn mz;gm ui;qs	162
 江城镇	jd;ku ig;gn vf;zn	614
 江埔村	jd;ku pu;gn cp;ek	139
 江堤中路	jd;ku di;go vs;dg lu;ps	162
@@ -302890,10 +302409,8 @@ columns:
 江河水库	jd;ku he;kz uv;ks ku;xy	346
 江河溪	jd;ku he;kz xi;ky	302
 江河里	jd;ku he;kz li;dl	242
-江油中学	jd;ku yb;kd vs;dg xt;kw	450
 江油的	jd;ku yb;kd de;un	360
 江油站	jd;ku yb;kd vj;iy	364
-江油肥肠	jd;ku yb;kd fz;vm ih;va	418
 江油鱼	jd;ku yb;kd yu;wv	269
 江波	jd;ku bo;kr	896
 江泰	jd;ku tl;ai	698
@@ -302906,8 +302423,6 @@ columns:
 江泽明	jd;ku ze;kr my;ov	153
 江泽涵	jd;ku ze;kr hj;ka	346
 江洋畈	jd;ku yh;kg fj;qx	364
-江津中学	jd;ku jn;kb vs;dg xt;kw	369
-江津五中	jd;ku jn;kb wu;wu vs;dg	162
 江津村	jd;ku jn;kb cp;ek	112
 江津站	jd;ku jn;kb vj;iy	500
 江津路	jd;ku jn;kb lu;ps	288
@@ -303098,10 +302613,7 @@ columns:
 江通	jd;ku ts;kt	838
 江道	jd;ku dk;ho	263
 江部长	jd;ku bu;id vh;pc	153
-江都中学	jd;ku du;qo vs;dg xt;kw	266
-江都医院	jd;ku du;qo yi;no yr;tw	117
 江都的	jd;ku du;qo de;un	436
-江都路街	jd;ku du;qo lu;ps jx;pg	130
 江里河	jd;ku li;dl he;kz	179
 江里面	jd;ku li;dl mm;bm	376
 江金桥	jd;ku jn;zj qc;et	252
@@ -303129,19 +302641,11 @@ columns:
 江间波浪	jd;ku jm;ao bo;kr lh;ki	207
 江阔	jd;ku ko;ak	508
 江阴南	jd;ku yn;tv nj;nm	410
-江阴历史	jd;ku yn;tv li;xs ui;db	130
-江阴哪里	jd;ku yn;tv na;da li;dl	117
-江阴市中	jd;ku yn;tv ui;zr vs;dg	320
-江阴市区	jd;ku yn;tv ui;zr qu;nb	225
 江阴有	jd;ku yn;tv yb;nv	450
-江阴申港	jd;ku yn;tv uf;og gh;kl	153
 江阴的	jd;ku yn;tv de;un	531
 江阴站	jd;ku yn;tv vj;iy	225
 江阴街	jd;ku yn;tv jx;pg	261
 江阴路	jd;ku yn;tv lu;ps	392
-江阴青阳	jd;ku yn;tv qy;av yh;to	144
-江陵中学	jd;ku ly;tg vs;dg xt;kw	171
-江陵之战	jd;ku ly;tg vi;ri vj;yd	364
 江陵人	jd;ku ly;tg rf;jr	353
 江陵侯	jd;ku ly;tg hb;jn	209
 江陵镇	jd;ku ly;tg vf;zn	181
@@ -303648,7 +303152,6 @@ columns:
 汾阳人	ff;kh yh;to rf;jr	396
 汾阳的	ff;kh yh;to de;un	351
 汾阳话	ff;kh yh;to hw;sa	234
-汾阳郡王	ff;kh yh;to jp;bt wh;nw	288
 汾阴	ff;kh yn;tv	230
 汾阴县	ff;kh yn;tv xm;fk	131
 沁人	qn;kh rf;jr	1240
@@ -303902,44 +303405,15 @@ columns:
 沈部长	uf;kw bu;id vh;pc	459
 沈铁路	uf;kw tx;zt lu;ps	364
 沈铁霁虹	uf;kw tx;zt ji;tq hs;cu	279
-沈阳业乔	uf;kw yh;to ye;cy qc;tm	338
-沈阳中兴	uf;kw yh;to vs;dg xy;kh	292
-沈阳五中	uf;kw yh;to wu;wu vs;dg	117
 沈阳仓	uf;kw yh;to ch;jz	189
 沈阳公园	uf;kw yh;to gs;hk yr;rm	153
-沈阳军事	uf;kw yh;to jp;wy ui;fd	171
-沈阳卫生	uf;kw yh;to wz;zf ug;ls	162
 沈阳吧	uf;kw yh;to ba;dm	248
-沈阳哪家	uf;kw yh;to na;da jw;wj	396
-沈阳哪的	uf;kw yh;to na;da de;un	117
-沈阳哪里	uf;kw yh;to na;da li;dl	454
 沈阳啊	uf;kw yh;to aa;dt	369
-沈阳四中	uf;kw yh;to si;ys vs;dg	144
-沈阳土著	uf;kw yh;to tu;gt vu;lq	162
-沈阳宜家	uf;kw yh;to yi;wf jw;wj	153
 沈阳局	uf;kw yh;to ju;ca	544
 沈阳市公安局	uf;kw yh;to ui;zr gs;hk an;wb ju;ca	880
-沈阳市内	uf;kw yh;to ui;zr nz;mj	513
 沈阳市教育局	uf;kw yh;to ui;zr jc;qh yu;bv ju;ca	221
-沈阳市民	uf;kw yh;to ui;zr mn;dm	630
-沈阳市的	uf;kw yh;to ui;zr de;un	585
-沈阳市第	uf;kw yh;to ui;zr di;rt	648
-沈阳广播	uf;kw yh;to gd;xg bo;ut	536
-沈阳政府	uf;kw yh;to vg;fs fu;xj	320
-沈阳教育	uf;kw yh;to jc;qh yu;bv	234
-沈阳文物	uf;kw yh;to wf;vw wu;qn	153
 沈阳时	uf;kw yh;to ui;ok	149
-沈阳水洞	uf;kw yh;to uv;ks ds;km	144
-沈阳汇鼎	uf;kw yh;to hv;kn dy;qa	234
-沈阳电信	uf;kw yh;to dm;oa xn;js	162
-沈阳站北	uf;kw yh;to vj;iy bz;av	180
-沈阳组织	uf;kw yh;to zu;if vi;id	144
-沈阳航空	uf;kw yh;to hh;iz ks;eu	558
 沈阳西	uf;kw yh;to xi;vx	644
-沈阳足球	uf;kw yh;to zu;pu qq;nf	400
-沈阳车展	uf;kw yh;to ie;yc vj;cl	418
-沈阳重型	uf;kw yh;to vs;ld xy;fl	220
-沈阳鸟岛	uf;kw yh;to nc;xn dk;xv	130
 沈陶然	uf;kw tk;tn rj;vm	118
 沈韬文	uf;kw tk;gy wf;vw	171
 沈颂	uf;kw ss;hk	152
@@ -304370,12 +303844,9 @@ columns:
 沙沟站	ua;ky gb;kn vj;iy	234
 沙沟遗址	ua;ky gb;kn yi;co vi;gs	153
 沙河东	ua;ky he;kz ds;ry	414
-沙河北岸	ua;ky he;kz bz;av an;vx	266
-沙河医院	ua;ky he;kz yi;no yr;tw	144
 沙河回	ua;ky he;kz hv;rd	130
 沙河坝	ua;ky he;kz ba;go	364
 沙河堡站	ua;ky he;kz bk;jd vj;iy	153
-沙河小区	ua;ky he;kz xc;yx qu;nb	122
 沙河店	ua;ky he;kz dm;xy	320
 沙河涌	ua;ky he;kz ys;kk	266
 沙河畔	ua;ky he;kz pj;qh	338
@@ -304412,9 +303883,6 @@ columns:
 沙湖边	ua;ky hu;kc bm;su	248
 沙湾市	ua;ky wj;kz ui;zr	354
 沙湾径	ua;ky wj;kz jy;wr	351
-沙湾拿吉	ua;ky wj;kz na;jd ji;gd	436
-沙湾水库	ua;ky wj;kz uv;ks ku;xy	117
-沙湾水道	ua;ky wj;kz uv;ks dk;ho	266
 沙湾的	ua;ky wj;kz de;un	518
 沙湾站	ua;ky wj;kz vj;iy	396
 沙源	ua;ky yr;kx	612
@@ -309221,7 +308689,6 @@ columns:
 河沼泽	he;kz vk;kp ze;kr	270
 河沿上	he;kz yj;ko uh;yf	324
 河洛大鼓	he;kz lo;ks da;md gu;hc	189
-河津县志	he;kz jn;kb xm;fk vi;gh	144
 河津町	he;kz jn;kb ty;qa	297
 河津站	he;kz jn;kb vj;iy	243
 河洲街	he;kz vb;ko jx;pg	252
@@ -311346,11 +310813,7 @@ columns:
 泰克胶囊	tl;ai ke;cp jc;va nh;nd	202
 泰兰河	tl;ai lj;ht he;kz	238
 泰共和国	tl;ai gs;lh he;xd go;rn	468
-泰兴中学	tl;ai xy;kh vs;dg xt;kw	342
-泰兴大楼	tl;ai xy;kh da;md lb;ep	144
-泰兴环保	tl;ai xy;kh hr;nc bk;jd	117
 泰兴的	tl;ai xy;kh de;un	306
-泰兴路口	tl;ai xy;kh lu;ps kb;dk	230
 泰兴里	tl;ai xy;kh li;dl	315
 泰冯路	tl;ai fg;wn lu;ps	572
 泰凌医药	tl;ai ly;wg yi;no yk;li	252
@@ -312359,8 +311822,6 @@ columns:
 津岛线	jn;kb dk;xv xm;if	144
 津川义冬	jn;kb ir;oc yi;ib ds;hw	202
 津川町	jn;kb ir;oc ty;qa	369
-津市交通	jn;kb ui;zr jc;ab ts;kt	432
-津市市人	jn;kb ui;zr ui;zr rf;jr	130
 津幡町	jn;kb fj;rt ty;qa	378
 津文公路	jn;kb wf;vw gs;hk lu;ps	117
 津斯基	jn;kb si;zh ji;zh	136
@@ -312558,7 +312019,6 @@ columns:
 洪济桥	hs;kl ji;kq qc;et	256
 洪海景区	hs;kl hl;ke jy;og qu;nb	144
 洪渡河	hs;kl du;kx he;kz	364
-洪湖一街	hs;kl hu;kc yi;fi jx;pg	248
 洪湖的	hs;kl hu;kc de;un	396
 洪濑鸡爪	hs;kl ll;kx ji;rx vw;ya	288
 洪灾时	hs;kl zl;wc ui;ok	364
@@ -313563,8 +313023,6 @@ columns:
 济河	ji;kq he;kz	138
 济洛路	ji;kq lo;ks lu;ps	201
 济湘巴盐	ji;kq xd;ke ba;mb yj;gy	162
-济源市区	ji;kq yr;kx ui;zr qu;nb	171
-济源旅游	ji;kq yr;kx lv;le yb;kl	180
 济源的	ji;kq yr;kx de;un	320
 济物浦	ji;kq wu;qn pu;kn	423
 济生公司	ji;kq ug;ls gs;hk si;af	238
@@ -313598,10 +313056,7 @@ columns:
 浏览吧	lq;kv lj;pr ba;dm	279
 浏览题	lq;kv lj;pr ti;ot	441
 浏醴高速	lq;kv li;yy gk;gg su;xu	130
-浏阳一中	lq;kv yh;to yi;fi vs;dg	248
-浏阳三中	lq;kv yh;to sj;ts vs;dg	130
 浏阳大道	lq;kv yh;to da;md dk;ho	220
-浏阳文庙	lq;kv yh;to wf;vw mc;xd	284
 浏阳的	lq;kv yh;to de;un	464
 浏阳鞭炮	lq;kv yh;to bm;tj pk;cn	162
 浐河东路	ij;ki he;kz ds;ry lu;ps	220
@@ -314251,10 +313706,6 @@ columns:
 海他西林	hl;ke ta;je xi;vx ln;ee	171
 海仙人掌	hl;ke xm;jv rf;jr vh;su	230
 海会塔	hl;ke hv;jb ta;gl	243
-海伦代尔	hl;ke lp;jj dl;jp er;xy	117
-海伦公式	hl;ke lp;jj gs;hk ui;pu	477
-海伦多兰	hl;ke lp;jj do;ll lj;ht	180
-海伦宾馆	hl;ke lp;jj bn;wt gr;qw	293
 海伦斯	hl;ke lp;jj si;zh	549
 海伦河	hl;ke lp;jj he;kz	194
 海伦清桃	hl;ke lp;jj qy;ka tk;ep	225
@@ -314488,20 +313939,13 @@ columns:
 海坦广场	hl;ke tj;go gd;xg ih;ga	144
 海垦路	hl;ke kf;ig lu;ps	243
 海埂路	hl;ke gg;gf lu;ps	351
-海城中学	hl;ke ig;gn vs;dg xt;kw	346
 海城了	hl;ke ig;gn le;rl	195
 海城人	hl;ke ig;gn rf;jr	454
-海城大厦	hl;ke ig;gn da;md ua;xf	171
-海城小区	hl;ke ig;gn xc;yx qu;nb	220
-海城小学	hl;ke ig;gn xc;yx xt;kw	180
-海城市人	hl;ke ig;gn ui;zr rf;jr	324
-海城市场	hl;ke ig;gn ui;zr ih;ga	130
 海城河	hl;ke ig;gn he;kz	225
 海城的	hl;ke ig;gn de;un	662
 海城站	hl;ke ig;gn vj;iy	248
 海城街	hl;ke ig;gn jx;pg	364
 海城路	hl;ke ig;gn lu;ps	256
-海城酒楼	hl;ke ig;gn jq;ky lb;ep	130
 海域时	hl;ke yu;gp ui;ok	630
 海域污染	hl;ke yu;gp wu;km rj;kk	315
 海域香廷	hl;ke yu;gp xd;xo ty;tg	284
@@ -314546,9 +313990,6 @@ columns:
 海子诗集	hl;ke zi;hi ui;sg ji;ue	279
 海子里	hl;ke zi;hi li;dl	300
 海字集	hl;ke zi;wh ji;ue	292
-海宁一中	hl;ke ny;wa yi;fi vs;dg	153
-海宁三院	hl;ke ny;wa sj;ts yr;tw	130
-海宁大道	hl;ke ny;wa da;md dk;ho	202
 海宁的	hl;ke ny;wa de;un	562
 海宁站	hl;ke ny;wa vj;iy	320
 海安南	hl;ke an;wb nj;nm	306
@@ -314814,10 +314255,8 @@ columns:
 海杧果素	hl;ke mh;ef go;qe su;ai	144
 海松子	hl;ke ss;eh zi;hi	338
 海板块	hl;ke bj;ex ky;gn	576
-海林市委	hl;ke ln;ee ui;zr wz;xb	117
 海林格	hl;ke ln;ee ge;es	162
 海林檎	hl;ke ln;ee qn;ej	310
-海林檎纲	hl;ke ln;ee qn;ej gh;im	144
 海林的	hl;ke ln;ee de;un	324
 海柏花园	hl;ke bl;eu hw;lj yr;rm	262
 海柳	hl;ke lq;eb	263
@@ -315341,7 +314780,6 @@ columns:
 海阳王	hl;ke yh;to wh;nw	205
 海阳的	hl;ke yh;to de;un	365
 海阳站	hl;ke yh;to vj;iy	472
-海阳路口	hl;ke yh;to lu;ps kb;dk	153
 海陆并举	hl;ke lu;tu by;hl ju;kh	153
 海陵大堤	hl;ke ly;tg da;md di;go	117
 海隆控股	hl;ke ls;th ks;ue gu;vr	144
@@ -316095,7 +315533,6 @@ columns:
 涵虚朗鉴	hj;ka xu;zc lh;ii jm;pr	202
 涵虚牌楼	hj;ka xu;zc pl;au lb;ep	212
 涿州东	vo;kj vb;oo ds;ry	274
-涿州市委	vo;kj vb;oo ui;zr wz;xb	130
 涿州的	vo;kj vb;oo de;un	360
 涿州站	vo;kj vb;oo vj;iy	144
 涿鹿中原	vo;kj lu;xl vs;dg yr;xu	117
@@ -318007,26 +317444,8 @@ columns:
 温尼辟	wf;ko ni;cv pi;cd	207
 温岚专辑	wf;ko lj;vo vr;ma ji;yd	117
 温岭的	wf;ko ly;vj de;un	387
-温州一中	wf;ko vb;oo yi;fi vs;dg	171
-温州事件	wf;ko vb;oo ui;fd jm;jq	117
-温州体育	wf;ko vb;oo ti;je yu;bv	338
-温州公司	wf;ko vb;oo gs;hk si;af	144
-温州公路	wf;ko vb;oo gs;hk lu;ps	202
 温州北	wf;ko vb;oo bz;av	396
-温州发廊	wf;ko vb;oo fa;sr lh;xi	117
-温州司法	wf;ko vb;oo si;af fa;kg	117
-温州名购	wf;ko vb;oo my;ld gb;on	153
 温州吧	wf;ko vb;oo ba;dm	212
-温州哪里	wf;ko vb;oo na;da li;dl	279
-温州媒体	wf;ko vb;oo mz;bz ti;je	144
-温州学校	wf;ko vb;oo xt;kw xc;ea	144
-温州广播	wf;ko vb;oo gd;xg bo;ut	238
-温州本地	wf;ko vb;oo bf;ef di;ge	621
-温州水利	wf;ko vb;oo uv;ks li;xp	153
-温州艺术	wf;ko vb;oo yi;la uu;ei	117
-温州铁投	wf;ko vb;oo tx;zt tb;ur	144
-温州鞋业	wf;ko vb;oo xx;tg ye;cy	144
-温州黄汤	wf;ko vb;oo hd;nh th;ka	202
 温差应力	wf;ko ia;gu yy;xk li;sl	162
 温差电	wf;ko ia;gu dm;oa	306
 温巴河	wf;ko ba;mb he;kz	207
@@ -319269,15 +318688,12 @@ columns:
 溧水人	li;kv uv;ks rf;jr	376
 溧水的	li;kv uv;ks de;un	376
 溧水站	li;kv uv;ks vj;iy	382
-溧阳中学	li;kv yh;to vs;dg xt;kw	238
 溧阳仓	li;kv yh;to ch;jz	500
-溧阳公主	li;kv yh;to gs;hk vu;in	238
 溧阳城	li;kv yh;to ig;gn	302
 溧阳白芹	li;kv yh;to bl;ub qn;lt	207
 溧阳的	li;kv yh;to de;un	387
 溧阳站	li;kv yh;to vj;iy	212
 溧阳美岕	li;kv yh;to mz;gm jx;vj	117
-溧阳论坛	li;kv yh;to lp;sj tj;gb	117
 溪东桥	xi;ky ds;ry qc;et	189
 溪东路	xi;ky ds;ry lu;ps	392
 溪东里	xi;ky ds;ry li;dl	315
@@ -320006,8 +319422,6 @@ columns:
 满江湖	mj;kl jd;ku hu;kc	459
 满池	mj;kl ii;ke	521
 满洲国民	mj;kl vb;ko go;rn mn;dm	306
-满洲里人	mj;kl vb;ko li;dl rf;jr	194
-满洲里街	mj;kl vb;ko li;dl jx;pg	194
 满浦线	mj;kl pu;kn xm;if	400
 满清水	mj;kl qy;ka uv;ks	513
 满湖	mj;kl hu;kc	567
@@ -320645,15 +320059,6 @@ columns:
 潇潇秋雨	xc;kl xc;kl qq;xc yu;tv	225
 潇潇风雨	xc;kl xc;kl fg;ob yu;tv	130
 潍县路	wz;ki xm;fk lu;ps	144
-潍坊体育	wz;ki fh;gl ti;je yu;bv	144
-潍坊历史	wz;ki fh;gl li;xs ui;db	117
-潍坊哪里	wz;ki fh;gl na;da li;dl	202
-潍坊媒体	wz;ki fh;gl mz;bz ti;je	130
-潍坊广播	wz;ki fh;gl gd;xg bo;ut	144
-潍坊歌尔	wz;ki fh;gl ge;zz er;xy	180
-潍坊组织	wz;ki fh;gl zu;if vi;id	130
-潍坊经济	wz;ki fh;gl jy;ir ji;kq	162
-潍坊长安	wz;ki fh;gl ih;pc an;wb	117
 潍川县	wz;ki ir;oc xm;fk	100
 潍水之战	wz;ki uv;ks vi;ri vj;yd	297
 潍汶河	wz;ki wf;kv he;kz	130
@@ -320860,7 +320265,6 @@ columns:
 潜地导弹	qm;kh di;ge dk;vk dj;bh	315
 潜射	qm;kh ue;zk	769
 潜射型	qm;kh ue;zk xy;fl	446
-潜山北路	qm;kh uj;vs bz;av lu;ps	274
 潜心悟道	qm;kh xn;hx wu;hw dk;ho	171
 潜望深度	qm;kh wh;fv uf;kw du;xl	162
 潜水位	qm;kh uv;ks wz;ji	194
@@ -320872,11 +320276,6 @@ columns:
 潜水海豚	qm;kh uv;ks hl;ke tp;vj	162
 潜水装具	qm;kh uv;ks vd;ag ju;qh	194
 潜水面	qm;kh uv;ks mm;bm	350
-潜江中学	qm;kh jd;ku vs;dg xt;kw	220
-潜江制药	qm;kh jd;ku vi;qr yk;li	324
-潜江剧院	qm;kh jd;ku ju;cc yr;tw	130
-潜江卫生	qm;kh jd;ku wz;zf ug;ls	212
-潜江教育	qm;kh jd;ku jc;qh yu;bv	144
 潜江的	qm;kh jd;ku de;un	338
 潜没带	qm;kh mz;kr dl;lw	252
 潜泉印泥	qm;kh qr;uk yn;bf ni;kc	153
@@ -321903,11 +321302,9 @@ columns:
 灯坏了	dg;ca hy;gc le;rl	688
 灯塔了	dg;ca ta;gl le;rl	182
 灯塔公园	dg;ca ta;gl gs;hk yr;rm	346
-灯塔列表	dg;ca ta;gl lx;gp bc;at	432
 灯塔吧	dg;ca ta;gl ba;dm	177
 灯塔山	dg;ca ta;gl uj;vs	369
 灯塔广场	dg;ca ta;gl gd;xg ih;ga	230
-灯塔油漆	dg;ca ta;gl yb;kd qi;ke	117
 灯塔牌	dg;ca ta;gl pl;au	171
 灯塔的	dg;ca ta;gl de;un	742
 灯塔的塔	dg;ca ta;gl de;un ta;gl	180
@@ -326772,7 +326169,6 @@ columns:
 牙体修复	ya;ly ti;je xq;jg fu;eo	230
 牙体预备	ya;ly ti;je yu;iw bz;hq	279
 牙修复体	ya;ly xq;jg fu;eo ti;je	266
-牙克石的	ya;ly ke;cp ui;ms de;un	234
 牙克石站	ya;ly ke;cp ui;ms vj;iy	194
 牙列缺失	ya;ly lx;gp qt;an ui;th	284
 牙刷吧	ya;ly uw;cr ba;dm	297
@@ -327276,9 +326672,6 @@ columns:
 牡丹区的	mu;qg dj;mz qu;nb de;un	130
 牡丹吧	mu;qg dj;mz ba;dm	230
 牡丹园店	mu;qg dj;mz yr;rm dm;xy	486
-牡丹江人	mu;qg dj;mz jd;ku rf;jr	328
-牡丹江的	mu;qg dj;mz jd;ku de;un	472
-牡丹江街	mu;qg dj;mz jd;ku jx;pg	194
 牡丹皮汤	mu;qg dj;mz pi;rp th;ka	130
 牡丹花好	mu;qg dj;mz hw;lj hk;bh	220
 牡丹花精	mu;qg dj;mz hw;lj jy;pa	212
@@ -329812,7 +329205,6 @@ columns:
 玉枢火府	yu;ni uu;en ho;ch fu;xj	144
 玉柱峰	yu;ni vu;ei fg;vh	110
 玉柴国际	yu;ni il;sv go;rn ji;tf	171
-玉树市人	yu;ni uu;er ui;zr rf;jr	212
 玉树路	yu;ni uu;er lu;ps	266
 玉格格	yu;ni ge;es ge;es	215
 玉桂	yu;ni gv;eg	738
@@ -332471,7 +331863,6 @@ columns:
 琼枝	qs;ng vi;ec	102
 琼楠	qs;ng nj;en	106
 琼波邦色	qs;ng bo;kr bh;at se;xm	297
-琼海嘉积	qs;ng hl;ke jw;hs ji;xd	274
 琼珍灵芝	qs;ng vf;nj ly;bc vi;lr	202
 琼瑠县	qs;ng lq;nb xm;fk	104
 琼脂鲤	qs;ng vi;vv li;wd	382
@@ -332503,10 +331894,6 @@ columns:
 瑞丰站	rv;nv fg;af vj;iy	387
 瑞丰花苑	rv;nv fg;af hw;lj yr;ll	175
 瑞丰路	rv;nv fg;af lu;ps	189
-瑞丽交通	rv;nv li;fv jc;ab ts;kt	117
-瑞丽家居	rv;nv li;fv jw;wj ju;cc	252
-瑞丽市委	rv;nv li;fv ui;zr wz;xb	356
-瑞丽风尚	rv;nv li;fv fg;ob uh;ss	117
 瑞云塔	rv;nv yp;by ta;gl	342
 瑞云寺	rv;nv yp;by si;gk	356
 瑞云山	rv;nv yp;by uj;vs	212
@@ -332555,8 +331942,6 @@ columns:
 瑞奥物联	rv;nv ao;tm wu;qn lm;qh	256
 瑞姆斯	rv;nv mu;bk si;zh	302
 瑞宁路	rv;nv ny;wa lu;ps	346
-瑞安中学	rv;nv an;wb vs;dg xt;kw	378
-瑞安塘下	rv;nv an;wb th;gx xw;fy	252
 瑞安店	rv;nv an;wb dm;xy	230
 瑞安街	rv;nv an;wb jx;pg	382
 瑞宝章	rv;nv bk;wn vh;xn	621
@@ -332582,7 +331967,6 @@ columns:
 瑞德里	rv;nv de;wn li;dl	410
 瑞提阶	rv;nv ti;uo jx;tj	152
 瑞文	rv;nv wf;vw	891
-瑞昌剪纸	rv;nv ih;oo jm;hv vi;ib	261
 瑞昌馨苑	rv;nv ih;oo xn;gc yr;ll	212
 瑞明节能	rv;nv my;ov jx;lz ng;kv	180
 瑞星卸载	rv;nv xy;ol xx;az zl;np	238
@@ -332638,7 +332022,6 @@ columns:
 瑞超甲	rv;nv ik;pp jw;sj	171
 瑞邦洋服	rv;nv bh;at yh;kg fu;vz	144
 瑞都国际	rv;nv db;qo go;rn ji;tf	162
-瑞金历史	rv;nv jn;zj li;xs ui;db	130
 瑞金站	rv;nv jn;zj vj;iy	261
 瑞铃企管	rv;nv ly;zj qi;js gr;rw	117
 瑞阳化工	rv;nv yh;to hw;jv gs;ug	162
@@ -332876,10 +332259,7 @@ columns:
 瓦恰河	wa;rw qw;hj he;kz	144
 瓦房上	wa;rw fh;ml uh;yf	338
 瓦房子	wa;rw fh;ml zi;hi	306
-瓦房店人	wa;rw fh;ml dm;xy rf;jr	266
-瓦房店的	wa;rw fh;ml dm;xy de;un	315
 瓦房店站	wa;rw fh;ml dm;xy vj;iy	266
-瓦房店西	wa;rw fh;ml dm;xy xi;vx	189
 瓦房里	wa;rw fh;ml li;dl	446
 瓦拉克	wa;rw la;ui ke;cp	500
 瓦拉明	wa;rw la;ui my;ov	238
@@ -336774,8 +336154,6 @@ columns:
 界面翻译	jx;qj mm;bm fj;tp yi;sr	266
 界面速度	jx;qj mm;bm su;xu du;xl	238
 界面面积	jx;qj mm;bm mm;bm ji;xd	152
-界首一中	jx;qj ub;ho yi;fi vs;dg	288
-界首中学	jx;qj ub;ho vs;dg xt;kw	238
 界首乡	jx;qj ub;ho xd;ix	394
 界首的	jx;qj ub;ho de;un	190
 界首路	jx;qj ub;ho lu;ps	133
@@ -341065,7 +340443,6 @@ columns:
 盘山水库	pj;ia uj;vs uv;ks ku;xy	279
 盘山的	pj;ia uj;vs de;un	490
 盘州	pj;ia vb;oo	486
-盘州市人	pj;ia vb;oo ui;zr rf;jr	130
 盘干碗	pj;ia gj;eg wj;mw	310
 盘庚迁	pj;ia gg;xb qm;lu	468
 盘形凸轮	pj;ia xy;fl tu;vf lp;yj	153
@@ -345777,8 +345154,6 @@ columns:
 石咀镇	ui;ms ju;df vf;zn	372
 石咏莉	ui;ms ys;di li;lx	396
 石嘴子	ui;ms zv;ds zi;hi	270
-石嘴山人	ui;ms zv;ds uj;vs rf;jr	153
-石嘴山的	ui;ms zv;ds uj;vs de;un	234
 石嘴山站	ui;ms zv;ds uj;vs vj;iy	230
 石嘴沟	ui;ms zv;ds gb;kn	225
 石器部落	ui;ms qi;dd bu;id lo;lk	144
@@ -345921,14 +345296,7 @@ columns:
 石家包子	ui;ms jw;wj bk;nv zi;hi	320
 石家奴	ui;ms jw;wj nu;br	194
 石家寨	ui;ms jw;wj vl;wq	270
-石家庄号	ui;ms jw;wj vd;xg hk;df	266
-石家庄吗	ui;ms jw;wj vd;xg ma;dn	171
-石家庄店	ui;ms jw;wj vd;xg dm;xy	279
-石家庄有	ui;ms jw;wj vd;xg yb;nv	554
-石家庄玩	ui;ms jw;wj vd;xg wj;nm	194
-石家庄的	ui;ms jw;wj vd;xg de;un	896
 石家庄舰	ui;ms jw;wj vd;xg jm;ie	194
-石家庄这	ui;ms jw;wj vd;xg ve;vu	580
 石家湖	ui;ms jw;wj hu;kc	180
 石家湾	ui;ms jw;wj wj;kz	232
 石家的	ui;ms jw;wj de;un	450
@@ -346138,8 +345506,6 @@ columns:
 石沱	ui;ms to;kw	194
 石河堰	ui;ms he;kz yj;gn	153
 石河大桥	ui;ms he;kz da;md qc;et	117
-石河子一	ui;ms he;kz zi;hi yi;fi	266
-石河子的	ui;ms he;kz zi;hi de;un	333
 石河子站	ui;ms he;kz zi;hi vj;iy	117
 石河水库	ui;ms he;kz uv;ks ku;xy	212
 石油一厂	ui;ms yb;kd yi;fi ih;xc	202
@@ -346302,9 +345668,7 @@ columns:
 石牯塘	ui;ms gu;qc th;gx	238
 石狩市	ui;ms ub;mw ui;zr	237
 石狩管内	ui;ms ub;mw gr;rw nz;mj	117
-石狮哪里	ui;ms ui;mp na;da li;dl	117
 石狮子头	ui;ms ui;mp zi;hi tb;wm	234
-石狮海关	ui;ms ui;mp hl;ke gr;hm	266
 石狮路	ui;ms ui;mp lu;ps	127
 石猴出世	ui;ms hb;mj iu;sm ui;la	297
 石猴子	ui;ms hb;mj zi;hi	310
@@ -348719,7 +348083,6 @@ columns:
 磐田市	pj;ir tm;qt ui;zr	382
 磐石中学	pj;ir ui;ms vs;dg xt;kw	130
 磐石人	pj;ir ui;ms rf;jr	220
-磐石医院	pj;ir ui;ms yi;no yr;tw	117
 磐石城	pj;ir ui;ms ig;gn	328
 磐石堂	pj;ir ui;ms th;sg	194
 磐石山	pj;ir ui;ms uj;vs	234
@@ -350263,8 +349626,6 @@ columns:
 禁防之具	jn;ee fh;tl vi;ri ju;qh	117
 禁驾	jn;ee jw;sd	198
 禁魔	jn;ee mo;za	135
-禄丰县人	lu;fb fg;af xm;fk rf;jr	162
-禄丰恐龙	lu;fb fg;af ks;uo ls;tl	252
 禄丰组	lu;fb fg;af zu;if	288
 禄口	lu;fb kb;dk	778
 禄存星君	lu;fb cp;ng xy;ol jp;bt	230
@@ -350431,15 +349792,10 @@ columns:
 福宁	fu;ff ny;wa	837
 福宁中学	fu;ff ny;wa vs;dg xt;kw	144
 福宁府	fu;ff ny;wa fu;xj	500
-福安一中	fu;ff an;wb yi;fi vs;dg	171
-福安大厦	fu;ff an;wb da;md ua;xf	292
 福安宫	fu;ff an;wb gs;wd	608
-福安小区	fu;ff an;wb xc;yx qu;nb	162
-福安居士	fu;ff an;wb ju;cc ui;gs	194
 福安的	fu;ff an;wb de;un	405
 福安社区	fu;ff an;wb ue;fg qu;nb	180
 福安站	fu;ff an;wb vj;iy	279
-福安花园	fu;ff an;wb hw;lj yr;rm	198
 福安街	fu;ff an;wb jx;pg	364
 福安话	fu;ff an;wb hw;sa	396
 福安路	fu;ff an;wb lu;ps	252
@@ -350643,20 +349999,12 @@ columns:
 福沃德	fu;ff wo;kt de;wn	279
 福沙匹坦	fu;ff ua;ky pi;np tj;go	117
 福治谷	fu;ff vi;kk gu;hg	558
-福泉中学	fu;ff qr;uk vs;dg xt;kw	194
-福泉北路	fu;ff qr;uk bz;av lu;ps	153
-福泉市委	fu;ff qr;uk ui;zr wz;xb	144
-福泉花园	fu;ff qr;uk hw;lj yr;rm	117
 福济寺	fu;ff ji;kq si;gk	194
 福海寺	fu;ff hl;ke si;gk	261
 福海楼	fu;ff hl;ke lb;ep	207
 福海渔场	fu;ff hl;ke yu;kw ih;ga	153
 福海花园	fu;ff hl;ke hw;lj yr;rm	153
 福润	fu;ff rp;ka	633
-福清一中	fu;ff qy;ka yi;fi vs;dg	284
-福清医院	fu;ff qy;ka yi;no yr;tw	230
-福清历史	fu;ff qy;ka li;xs ui;db	130
-福清哪里	fu;ff qy;ka na;da li;dl	117
 福清有	fu;ff qy;ka yb;nv	297
 福清的	fu;ff qy;ka de;un	518
 福清话	fu;ff qy;ka hw;sa	441
@@ -350777,7 +350125,6 @@ columns:
 福马机械	fu;ff ma;nm ji;eo xx;ep	162
 福马铁路	fu;ff ma;nm tx;zt lu;ps	171
 福麒珠宝	fu;ff qi;xz vu;nt bk;wn	117
-福鼎一中	fu;ff dy;qa yi;fi vs;dg	162
 福鼎的	fu;ff dy;qa de;un	405
 福鼎话	fu;ff dy;qa hw;sa	243
 福龙号	fu;ff ls;tl hk;df	230
@@ -352250,16 +351597,6 @@ columns:
 秦病毒科	qn;ai by;af du;ak ke;xj	130
 秦皇半岛	qn;ai hd;un bj;hu dk;xv	508
 秦皇宫	qn;ai hd;un gs;wd	342
-秦皇岛了	qn;ai hd;un dk;xv le;rl	238
-秦皇岛到	qn;ai hd;un dk;xv dk;yp	320
-秦皇岛吗	qn;ai hd;un dk;xv ma;dn	144
-秦皇岛吧	qn;ai hd;un dk;xv ba;dm	162
-秦皇岛呢	qn;ai hd;un dk;xv ne;dc	144
-秦皇岛啊	qn;ai hd;un dk;xv aa;dt	171
-秦皇岛啦	qn;ai hd;un dk;xv la;du	130
-秦皇岛来	qn;ai hd;un dk;xv ll;ah	279
-秦皇岛的	qn;ai hd;un dk;xv de;un	702
-秦皇岛那	qn;ai hd;un dk;xv na;au	333
 秦皇帝	qn;ai hd;un di;iw	508
 秦皇食府	qn;ai hd;un ui;qs fu;xj	279
 秦皮啶	qn;ai pi;rp dy;dw	117
@@ -364099,7 +363436,6 @@ columns:
 绥崇丹懋	sv;iy is;vw dj;mz mk;ei	207
 绥州	sv;iy vb;oo	231
 绥满	sv;iy mj;kl	410
-绥芬河的	sv;iy ff;lh he;kz de;un	306
 绥西战役	sv;iy xi;vx vj;yd yi;wr	212
 绥远将军	sv;iy yr;mp jd;al jp;wy	374
 绥远战役	sv;iy yr;mp vj;yd yi;wr	279
@@ -366269,7 +365605,6 @@ columns:
 美人家	mz;gm rf;jr jw;wj	257
 美人山	mz;gm rf;jr uj;vs	454
 美人峰	mz;gm rf;jr fg;vh	225
-美人既醉	mz;gm rf;jr ji;id zv;yz	202
 美人春	mz;gm rf;jr ip;ai	392
 美人梳头	mz;gm rf;jr uu;eb tb;wm	117
 美人照镜	mz;gm rf;jr vk;op jy;zx	266
@@ -368448,8 +367783,6 @@ columns:
 老没有	lk;ql mz;kr yb;nv	738
 老没见	lk;ql mz;kr jm;ej	351
 老沪太路	lk;ql hu;km tl;mi lu;ps	266
-老河口东	lk;ql he;kz kb;dk ds;ry	238
-老河口人	lk;ql he;kz kb;dk rf;jr	144
 老河安区	lk;ql he;kz an;wb qu;nb	194
 老河沟	lk;ql he;kz gb;kn	238
 老河道	lk;ql he;kz dk;ho	302
@@ -370664,8 +369997,6 @@ columns:
 肆筵设席	si;pb yj;rt ue;sr xi;xl	194
 肆虐了	si;pb nt;zb le;rl	482
 肆虐时	si;pb nt;zb ui;ok	432
-肇东市人	vk;mh ds;ry ui;zr rf;jr	180
-肇东市委	vk;mh ds;ry ui;zr wz;xb	130
 肇事前	vk;mh ui;fd qm;hv	230
 肇启	vk;mh qi;md	180
 肇周路	vk;mh vb;mg lu;ps	490
@@ -372739,7 +372070,6 @@ columns:
 胶囊药	jc;va nh;nd yk;li	459
 胶团	jc;va tr;rn	523
 胶园	jc;va yr;rm	124
-胶州一中	jc;va vb;oo yi;fi vs;dg	482
 胶州公园	jc;va vb;oo gs;hk yr;rm	234
 胶州北	jc;va vb;oo bz;av	436
 胶州的	jc;va vb;oo de;un	454
@@ -379987,7 +379317,6 @@ columns:
 茨瓦纳	ci;lw wa;rw na;im	886
 茨纳河	ci;lw na;im he;kz	234
 茨鲁平	ci;lw lu;wo py;eh	346
-茫崖行政	mh;lk ya;vx xy;px vg;fs	243
 茫拉河	mh;lk la;ui he;kz	117
 茫无际涯	mh;lk wu;du ji;tf ya;kx	117
 茫然了	mh;lk rj;vm le;rl	693
@@ -380725,7 +380054,6 @@ columns:
 荣德帝姬	rs;lw de;wn di;iw ji;bq	220
 荣忠豪	rs;lw vs;dg hk;gj	252
 荣怀	rs;lw hy;hc	522
-荣成校区	rs;lw ig;na xc;ea qu;nb	238
 荣成的	rs;lw ig;na de;un	454
 荣昊	rs;lw hk;of	572
 荣昌东街	rs;lw ih;oo ds;ry jx;pg	306
@@ -380795,7 +380123,6 @@ columns:
 荤菜时	hp;lw cl;ly ui;ok	500
 荥泽大道	xy;lw ze;kr da;md dk;ho	144
 荥经河	yy;lw jy;ir he;kz	130
-荥阳一中	xy;lw yh;to yi;fi vs;dg	117
 荥阳人	xy;lw yh;to rf;jr	387
 荥阳的	xy;lw yh;to de;un	454
 荥阳郡	xy;lw yh;to jp;bt	554
@@ -381133,16 +380460,7 @@ columns:
 荼靡	tu;lj mi;zr	760
 荼靡花	tu;lj mi;zr hw;lj	351
 莅阳公主	li;lj yh;to gs;hk vu;in	122
-莆田五中	pu;ln tm;qt wu;wu vs;dg	212
 莆田仓	pu;ln tm;qt ch;jz	207
-莆田卤面	pu;ln tm;qt lu;yr mm;bm	328
-莆田历史	pu;ln tm;qt li;xs ui;db	130
-莆田县人	pu;ln tm;qt xm;fk rf;jr	612
-莆田四中	pu;ln tm;qt si;ys vs;dg	130
-莆田广播	pu;ln tm;qt gd;xg bo;ut	212
-莆田教育	pu;ln tm;qt jc;qh yu;bv	220
-莆田文化	pu;ln tm;qt wf;vw hw;jv	189
-莆田经济	pu;ln tm;qt jy;ir ji;kq	171
 莆禧古城	pu;ln xi;fh gu;cg ig;gn	117
 莆系	pu;ln xi;ti	258
 莉娜大厦	li;lx na;ba da;md ua;xf	266
@@ -381527,10 +380845,7 @@ columns:
 莱里贝	ll;la li;dl bz;ob	266
 莱钢医院	ll;la gh;zm yi;no yr;tw	468
 莱钢建设	ll;la gh;zm jm;bu ue;sr	130
-莱阳九中	ll;la yh;to jq;kj vs;dg	117
 莱阳参	ll;la yh;to cj;km	117
-莱阳师范	ll;la yh;to ui;pf fj;lk	171
-莱阳战役	ll;la yh;to vj;yd yi;wr	189
 莱阳的	ll;la yh;to de;un	320
 莱阳站	ll;la yh;to vj;iy	266
 莱阳绿	ll;la yh;to lv;ib	110
@@ -383240,9 +382555,6 @@ columns:
 葫芦套	hu;lc lu;lm tk;mp	302
 葫芦娃娃	hu;lc lu;lm wa;bg wa;bg	144
 葫芦子	hu;lc lu;lm zi;hi	285
-葫芦岛人	hu;lc lu;lm dk;xv rf;jr	270
-葫芦岛北	hu;lc lu;lm dk;xv bz;av	279
-葫芦岛的	hu;lc lu;lm dk;xv de;un	441
 葫芦岛站	hu;lc lu;lm dk;xv vj;iy	270
 葫芦峡	hu;lc lu;lm xw;vh	274
 葫芦树	hu;lc lu;lm uu;er	266
@@ -385826,14 +385138,6 @@ columns:
 蚊蟆	wf;cv ma;cl	872
 蚋式教练	rv;cm ui;pu jc;qh lm;ir	117
 蚌医附院	bh;ca yi;no fu;tj yr;tw	162
-蚌埠一中	bg;ca bu;gt yi;fi vs;dg	212
-蚌埠三中	bg;ca bu;gt sj;ts vs;dg	189
-蚌埠二院	bg;ca bu;gt er;me yr;tw	189
-蚌埠体育	bg;ca bu;gt ti;je yu;bv	189
-蚌埠六中	bg;ca bu;gt lq;al vs;dg	144
-蚌埠市区	bg;ca bu;gt ui;zr qu;nb	266
-蚌埠文化	bg;ca bu;gt wf;vw hw;jv	153
-蚌埠监狱	bg;ca bu;gt jm;pr yu;ms	189
 蚌壳精	bh;ca ke;gw jy;pa	189
 蚌式	bh;ca ui;pu	106
 蚌湖	bh;ca hu;kc	387
@@ -390546,13 +389850,8 @@ columns:
 西施银芽	xi;vx ui;le yn;zi ya;ll	130
 西昂区	xi;vx ah;ob qu;nb	320
 西昊	xi;vx hk;of	522
-西昌中学	xi;vx ih;oo vs;dg xt;kw	153
 西昌北	xi;vx ih;oo bz;av	130
 西昌南	xi;vx ih;oo nj;nm	351
-西昌小区	xi;vx ih;oo xc;yx qu;nb	171
-西昌市委	xi;vx ih;oo ui;zr wz;xb	252
-西昌战役	xi;vx ih;oo vj;yd yi;wr	328
-西昌烧烤	xi;vx ih;oo uk;cp kk;cq	288
 西昌的	xi;vx ih;oo de;un	437
 西昌青山	xi;vx ih;oo qy;av uj;vs	243
 西明寺	xi;vx my;ov si;gk	410
@@ -394839,11 +394138,7 @@ columns:
 许文	xu;se wf;vw	994
 许文峰	xu;se wf;vw fg;vh	148
 许斯	xu;se si;zh	130
-许昌公司	xu;se ih;oo gs;hk si;af	117
-许昌市区	xu;se ih;oo ui;zr qu;nb	364
-许昌文化	xu;se ih;oo wf;vw hw;jv	117
 许昌站	xu;se ih;oo vj;iy	189
-许昌经济	xu;se ih;oo jy;ir ji;kq	212
 许明	xu;se my;ov	851
 许明明	xu;se my;ov my;ov	315
 许是吧	xu;se ui;ot ba;dm	585
@@ -395519,6 +394814,7 @@ columns:
 试试就	ui;sp ui;sp jq;gy	1112
 试试性能	ui;sp ui;sp xy;hl ng;kv	163
 试试新版	ui;sp ui;sp xn;ie bj;ax	776
+试试服装	ui;sp ui;sp fu;vz vd;ag	606
 试试深浅	ui;sp ui;sp uf;kw qm;kf	212
 试试看呢	ui;sp ui;sp kj;uq ne;dc	454
 试试那	ui;sp ui;sp na;au	770
@@ -400105,7 +399401,6 @@ columns:
 诸善奉行	vu;sq uj;gh fg;ai xy;px	342
 诸善男子	vu;sq uj;gh nj;qs zi;hi	333
 诸圣堂	vu;sq ug;rg th;sg	513
-诸城一中	vu;sq ig;gn yi;fi vs;dg	171
 诸城人	vu;sq ig;gn rf;jr	472
 诸城派	vu;sq ig;gn pl;kx	279
 诸城的	vu;sq ig;gn de;un	436
@@ -400133,9 +399428,7 @@ columns:
 诸往	vu;sq wh;wi	623
 诸恶	vu;sq ee;fc	716
 诸星	vu;sq xy;ol	182
-诸暨出口	vu;sq ji;id iu;sm kb;dk	144
 诸暨市大唐镇	vu;sq ji;id ui;zr da;md th;xb vf;zn	127
-诸暨日报	vu;sq ji;id ri;or bk;uz	130
 诸暨的	vu;sq ji;id de;un	446
 诸暨站	vu;sq ji;id vj;iy	468
 诸有所作	vu;sq yb;nv so;mt zo;jw	171
@@ -404883,8 +404176,6 @@ columns:
 资产没收	zi;we ij;ix mo;kr ub;ih	288
 资产计价	zi;we ij;ix ji;sn jw;jj	338
 资优教育	zi;we yb;jo jc;qh yu;bv	500
-资兴东江	zi;we xy;kh ds;ry jd;ku	194
-资兴市委	zi;we xy;kh ui;zr wz;xb	171
 资助了	zi;we vu;fs le;rl	810
 资助制度	zi;we vu;fs vi;qr du;xl	364
 资助委员	zi;we vu;fs wz;xb yr;do	558
@@ -405563,7 +404854,6 @@ columns:
 赤堀悟	ii;gc ku;gc wu;hw	396
 赤堇山	ii;gc jn;ld uj;vs	212
 赤塔河	ii;gc ta;gl he;kz	117
-赤壁一中	ii;gc bi;cd yi;fi vs;dg	279
 赤壁山	ii;gc bi;cd uj;vs	320
 赤壁的	ii;gc bi;cd de;un	558
 赤壁站	ii;gc bi;cd vj;iy	202
@@ -405616,7 +404906,6 @@ columns:
 赤柱炮台	ii;gc vu;ei pk;cn tl;kd	441
 赤柱警署	ii;gc vu;ei jy;lg uu;yq	288
 赤橙	ii;gc ig;eh	132
-赤水一中	ii;gc uv;ks yi;fi vs;dg	117
 赤水沟子	ii;gc uv;ks gb;kn zi;hi	117
 赤水玄珠	ii;gc uv;ks xr;zi vu;nt	189
 赤水站	ii;gc uv;ks vj;iy	189
@@ -416218,8 +415507,6 @@ columns:
 连二磷酸	lm;yu er;me ln;mp sr;yk	252
 连云三乱	lm;yu yp;by sj;ts lr;aa	189
 连云新城	lm;yu yp;by xn;ie ig;gn	212
-连云港了	lm;yu yp;by gh;kl le;rl	144
-连云港的	lm;yu yp;by gh;kl de;un	603
 连人也	lm;yu rf;jr ye;ey	432
 连任吧	lm;yu rf;jt ba;dm	378
 连任时	lm;yu rf;jt ui;ok	414
@@ -419690,7 +418977,6 @@ columns:
 遵义经济	zp;hy yi;ib jy;ir ji;kq	230
 遵从了	zp;hy cs;jj le;rl	590
 遵从规律	zp;hy cs;jj gv;he lv;wb	144
-遵化市委	zp;hy hw;jv ui;zr wz;xb	212
 遵化的	zp;hy hw;jv de;un	306
 遵守了	zp;hy ub;wk le;rl	914
 遵守吧	zp;hy ub;wk ba;dm	261
@@ -419957,9 +419243,7 @@ columns:
 邗江实验	hj;et jd;ku ui;ww yj;nj	207
 邗江路	hj;et jd;ku lu;ps	236
 邙山晚眺	mh;ft uj;vs wj;ow tc;qp	130
-邛崃一中	qs;ut ll;va yi;fi vs;dg	180
 邛崃人	qs;ut ll;va rf;jr	333
-邛崃哪里	qs;ut ll;va na;da li;dl	117
 邛崃的	qs;ut ll;va de;un	392
 邛海边	qs;ut hl;ke bm;su	315
 邛邛岠虚	qs;ut qs;ut ju;vn xu;zc	153
@@ -421211,11 +420495,9 @@ columns:
 邱镜淳	qq;tf jy;zx ip;kg	446
 邱隘	qq;tf ai;tk	518
 邳州东站	pi;cf vb;oo ds;ry vj;iy	252
-邳州市人	pi;cf vb;oo ui;zr rf;jr	428
 邳州的	pi;cf vb;oo de;un	338
 邳州站	pi;cf vb;oo vj;iy	171
 邳洪河	pi;cf hs;kl he;kz	130
-邵东一中	uk;pd ds;ry yi;fi vs;dg	270
 邵升	uk;pd ug;tl	112
 邵华泽	uk;pd hw;jv ze;kr	315
 邵叔	uk;pd uu;yf	140
@@ -421257,8 +420539,6 @@ columns:
 邵象华	uk;pd xd;wx hw;jv	189
 邵逸凡	uk;pd yi;wu fj;oi	115
 邵阳北站	uk;pd yh;to bz;av vj;iy	279
-邵阳医专	uk;pd yh;to yi;no vr;ma	153
-邵阳县委	uk;pd yh;to xm;fk wz;xb	117
 邵陵	uk;pd ly;tg	688
 邵雅琦	uk;pd ya;lu qi;nm	144
 邵雪聪	uk;pd xt;tb cs;qh	436
@@ -421280,7 +420560,6 @@ columns:
 邹宏宇	zb;xb hs;wn yu;wf	266
 邹家人	zb;xb jw;wj rf;jr	328
 邹容墓	zb;xb rs;wh mu;lo	238
-邹平一中	zb;xb py;eh yi;fi vs;dg	238
 邹平学	zb;xb py;eh xt;kw	162
 邹建军	zb;xb jm;bu jp;wy	279
 邹建华	zb;xb jm;bu hw;jv	194
@@ -422209,7 +421488,6 @@ columns:
 都加了	db;qo jw;sd le;rl	832
 都动了	db;qo ds;bs le;rl	356
 都勾选上	db;qo gb;nk xr;qp uh;yf	171
-都匀一中	du;qo yp;nw yi;fi vs;dg	189
 都匀东	du;qo yp;nw ds;ry	297
 都匀的	du;qo yp;nw de;un	288
 都包	db;qo bk;nv	421
@@ -423171,14 +422449,7 @@ columns:
 都水使者	db;qo uv;ks ui;jf ve;qo	423
 都水监	db;qo uv;ks jm;pr	450
 都汇华府	du;qo hv;kn hw;jv fu;xj	144
-都江堰了	du;qo jd;ku yj;gn le;rl	162
-都江堰人	du;qo jd;ku yj;gn rf;jr	315
-都江堰去	du;qo jd;ku yj;gn qu;gk	171
-都江堰吧	du;qo jd;ku yj;gn ba;dm	153
-都江堰啊	du;qo jd;ku yj;gn aa;dt	153
-都江堰的	du;qo jd;ku yj;gn de;un	585
 都江堰站	du;qo jd;ku yj;gn vj;iy	266
-都江堰西	du;qo jd;ku yj;gn xi;vx	248
 都沉了	db;qo if;kw le;rl	508
 都沉醉	db;qo if;kw zv;yz	536
 都沉默着	db;qo if;kw mo;pm ve;gq	526
@@ -424854,7 +424125,6 @@ columns:
 醴茶线	li;yy ia;lj xm;if	194
 醴茶高速	li;yy ia;lj gk;gg su;xu	252
 醴陵东	li;yy ly;tg ds;ry	284
-醴陵市委	li;yy ly;tg ui;zr wz;xb	310
 醴陵的	li;yy ly;tg de;un	360
 醴陵窑	li;yy ly;tg yk;ea	171
 醴陵站	li;yy ly;tg vj;iy	234
@@ -429111,7 +428381,6 @@ columns:
 钟的同步	vs;zd de;un ts;mf bu;ss	230
 钟的滴答	vs;zd de;un di;ki da;rj	432
 钟盛忠	vs;zd ug;na vs;dg	293
-钟祥一中	vs;zd xd;fg yi;fi vs;dg	266
 钟祥的	vs;zd xd;fg de;un	297
 钟离之战	vs;zd li;zb vi;ri vj;yd	306
 钟秀	vs;zd xq;xv	1005
@@ -429805,9 +429074,6 @@ columns:
 铁山郡	tx;zt uj;vs jp;bt	297
 铁山里	tx;zt uj;vs li;dl	252
 铁岩蛊	tx;zt yj;vm gu;ca	328
-铁岭市委	tx;zt ly;vj ui;zr wz;xb	378
-铁岭广播	tx;zt ly;vj gd;xg bo;ut	171
-铁岭高氏	tx;zt ly;vj gk;gg ui;bs	130
 铁峰山	tx;zt fg;vh uj;vs	364
 铁帅	tx;zt uy;pr	400
 铁干里克	tx;zt gj;eg li;dl ke;cp	378
@@ -434401,7 +433667,6 @@ columns:
 阅读啊	yt;ah du;sn aa;dt	522
 阅读大地	yt;ah du;sn da;md di;ge	212
 阅过	yt;ah go;ku	188
-阆中中学	lh;ai vs;dg vs;dg xt;kw	117
 阆中的	lh;ai vs;dg de;un	432
 阆州	lh;ai vb;oo	598
 阆风亭	lh;ai fg;ob ty;ga	248
@@ -434544,8 +433809,6 @@ columns:
 阜宁人	fu;tk ny;wa rf;jr	378
 阜宁的	fu;tk ny;wa de;un	266
 阜康的	fu;tk kh;xb de;un	274
-阜康西路	fu;tk kh;xb xi;vx lu;ps	153
-阜康陨石	fu;tk kh;xb yp;td ui;ms	238
 阜成门内	fu;tk ig;na mf;am nz;mj	536
 阜成门北	fu;tk ig;na mf;am bz;av	292
 阜成门南	fu;tk ig;na mf;am nj;nm	328
@@ -434683,8 +433946,6 @@ columns:
 防喷罩	fh;tl pf;dn vk;yy	238
 防坦克壕	fh;tl tj;go ke;cp hk;gg	171
 防城河	fh;tl ig;gn he;kz	153
-防城港人	fh;tl ig;gn gh;kl rf;jr	266
-防城港北	fh;tl ig;gn gh;kl bz;av	396
 防城港站	fh;tl ig;gn gh;kl vj;iy	194
 防备了	fh;tl bz;hq le;rl	490
 防夹天窗	fh;tl jw;hh tm;fm id;et	410
@@ -436625,6 +435886,7 @@ columns:
 限量版的	xm;ti ld;of bj;ax de;un	837
 限面体	xm;ti mm;bm ti;je	500
 限领	xm;ti ly;jk	236
+限频	xm;ti pn;ss	403
 限额了	xm;ti ee;ws le;rl	436
 限额内	xm;ti ee;ws nz;mj	680
 限额制	xm;ti ee;ws vi;qr	328
@@ -437145,7 +436407,6 @@ columns:
 隆德路	ls;th de;wn lu;ps	292
 隆恩河	ls;th en;rm he;kz	212
 隆成集团	ls;th ig;na ji;ue tr;rn	207
-隆昌一中	ls;th ih;oo yi;fi vs;dg	130
 隆昌寺	ls;th ih;oo si;gk	310
 隆朵嘉措	ls;th do;oe jw;hs co;ul	225
 隆格维	ls;th ge;es wz;iu	392
@@ -437279,7 +436540,6 @@ columns:
 随宜说法	sv;tn yi;wf uo;sh fa;kg	153
 随家仓	sv;tn jw;wj ch;jz	351
 随山浚川	sv;tn uj;vs jp;kk ir;oc	189
-随州一中	sv;tn vb;oo yi;fi vs;dg	153
 随当时	sv;tn dh;yb ui;ok	459
 随形	sv;tn xy;fl	499
 随心一	sv;tn xn;hx yi;fi	319
@@ -437945,7 +437205,6 @@ columns:
 难饮	nj;ru yn;qe	243
 雀之恋	qt;yu vi;ri lm;zc	306
 雀儿答道	qt;yu er;pe da;rj dk;ho	180
-雀占鸠巢	qt;yu vj;yd jq;kx ik;oq	252
 雀山公园	qt;yu uj;vs gs;hk yr;rm	117
 雀巢吧	qt;yu ik;oq ba;dm	180
 雀巢品牌	qt;yu ik;oq pn;dd pl;au	220
@@ -438314,9 +437573,7 @@ columns:
 集宁南站	ji;ue ny;wa nj;nm vj;iy	315
 集宁战役	ji;ue ny;wa vj;yd yi;wr	364
 集宁的	ji;ue ny;wa de;un	261
-集安口岸	ji;ue an;wb kb;dk an;vx	144
 集安站	ji;ue an;wb vj;iy	189
-集安路口	ji;ue an;wb lu;ps kb;dk	194
 集宝盆	ji;ue bk;wn pf;hp	324
 集家嘴	ji;ue jw;wj zv;ds	252
 集尘系统	ji;ue if;yg xi;ti ts;ib	171
@@ -439263,6 +438520,7 @@ columns:
 雾之恋	wu;th vi;ri lm;zc	410
 雾云山	wu;th yp;by uj;vs	331
 雾化干燥	wu;th hw;jv gj;eg zk;cd	130
+雾号	wu;th hk;df	100
 雾失楼台	wu;th ui;th lb;ep tl;kd	423
 雾岗路	wu;th gh;vm lu;ps	310
 雾岛号	wu;th dk;xv hk;df	395
@@ -439551,7 +438809,6 @@ columns:
 霍山中学	ho;tu uj;vs vs;dg xt;kw	220
 霍山的	ho;tu uj;vs de;un	270
 霍州署	ho;tu vb;oo uu;yq	200
-霍州鼓楼	ho;tu vb;oo gu;hc lb;ep	200
 霍巴陨铁	ho;tu ba;mb yp;td tx;zt	189
 霍布罗	ho;tu bu;nr lo;yl	180
 霍布豪斯	ho;tu bu;nr hk;gj si;zh	418
@@ -440089,9 +439346,6 @@ columns:
 青崖白鹿	qy;av ya;vx bl;ub lu;xl	144
 青川木牍	qy;av ir;oc mu;em du;an	266
 青川站	qy;av ir;oc vj;iy	225
-青州一中	qy;av vb;oo yi;fi vs;dg	130
-青州市南	qy;av vb;oo ui;zr nj;nm	153
-青州市委	qy;av vb;oo ui;zr wz;xb	153
 青州市站	qy;av vb;oo ui;zr vj;iy	207
 青州有	qy;av vb;oo yb;nv	338
 青州的	qy;av vb;oo de;un	562
@@ -440489,8 +439743,6 @@ columns:
 青铜宝箱	qy;av ts;zm bk;wn xd;re	297
 青铜小刀	qy;av ts;zm xc;yx dk;pd	212
 青铜小号	qy;av ts;zm xc;yx hk;df	117
-青铜峡塔	qy;av ts;zm xw;vh ta;gl	162
-青铜峡路	qy;av ts;zm xw;vh lu;ps	144
 青铜板	qy;av ts;zm bj;ex	315
 青铜武士	qy;av ts;zm wu;fp ui;gs	238
 青铜水器	qy;av ts;zm uv;ks qi;dd	130
@@ -440616,7 +439868,6 @@ columns:
 靖志远	jy;ia vi;gh yr;mp	310
 靖江的	jy;ia jd;ku de;un	423
 靖江站	jy;ia jd;ku vj;iy	153
-靖江论坛	jy;ia jd;ku lp;sj tj;gb	162
 靖江路站	jy;ia jd;ku lu;ps vj;iy	243
 靖沧浪	jy;ia ch;kj lh;ki	207
 靖海侯	jy;ia hl;ke hb;jn	374
@@ -442103,11 +441354,6 @@ columns:
 韩圈	hj;no qr;rh	568
 韩场镇	hj;no ih;ga vf;zn	139
 韩垓镇	hj;no gl;gk vf;zn	155
-韩城南糖	hj;no ig;gn nj;nm th;px	153
-韩城市委	hj;no ig;gn ui;zr wz;xb	207
-韩城文庙	hj;no ig;gn wf;vw mc;xd	180
-韩城花椒	hj;no ig;gn hw;lj jc;ey	194
-韩城行鼓	hj;no ig;gn xy;px gu;hc	130
 韩增	hj;no zg;gh	2126
 韩复龄	hj;no fu;eo ly;lj	288
 韩大建	hj;no da;md jm;bu	162
@@ -446340,7 +445586,6 @@ columns:
 马屋村	ma;nm wu;cy cp;ek	145
 马屯村	ma;nm tp;fs cp;ek	243
 马屯镇	ma;nm tp;fs vf;zn	120
-马山中学	ma;nm uj;vs vs;dg xt;kw	144
 马山乡	ma;nm uj;vs xd;ix	171
 马山市	ma;nm uj;vs ui;zr	320
 马山庄	ma;nm uj;vs vd;xg	224
@@ -446732,8 +445977,6 @@ columns:
 马鞍上	ma;nm an;tw uh;yf	480
 马鞍中学	ma;nm an;tw vs;dg xt;kw	171
 马鞍乡	ma;nm an;tw xd;ix	247
-马鞍山号	ma;nm an;tw uj;vs hk;df	320
-马鞍山港	ma;nm an;tw uj;vs gh;kl	288
 马鞍湖	ma;nm an;tw hu;kc	117
 马鞍石	ma;nm an;tw ui;ms	189
 马鞭石斛	ma;nm bm;tj ui;ms hu;xt	130
@@ -446891,6 +446134,7 @@ columns:
 驻云飞	vu;ni yp;by fz;cf	130
 驻会	vu;ni hv;jb	1061
 驻俄罗斯	vu;ni ee;jt lo;yl si;zh	688
+驻值	vu;ni vi;jn	110
 驻区	vu;ni qu;nb	1064
 驻华美军	vu;ni hw;jv mz;gm jp;wy	342
 驻华领事	vu;ni hw;jv ly;jk ui;fd	418
@@ -446931,7 +446175,6 @@ columns:
 驻非盟	vu;ni fz;rf mg;ov	310
 驻马	vu;ni ma;nm	518
 驻马听	vu;ni ma;nm ty;dt	261
-驻马店的	vu;ni ma;nm dm;xy de;un	450
 驼了	to;nw le;rl	281
 驼奶	to;nw nl;bv	594
 驼山	to;nw uj;vs	634
@@ -448001,7 +447244,6 @@ columns:
 高家里	gk;gg jw;wj li;dl	558
 高家龙	gk;gg jw;wj ls;tl	414
 高宽容度	gk;gg kr;wl rs;wh du;xl	392
-高密一中	gk;gg mi;wh yi;fi vs;dg	333
 高密剪纸	gk;gg mi;wh jm;hv vi;ib	117
 高密炉包	gk;gg mi;wh lu;cm bk;nv	162
 高密的	gk;gg mi;wh de;un	472
@@ -448110,8 +447352,6 @@ columns:
 高川格	gk;gg ir;oc ge;es	360
 高川秀格	gk;gg ir;oc xq;xv ge;es	202
 高州人	gk;gg vb;oo rf;jr	320
-高州师范	gk;gg vb;oo ui;pf fj;lk	171
-高州水库	gk;gg vb;oo uv;ks ku;xy	342
 高州的	gk;gg vb;oo de;un	396
 高州路	gk;gg vb;oo lu;ps	256
 高工产业	gk;gg gs;ug ij;ix ye;cy	261
@@ -448122,14 +447362,11 @@ columns:
 高帆家私	gk;gg fj;ro jw;wj si;xk	153
 高师泰	gk;gg ui;pf tl;ai	252
 高师直	gk;gg ui;pf vi;nq	369
-高平一中	gk;gg py;eh yi;fi vs;dg	243
 高平仓	gk;gg py;eh ch;jz	252
 高平关	gk;gg py;eh gr;hm	212
-高平协定	gk;gg py;eh xx;ns dy;wt	180
 高平原	gk;gg py;eh yr;xu	351
 高平均	gk;gg py;eh jp;gn	837
 高平城	gk;gg py;eh ig;gn	378
-高平市委	gk;gg py;eh ui;zr wz;xb	279
 高平时	gk;gg py;eh ui;ok	657
 高平的	gk;gg py;eh de;un	400
 高广圻	gk;gg gd;xg qi;gt	490
@@ -449010,7 +448247,6 @@ columns:
 高隆之	gk;gg ls;th vi;ri	369
 高隐	gk;gg yn;tx	592
 高难度的	gk;gg nj;ru du;xl de;un	1040
-高雄事件	gk;gg xs;nk ui;fd jm;jq	288
 高雄代	gk;gg xs;nk dl;jp	306
 高雄分	gk;gg xs;nk ff;hp	603
 高雄前	gk;gg xs;nk qm;hv	324
@@ -449019,15 +448255,11 @@ columns:
 高雄台	gk;gg xs;nk tl;kd	626
 高雄场	gk;gg xs;nk ih;ga	490
 高雄型	gk;gg xs;nk xy;fl	284
-高雄市立	gk;gg xs;nk ui;zr li;il	846
 高雄店	gk;gg xs;nk dm;xy	364
 高雄河	gk;gg xs;nk he;kz	212
-高雄港口	gk;gg xs;nk gh;kl kb;dk	153
 高雄端	gk;gg xs;nk dr;iv	315
-高雄草衙	gk;gg xs;nk ck;lo ya;pw	225
 高雄荣	gk;gg xs;nk rs;lw	436
 高雄街	gk;gg xs;nk jx;pg	405
-高雄铁路	gk;gg xs;nk tx;zt lu;ps	405
 高雄间	gk;gg xs;nk jm;ao	315
 高雅吧	gk;gg ya;lu ba;dm	207
 高雅品位	gk;gg ya;lu pn;dd wz;ji	382
@@ -451030,10 +450262,7 @@ columns:
 鹤壁的	he;wu bi;cd de;un	297
 鹤壁集	he;wu bi;cd ji;ue	224
 鹤子镇	he;wu zi;hi vf;zn	606
-鹤山书院	he;wu uj;vs uu;aa yr;tw	266
 鹤山公园	he;wu uj;vs gs;hk yr;rm	230
-鹤山学校	he;wu uj;vs xt;kw xc;ea	256
-鹤山市人	he;wu uj;vs ui;zr rf;jr	234
 鹤山站	he;wu uj;vs vj;iy	274
 鹤岗一中	he;wu gh;vm yi;fi vs;dg	252
 鹤岗市委	he;wu gh;vm ui;zr wz;xb	306
@@ -451499,13 +450728,10 @@ columns:
 麻地沟	ma;zm di;ge gb;kn	284
 麻地湾	ma;zm di;ge wj;kz	225
 麻坡	ma;zm po;gr	562
-麻城一中	ma;zm ig;gn yi;fi vs;dg	266
 麻城人	ma;zm ig;gn rf;jr	432
-麻城刘氏	ma;zm ig;gn lq;vp ui;bs	261
 麻城北	ma;zm ig;gn bz;av	266
 麻城的	ma;zm ig;gn de;un	378
 麻城站	ma;zm ig;gn vj;iy	220
-麻城铁路	ma;zm ig;gn tx;zt lu;ps	180
 麻埠镇响	ma;zm bu;gt vf;zn xd;dt	144
 麻塘湖	ma;zm th;gx hu;kc	189
 麻姐	ma;zm jx;bf	217
@@ -453125,7 +452351,6 @@ columns:
 黄香莲	hd;nh xd;xo lm;ly	400
 黄馨慧	hd;nh xn;gc hv;aa	279
 黄马乡	hd;nh ma;nm xd;ix	224
-黄骅市委	hd;nh hw;nj ui;zr wz;xb	248
 黄骅镇	hd;nh hw;nj vf;zn	150
 黄鱼吧	hd;nh yu;wv ba;dm	306
 黄鱼岛	hd;nh yu;wv dk;xv	162
@@ -454580,8 +453805,6 @@ columns:
 龙井区	ls;tl jy;qj qu;nb	596
 龙井吧	ls;tl jy;qj ba;dm	194
 龙井山	ls;tl jy;qj uj;vs	454
-龙井市人	ls;tl jy;qj ui;zr rf;jr	171
-龙井市委	ls;tl jy;qj ui;zr wz;xb	144
 龙井沟	ls;tl jy;qj gb;kn	230
 龙井河	ls;tl jy;qj he;kz	306
 龙井站	ls;tl jy;qj vj;iy	310
@@ -454666,8 +453889,6 @@ columns:
 龙华的	ls;tl hw;jv de;un	544
 龙华街	ls;tl hw;jv jx;pg	513
 龙华里	ls;tl hw;jv li;dl	189
-龙南医院	ls;tl nj;nm yi;no yr;tw	130
-龙南小区	ls;tl nj;nm xc;yx qu;nb	117
 龙博士	ls;tl bo;nn ui;gs	418
 龙卫	ls;tl wz;zf	182
 龙卫球	ls;tl wz;zf qq;nf	243
@@ -454677,7 +453898,6 @@ columns:
 龙叔	ls;tl uu;yf	806
 龙变	ls;tl bm;zc	706
 龙口东	ls;tl kb;dk ds;ry	459
-龙口水库	ls;tl kb;dk uv;ks ku;xy	306
 龙口的	ls;tl kb;dk de;un	387
 龙口路	ls;tl kb;dk lu;ps	356
 龙号机车	ls;tl hk;df ji;eo ie;yc	284
@@ -454948,24 +454168,18 @@ columns:
 龙河口	ls;tl he;kz kb;dk	356
 龙河校区	ls;tl he;kz xc;ea qu;nb	180
 龙泉一	ls;tl qr;uk yi;fi	824
-龙泉一中	ls;tl qr;uk yi;fi vs;dg	144
 龙泉井	ls;tl qr;uk jy;qj	324
 龙泉区	ls;tl qr;uk qu;nb	171
-龙泉园路	ls;tl qr;uk yr;rm lu;ps	162
 龙泉堂	ls;tl qr;uk th;sg	225
 龙泉塔	ls;tl qr;uk ta;gl	202
-龙泉小区	ls;tl qr;uk xc;yx qu;nb	129
 龙泉岩	ls;tl qr;uk yj;vm	288
 龙泉峪	ls;tl qr;uk yu;vh	266
 龙泉庵	ls;tl qr;uk an;xm	243
 龙泉河	ls;tl qr;uk he;kz	297
-龙泉洗浴	ls;tl qr;uk xi;kq yu;kh	153
-龙泉浴室	ls;tl qr;uk yu;kh ui;wy	130
 龙泉湾	ls;tl qr;uk wj;kz	234
 龙泉溪	ls;tl qr;uk xi;ky	374
 龙泉的	ls;tl qr;uk de;un	504
 龙泉站	ls;tl qr;uk vj;iy	288
-龙泉苑街	ls;tl qr;uk yr;ll jx;pg	117
 龙泉茶	ls;tl qr;uk ia;lj	288
 龙泉观	ls;tl qr;uk gr;re	297
 龙泉道	ls;tl qr;uk dk;ho	252
@@ -454992,7 +454206,6 @@ columns:
 龙海站	ls;tl hl;ke vj;iy	194
 龙海花园	ls;tl hl;ke hw;lj yr;rm	202
 龙润	ls;tl rp;ka	432
-龙港快线	ls;tl gh;kl ky;hn xm;if	297
 龙港社区	ls;tl gh;kl ue;fg qu;nb	117
 龙游乌猪	ls;tl yb;kl wu;xu vu;mq	130
 龙游县委	ls;tl yb;kl xm;fk wz;xb	194

@@ -36,6 +36,13 @@ make dict
 
 构建不会改写 `mohu_zrm.dict.yaml`。小鹤表 `mohu_flypy.dict.yaml` 是从主表转换的派生产物，不单独维护。
 把对应方案的主表、schema 和 Lua 等运行时资源同步到 Rime 用户目录后重新部署；不能只复制码表而沿用仍引用旧表的 schema/Lua。
+macOS 必须执行鼠须管自身的重新部署，不能仅运行通用词典部署器。`rime_deployer --build` 编译字典成功不等于前端皮肤配置已生成；清理 `build/` 后若缺少 `build/squirrel.yaml`，鼠须管会退回默认外观。正确步骤是：
+
+```bash
+"/Library/Input Methods/Squirrel.app/Contents/MacOS/Squirrel" --reload
+```
+
+部署验收必须同时检查 `build/squirrel.yaml` 存在、`style/color_scheme` 指向现有皮肤、`squirrel.custom.yaml` 的自定义样式和皮肤已进入编译产物。不得覆盖用户的 `squirrel.yaml`、`squirrel.custom.yaml`；不能把前端外观重置当成部署成功。
 本次迁移不自动修改个人用户目录或删除个人词库。
 
 整句词典、读音／字根数据、模型词表是仍有实际用途的引擎资源，不是另一个简码维护入口；本次没有删除它们。

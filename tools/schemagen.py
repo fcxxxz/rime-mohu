@@ -10,10 +10,8 @@
 #
 
 import argparse
-import traceback
 from collections import *
 from itertools import *
-from operator import *
 
 import flypyify
 import regex
@@ -28,7 +26,6 @@ auxiliary_code_choices = ['tiger_prefix2', 'zrm', 'user']
 args = None
 auxiliary_table = defaultdict(list)
 pinyin_table = defaultdict(lambda: defaultdict(int))
-charset = []
 
 ##################
 ### 單字處理例程 ###
@@ -236,189 +233,6 @@ def handle_gen_dict():
                     weight = pinyin_weight(word, pinyin)
                     weight = int(weight * float(args.freq_scale))
                 print(f'{output_word}\t{code}\t{weight}')
-
-
-
-###############
-### 簡碼生成 ###
-###############
-def initialize_charset():
-    global charset
-    with open(args.charset, 'r') as f:
-        for line in f:
-            if len(line) == 0 or line.startswith('#'):
-                continue
-            charset.append(line[0])
-
-
-def encode_fixed_word(word, pinyin=None, short=False):
-    assert len(word) > 1
-    if '，' in word:
-        word = word.replace('，', '')
-    if not pinyin:
-        pinyin = word_to_pinyin(word)
-    double_pinyin = to_double_pinyin(pinyin).split()
-    # if len(word) == 2:
-    #     A = double_pinyin[0][0]
-    #     B = double_pinyin[1][0]
-    #     a = to_auxiliary_codes(word[0])[0][0]
-    #     b = to_auxiliary_codes(word[1])[0][0]
-    #     return A+B+b+a
-    if len(word) == 2:
-        if not short:
-            return ''.join(double_pinyin)
-        else:
-            return double_pinyin[0][0] + double_pinyin[1][0]
-    elif len(word) == 3:
-        if short:
-            return double_pinyin[0][0] + double_pinyin[1][0] + double_pinyin[2][0]
-        elif args.aabc:
-            return double_pinyin[0] + double_pinyin[1][0] + double_pinyin[2][0]
-        else:
-            return double_pinyin[0][0] + double_pinyin[1][0] + double_pinyin[2]
-    else:
-        return double_pinyin[0][0] + double_pinyin[1][0] + double_pinyin[2][0] + double_pinyin[-1][0]
-
-def encode_fixed_word_sunshine_strategy(word, pinyin=None):
-    assert len(word) > 1
-    if not pinyin:
-        pinyin = word_to_pinyin(word)
-    double_pinyin = to_double_pinyin(pinyin).split()
-    if len(word) == 2:
-        return [double_pinyin[0] + double_pinyin[1][0] + to_auxiliary_codes(word[1])[0][0],
-                #encode_fixed_word(word,pinyin)
-                ]
-    elif len(word) == 3:
-        return [double_pinyin[0][0] + double_pinyin[1][0] + double_pinyin[2][0] + to_auxiliary_codes(word[2])[0][0]]
-    else:
-        return [encode_fixed_word(word, pinyin)]
-
-def handle_gen_fixed():
-    initialize_charset()
-    initialize_pinyin_table()
-
-    table = defaultdict(list)
-    encoded = defaultdict(list)
-
-    def put_into_dict_char(word, code, py, max_len=4):
-        nonlocal table, encoded
-        assert len(word) == 1
-        # 這個字有多個編碼，但如果某個已有編碼是當前編碼的前綴，則不再添加該額外編碼
-        for existing_code in encoded[word]:
-            if code.startswith(existing_code):
-                return
-        # 逐級嘗試把當前編碼放入簡碼
-        tolerance = dict(zip([1,2,3], (int(s) for s in args.tolerance.split(','))))
-        for i in range(1, max_len):
-            if len(table[code[:i]]) < tolerance[i]:
-                table[code[:i]].append(word)
-                encoded[word].append(code[:i])
-                return
-        # 一簡到三簡已經全部用完
-        table[code].append(word)
-
-    def put_into_dict_word(word, code, pinyin, max_len=4):
-        nonlocal table
-        assert len(word) > 1
-
-        # 不使用簡詞時，詞總是四碼
-        if not args.short_word:
-            table[code].append(word)
-            return
-
-        # 使用簡詞時，詞語嘗試多種編碼方式
-        # - 一簡
-        # - n字詞嘗試n簡
-        # - 二字詞嘗試取前三碼
-        # - fallback: 全碼
-        short_codes = []   # all(c < 4 for c in short_codes)
-        # 1. 一簡
-        short_codes.append(code[0])
-        # 2. 字數匹配的簡碼
-        short_code = encode_fixed_word(word, pinyin, True)
-        if len(short_code) < 4:
-            short_codes.append(short_code)
-        # 3. 前三碼
-        if len(word) == 2:
-            short_codes.append(code[:3])
-
-        # 放入簡碼
-        tolerance = dict(zip([1,2,3], (int(s) for s in args.tolerance.split(','))))
-        for c in short_codes:
-            if len(table[c]) < tolerance[len(c)]:
-                table[c].append(word)
-                return
-
-        # 沒放進去，只能放到全碼位上
-        table[code].append(word)
-
-    def put_into_dict(word, code, py, max_len=4):
-        if len(word) == 1:
-            put_into_dict_char(word, code, py, max_len)
-        else:
-            put_into_dict_word(word, code, py, max_len)        
-
-    # 放入單字
-    words = []
-    for c in charset:
-        for py in pinyin_table[c].keys():
-            for ac in to_auxiliary_codes(c):
-                try:
-                    w = pinyin_weight(c, py)
-                    words.append((w, c, to_double_pinyin(py)+ac, py))
-                except:
-                    traceback.print_exc()
-
-    # 再放入詞語
-    for (word, pinyin, weight) in read_input_dict():
-        if len(word) > 1:
-            try:
-                code = encode_fixed_word(word, pinyin, False)
-                assert len(code) == 4
-                words.append((pinyin_weight(word, pinyin),
-                              word,
-                              code,
-                              pinyin))
-            except:
-                traceback.print_exc()
-                pass
-
-    # 降序將所有字詞放入碼表
-    words.sort(key=itemgetter(0), reverse=True)
-    for (w, word, code, py) in words:
-        put_into_dict(word, code, py)
-
-    # 輸出碼表
-    print_table(table)
-
-
-def print_dict(dict, many_values):
-    if many_values:
-        for (key, list) in dict.items():
-            print(f'{key}\t{" ".join(list)}')
-    else:
-        for (key, list) in dict.items():
-            for el in list:
-                print(f'{key}\t{el}')
-
-
-def transpose_table(table):
-    ret = defaultdict(list)
-    for (k,vs) in table.items():
-        for v in vs:
-            ret[v].append(k)
-    return ret
-
-
-def print_table(table):
-    if args.format == 'code-words':
-        print_dict(table, True)
-    elif args.format == 'code-word':
-        print_dict(table, False)
-    elif args.format == 'word-codes':
-        print_dict(transpose_table(table), True)
-    else:
-        print_dict(transpose_table(table), False)
 
 
 
@@ -704,15 +518,6 @@ gen_dict.add_argument('--compact', help='取消容錯碼', action='store_true', 
 gen_dict.add_argument('--no-freq', help='不產生詞頻', action='store_true', default=False)
 gen_dict.add_argument('--freq-scale', help='詞頻縮放倍數', default=1.0)
 
-gen_fixed = subparsers.add_parser('gen-fixed', help='生成簡碼碼表')
-gen_fixed.add_argument('--charset', default='data/trad_chars.txt', help='常用單字表')
-gen_fixed.add_argument('--input-dict', help='輸入txt格式詞庫', default='/Library/Input Methods/Squirrel.app/Contents/SharedSupport/essay.txt')
-gen_fixed.add_argument('--opencc-for-pinyin', help='註音時的簡繁轉換，默認轉爲簡體', default='t2s.json')
-gen_fixed.add_argument('--format', choices=['code-words', 'code-word', 'word-code', 'word-codes'], help='輸出碼表的格式', default='code-words')
-gen_fixed.add_argument('--tolerance', help='每級簡碼最多可以容納多少候選', default='1,1,1')
-gen_fixed.add_argument('--aabc', action='store_true', default=False, help='三碼字使用 AABC 方式編碼')
-gen_fixed.add_argument('--short-word', action='store_true', help='生成簡詞', default=False)
-
 update_compact_dict = subparsers.add_parser('update-compact-dict', help='更新 *compact* 詞庫中的輔助碼爲新輔助碼')
 update_compact_dict.add_argument('--rime-dict', help='輸入rime格式詞庫（無frontmatter）', required=True)
 
@@ -745,8 +550,6 @@ if __name__ == '__main__':
         handle_gen_chars()
     elif args.command == 'gen-dict':
         handle_gen_dict()
-    elif args.command == 'gen-fixed':
-        handle_gen_fixed()
     elif args.command == 'update-compact-dict':
         handle_update_compact_dict()
     elif args.command == 'update-char-weight':

@@ -91,6 +91,14 @@ class UnifiedDictionaryTest(unittest.TestCase):
         self.assertFalse((ROOT / 'tools/rebuild_fixed_tiger.py').exists())
         self.assertFalse((ROOT / 'tools/fixed_tiger_allocation.py').exists())
 
+    def test_retired_two_part_and_charset_generator_data_are_removed(self):
+        for name in ('tools/data/trad_chars.txt', 'tools/data/zrlf.txt', 'tools/gen_zrlf.py'):
+            self.assertFalse((ROOT / name).exists(), name)
+        generator = (ROOT / 'tools/schemagen.py').read_text()
+        self.assertNotIn('gen-fixed', generator)
+        self.assertNotIn('handle_gen_fixed', generator)
+        self.assertNotIn('initialize_charset', generator)
+
     def test_build_has_no_allocator_or_master_rewrite(self):
         text = (ROOT / 'Makefile').read_text()
         self.assertNotIn('fixed_tiger', text)

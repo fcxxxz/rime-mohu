@@ -57,7 +57,7 @@
 | 需求 | 正确入口 | 参与组句 | 需重新部署 | 自动记录 |
 |---|---|---|---|---|
 | 加常用词 | `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml` 第一块末尾（无码加词） | ✅ | ✅ | ❌ 手动 |
-| 给字加新辅码（拆分） | 仓库源数据 `tools/data/mohu_chai.txt`（保留旧拆分）+ `make all` | ✅ | ✅ | ❌ 手动 |
+| 虎码基础编码／拆字提示 | `tiger.dict.yaml`（编码）与 `tools/data/tiger_chaifen.txt`（拆分）+ `make all`；字词兼容打法直接改主表 | ✅ | ✅ | ❌ 手动 |
 | 个人速记短语 | `~/Library/Rime/mohu_zrm_custom_phrases.txt`（`文字<Tab>编码<Tab>权重`） | ❌ | ✅ | ❌ 手动 |
 | 个人拼写别名（见下节） | `~/Library/Rime/mohu.custom.yaml` | ✅ | ✅ | ❌ 手动 |
 | 候选调频 | 打字学习，存 `*.userdb` | — | 不需要 | ✅ 自动 |

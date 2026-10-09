@@ -30,7 +30,7 @@ jobs:
         run: make check-code-table flykey-check
 
       - name: Validate editable code-table contract
-        run: uv run python -m unittest tests.test_unified_dictionary -v
+        run: uv run python -m unittest tests.test_unified_dictionary tests.test_maintenance_sources -v
 
   windows-runtime:
     runs-on: windows-latest
@@ -236,7 +236,7 @@ jobs:
 
       - name: Validate dictionary and source contracts
         run: |
-          uv run python -m unittest tests.test_sentence_dictionary tests.test_flypy_assets tests.test_mohu_config -v
+          uv run python -m unittest tests.test_sentence_dictionary tests.test_flypy_assets tests.test_mohu_config tests.test_maintenance_sources -v
           uv run python tools/check_distribution.py zrm dist-zrm
           uv run python tools/check_distribution.py flypy dist-flypy
 

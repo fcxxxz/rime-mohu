@@ -50,6 +50,6 @@
 - Keep dictionary blocks sorted by the code column. Do not append entries to the end of the file unless that is the correct block and sorted position.
 - Respect block boundaries. Three-character words belong in the three-word block, longer phrases in the main phrase block, and special/test blocks should stay separate.
 - When editing entries whose code contains a fly-key pattern (`wz -> wk`, `xq -> xo`, `qx -> qo`), update the corresponding fly-key region as well. For example, changing the order of `ihwz` entries also requires checking the generated/parallel `ihwk` entries.
-- When adding a new decomposition for a character in `tools/data/mohu_chai.txt`, keep existing decompositions unless the issue explicitly says the old decomposition is wrong and should be removed.
+- Tiger decomposition annotations use `tools/data/tiger_chaifen.txt`; normal auxiliary codes are derived from `tiger.dict.yaml`. Do not reintroduce old Moran decomposition data or a separate compatibility allowlist; compatible full-code plays are declared directly in `mohu_zrm.dict.yaml`.
 - For intelligent/sentence dictionary additions without an explicit code, add them to `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml` at the end of the first block after the YAML header.
 - For all short-code swaps, secondary candidates and full-code changes, edit rows in `mohu_zrm.dict.yaml`; there are no claims/secondary/archive/overrides inputs or unique/multiple mode. Run `make check-code-table` and `make dict`.

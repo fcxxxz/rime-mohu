@@ -284,11 +284,13 @@ class TigerAuxRepositoryTest(unittest.TestCase):
         self.assertEqual(utils.aux_table["𖿲"].normal, "pe")
         self.assertEqual(utils.aux_table["𖿳"].normal, "pp")
 
-    def test_character_generator_version_includes_compatibility_targets(self):
+    def test_character_generator_version_includes_master_and_reading_sources(self):
         version_inputs = (
             self.root / "tools/data/chars.txt",
             self.root / "tools/data/tiger_aux.txt",
-            self.root / "tools/data/tiger_compatibility_chars.txt",
+            self.root / "mohu_zrm.dict.yaml",
+            self.root / "tools/data/pinyin_simp.txt",
+            self.root / "tools/data/chars.dict.yaml",
         )
         expected = datetime.fromtimestamp(
             max(path.stat().st_mtime for path in version_inputs)

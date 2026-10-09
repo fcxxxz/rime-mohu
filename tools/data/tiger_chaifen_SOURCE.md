@@ -7,3 +7,5 @@
 
 `tiger_chaifen.txt` is a build-time snapshot. Runtime generation must not read the
 adjacent repository.
+
+当前用途：虎码根数／兼容辅码生成、Rime 拆字提示与可选 MDX 拆字词典共用本数据。旧魔然拆分来源已退出当前构建。

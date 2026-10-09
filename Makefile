@@ -74,7 +74,7 @@ chaifen: opencc/mohu_chaifen.txt
 
 tools/data/tiger_aux.txt: tiger.dict.yaml tools/data/chars.txt tools/data/chars.dict.yaml tools/data/tiger_chaifen.txt tools/gen_tiger_aux.py tools/tiger_aux.py
 	uv run tools/gen_tiger_aux.py > $@
-tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml: tools/data/tiger_compatibility_chars.txt tiger.dict.yaml tools/data/chars.txt tools/data/chars.dict.yaml tools/data/tiger_aux.txt tools/data/pinyin_simp.txt tools/gen_chars.py tools/modern_readings.py tools/tiger_aux.py tools/tiger_compatibility.py tools/utils.py tools/write_if_changed.py
+tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml: mohu_zrm.dict.yaml tiger.dict.yaml tools/data/chars.txt tools/data/chars.dict.yaml tools/data/tiger_aux.txt tools/data/pinyin_simp.txt tools/gen_chars.py tools/modern_readings.py tools/tiger_aux.py tools/tiger_compatibility.py tools/utils.py tools/write_if_changed.py
 	uv run tools/gen_chars.py --simplified | uv run tools/write_if_changed.py $@ --ignore-version
 mohu_pinyin.dict.yaml: tools/data/pinyin_simp.txt tools/build_pinyin_reverse.py
 	uv run tools/build_pinyin_reverse.py > $@
@@ -119,7 +119,7 @@ mdict: mohu.mdd mohu.mdx
 mohu.mdd: tools/mdict/main.css
 	mdict -a tools/mdict mohu.mdd
 
-mohu.mdx: tools/data/chars.txt tools/data/mohu_chai.txt tools/gen_mdx.py 
+mohu.mdx: tools/data/chars.txt tools/data/tiger_chaifen.txt tools/data/tiger_aux.txt tools/gen_mdx.py tools/gen_chaifen_filter.py tools/utils.py
 	uv run tools/gen_mdx.py mohu.mdx
 
 ########

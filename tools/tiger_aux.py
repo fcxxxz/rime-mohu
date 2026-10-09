@@ -119,6 +119,31 @@ def to_auxiliary_entry(code: str, root_count: int | None = None) -> AuxiliaryEnt
     return AuxiliaryEntry(normal, compat14, compat13)
 
 
+def load_master_compatibility_characters(
+    path: Path, auxiliaries: Mapping[str, AuxiliaryEntry],
+) -> set[str]:
+    """Characters whose compatible full codes are explicitly kept in the master.
+
+    The master owns these plays. Short codes, words, primary auxiliaries and
+    punctuation do not create a second implicit allowlist.
+    """
+    result: set[str] = set()
+    with path.open(encoding="utf-8") as source:
+        for line in source:
+            if line.startswith("#"):
+                continue
+            fields = line.rstrip("\r\n").split("\t")
+            if len(fields) < 2 or len(fields[0]) != 1:
+                continue
+            char, code = fields[:2]
+            if len(code) != 4 or not re.fullmatch(r"[a-z]{4}", code):
+                continue
+            entry = auxiliaries.get(char)
+            if entry is not None and code[2:] in entry.compat_codes():
+                result.add(char)
+    return result
+
+
 def load_root_counts(path: Path) -> dict[str, int]:
     """Read per-character root counts from tools/data/tiger_chaifen.txt."""
     result: dict[str, int] = {}

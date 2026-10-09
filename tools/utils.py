@@ -67,7 +67,6 @@ def read_tsv_many(path, key_indices, value_index):
 pinyin_table = read_tsv_many('tools/data/chars.txt', 0, 1)
 freq_trad_table = read_tsv('tools/data/chars.txt', (0, 1), 2)
 freq_simp_table = read_tsv('tools/data/chars.txt', (0, 1), 3)
-chai_table = read_tsv('tools/data/mohu_chai.txt', (0, 1), 2)
 aux_table = load_auxiliary_tsv(Path('tools/data/tiger_aux.txt'))
 
 
@@ -82,14 +81,16 @@ def get_modified_date(file_path):
 
 
 def get_chars_version():
-    source_dates = [
-        get_modified_date('tools/data/tiger_aux.txt'),
-        get_modified_date('tools/data/chars.txt'),
-    ]
-    compatibility_path = 'tools/data/tiger_compatibility_chars.txt'
-    if os.path.exists(compatibility_path):
-        source_dates.append(get_modified_date(compatibility_path))
-    return max(source_dates).strftime('%Y%m%d')
+    # Every data input affecting character rows, including master-declared
+    # compatibility plays, participates in the generated version.
+    sources = (
+        'tools/data/tiger_aux.txt',
+        'tools/data/chars.txt',
+        'tools/data/chars.dict.yaml',
+        'tools/data/pinyin_simp.txt',
+        'mohu_zrm.dict.yaml',
+    )
+    return max(get_modified_date(path) for path in sources).strftime('%Y%m%d')
 
 
 ambiguous_chars = {

@@ -3,6 +3,7 @@
 import argparse
 
 from modern_readings import load_modern_readings, simplified_reading_weight
+from tiger_aux import load_master_compatibility_characters
 from utils import *
 from zrmify import zrmify
 
@@ -13,13 +14,9 @@ args = parser.parse_args()
 if args.simplified:
     freq_table = freq_simp_table
     modern_readings = load_modern_readings(Path('tools/data/pinyin_simp.txt'))
-    compatibility_characters = {
-        line.strip()
-        for line in Path('tools/data/tiger_compatibility_chars.txt')
-        .read_text(encoding='utf-8')
-        .splitlines()
-        if len(line.strip()) == 1 and not line.startswith('#')
-    }
+    compatibility_characters = load_master_compatibility_characters(
+        Path('mohu_zrm.dict.yaml'), aux_table,
+    )
 else:
     freq_table = freq_trad_table
     modern_readings = None
@@ -44,7 +41,7 @@ for ((char, py), w) in freq_table.items():
     sp = zrmify(py)
     entry = aux_table[char]
     print(f'{char}\t{sp};{entry.normal}\t{w}')
-    # 兼容打法（13/14 位）：救援目标字保留全权重，其余字低权重，
+    # 兼容打法（13/14 位）：主表明确保留的目标字使用全权重，其余字低权重，
     # 不与正常辅码的首选竞争。
     rescued = (
         char in compatibility_characters

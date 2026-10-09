@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from tiger_aux import TIGER_EQUIVALENTS, load_tiger_codes, select_longest_codes
+if __package__:
+    from .tiger_aux import TIGER_EQUIVALENTS, load_tiger_codes, select_longest_codes
+else:
+    from tiger_aux import TIGER_EQUIVALENTS, load_tiger_codes, select_longest_codes
 
 ROOT = Path(__file__).resolve().parents[1]
 

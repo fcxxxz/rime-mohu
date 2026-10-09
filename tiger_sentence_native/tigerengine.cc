@@ -40,6 +40,7 @@
 #include <exception>
 #include <limits>
 #include <memory>
+#include <map>
 #include <mutex>
 #include <stdexcept>
 #include <string>
@@ -1398,6 +1399,81 @@ struct Lexicon {
   std::unordered_map<std::string, int> freq_rank;        // text -> 名次
   int max_code_len = 1;
   bool has_multi_char_entries = false;
+  struct AuxiliaryWordSource {
+    std::string code;
+    size_t row = 0;
+  };
+  // (node ID, canonical syllable + codepoint) -> child. A single flat hash
+  // table avoids a separate allocation/hash table for every trie node.
+  std::unordered_map<uint64_t, uint32_t> auxiliary_word_children;
+  std::vector<std::vector<AuxiliaryWordSource>> auxiliary_word_terminals;
+  bool auxiliary_word_index_ready = false;
+  size_t auxiliary_word_max_chars = 0;
+  size_t auxiliary_word_count = 0;
+  std::vector<uint8_t> auxiliary_word_has_children;
+
+  static uint32_t syllable_character_token(const std::string& syllable, uint32_t cp) {
+    if (syllable.size() != 2 || syllable[0] < 'a' || syllable[0] > 'z' ||
+        syllable[1] < 'a' || syllable[1] > 'z' || cp > 0x10ffff) return 0;
+    uint32_t id = (syllable[0] - 'a') * 26 + syllable[1] - 'a' + 1;
+    return (id << 21) | cp;
+  }
+
+  bool has_known_two_character_suffix(const std::string& text) const {
+    size_t start = text.size();
+    for (int count = 0; count < 2; ++count) {
+      if (start == 0) return false;
+      --start;
+      while (start > 0 && (static_cast<unsigned char>(text[start]) & 0xc0) == 0x80) --start;
+    }
+    return freq_rank.find(text.substr(start)) != freq_rank.end();
+  }
+
+  uint32_t canonical_character_token(const std::string& head, uint32_t cp) const {
+    auto bucket = codes.find(head);
+    if (bucket != codes.end()) {
+      for (const auto& e : bucket->second) {
+        if (e.chars.size() == 1 && e.chars[0] == cp && !e.reading_key.empty())
+          return syllable_character_token(e.reading_key, cp);
+      }
+    }
+    return syllable_character_token(head, cp);
+  }
+
+  void ensure_auxiliary_word_index() {
+    if (auxiliary_word_index_ready) return;
+    auxiliary_word_children.reserve(2 * auxiliary_word_count);
+    auxiliary_word_terminals.reserve(1 + 2 * auxiliary_word_count);
+    auxiliary_word_has_children.reserve(1 + 2 * auxiliary_word_count);
+    auxiliary_word_terminals.emplace_back();  // root
+    auxiliary_word_has_children.push_back(0);
+    for (const auto& bucket : codes) {
+      const auto& code = bucket.first;
+      for (size_t row = 0; row < bucket.second.size(); ++row) {
+        const auto& e = bucket.second[row];
+        // Preserve the existing sentence-edge policy. Injected terminal-only
+        // phrases and abbreviated words must not become sentence edges here.
+        if (!e.from_static || e.rank >= 90 || e.chars.size() < 2 ||
+            code.size() != 2 * e.chars.size()) continue;
+        uint32_t node = 0;
+        for (size_t i = 0; i < e.chars.size(); ++i) {
+          uint32_t token = canonical_character_token(code.substr(2 * i, 2), e.chars[i]);
+          const uint64_t key = (static_cast<uint64_t>(node) << 32) | token;
+          auto found = auxiliary_word_children.find(key);
+          if (found == auxiliary_word_children.end()) {
+            const uint32_t child = static_cast<uint32_t>(auxiliary_word_terminals.size());
+            auxiliary_word_terminals.emplace_back();
+            auxiliary_word_has_children.push_back(0);
+            auxiliary_word_has_children[node] = 1;
+            auxiliary_word_children.emplace(key, child);
+            node = child;
+          } else node = found->second;
+        }
+        auxiliary_word_terminals[node].push_back({code, row});
+      }
+    }
+    auxiliary_word_index_ready = true;
+  }
   // 装载基线键集（code\ttext）：真删词撤销时区分「静态条目复位」与
   // 「纯个人条目擦除」。判错方向是把静态条目整条 erase（数据损毁级），
   // 故用明文键而不用指纹集（17 万键 64bit 碰撞 ~1e-10 也嫌代价高）。
@@ -1471,6 +1547,10 @@ struct Lexicon {
       e.abbrev = e.chars.size() > 1 && code.size() < 2 * e.chars.size();
       e.abbrev_exact = e.abbrev && code.size() == e.chars.size();
       e.lex_weight_raw = fr;
+      if (e.rank < 90 && e.chars.size() > 1 && code.size() == 2 * e.chars.size()) {
+        auxiliary_word_max_chars = std::max(auxiliary_word_max_chars, e.chars.size());
+        ++auxiliary_word_count;
+      }
       codes[code].push_back(std::move(e));
       ++entry_count;
       if (freq_rank.find(text) == freq_rank.end()) freq_rank[text] = fr;
@@ -1494,6 +1574,7 @@ struct Lexicon {
     for (const auto& kv : codes)
       for (const auto& e : kv.second)
         static_keys.insert(kv.first + '\t' + e.text);
+    ensure_auxiliary_word_index();
     return !codes.empty();
   }
 
@@ -1775,17 +1856,19 @@ struct Lexicon {
   void apply_personal_parsed(const std::unordered_map<std::string, size_t>& index,
                              const std::vector<PersonalRow>& parsed,
                              bool* changed) {
-    std::vector<const std::string*> undo;
+    // Erasing personal_boosts also destroys its key. Own the undo identifiers
+    // so undo_personal_key can safely use one for both map erases.
+    std::vector<std::string> undo;
     for (const auto& applied : personal_boosts) {
       if (index.find(applied.first) != index.end()) continue;
       // 只有「上次负载里有、这次没了」才是真实删词。从未进入过负载的键
       // （adjust_personal 在两次快照之间即时注入的提交）在负载被行数上限
       // 截断时天然缺席，不能当作删词证据，否则每轮刷新都会误伤。
       if (personal_payload_keys.find(applied.first) != personal_payload_keys.end())
-        undo.push_back(&applied.first);
+        undo.push_back(applied.first);
     }
-    for (const std::string* key : undo) {
-      undo_personal_key(*key);
+    for (const std::string& key : undo) {
+      undo_personal_key(key);
       *changed = true;
     }
 
@@ -1963,6 +2046,7 @@ struct State {
   // 读音组合（vgxju 的「整车」jū）——文本词典先验不再奖励这类路径
   //（词「整车」的证据属于 zhěngchē，不该给 jū 组合加 +6.5）。
   double composed_penalty = 0;
+  double auxiliary_boundary_gain = 0;
   std::string text;
   std::string segmented;
   uint32_t prev2 = kBOS, prev1 = kBOS;
@@ -1996,11 +2080,22 @@ struct Bucket {
   std::vector<double> mass;
   bool truncated = false;
   bool free_order = false;  // all_ranks 模式：分数优先排序
+  bool track_auxiliary_boundary = false;
 
   void add(State* s) {
-    auto it = index.find(s->text);
+    // A used and an unused one-shot budget have different future scores.
+    // Keep both frontiers; ordinary text remains the identity otherwise.
+    if (track_auxiliary_boundary && s->auxiliary_boundary_gain > 0.0) {
+      std::string key = s->text;
+      key.append("\0g", 2);
+      add_with_key(s, key);
+    } else add_with_key(s, s->text);
+  }
+
+  void add_with_key(State* s, const std::string& key) {
+    auto it = index.find(key);
     if (it == index.end()) {
-      index[s->text] = best.size();
+      index[key] = best.size();
       best.push_back(s);
       mass.push_back(s->mass_score);
     } else {
@@ -2333,6 +2428,8 @@ struct Engine {
   // 投票，对应 librime/万象 entry_weight+Query 的加法融合结构（词频地板
   // 垫在字符模型下）。0 = 关闭并逐字节保持旧行为。
   double word_edge_weight = 0.0;
+  bool auxiliary_word_edges = true;
+  double auxiliary_context_guard = 0.5;
   // 文本词典先验：>0 时，完整文本命中词表多字条目（任意码形——如
   // 「同一个」挂在简码 tyg 下）的候选在输出分上加该有界分。词边先验
   // 按「编码内部边」投票，此项按「整候选文本是否成词」投票，压住组合
@@ -2348,10 +2445,10 @@ struct Engine {
   // 的先后，使同码高权重词更容易胜过字符组合。只加整段命中边，组合
   // 路径与长句切分不受扰动。0 = 关闭并保持旧行为。
   double word_form_weight = 0.0;
-  // 跨候选调频：上屏历史尾部的 CJK 字作为解码左上文（字符级 trigram
-  // 条件窗口恰为 2 字）。词级上下文（pw2/pw1）不参与播种，维持 <s>。
+  // Cross-commit context uses the primary model's units: characters or words.
   bool has_decode_context = false;
   uint32_t ctx_prev2 = kBOS, ctx_prev1 = kBOS;
+  uint32_t ctx_pw2 = 0, ctx_pw1 = 0;
   // 简词内部边（实验）：>0 时允许静态简词条目作为长句内部边，
   // 数值为参与边的 rank 上限（1=仅首选简词）。默认 0=维持现状。
   // strict 打开时仅允许「一音一键」简词（码长==字数），排除 2 键
@@ -2359,8 +2456,8 @@ struct Engine {
   int abbrev_edges_max_rank = 0;
   bool abbrev_strict = false;
 
-  // 整段最近上屏文本 -> 尾部至多 window 个 CJK 码点作左上文；无汉字则
-  // 清除（与 librime 整段传递、模型侧定窗口的口径一致）。上下文变化
+  // 最近上屏文本 -> 尾部至多 window 个模型单元（CJK 字或完整词）；
+  // 无可用单元则清除。上下文变化
   // 时整帧 beam 缓存作废（旧状态内嵌的是旧条件下的分数）。
   bool set_decode_context(const std::string& text, int window) {
     if (window < 1 || window > 2) window = 2;  // 字符级三元结构窗口 = 2
@@ -2380,16 +2477,26 @@ struct Engine {
       }
       i += n;
     }
-    const bool new_has = found > 0;
+    uint32_t new_pw2 = 0, new_pw1 = 0;
+    if (word_mode) {
+      // Decode IDs must come from the primary word model, not an optional
+      // independent scorer whose vocabulary may use different IDs.
+      if (!resolve_word_context(text, window, &wm)) return false;
+      new_pw2 = word_ctx_pw2;
+      new_pw1 = word_ctx_pw1;
+    }
+    const bool new_has = word_mode ? new_pw1 != 0 : found > 0;
     const uint32_t new_p2 = found >= 2 ? last2 : kBOS;
     const uint32_t new_p1 = found >= 1 ? last1 : kBOS;
     if (new_has == has_decode_context && new_p2 == ctx_prev2 &&
-        new_p1 == ctx_prev1) {
+        new_p1 == ctx_prev1 && new_pw2 == ctx_pw2 && new_pw1 == ctx_pw1) {
       return false;  // 逐键重复设置同一历史时保持零开销
     }
     has_decode_context = new_has;
     ctx_prev2 = new_p2;
     ctx_prev1 = new_p1;
+    ctx_pw2 = new_pw2;
+    ctx_pw1 = new_pw1;
     cache_valid = false;
     has_terminal_phrase_states = false;
     cached_raw.clear();
@@ -2460,18 +2567,21 @@ struct Engine {
   uint32_t word_ctx_pw2 = 0, word_ctx_pw1 = 0;
   int word_ctx_window = 2;
   bool word_ctx_valid = false;
+  WordModel* word_ctx_model = nullptr;
 
   // 上文尾部逆向最大匹配切出末 1–2 词（词表含全部单字）。只看末 16 个
   // CJK 字：边界误差至多影响窗口首词，不影响末两词。无词可切时 pw2/pw1
   // 保持 0（<s>）。
-  bool resolve_word_context(const std::string& text, int window_words) {
+  bool resolve_word_context(const std::string& text, int window_words,
+                            WordModel* primary = nullptr) {
     if (window_words < 1 || window_words > 2) window_words = 2;
-    WordModel* m = word_scorer();
+    WordModel* m = primary ? primary : word_scorer();
     if (!m) {
       set_error("word scorer not loaded");
       return false;
     }
-    if (word_ctx_valid && word_ctx_window == window_words && word_ctx_text == text)
+    if (word_ctx_valid && word_ctx_model == m &&
+        word_ctx_window == window_words && word_ctx_text == text)
       return true;
     std::vector<std::string> tail;  // 末 16 个 CJK 字
     size_t i = 0;
@@ -2515,6 +2625,7 @@ struct Engine {
     word_ctx_pw2 = rev.size() >= 2 ? rev[1] : 0;
     word_ctx_text = text;
     word_ctx_window = window_words;
+    word_ctx_model = m;
     word_ctx_valid = true;
     return true;
   }
@@ -2741,7 +2852,7 @@ struct Engine {
       size_t end = next;
       while (end < raw.size() && raw[end] >= '0' && raw[end] <= '9') end++;
       int value = 0;
-      for (size_t i = next; i < end; ++i) {
+      for (size_t i = code_end; i < end; ++i) {
         const int digit = raw[i] - '0';
         if (value > (std::numeric_limits<int>::max() - digit) / 10) {
           value = std::numeric_limits<int>::max();
@@ -2749,7 +2860,7 @@ struct Engine {
         }
         value = value * 10 + digit;
       }
-      *rank = (value == 0 && end == next + 1) ? 10 : value;
+      *rank = (value == 0 && end == next) ? 10 : value;
       *consumed = end;
     }
   }
@@ -2762,13 +2873,118 @@ struct Engine {
   std::unique_ptr<Bucket> new_bucket() {
     auto b = std::make_unique<Bucket>();
     b->free_order = all_ranks_always;
+    b->track_auxiliary_boundary = auxiliary_word_edges && auxiliary_context_guard > 0.0;
     return b;
+  }
+
+  struct AuxiliaryCharacterSpan {
+    uint32_t token = 0;
+    size_t end = 0;
+    bool auxiliary = false;
+  };
+  struct AuxiliaryWordMatches {
+    std::vector<LexEntry> entries;
+    std::unordered_map<std::string, std::string> spellings;
+  };
+
+  // Parse character constraints once per input, outside the beam. Looking up
+  // an actual character row validates every auxiliary key and selection key;
+  // a naked spelling normalization cannot provide those guarantees.
+  std::vector<std::vector<AuxiliaryCharacterSpan>> auxiliary_character_spans(
+      const std::string& raw, size_t length) {
+    std::vector<std::vector<AuxiliaryCharacterSpan>> spans(length);
+    bool has_auxiliary = false;
+    for (size_t pos = 0; pos < length; ++pos) {
+      for (size_t width = 2; width <= 5 && pos + width <= length; ++width) {
+        const auto code = raw.substr(pos, width);
+        auto bucket = lex.codes.find(code);
+        if (bucket == lex.codes.end()) continue;
+        int selected_rank; size_t end;
+        parse_selector(raw, pos + width, &selected_rank, &end);
+        for (const auto& e : bucket->second) {
+          if (e.chars.size() != 1 || !e.from_static ||
+              (selected_rank && e.rank != selected_rank) ||
+              (!selected_rank && !all_ranks_always && length > 4 && e.rank != 1)) continue;
+          const auto& head = e.reading_key.empty() ? code.substr(0, 2) : e.reading_key;
+          uint32_t token = Lexicon::syllable_character_token(head, e.chars[0]);
+          if (!token) continue;
+          spans[pos].push_back({token, end, width > 2});
+          has_auxiliary = has_auxiliary || width > 2;
+        }
+      }
+    }
+    if (!has_auxiliary) spans.clear();
+    return spans;
+  }
+
+  std::map<size_t, AuxiliaryWordMatches> auxiliary_word_matches(
+      const std::string& raw, size_t start,
+      const std::vector<std::vector<AuxiliaryCharacterSpan>>& spans) {
+    std::map<size_t, AuxiliaryWordMatches> matches;
+    if (spans.empty()) return matches;
+    lex.ensure_auxiliary_word_index();
+    struct Cursor { uint32_t node; size_t end; bool auxiliary; bool odd_auxiliary; std::string spelling; };
+    std::vector<Cursor> pending{{0, start, false, false, {}}};
+    while (!pending.empty()) {
+      Cursor cursor = std::move(pending.back()); pending.pop_back();
+      if (cursor.end >= spans.size()) continue;
+      for (const auto& span : spans[cursor.end]) {
+        const uint64_t key = (static_cast<uint64_t>(cursor.node) << 32) | span.token;
+        auto child = lex.auxiliary_word_children.find(key);
+        if (child == lex.auxiliary_word_children.end()) continue;
+        Cursor next{child->second, span.end, cursor.auxiliary || span.auxiliary,
+                    cursor.odd_auxiliary || (span.auxiliary && (span.end - cursor.end) % 2 != 0), cursor.spelling};
+        if (!next.spelling.empty()) next.spelling += ' ';
+        next.spelling.append(raw, cursor.end, span.end - cursor.end);
+        // Two auxiliary keys can be an entire ordinary syllable (得 dewo
+        // versus 得+我 de wo). If every pair in such an even-width spelling
+        // is a real character syllable, preserve the original competition
+        // rather than introducing a new word vote that swallows a syllable.
+        bool bare_syllable_ambiguity = next.auxiliary && !next.odd_auxiliary &&
+                                      (next.end - start) % 2 == 0;
+        for (size_t p = start; bare_syllable_ambiguity && p < next.end; p += 2) {
+          auto bare = lex.codes.find(raw.substr(p, 2));
+          bare_syllable_ambiguity = bare != lex.codes.end() &&
+              std::any_of(bare->second.begin(), bare->second.end(), [](const LexEntry& entry) {
+                return entry.from_static && entry.chars.size() == 1;
+              });
+        }
+        if (next.auxiliary && !bare_syllable_ambiguity) {
+          for (const auto& source : lex.auxiliary_word_terminals[next.node]) {
+            auto bucket = lex.codes.find(source.code);
+            if (bucket == lex.codes.end() || source.row >= bucket->second.size()) continue;
+            const auto& e = bucket->second[source.row];
+            const auto literal = lex.codes.find(raw.substr(start, next.end - start));
+            if (literal != lex.codes.end() &&
+                std::any_of(literal->second.begin(), literal->second.end(),
+                            [&e](const LexEntry& entry) { return entry.text == e.text; })) continue;
+            auto& group = matches[next.end - start];
+            auto existing = std::find_if(group.entries.begin(), group.entries.end(),
+                                        [&e](const LexEntry& entry) { return entry.text == e.text; });
+            if (existing != group.entries.end() && existing->rank <= e.rank) continue;
+            group.spellings[e.text] = next.spelling;
+            if (existing == group.entries.end()) group.entries.push_back(e);
+            else *existing = e;
+          }
+        }
+        if (lex.auxiliary_word_has_children[next.node]) pending.push_back(std::move(next));
+      }
+    }
+    for (auto& group : matches)
+      std::sort(group.second.entries.begin(), group.second.entries.end(), [](const LexEntry& a, const LexEntry& b) {
+        if (a.rank != b.rank) return a.rank < b.rank;
+        return a.text < b.text;
+      });
+    return matches;
   }
 
   void expand_range(const std::string& raw, size_t from_pos, size_t length,
                     int64_t minimum_consumed_end) {
     if (minimum_consumed_end < 0) minimum_consumed_end = -1;
     bool allow_all = all_ranks_always || length <= 4;
+    const auto auxiliary_spans = auxiliary_word_edges && length >= 5 && (word_mode || word_edge_weight > 0.0)
+        ? auxiliary_character_spans(raw, length)
+        : std::vector<std::vector<AuxiliaryCharacterSpan>>{};
     for (size_t pos = from_pos; pos < length; ++pos) {
       bool now_truncated = false;
       std::vector<State*> current = states[pos]->limit(beam, &now_truncated);
@@ -2778,15 +2994,33 @@ struct Engine {
       states[pos] = std::move(nb);
       const bool source_truncated = states[pos]->truncated;
       if (current.empty()) continue;
+      const auto auxiliary_matches = auxiliary_word_matches(raw, pos, auxiliary_spans);
+      struct QueryEdge {
+        size_t width;
+        const std::vector<LexEntry>* candidates;
+        const std::unordered_map<std::string, std::string>* auxiliary_spellings;
+      };
+      std::vector<QueryEdge> query_edges;
+      query_edges.reserve(lex.lengths.size() + auxiliary_matches.size());
       for (int code_length : lex.lengths) {
         if (pos + (size_t)code_length > length) continue;
         std::string code = raw.substr(pos, (size_t)code_length);
         auto cit = lex.codes.find(code);
         if (cit == lex.codes.end()) continue;
-        const std::vector<LexEntry>& candidates = cit->second;
+        query_edges.push_back({static_cast<size_t>(code_length), &cit->second, nullptr});
+      }
+      for (const auto& group : auxiliary_matches)
+        query_edges.push_back({group.first, &group.second.entries, &group.second.spellings});
+      std::stable_sort(query_edges.begin(), query_edges.end(), [](const QueryEdge& a, const QueryEdge& b) {
+        return a.width < b.width;
+      });
+      for (const auto& edge : query_edges) {
+        const size_t code_length = edge.width;
+        const std::vector<LexEntry>& candidates = *edge.candidates;
         int selected_rank;
         size_t consumed_end;
-        parse_selector(raw, pos + (size_t)code_length, &selected_rank, &consumed_end);
+        if (edge.auxiliary_spellings) { selected_rank = 0; consumed_end = pos + code_length; }
+        else parse_selector(raw, pos + code_length, &selected_rank, &consumed_end);
         if (!((int64_t)consumed_end > minimum_consumed_end)) continue;
         // 一码简词只允许独立输入；多键整句中的每条边至少消费双拼两键。
         if (length > 1 && consumed_end - pos < 2) continue;
@@ -2828,8 +3062,11 @@ struct Engine {
             // 只做整段命中与 freq_rank 可见性（二字组合门控、词频梯度），
             // 不作句中内部边——注入词若进内部边会改变长句切分空间
             // （实测「只吃/一只」反杀回归），长句打分保持注入前的形态。
+            // Word models consume complete dictionary tokens. Abbreviations
+            // and injected terminal-only words retain their existing guards.
+            const bool word_model_edge = word_mode && !cand.abbrev && cand.rank < 90;
             if (cand.chars.size() != 1 && !cand.personal && !abbrev_edge_ok &&
-                !whole_input_edge && !word_prior_edge) continue;
+                !whole_input_edge && !word_prior_edge && !word_model_edge) continue;
             // 整段命中的静态多字词在输入继续增长后语义会失效（整段→内部），
             // 必须禁用增量复用。启用学习守卫时，个人词和单字的 BOS
             // 预算/标记也依赖整段身份，追加输入必须重新评分。
@@ -2839,6 +3076,7 @@ struct Engine {
             double score = item->score;
             double user_gain = item->user_gain;
             double bos_gain = item->bos_gain;
+            double boundary_gain = item->auxiliary_boundary_gain;
             uint32_t prev2 = item->prev2, prev1 = item->prev1;
             uint32_t pw2 = item->pw2, pw1 = item->pw1;
             if (word_mode) {
@@ -2888,6 +3126,33 @@ struct Engine {
                 }
                 prev2 = prev1;
                 prev1 = cp;
+              }
+              // A validated auxiliary word can cross a character-model window
+              // without losing its word identity. When that cross-boundary
+              // trigram has no direct evidence but the word-internal BOS
+              // trigram does, mix in only a bounded portion of that evidence.
+              // Actual observed contexts remain authoritative. The whole path
+              // gets at most one nat; longer sentences cannot accumulate votes.
+              if (edge.auxiliary_spellings && auxiliary_context_guard > 0.0 &&
+                  lex.has_known_two_character_suffix(item->text) &&
+                  !blend_mode && item->prev1 != kBOS && cand.chars.size() > 1 &&
+                  boundary_gain == 0.0) {
+                const uint32_t first = cand.chars[0], second = cand.chars[1];
+                const auto crossing = model.lookup_context(true, pack2(item->prev1, first),
+                    static_cast<uint32_t>(pack2(item->prev1, first)), second);
+                const auto inside = model.lookup_context(true, pack2(kBOS, first),
+                    static_cast<uint32_t>(pack2(kBOS, first)), second);
+                if (crossing.invalid || inside.invalid) throw InvalidPageError();
+                const bool learned_context = user_weight < 1.0 &&
+                    user.has_trigram(item->prev1, first, second);
+                if (!crossing.observed && !learned_context && inside.observed) {
+                  const double delta = static_logp(kBOS, first, second) -
+                                       static_logp(item->prev1, first, second);
+                  const double paid = std::min(1.0,
+                      auxiliary_context_guard * std::max(0.0, std::min(2.0, delta)));
+                  score += paid;
+                  boundary_gain += paid;
+                }
               }
             }
             if (selected_rank == 0 && cand.rank > 1)
@@ -2949,8 +3214,9 @@ struct Engine {
               personal_paid = personal_internal_cap;
             }
             score += personal_paid;
-            std::string piece = raw.substr(pos, consumed_end - pos);
-            if (cand.personal_full_syllables) {
+            std::string piece = edge.auxiliary_spellings
+                ? edge.auxiliary_spellings->at(cand.text) : raw.substr(pos, consumed_end - pos);
+            if (cand.personal_full_syllables && !edge.auxiliary_spellings) {
               piece.clear();
               piece.reserve(consumed_end - pos + cand.chars.size() - 1);
               for (size_t offset = 0; offset < static_cast<size_t>(code_length); offset += 2) {
@@ -2984,6 +3250,7 @@ struct Engine {
                                    personal_paid > 0.0 || whole_input_edge));
             s2->user_gain = user_gain;
             s2->bos_gain = bos_gain;
+            s2->auxiliary_boundary_gain = boundary_gain;
             s2->composed_penalty = item->composed_penalty + composed_paid;
             // 魔然对齐（2026-09-20 方案 A）：词形查询的两字组合终态（整段
             // 覆盖输入、恰两字、两音节+辅助码形态）必须是词表词条——
@@ -3215,6 +3482,7 @@ struct Engine {
     // but expose only the documented native top-20 to Lua and downstream
     // reranking.  This bounds the ABI payload without changing confidence math.
     std::vector<OutItem> final_items;
+    std::unordered_map<std::string, size_t> final_by_text;
     final_items.reserve(completed.size());
     for (State* s : completed) {
       double ending = ending_score(s);
@@ -3223,7 +3491,17 @@ struct Engine {
       // Early-commit and downstream prefix consumers need the raw-code
       // boundaries for terminal candidates as well as incomplete paths.
       build_pathmap(s, &item);
-      final_items.push_back(std::move(item));
+      auto prior = final_by_text.find(item.text);
+      if (prior == final_by_text.end()) {
+        final_by_text.emplace(item.text, final_items.size());
+        final_items.push_back(std::move(item));
+      } else {
+        auto& existing = final_items[prior->second];
+        const double confidence = logsumexp(existing.confidence, item.confidence);
+        if (item.score > existing.score ||
+            (item.score == existing.score && item.max_rank < existing.max_rank)) existing = std::move(item);
+        existing.confidence = confidence;
+      }
     }
     // ≤4 键：魔虎“四码简快码”规则——整段单条命中按码表序排最前，
     // 其余多段解析按码表序；>4 键（整句）：语言模型分数优先。
@@ -3405,7 +3683,12 @@ struct Engine {
         reuse = false;
       } else if (length > old_n && raw.compare(0, old_n, cached_raw) == 0 &&
                  !has_terminal_phrase_states) {
-        size_t max_consume = lex.max_code_len + trailing_selector_span(raw);
+        size_t selector_bytes = auxiliary_word_edges
+            ? static_cast<size_t>(std::count_if(raw.begin(), raw.end(), [](char c) {
+                return (c >= '0' && c <= '9') || c == ';' || c == '\'';
+              })) : trailing_selector_span(raw);
+        size_t max_consume = std::max<size_t>(lex.max_code_len,
+            auxiliary_word_edges ? 5 * lex.auxiliary_word_max_chars : 0) + selector_bytes;
         size_t from_pos = old_n + 1 > max_consume ? old_n + 1 - max_consume : 0;
         states.resize(length + 1);
         for (size_t i = old_n + 1; i <= length; ++i)
@@ -3437,10 +3720,11 @@ struct Engine {
     for (auto& s : states) s = new_bucket();
     State* root = new_state();
     if (has_decode_context) {
-      // 跨候选左上文：beam 起步条件改为 P(首字|上文尾部两字)，
-      // 与后续字的 trigram 打分天然同构，候选间比较保持一致。
+      // Seed the primary model's context units; the other ID space is unused.
       root->prev2 = ctx_prev2;
       root->prev1 = ctx_prev1;
+      root->pw2 = ctx_pw2;
+      root->pw1 = ctx_pw1;
     }
     states[0]->add(root);
     expand_range(raw, 0, length, -1);
@@ -4053,6 +4337,34 @@ int tiger_engine_set_word_edge_weight(int handle, double weight) {
    上加该有界分，范围 [0, 16]。词长候选上词典证据应基本压住上下文搭配
    杠杆（实测 祖国/和平+tsyige 时 P(统|ctx) 级搭配差可达 4.5 nats，
    1.5 不够）。 */
+int tiger_engine_set_auxiliary_word_edges(int handle, int on) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle"); return -1;
+    }
+    if (on != 0 && on != 1) { set_error("auxiliary word edges must be 0 or 1"); return -1; }
+    auto* e = g_engines[handle].get();
+    if (e->auxiliary_word_edges == (on != 0)) return 0;
+    e->auxiliary_word_edges = on != 0;
+    e->invalidate_overlay_cache(); return 1;
+  } catch (...) { set_error("auxiliary word edges update failed"); return -1; }
+}
+
+int tiger_engine_set_auxiliary_context_guard(int handle, double weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle"); return -1;
+    }
+    if (!(weight >= 0.0 && weight <= 1.0)) { set_error("auxiliary context guard must be in [0, 1]"); return -1; }
+    auto* e = g_engines[handle].get();
+    if (e->auxiliary_context_guard == weight) return 0;
+    e->auxiliary_context_guard = weight;
+    e->invalidate_overlay_cache(); return 1;
+  } catch (...) { set_error("auxiliary context guard update failed"); return -1; }
+}
+
 int tiger_engine_set_text_lexicon_weight(int handle, double weight) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);

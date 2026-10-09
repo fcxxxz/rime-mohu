@@ -46,7 +46,10 @@ T2S = opencc.OpenCC("t2s")
 HAN_RE = re.compile(r"^[\u3400-\u4dbf\u4e00-\u9fff\U00020000-\U0003347f]+$")
 PY_RE = re.compile(r"^[a-z]+$")
 
-HEADER = """# Rime dictionary
+HEADER = """# 【经典词库来源｜自动生成，请勿直接编辑】
+# 用途：审核后的古典文本词条，参与合并整句词库。
+# 构建：uv run tools/import_classics.py build；维护入口见 tools/data/classics/。
+# Rime dictionary
 # encoding: utf-8
 # license: {license}
 # Generated from reviewed classical-text entries; see tools/data/classics/SOURCE.md

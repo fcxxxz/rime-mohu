@@ -343,6 +343,10 @@ function Top.yield_smart_in_place_of_fixed(env, scand, fcand)
         scand.comment = env.quick_code_indicator .. scand.comment
     elseif fcand.type == "pinned" then
         scand.comment = env.pin_indicator
+        -- Candidate.type is writable and does not change the underlying
+        -- Phrase class. Keep that same learning object and avoid an extra
+        -- Shadow layer that would hide later hints or break genuine lookup.
+        scand.type = "pinned"
     end
     yield(scand)
 end

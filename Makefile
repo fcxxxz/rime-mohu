@@ -242,9 +242,19 @@ tigerengine-windows-memory:
 	@mkdir -p "$(dir $(TIGER_MEMORY_OUTPUT))"
 	python tests/tigerengine_windows_mapping_test.py > "$(TIGER_MEMORY_OUTPUT)"
 
-# 词级上下文候选评分引擎测试：load_word_scorer/context_word_scores 的
-# 可用性语义、方向性、OOV、确定性与 MHCTN01 容器词层等价；模型缺失
-# （未安装或未设 TIGER_NGRAM/TIGER_WORD_NGRAM）时自动跳过。
+# Deterministic word-unit/context regression; no installed model required.
+tigerengine-word-units:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_units_test.cc \
+		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_units_test
+	/tmp/tigerengine_word_units_test
+
+# Auxiliary words: deterministic constraint, selector, and incremental tests.
+tigerengine-aux-words:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_aux_words_test.cc \
+		$(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_aux_words_test
+	/tmp/tigerengine_aux_words_test
+
+# 词级上下文候选评分引擎测试：模型缺失时自动跳过。
 tigerengine-word-score:
 	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_score_test.cc \
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_score_test
@@ -297,6 +307,14 @@ dist-zrm: quick mohu_lexicons tigerengine-native
 dist-flypy: quick mohu_lexicons tigerengine-native
 	uv run tools/build_flat_dist.py flypy "$(FLYPY_DESTDIR)" $(WINDOWS_RUNTIME_ARG)
 
+# 日常打包只记 make pack：更新全部数据，生成两方案目录和扁平 zip。
+pack:
+	$(MAKE) -j1 all tigerengine-native
+	uv run tools/build_flat_dist.py zrm "$(ZRM_DESTDIR)" $(WINDOWS_RUNTIME_ARG)
+	uv run tools/build_flat_dist.py flypy "$(FLYPY_DESTDIR)" $(WINDOWS_RUNTIME_ARG)
+	uv run python tools/pack_desktop.py zrm "$(ZRM_DESTDIR)" rime-mohu-zrm.zip
+	uv run python tools/pack_desktop.py flypy "$(FLYPY_DESTDIR)" rime-mohu-flypy.zip
+
 # 手机精简包（Trime/Hamster）：无模型、无 native 二进制，模型由用户自行
 # 导入 mohu-sentence-ngram-v5.bin。同时产出目录与发行 zip。
 dist-mobile-zrm: quick mohu_lexicons
@@ -327,6 +345,8 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-mobile
 	$(MAKE) tigerengine-mapping
 	$(MAKE) tigerengine-word-score
+	$(MAKE) tigerengine-word-units
+	$(MAKE) tigerengine-aux-words
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
 	uv run python -m unittest tests.test_tiger_aux tests.test_unified_dictionary -v
@@ -351,6 +371,7 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MOHU_LUA_BIN) tests/mohu_charset_filter_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_contextual_translator_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_ijrq_fixed_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_freestyle_config_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_hint_filter_runtime_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_model_version_test.lua
@@ -386,4 +407,4 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python
+.PHONY: quick all pack dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-word-units tigerengine-aux-words tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python

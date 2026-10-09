@@ -104,6 +104,7 @@ end
 -- 部分跨度词组候选逃过配额裁剪（句尾减一处的编辑点上 20 条句形流
 -- 刷屏，2026-09-20）；caret 在句尾时末段即全输入，与旧判定等价。
 local function quota_sentence(env, cand)
+  if cand.type == "pinned" then return false end
   local genuine = cand.get_genuine and cand:get_genuine() or cand
   local t = genuine.type
   if t == "punct" or t == "pinned" then return false end

@@ -3,6 +3,8 @@
 #
 # Source: rime-tiger/core2022.dict.yaml (version 2026.03.01)
 # Only characters in this table are shown in common-character mode.
+# 【常用字过滤名单】用于“常用字/全字集”开关，不参与编码、词频或候选排序。
+# 每行格式为“字符<TAB>分类标记”；当前 t 表示该字符属于通用名单。
 
 ---
 name: mohu_charset

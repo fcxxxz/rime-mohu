@@ -3,6 +3,10 @@
 # license: CC-BY-SA 4.0+
 # authors: 吕奉先 SunShine 小幽幽 ksqsf sky Kuroame 吾因孰
 
+# 【主码表｜请直接编辑】自然码字词编码、简码、完整码和同码初始顺序都维护在这里。
+# 小鹤码表与发布用整句词库由构建脚本从这里和来源词库派生；不要直接改派生文件。
+# 维护后运行：make check-code-table && make dict
+
 ---
 name: mohu_zrm
 version: "20261008"
@@ -3956,7 +3960,7 @@ columns:
 石	uim
 十	uin
 时	uio
-师	uip
+式	uip
 食	uiq
 筮	uir
 识	uis

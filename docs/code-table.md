@@ -27,6 +27,14 @@ YAML 文件头声明 `name: mohu_zrm`、`sort: original` 和 `text/code` 两列�
 - 完整码与简码是明确的独立条目；修改后程序不会替你自动递补、分配或回写。
 - 符号码也在这张表里；飞键别名在同一表的飞键区，修改时一并检查对应打法。
 
+## 简码与完整码的候选优先级
+
+码表可以同时保留 `咦 yid` 和 `咦 yidm`。`yid` 是简码；启用 `mohu/ijrq/enable` 后，完整四码 `yidm` 会把有前缀简码的单字后移，完整码仍然可选。这个“出简让全”在 fixed/native/smart 候选合并后统一处理，不能只检查 smart 分支；明确置顶和候选调序仍保留用户意图。
+
+四码字词逐对覆盖另有入口：`mohu/four_code_yield_pairs_zrm.txt`（自然码）和 `mohu/four_code_yield_pairs_flypy.txt`（小鹤）。它控制具体二字词可以排在哪些完整码单字之前；和按短码让位的规则不同。schema 中 `four_code_char_yield_rank` 是旧配置占位，当前不参与这项判断。
+
+词末追加一位辅码，如 `puii` → `puiid`，走词辅筛选/原生解码；`哧`、`嗤` 都有首辅 `d`，这一位不能分清二者。单字“出简让全”不会自动改写这组词的排序；词语级让全由独立的 `mohu/ijrq/enable_word` 开关控制。
+
 ## 检查、构建、部署
 
 ```bash

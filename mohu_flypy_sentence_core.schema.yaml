@@ -1,5 +1,6 @@
 # Compile-only dependency: builds the sentence dictionary and its prism.
 # Not a selectable input scheme; interactive features live in mohu_flypy.schema.yaml.
+# 【编译垫片】只负责生成 mohu_flypy.words 的 table/prism；不是用户选择的输入方案。
 schema:
   schema_id: mohu_flypy_sentence_core
   version: '20261008'

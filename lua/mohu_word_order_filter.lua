@@ -132,6 +132,9 @@ end
 
 -- 候选是否参与评分：多字、非 punct/pinned/native、无简码/固顶标记。
 local function reorderable(env, cand)
+  -- A shadow may retain a genuine lexical phrase for learning while its
+  -- outer identity records a pin with no visible indicator.
+  if cand.type == "pinned" then return false end
   local g = cand.get_genuine and cand:get_genuine() or cand
   local t = g.type
   if t == "punct" or t == "pinned" then return false end

@@ -132,7 +132,12 @@ def convert_dictionary(source_name: str, target_name: str) -> str:
                     continue
             fields[1] = convert_spelling_code(fields[1])
         lines.append("\t".join(fields) + ("\n" if raw.endswith("\n") else ""))
-    return "".join(lines)
+    # Keep upstream license/provenance, but distinguish this generated Flypy
+    # copy from the editable natural-code source whose comments follow.
+    return ("# 【小鹤词库来源副本｜自动生成，请勿直接编辑】\n"
+            + f"# 来源：{source_name}；修改自然码来源后运行 make pack。\n"
+            + "# 以下保留来源说明；其中的人工维护入口指自然码源文件。\n"
+            + "".join(lines))
 
 
 def compose_fly_blocks(expected: dict, fly: dict[str, str]) -> list[str]:
@@ -155,6 +160,14 @@ def convert_code_table(source_name: str, target_name: str) -> str:
     in_body = False
     fly_drop = False
     for raw in text.splitlines(keepends=True):
+        # The source header is reused for license/provenance, but its natural-
+        # code maintenance directions would be misleading in the Flypy file.
+        if raw.startswith("# 【主码表｜"):
+            raw = "# 【来源：自然码主码表】小鹤编码由本文件上方的转换脚本生成。\n"
+        elif raw.startswith("# 小鹤码表与发布用整句词库"):
+            raw = "# 小鹤版本请修改自然码源文件后运行 make dict。\n"
+        elif raw.startswith("# 维护后运行：make check-code-table"):
+            raw = "# 自然码源文件维护后运行 make check-code-table && make dict。\n"
         if FLY_BLOCK_START.match(raw):
             fly_drop = True
             continue
@@ -173,7 +186,9 @@ def convert_code_table(source_name: str, target_name: str) -> str:
         lines.append(raw)
     converted = "".join(lines)
     expected = build_expected(converted.splitlines(), [], fly_keys.FLY_FLYPY)
-    return ("# 小鹤派生表；请修改 mohu_zrm.dict.yaml 后运行 make dict。\n"
+    return ("# 【小鹤派生码表｜自动生成，请勿直接编辑】\n"
+            + "# 来源：mohu_zrm.dict.yaml；构建：make dict。\n"
+            + "# 小鹤编码、飞键区和同码顺序由转换脚本维护。\n"
             + converted.rstrip() + "\n\n"
             + "".join(compose_fly_blocks(expected, fly_keys.FLY_FLYPY)))
 

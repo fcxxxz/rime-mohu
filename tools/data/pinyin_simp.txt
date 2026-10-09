@@ -56947,7 +56947,6 @@
 欧美国家	ou mei guo jia	141
 欧洲国家	ou zhou guo jia	193
 欧洲市场	ou zhou shi chang	170
-宫保拼音	gong bao pin yin	100
 唔	n	0
 嗯	n	0
 这	zhei	8383

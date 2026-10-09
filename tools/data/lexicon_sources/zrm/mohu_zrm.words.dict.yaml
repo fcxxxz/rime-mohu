@@ -1,3 +1,6 @@
+# 【人工整句词库源｜可直接维护】
+# 用途：添加不带固定编码的人工整句/词条；构建后合并到根目录 mohu_zrm.words.dict.yaml。
+# 构建：make dict；小鹤来源和根目录运行时词库由脚本派生，请勿直接编辑。
 # Rime dictionary
 # encoding: utf-8
 # license: CC-BY 4.0

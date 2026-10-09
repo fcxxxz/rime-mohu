@@ -327,6 +327,8 @@ def render_entries(entries: list[Candidate]) -> str:
 def render_dictionary(entries: list[Candidate], version: str, auxiliary: dict[str, list[str]],
                       seed_rows: list[tuple[str, str, int]] | None = None) -> str:
     lines = [
+        "# 【万象来源词库｜自动同步/生成，请勿直接编辑】",
+        "# 用途：作为整句词库和词频来源之一；修改请走 tools/sync_wanxiang.py 的同步流程。",
         "# Rime dictionary",
         "# encoding: utf-8",
         "# license: CC-BY-4.0 (upstream); generated adaptation",

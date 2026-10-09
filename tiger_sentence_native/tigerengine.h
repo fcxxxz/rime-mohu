@@ -84,6 +84,14 @@ int tiger_engine_set_composed_reading_prior_weight(int handle, double weight);
  * word edge, mirroring librime's entry_weight + grammar additive fusion.
  * Range [0, 4]. */
 int tiger_engine_set_word_edge_weight(int handle, double weight);
+/* Auxiliary spellings retain full-code dictionary-word identity. Default on;
+ * 0 disables query-local auxiliary word projections. Returns 1 applied,
+ * 0 unchanged, -1 error. The dictionary/code table is never rewritten. */
+int tiger_engine_set_auxiliary_word_edges(int handle, int on);
+/* Mix weight [0,1] for observed word-internal evidence when a validated
+ * auxiliary word's crossing character trigram only backs off. Default 0.5;
+ * 0 disables. Correction is bounded to one nat over the entire path. */
+int tiger_engine_set_auxiliary_context_guard(int handle, double weight);
 /* Text-lexicon prior: 0 disables (default); >0 adds this bounded bonus to
  * the output score (and early-commit confidence) of candidates whose full
  * text is a multi-character lexicon entry under ANY code form (e.g. 同一个
@@ -130,7 +138,9 @@ int tiger_engine_user_model_import(int handle, const char* blob, size_t blob_siz
 /* Cross-commit left context: pass the WHOLE latest commit text (same source
  * as librime's GetPrecedingText); the engine extracts the trailing CJK
  * characters itself (character trigram window; window_chars <= 0 means the
- * default 2, values above 2 are clamped to 2 by the current model). Empty or
+ * default 2, values above 2 are clamped to 2 by the current model). A word-mode
+ * primary instead extracts up to two complete words from its vocabulary.
+ * An independently loaded scoring model does not change decode units. Empty or
  * CJK-free text clears it. Returns 0 = no change, 1 = applied (decode cache
  * invalidated), -1 = error. */
 int tiger_engine_set_decode_context(int handle, const char* text, int window_chars);

@@ -182,3 +182,9 @@ assert(combined.comment == "bd qe ¦ ⚡rg")
 filter.fini(env)
 
 print("runtime quick-code hint tests passed")
+
+local pin_phrase={text="如果",type="pinned",get_dynamic_type=function() return "Phrase" end}
+local hinted=require("mohu_hint_filter").get_auxcode_hint({is_auxfilter=true,
+ aux_table={[utf8.codepoint("如")]="bd",[utf8.codepoint("果")]="qe"}},pin_phrase,pin_phrase,true)
+assert(hinted=="bd qe","pinned learning Phrase retains its word auxiliary hints")
+print("pinned Phrase word hints: ok")

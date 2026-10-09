@@ -33,11 +33,18 @@ def merge_dictionary(name: str, sources: list[Path], destination: Path) -> int:
     temporary_path.chmod(0o644)
     count = 0
     digest = hashlib.sha256()
-    header = (f'# Generated runtime sentence dictionary; corpus inputs: tools/data/lexicon_sources/.\n'
+    header = (f'# 【运行时整句词库｜自动生成，请勿直接编辑】\n'
+              f'# 用途：smart/native 整句输入使用的合并词库；维护入口是 tools/data/lexicon_sources/{name.split(".")[0].replace("mohu_", "")}/。\n'
+              f'# 构建：make dict；本文件会被重新生成，直接修改不会保留。\n'
+              f'# Generated runtime sentence dictionary; corpus inputs: tools/data/lexicon_sources/.\n'
               f'# Source licenses and attribution are retained in the source blocks below.\n'
               f'---\nname: {name}\nversion: "000000000000"\nsort: by_weight\n'
               f'use_preset_vocabulary: false\ncolumns: [text, code, weight]\n...\n')
-    version_offset = header.index('000000000000')
+    # The header contains UTF-8 comments. `seek()` uses byte offsets, while
+    # str.index() returns a character offset; convert explicitly so adding
+    # Chinese guidance cannot corrupt the generated header.
+    version_char_offset = header.index('000000000000')
+    version_offset = len(header[:version_char_offset].encode('utf-8'))
     try:
         with os.fdopen(fd, 'w+b') as output:
             output.write(header.encode('utf-8'))

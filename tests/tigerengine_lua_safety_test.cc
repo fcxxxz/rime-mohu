@@ -126,6 +126,35 @@ int main() {
   assert(lua_isboolean(state, -1) && !lua_toboolean(state, -1));
   lua_settop(state, 0);
 
+  // Lua must expose the configured composed reading prior, not silently
+  // leave the native default in use while direct C probes apply 1.3.
+  push_method(state, "set_composed_reading_prior_weight");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 1.3);
+  assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+  assert(lua_toboolean(state, -1));
+  lua_settop(state, 0);
+  push_method(state, "set_composed_reading_prior_weight");
+  lua_pushinteger(state, handle);
+  lua_pushnumber(state, 5.0);
+  expect_lua_error(state, "set_composed_reading_prior_weight", 2);
+  expect_valid_decode(state, handle);
+
+  for (const char* method : {"set_auxiliary_word_edges", "set_auxiliary_context_guard"}) {
+    push_method(state, method);
+    lua_pushinteger(state, handle);
+    if (std::strcmp(method, "set_auxiliary_word_edges") == 0) lua_pushinteger(state, 1);
+    else lua_pushnumber(state, 0.5);
+    assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+    assert(lua_toboolean(state, -1));
+    lua_settop(state, 0);
+    push_method(state, method);
+    lua_pushinteger(state, handle);
+    lua_pushinteger(state, 2);
+    expect_lua_error(state, method, 2);
+    expect_valid_decode(state, handle);
+  }
+
   // Every bad argument must leave the C++ binding usable.  A longjmp from
   // luaL_check* used to bypass the binding mutex's destructor here.
   push_method(state, "free");

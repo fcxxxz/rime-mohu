@@ -53,20 +53,58 @@ V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema �
 
 运行时固定读取 `mohu-sentence-ngram-v5.bin`；没有模型文件时会记录一次错误并回退到普通候选。模型资源由发布/部署步骤单独校验，不在输入热路径扫描目录。
 
-# 方案维护
+# 文件入口：码表、词库与配置
 
-master 分支可使用如下命令进行日常维护：
+第一次维护时，先看这张入口表：
+
+| 你要改的内容 | 应修改的文件 | 是否自动生成 |
+|---|---|---|
+| 字、词的编码、简码、完整码、同码初始顺序 | `mohu_zrm.dict.yaml` | 否，主码表 |
+| 小鹤版本的对应编码 | `mohu_flypy.dict.yaml` | 是，由自然码主表转换 |
+| 单字读音、虎码辅码、字频等整句基础数据 | `tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml` | 是，由 `mohu_zrm.dict.yaml` 等源生成 |
+| 人工维护的整句词条 | `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml` | 否，词库源 |
+| 腾讯、万象、经典等外部词库 | `tools/data/lexicon_sources/zrm/` 对应来源文件 | 按来源脚本同步或生成 |
+| 运行时整句词库 | `mohu_zrm.words.dict.yaml`、`mohu_flypy.words.dict.yaml` | 是，合并来源，不直接编辑 |
+| 自然码/小鹤方案配置 | `mohu_zrm.schema.yaml`、`mohu_flypy.schema.yaml` | 两主方案直接维护；编译垫片派生 |
+| 全局 Rime 配置 | `default.yaml` | 否 |
+| 常用字/全字集过滤名单 | `mohu_charset.dict.yaml` | 来源于虎码数据；字后的 `t` 是分类标记 |
+| 虎码反查与拼音反查 | `tiger.dict.yaml`、`mohu_pinyin.dict.yaml` | `mohu_pinyin.dict.yaml` 自动生成 |
+
+最常见的两个入口是：**改编码去 `mohu_zrm.dict.yaml`，加人工整句词去 `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml`**。改完后运行 `make check-code-table` 和 `make dict`；不要直接改 `mohu_*.words.dict.yaml`，因为下一次构建会重新生成它。
+
+`tools/data/lexicon_sources/flypy/` 和根目录的 `mohu_flypy.words.dict.yaml` 都是小鹤派生/合并结果，通常不直接维护。发布包通过白名单选择运行文件，构建中间文件不会全部进入 Git。
+
+# 日常打包：只记一个命令
+
+在仓库根目录执行：
 
 ```bash
-make quick                           # 快速更新单字信息
-make dict                            # 校验主码表并更新派生资源，不改写主码表
-make dist-zrm                        # 生成扁平自然码方案包目录
-make dist-flypy                      # 生成扁平小鹤方案包目录
-make test                            # 执行单元测试
-./make_simp_dist.sh                  # 产生简体版方案到 ./dist 目录下
+make pack
 ```
 
-注意：master 分支必须首先 `make quick` 后才能部署。
+它会更新源数据的派生文件、编译引擎并生成两份桌面包：
+
+- `rime-mohu-zrm.zip`：自然码。
+- `rime-mohu-flypy.zip`：小鹤。
+
+对应展开目录仍是 `dist-zrm/` 和 `dist-flypy/`。zip 内文件直接位于根目录，解压到 Rime 用户目录后重新部署；更新引擎时还需完全退出并重启鼠须管。包内不带模型，保留原有 `mohu/model/mohu-sentence-ngram-v5.bin`。
+
+四码字词逐对覆盖改 `mohu/four_code_yield_pairs_zrm.txt`（自然码）或 `mohu/four_code_yield_pairs_flypy.txt`（小鹤）；每行是“词<Tab>让位的字”。单字有短码时，输入完整四码还会受 `mohu/ijrq/enable` 的“出简让全”规则影响：完整码保留，首选后移；不用从主码表删除完整码。
+
+<details>
+<summary>只更新数据、单独打包或运行测试时的其他命令</summary>
+
+```bash
+make dict                # 更新字词派生资源
+make quick               # 更新单字、反查、拆分等资源
+make dist-zrm            # 仅生成自然码目录
+make dist-flypy          # 仅生成小鹤目录
+make test                # 测试
+make dist-mobile-zrm     # 手机自然码精简包
+make dist-mobile-flypy   # 手机小鹤精简包
+```
+
+</details>
 
 日常个人定制（个人拼写别名、加词入口对照、自定义短语、哪些设置会自动保存）见 [个人定制与组词规则](docs/dingzhi-个人定制与组词规则.md)。字词编码、简码与同码顺序直接维护在 `mohu_zrm.dict.yaml`，见 [字词码表维护](docs/code-table.md)。
 

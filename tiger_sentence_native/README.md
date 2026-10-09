@@ -6,6 +6,14 @@
 架构与 TigerClaw 虎整句（Rime Lua 版）等价，模型直接复用其 TCSKNM 三元模型。
 这是魔虎方案的原生整句组件，不启用 Octagram。
 
+2026-10-09 起，合法首辅、末辅和多位置辅码也可识别回词典完整词。加载期
+建立规范音节+汉字索引，输入时在 beam 外验证真实单字辅码与选重，不改码表
+或生成全部组合。对可完整解释为普通音节的双辅歧义串保留原竞争，避免吞字。
+默认 V5 配合一次、有上限的词边界保护；这不等于把 V5 改成词三元模型。
+排障可设置 `tiger/auxiliary_word_edges: false` 或
+`tiger/auxiliary_context_guard: 0`。实现、性能和新增错选边界见
+[辅码词匹配报告](../docs/reports/2026-10-09-auxiliary-word-edges.md)。
+
 ## 文件
 
 - `tigerengine.cc` — TCSKNM01/02 模型读取（mmap）+ 增量 beam 解码 + C ABI

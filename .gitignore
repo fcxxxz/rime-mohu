@@ -15,6 +15,8 @@ tools/data/wanxiang/entries.tsv
 dist/
 dist-zrm/
 dist-flypy/
+/rime-mohu-zrm.zip
+/rime-mohu-flypy.zip
 dazhu*.txt
 moran.mdd
 moran.mdx

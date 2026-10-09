@@ -243,5 +243,15 @@ cache_run()
 check("cache prevents repeat socket calls",
       first_count >= 1 and model_calls.requests == first_count)
 
+do
+  local pin = candidate("甲词", "pinned")
+  local genuine = candidate("甲词", "phrase")
+  pin.get_genuine = function() return genuine end
+  model_calls.response = { 1.0, 5.0, 3.0 }
+  model_calls.requests = 0
+  local result = run({ pin, candidate("乙词"), candidate("丙词"), candidate("丁词") }, { _se_pin = "" })
+  check("semantic ranking preserves an invisible shadow pin", result[1] == pin)
+end
+
 print(string.format("%d passed, %d failed", checks.passed, checks.failed))
 if checks.failed > 0 then os.exit(1) end

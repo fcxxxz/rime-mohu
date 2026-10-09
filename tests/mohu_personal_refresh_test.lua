@@ -19,11 +19,14 @@ function memory:iter_user()
   return function() i=i+1; return rows[i] end
 end
 Memory = function() return memory end
-local applied, appended, commits = {}, {}, 0
+local applied, appended, commits, learned = {}, {}, 0, {}
 package.loadlib = function()
   return function() return {
     create = function() return 7 end,
     free = function() end,
+    adjust_personal = function(_, code, text, count)
+      learned[#learned+1]={code,text,count};return 1
+    end,
     decode = function() return "0 0 0 0 0 0\n", 0 end,
     set_personal_lexicon = function(_, payload) applied[#applied+1] = payload end,
     personal_begin = function() appended={};return true end,
@@ -49,5 +52,14 @@ assert(commits == 1, 'idle scan must finish native transaction')
 assert(table.concat(appended) == 'qygf\t教授\t6\n', 'transaction consumes finalized merged snapshot')
 assert(env._mohu_personal_feed == nil and not env._mohu_personal_dirty,
   'completed refresh clears transaction and dirty state')
+local pinned_phrase={type="pinned",text="教授",preedit="qy gf",
+ get_dynamic_type=function() return "Phrase" end}
+function pinned_phrase:get_genuine() return self end
+ctx.composition={toSegmentation=function() return {
+ get_segments=function() return {{get_selected_candidate=function() return pinned_phrase end}} end,
+} end}
+for _,f in ipairs(ctx.commit_notifier.callbacks) do f(ctx) end
+assert(#learned==1 and learned[1][1]=="qygf" and learned[1][2]=="教授",
+ "pinned lexical Phrase retains immediate native word learning")
 native.translator.fini(env)
 print('personal refresh transaction: ok')

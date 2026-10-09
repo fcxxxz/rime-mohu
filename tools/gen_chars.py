@@ -22,8 +22,11 @@ else:
     modern_readings = None
     compatibility_characters = set()
 
-print('# 自動生成，請勿編輯。')
-print("# AUTO-GENERATED. DO NOT EDIT.")
+print('# 【单字基础词库｜自动生成，请勿直接编辑】')
+print('# 用途：提供单字读音、字频、虎码辅码等数据，参与整句词库和原生词表构建。')
+print('# 来源：mohu_zrm.dict.yaml、tiger.dict.yaml 及 tools/data/chars.txt 等。')
+print('# 构建：make chars 或 make quick；修改入口不是本文件。')
+print('# AUTO-GENERATED. DO NOT EDIT.')
 header = open('tools/data/chars.dict.yaml').read()
 header = header.replace('YYYYmmdd', get_chars_version())
 for line in header.splitlines():

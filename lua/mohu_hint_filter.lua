@@ -64,7 +64,9 @@ function Module.get_auxcode_hint(env, cand, gcand, enabled)
             return nil
         end
         return codes:sub(2)
-    elseif len ~= 1 and env.is_auxfilter and (gcand.type == "phrase" or gcand.type == "user_phrase") then
+    elseif len ~= 1 and env.is_auxfilter and (gcand.type == "phrase" or gcand.type == "user_phrase"
+        or (gcand.type == "pinned" and gcand.get_dynamic_type
+            and gcand:get_dynamic_type() == "Phrase")) then
         result = ""
         for i, cp in mohu.codepoints(gcand.text) do
             local cpaux = env.aux_table[cp]

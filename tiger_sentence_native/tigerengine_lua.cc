@@ -476,6 +476,24 @@ int l_set_reading_prior_weight(lua_State* L) {
   return 1;
 }
 
+int l_set_composed_reading_prior_weight(lua_State* L) {
+  lua_Integer handle_value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
+                       handle_value <= std::numeric_limits<int>::max(),
+                1, "engine handle is out of range");
+  double weight = luaL_checknumber(L, 2);
+  int rc;
+  char error[512] = {0};
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_composed_reading_prior_weight((int)handle_value, weight);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "composed reading prior update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
 int l_set_word_edge_weight(lua_State* L) {
   lua_Integer handle_value = luaL_checkinteger(L, 1);
   luaL_argcheck(L, handle_value >= std::numeric_limits<int>::min() &&
@@ -492,6 +510,35 @@ int l_set_word_edge_weight(lua_State* L) {
   if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "word edge weight update failed");
   lua_pushboolean(L, 1);
   return 1;
+}
+
+int l_set_auxiliary_word_edges(lua_State* L) {
+  lua_Integer handle = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle >= std::numeric_limits<int>::min() && handle <= std::numeric_limits<int>::max(), 1, "engine handle is out of range");
+  lua_Integer on = luaL_checkinteger(L, 2);
+  luaL_argcheck(L, on == 0 || on == 1, 2, "auxiliary word edges must be 0 or 1");
+  char error[512] = {}; int rc;
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_auxiliary_word_edges(static_cast<int>(handle), static_cast<int>(on));
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error);
+  lua_pushboolean(L, 1); return 1;
+}
+
+int l_set_auxiliary_context_guard(lua_State* L) {
+  lua_Integer handle = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, handle >= std::numeric_limits<int>::min() && handle <= std::numeric_limits<int>::max(), 1, "engine handle is out of range");
+  double weight = luaL_checknumber(L, 2);
+  char error[512] = {}; int rc;
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_auxiliary_context_guard(static_cast<int>(handle), weight);
+    if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
+  }
+  if (rc < 0) return luaL_error(L, "%s", error);
+  lua_pushboolean(L, 1); return 1;
 }
 
 int l_set_text_lexicon_weight(lua_State* L) {
@@ -797,7 +844,10 @@ int luaopen_tigerengine(lua_State* L) {
       {"set_personal_edge_internal_cap", l_set_personal_edge_internal_cap},
       {"set_bos_user_gain_cap", l_set_bos_user_gain_cap},
       {"set_reading_prior_weight", l_set_reading_prior_weight},
+      {"set_composed_reading_prior_weight", l_set_composed_reading_prior_weight},
       {"set_word_edge_weight", l_set_word_edge_weight},
+      {"set_auxiliary_word_edges", l_set_auxiliary_word_edges},
+      {"set_auxiliary_context_guard", l_set_auxiliary_context_guard},
       {"set_text_lexicon_weight", l_set_text_lexicon_weight},
       {"set_word_form_weight", l_set_word_form_weight},
       {"word_disagreement", l_word_disagreement},

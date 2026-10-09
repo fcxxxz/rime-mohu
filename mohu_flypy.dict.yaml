@@ -1,8 +1,14 @@
-# 小鹤派生表；请修改 mohu_zrm.dict.yaml 后运行 make dict。
+# 【小鹤派生码表｜自动生成，请勿直接编辑】
+# 来源：mohu_zrm.dict.yaml；构建：make dict。
+# 小鹤编码、飞键区和同码顺序由转换脚本维护。
 # Rime dictionary
 # encoding: utf-8
 # license: CC-BY-SA 4.0+
 # authors: 吕奉先 SunShine 小幽幽 ksqsf sky Kuroame 吾因孰
+
+# 【来源：自然码主码表】小鹤编码由本文件上方的转换脚本生成。
+# 小鹤版本请修改自然码源文件后运行 make dict。
+# 自然码源文件维护后运行 make check-code-table && make dict。
 
 ---
 name: mohu_flypy
@@ -3957,7 +3963,7 @@ columns:
 石	uim
 十	uin
 时	uio
-师	uip
+式	uip
 食	uiq
 筮	uir
 识	uis

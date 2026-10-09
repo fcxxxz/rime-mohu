@@ -292,6 +292,7 @@ local function ensure_engine(env)
       conf("beam") or "", conf("all_ranks") or "",
       conf("word_scorer_model") or "", conf("semantic_model") or "",
       conf("semantic_vocab") or "",
+      conf("auxiliary_word_edges") or "", conf("auxiliary_context_guard") or "",
       (conf("learning_context_guard") == "false" or
        conf("learning_context_guard") == "0") and "0" or "1" }, "\28")
   if engine_handle ~= nil then
@@ -472,6 +473,16 @@ local function ensure_engine(env)
   end
   if type(tigerengine.set_word_edge_weight) == "function" then
     pcall(tigerengine.set_word_edge_weight, h, word_edge_weight)
+  end
+  if type(tigerengine.set_auxiliary_word_edges) == "function" then
+    local enabled = conf("auxiliary_word_edges")
+    pcall(tigerengine.set_auxiliary_word_edges, h,
+      (enabled == "false" or enabled == "0") and 0 or 1)
+  end
+  if type(tigerengine.set_auxiliary_context_guard) == "function" then
+    local weight = tonumber(conf("auxiliary_context_guard"))
+    if weight == nil or not finite_number(weight) or weight < 0 or weight > 1 then weight = 0.5 end
+    pcall(tigerengine.set_auxiliary_context_guard, h, weight)
   end
   -- 文本词典先验权重：tiger/text_lexicon_weight（0 关闭）。旧 ABI dylib
   -- 无该函数时静默保持引擎内建默认（0=旧行为）；非法值回退默认。
@@ -827,7 +838,11 @@ local function memorize_native_candidates(env, ctx)
                 update_ok = false
               end
             end
-          elseif cand_type == "phrase" or cand_type == "user_phrase" then
+          elseif cand_type == "phrase" or cand_type == "user_phrase" or
+              (cand_type == "pinned" and genuine.get_dynamic_type and
+               genuine:get_dynamic_type() == "Phrase") then
+            -- Pin identity is a type label on the same lexical Phrase.
+            -- Preserve the synchronous native learning channel as well.
             normalized_code = personal_lexicon.normalize_code(preedit)
           else
             update_ok = false

@@ -151,6 +151,8 @@ jobs:
           local wrote, write_error = engine.atomic_write_snapshot_file("missing/snapshot.bin", "x")
           assert(wrote == false and type(write_error) == "string")
           local handle = assert(engine.create(model, lexicon, 200, 1))
+          assert(engine.set_auxiliary_word_edges(handle, 1))
+          assert(engine.set_auxiliary_context_guard(handle, 0.5))
           local output = assert(engine.decode(handle, "ufqyhfmimh", false))
           assert(output:find("迷茫", 1, true), output)
           engine.free(handle)
@@ -158,6 +160,21 @@ jobs:
           ./lua-5.4.8/src/lua.exe smoke.lua "$PWD/libtigerengine.dll" \
             "$PWD/mohu-sentence-ngram-v5.bin" \
             "$PWD/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt"
+
+      - name: Verify word-boundary and auxiliary matching contracts on Windows
+        shell: msys2 {0}
+        env:
+          ORT_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
+        run: |
+          g++ -O2 -std=c++17 -D_stdcall=__stdcall -I tiger_sentence_native \
+            -I "$ORT_HOME/include" -L "$ORT_HOME/lib" \
+            tests/tigerengine_aux_words_test.cc -lonnxruntime -o aux-words-test.exe
+          ./aux-words-test.exe
+          g++ -O2 -std=c++17 -D_stdcall=__stdcall -I tiger_sentence_native \
+            -I "$ORT_HOME/include" -L "$ORT_HOME/lib" \
+            tests/tigerengine_word_units_test.cc tiger_sentence_native/tigerengine.cc \
+            -lonnxruntime -o word-units-test.exe
+          ./word-units-test.exe
 
       - name: Probe primary model mapping on Windows
         shell: msys2 {0}
@@ -227,7 +244,10 @@ jobs:
         # onnxruntime：build.sh 编译 libtigerengine（内建语义推理）需要其头文件
 
       - name: Build native engine
-        run: make tigerengine-native
+        run: make tigerengine-native ONNXRUNTIME_HOME="$(brew --prefix onnxruntime)"
+
+      - name: Verify word-boundary and auxiliary matching contracts
+        run: make tigerengine-aux-words tigerengine-word-units ONNXRUNTIME_HOME="$(brew --prefix onnxruntime)"
 
       - name: Build flat scheme packages
         run: |

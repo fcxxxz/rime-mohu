@@ -34,6 +34,21 @@ class SentenceDictionaryTest(unittest.TestCase):
             rows = [line for line in body.splitlines() if line and not line.startswith('#')]
             self.assertEqual(rows, ['式\tui;pu\t600521', '测试\tce;sd ui;sp\t7', '未编码\t\t1', '无权重', '式\tui;pu\t600521'])
 
+    def test_utf8_header_guidance_does_not_corrupt_generated_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'source.dict.yaml'
+            source.write_text(
+                '# 【来源说明】中文头注释\n---\nname: source\n...\n'
+                '测试\tce;sd\t7\n', encoding='utf-8')
+            output = root / 'merged.dict.yaml'
+            builder.merge_dictionary('mohu_zrm.words', [source], output)
+            text = output.read_text(encoding='utf-8')
+            self.assertIn('# 【运行时整句词库｜自动生成，请勿直接编辑】', text)
+            self.assertIn('version: "', text)
+            self.assertRegex(text, r'version: "[0-9a-f]{12}"')
+            self.assertNotIn('000000000000', text)
+
     def test_packager_uses_explicit_scheme_files_not_a_prefix_glob(self):
         text = (ROOT / 'tools/build_split_dist.py').read_text()
         self.assertNotIn('ROOT.glob(f"mohu_{scheme}*")', text)

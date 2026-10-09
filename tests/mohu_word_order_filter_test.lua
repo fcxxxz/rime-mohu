@@ -692,6 +692,17 @@ do
   end
 end
 
+do
+  reset_scorer({ -10, -1, -2 })
+  local pin = candidate("pinned", "中心", "")
+  local genuine = candidate("phrase", "中心", "")
+  pin.get_genuine = function() return genuine end
+  local env = make_env({ history = "今天会议", config = { ["mohu/pin/indicator"] = "" } })
+  filter.init(env)
+  local out = run_filter(env, { pin, candidate("table", "目标"), candidate("table", "其他") })
+  check("shadow pin identity survives an empty indicator", out[1] == pin)
+end
+
 if failures > 0 then
   print(string.format("%d failures", failures))
   os.exit(1)

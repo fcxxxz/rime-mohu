@@ -1,3 +1,6 @@
+# 【经典词库来源｜自动生成，请勿直接编辑】
+# 用途：审核后的古典文本词条，参与合并整句词库。
+# 构建：uv run tools/import_classics.py build；维护入口见 tools/data/classics/。
 # Rime dictionary
 # encoding: utf-8
 # license: CC-BY-SA 4.0

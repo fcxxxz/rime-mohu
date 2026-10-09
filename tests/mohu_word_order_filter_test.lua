@@ -153,7 +153,12 @@ local function bind_fn(scores, state)
       -- 评分函数契约：返回个数必须与候选文本数一致。
       local out = {}
       for index = 1, #texts do out[index] = scores[texts[index]] or scores[index] end
-      return out
+      local support
+      if state.support then
+        support = {}
+        for index = 1, #texts do support[index] = state.support[texts[index]] == true end
+      end
+      return out, support
     end
     return error(scores)  -- 字符串：让 pcall 失败
   end
@@ -652,6 +657,39 @@ do
   local fn = mod.acquire_char_scorer(env)
   check("old dylib (no context_char_scores) degrades to nil", fn == nil)
   mod.translator.fini(env)
+end
+
+-- A fallback-only continuation score cannot promote an unrelated word.
+do
+  reset_scorer({ ["码表"] = -17.75, ["马标"] = -11.93, ["马表"] = -14.98 })
+  char_state.support = { ["码表"] = false, ["马标"] = false, ["马表"] = false }
+  local env = make_env({ history = "编辑", input = "mabc" })
+  filter.init(env)
+  local input = { candidate("table", "码表"), candidate("table", "马标"), candidate("table", "马表") }
+  local out = run_filter(env, input)
+  check("unsupported continuation preserves dictionary order", same_texts(texts_of(out), texts_of(input)))
+  char_state.support["马标"] = true
+  out = run_filter(env, input)
+  check("true complete-context learning may promote a rare word", out[1].text == "马标" and same_multiset(texts_of(out), texts_of(input)))
+  char_state.support["马标"] = false
+  env = make_env({ history = "编辑", input = "mabc", config = { ["tiger/learning_context_guard"] = "false" } })
+  filter.init(env)
+  out = run_filter(env, input)
+  check("guard disabled retains previous scoring", out[1].text == "马标")
+  char_state.support = nil
+end
+
+do
+  local input = { candidate("table", "码表"), candidate("table", "马标"), candidate("table", "马表") }
+  for _, metadata in ipairs({ { false }, { false, true, false, true },
+      { [1] = false, [3] = true }, { false, 1, false }, "invalid" }) do
+    reset_scorer({ -17.75, -11.93, -14.98 })
+    char_state.fn = function() return { -17.75, -11.93, -14.98 }, metadata end
+    local env = make_env({ history = "编辑", input = "mabc" })
+    filter.init(env)
+    local out = run_filter(env, input)
+    check("malformed support metadata retains order", same_texts(texts_of(out), texts_of(input)))
+  end
 end
 
 if failures > 0 then

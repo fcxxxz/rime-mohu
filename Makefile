@@ -184,6 +184,11 @@ tigerengine-user-model:
 		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_user_model_test
 	/tmp/tigerengine_user_model_test
 
+tigerengine-learning-context:
+	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_learning_context_test.cc \
+		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_learning_context_test
+	/tmp/tigerengine_learning_context_test
+
 tigerengine-snapshot-io:
 	@mkdir -p .tmp/native-tests
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) $(ORT_INCLUDES) \
@@ -309,6 +314,7 @@ model-dist:
 test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-safety
 	$(MAKE) tigerengine-lua-safety
+	$(MAKE) tigerengine-learning-context
 	$(MAKE) tigerengine-snapshot-io
 	$(MAKE) tigerengine-user-model
 	$(MAKE) tigerengine-reading-prior
@@ -380,4 +386,4 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python
+.PHONY: quick all dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python

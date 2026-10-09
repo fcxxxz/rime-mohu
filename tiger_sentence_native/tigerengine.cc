@@ -2084,6 +2084,24 @@ struct UserNgram {
 
   bool empty() const { return total == 0; }
 
+  uint32_t context_count(uint32_t a, uint32_t b) const {
+    auto it = bi.find(bi_key(a, b));
+    return it == bi.end() ? 0 : it->second;
+  }
+
+  bool has_trigram(uint32_t a, uint32_t b, uint32_t c) const {
+    auto it = tri.find(tri_key(a, b, c));
+    return it != tri.end() && it->second > 0;
+  }
+
+  double contextual_logp(uint32_t a, uint32_t b, uint32_t c) const {
+    const uint32_t count = context_count(a, b);
+    auto it = tri.find(tri_key(a, b, c));
+    const double p = count && it != tri.end()
+        ? static_cast<double>(it->second) / count : 0.0;
+    return std::log(std::max(1e-12, p));
+  }
+
   // Jelinek-Mercer 级联回退：上下文未见时权重自动落到低阶，kFloor 保证非零。
   double logp(uint32_t a, uint32_t b, uint32_t c) const {
     static const double kTriW = 0.6, kBiW = 0.3, kUniW = 0.09;
@@ -2282,6 +2300,7 @@ struct Engine {
   double blend_alpha = 0.6;  // 主模型权重
   UserNgram user;            // 用户调频层（提交文本的 trigram 计数）
   double user_weight = 0.85; // 静态模型（含 blend 后）权重；>=1 等价关闭用户层
+  bool learning_context_guard = false;  // C ABI legacy default; Lua explicitly opts in.
   // 用户层路径累计正增益封顶（nats）：0=关闭。限制历史 trigram 对整条
   // 解码路径的放大，不删除用户计数，也不削弱个人词边；默认由 Lua 设为 6。
   double user_gain_cap = 6.0;
@@ -2544,7 +2563,7 @@ struct Engine {
   // 无字符层时返回 -1。不动解码状态。
   int context_char_scores(const std::string& context_text,
                           const std::vector<std::string>& candidates,
-                          double* out) {
+                          double* out, int* supported = nullptr) {
     if (word_mode) {
       set_error("char scoring requires a char-level model");
       return -1;
@@ -2572,17 +2591,46 @@ struct Engine {
     }
     for (size_t i = 0; i < candidates.size(); ++i) {
       const std::string& cand = candidates[i];
-      double s = 0;
-      uint32_t a = p2, b = p1;
-      size_t j = 0;
+      double s = 0, user_gain = 0, bos_gain = 0;
+      uint32_t a = p2, b = p1, first_cp = 0;
+      size_t j = 0, consumed = 0;
+      if (supported) supported[i] = 0;
       while (j < cand.size()) {
         uint32_t cp; size_t n;
         utf8_next(cand.data(), cand.size(), j, &cp, &n);
         if (n == 0) break;
         s += logp(a, b, cp);
+        if (learning_context_guard) {
+          const double gain = cached_user_gain(a, b, cp);
+          double paid = gain;
+          if (gain > 0.0) {
+            if (user_gain_cap > 0.0)
+              paid = std::min(paid, std::max(0.0, user_gain_cap - user_gain));
+            if (a == kBOS && bos_user_gain_cap > 0.0)
+              paid = std::min(paid, std::max(0.0, bos_user_gain_cap - bos_gain));
+            s += paid - gain;
+          }
+          user_gain += paid;
+          if (a == kBOS) bos_gain += paid;
+        }
+        if (consumed == 0) first_cp = cp;
+        if (supported && consumed == 1 && p1 != kBOS) {
+          const auto boundary = model.lookup_context(
+              true, pack2(p1, first_cp), static_cast<uint32_t>(pack2(p1, first_cp)), cp);
+          if (boundary.invalid) throw InvalidPageError();
+          bool observed = boundary.observed;
+          if (blend_mode) {
+            const auto other = blend.lookup_context(
+                true, pack2(p1, first_cp), static_cast<uint32_t>(pack2(p1, first_cp)), cp);
+            if (other.invalid) throw InvalidPageError();
+            observed = observed || other.observed;
+          }
+          supported[i] = observed || (user_weight < 1.0 && user.has_trigram(p1, first_cp, cp));
+        }
         a = b;
         b = cp;
         j += n;
+        ++consumed;
       }
       out[i] = s;
     }
@@ -2610,9 +2658,10 @@ struct Engine {
     auto it = logp_cache.find(key);
     if (it != logp_cache.end()) return it->second;
     double v = static_logp(a, b, c);
-    if (user_weight < 1.0 && !user.empty()) {
+    if (user_weight < 1.0 && !user.empty() &&
+        (!learning_context_guard || user.context_count(a, b) > 0)) {
       const double base = v;  // 融合前的静态分（含 blend）
-      double pu = user.logp(a, b, c);
+      double pu = learning_context_guard ? user.contextual_logp(a, b, c) : user.logp(a, b, c);
       if (!std::isfinite(v) || !std::isfinite(pu))
         throw std::runtime_error("invalid n-gram probability");
       const double p1 = std::exp(std::max(-700.0, v));
@@ -2782,8 +2831,10 @@ struct Engine {
             if (cand.chars.size() != 1 && !cand.personal && !abbrev_edge_ok &&
                 !whole_input_edge && !word_prior_edge) continue;
             // 整段命中的静态多字词在输入继续增长后语义会失效（整段→内部），
-            // 必须禁用增量复用；纯内部边（个人词、简词）无此问题。
-            if (cand.chars.size() != 1 && !cand.personal && whole_input_edge)
+            // 必须禁用增量复用。启用学习守卫时，个人词和单字的 BOS
+            // 预算/标记也依赖整段身份，追加输入必须重新评分。
+            if (whole_input_edge &&
+                (learning_context_guard || (cand.chars.size() != 1 && !cand.personal)))
               has_terminal_phrase_states = true;
             double score = item->score;
             double user_gain = item->user_gain;
@@ -2822,6 +2873,13 @@ struct Engine {
                     paid = std::min(paid, std::max(0.0, user_gain_cap - previous_gain));
                   if (bos_user_gain_cap > 0.0 && bos_context)
                     paid = std::min(paid, std::max(0.0, bos_user_gain_cap - previous_bos_gain));
+                  // A separately committed word also trains BOS. Its head must
+                  // not rewrite a longer composed sentence. Whole-input words
+                  // and explicitly learned phrases keep their learning channel.
+                  if (learning_context_guard && bos_context && !whole_input_edge) {
+                    paid = 0.0;
+                    user_gain = previous_gain;
+                  }
                   if (paid != gain) {
                     score -= gain;
                     score += paid;
@@ -2879,6 +2937,12 @@ struct Engine {
             // 只有这条通道能进句）、注入词（夜莺 rank 99）、整段命中边
             // 与单字调频保持全额。
             double personal_paid = cand.personal_boost;
+            if (learning_context_guard && cand.personal && cand.from_static &&
+                !whole_input_edge && cand.chars.size() > 1 &&
+                (item->prev1 == kBOS ||
+                 !user.has_trigram(item->prev1, cand.chars[0], cand.chars[1]))) {
+              personal_paid = 0.0;
+            }
             if (cand.personal_static_word && !whole_input_edge &&
                 cand.chars.size() > 1 &&
                 personal_internal_cap < personal_paid) {
@@ -2913,7 +2977,11 @@ struct Engine {
             s2->previous = item;
             s2->text_length = s2->text.size();
             s2->raw_length = consumed_end;
-            s2->personal = item->personal || cand.personal;
+            // A suppressed known-word boost must not mark all composed
+            // siblings as personal and bypass the downstream lexicon fence.
+            s2->personal = item->personal ||
+                (cand.personal && (!learning_context_guard ||
+                                   personal_paid > 0.0 || whole_input_edge));
             s2->user_gain = user_gain;
             s2->bos_gain = bos_gain;
             s2->composed_penalty = item->composed_penalty + composed_paid;
@@ -3121,6 +3189,16 @@ struct Engine {
     return true;
   }
 
+  double ending_score(const State* state) {
+    if (word_mode) return word_logp(state->pw2, state->pw1, 1 /*</s>*/);
+    // Standalone words also train word+EOS. That terminal habit must not
+    // rewrite unrelated composed sentences; exact whole-input words keep it.
+    const double lp = learning_context_guard && state->edges > 1
+        ? static_logp(state->prev2, state->prev1, kEOS)
+        : logp(state->prev2, state->prev1, kEOS);
+    return lp - isolation_penalty(state->text);
+  }
+
   DecodeResult emit(const std::string& raw, bool include_early) {
     DecodeResult result;
     bool now_truncated = false;
@@ -3139,9 +3217,7 @@ struct Engine {
     std::vector<OutItem> final_items;
     final_items.reserve(completed.size());
     for (State* s : completed) {
-      double ending = (word_mode ? word_logp(s->pw2, s->pw1, 1 /*</s>*/)
-                                 : logp(s->prev2, s->prev1, kEOS)) -
-                      (word_mode ? 0.0 : isolation_penalty(s->text));
+      double ending = ending_score(s);
       OutItem item;
       to_out(s, ending, &item);
       // Early-commit and downstream prefix consumers need the raw-code
@@ -3182,9 +3258,7 @@ struct Engine {
     auto add_states = [&](const std::vector<State*>& vs) {
       for (State* s : vs) {
         if (s->text.empty()) continue;
-        double ending = (word_mode ? word_logp(s->pw2, s->pw1, 1 /*</s>*/)
-                                 : logp(s->prev2, s->prev1, kEOS)) -
-                      (word_mode ? 0.0 : isolation_penalty(s->text));
+        double ending = ending_score(s);
         double confidence = s->mass_score + ending + text_lexicon_bonus(s->text);
         auto it = mass_by_text.find(s->text);
         if (it == mass_by_text.end()) mass_by_text[s->text] = confidence;
@@ -3816,6 +3890,28 @@ int tiger_engine_set_user_model_weight(int handle, double static_weight) {
   }
 }
 
+int tiger_engine_set_learning_context_guard(int handle, int on) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (on != 0 && on != 1) {
+      set_error("learning context guard must be 0 or 1");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->learning_context_guard == (on != 0)) return 0;
+    e->learning_context_guard = on != 0;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("learning context guard update failed");
+    return -1;
+  }
+}
+
 int tiger_engine_set_user_model_gain_cap(int handle, double cap) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
@@ -4242,9 +4338,9 @@ int tiger_engine_context_word_scores(int handle, const char* context_text,
 /* 批量字符级续写评分（octagram 同型）：out_scores[i] = Σ logP(候选 i 的
  * 码点 | 上文末 2 个 CJK 字及候选已出字)。空上文返回 BOS 基线分（供
  * lift 计算）。字符级主模型专用；word_mode 主模型返回 -1。 */
-int tiger_engine_context_char_scores(int handle, const char* context_text,
+static int context_char_scores_batch(int handle, const char* context_text,
                                      const char* candidates, int candidate_count,
-                                     double* out_scores) {
+                                     double* out_scores, int* out_supported) {
   try {
     std::lock_guard<std::mutex> lock(g_engine_mutex);
     if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
@@ -4275,7 +4371,7 @@ int tiger_engine_context_char_scores(int handle, const char* context_text,
         p = nl + 1;
       }
     }
-    return g_engines[handle]->context_char_scores(context_text, cands, out_scores);
+    return g_engines[handle]->context_char_scores(context_text, cands, out_scores, out_supported);
   } catch (const InvalidPageError& error) {
     set_error("%s", error.what());
     return -1;
@@ -4286,6 +4382,24 @@ int tiger_engine_context_char_scores(int handle, const char* context_text,
     set_error("char scores failed");
     return -1;
   }
+}
+
+int tiger_engine_context_char_scores(int handle, const char* context_text,
+                                     const char* candidates, int candidate_count,
+                                     double* out_scores) {
+  return context_char_scores_batch(handle, context_text, candidates, candidate_count,
+                                   out_scores, nullptr);
+}
+
+int tiger_engine_context_char_scores_supported(int handle, const char* context_text,
+                                     const char* candidates, int candidate_count,
+                                     double* out_scores, int* out_supported) {
+  if (!out_supported) {
+    set_error("char scores require a support output buffer");
+    return -1;
+  }
+  return context_char_scores_batch(handle, context_text, candidates, candidate_count,
+                                   out_scores, out_supported);
 }
 
 int tiger_semantic_create(const char* model_path, const char* vocab_path,

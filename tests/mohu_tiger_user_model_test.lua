@@ -72,7 +72,7 @@ local function fresh(with_user_model, with_snapshot_io)
   if with_snapshot_io == nil then with_snapshot_io = with_user_model end
   local calls = {
     update = {}, weights = {}, exports = 0, imports = {}, reads = {}, writes = {},
-    forget = {}, forget_fail = false,
+    forget = {}, forget_fail = false, guards = {},
   }
   package.preload["mohu_tiger_reranker"] = function()
     return { init = function() end, fini = function() end, rerank = function() return nil end }
@@ -82,6 +82,7 @@ local function fresh(with_user_model, with_snapshot_io)
       local module = {
         create = function() return 7 end,
         free = function() end,
+        set_learning_context_guard = function(_, on) calls.guards[#calls.guards+1] = on end,
         decode = function() return decode_output, 0.1 end,
       }
       if with_user_model then
@@ -343,3 +344,19 @@ else
 end
 
 print("Mohu user model tests passed")
+
+-- Shared native engines reject environments with incompatible guard settings.
+for _, first_on in ipairs({ true, false }) do
+  local native, calls = fresh(true)
+  local first_env = make_env({ ["tiger/learning_context_guard"] = tostring(first_on) })
+  local second_env = make_env({ ["tiger/learning_context_guard"] = tostring(not first_on) })
+  native.translator.init(first_env)
+  native.translator.init(second_env)
+  assert(#calls.guards == 1 and calls.guards[1] == first_on,
+    "a shared engine's guard must not be silently overwritten")
+  assert(first_env._tiger_engine_ready == true and second_env._tiger_engine_ready == false,
+    "incompatible guard must reject shared engine reuse")
+  native.translator.fini(second_env)
+  native.translator.fini(first_env)
+end
+print("shared learning guard configuration: ok")

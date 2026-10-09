@@ -8,6 +8,14 @@
 > [前报](../reports/2026-09-02-cross-candidate-ordering-benchmark.md)和
 > [旧全量审计](../reports/2026-09-02-cross-candidate-ordering-audit.md)保留为历史工程测量。
 
+## 上下文学习守卫补充（2026-10-09）
+
+两主方案新增 `tiger/learning_context_guard: true`。不改个人快照/userdb 格式，也不提高词频：用户字符层只融合实际两字上下文下的精确三元观测，独立词的 BOS/EOS 习惯不扩散到组合长句，已知词内部个人边需个人跨边界记录；整段个人词/短语和新造词的学习保留。被取消加分的已知词边不再把组合兄弟标为个人候选。追加输入时，whole-input 身份变化须重算包含个人词/单字的终态，不能复用短词阶段预算。
+
+`context_char_scores` Lua 第一返回表兼容旧调用，第二表为前文末字＋候选前两字的真实静态/个人三元支持。word-order 首位仍作基线，后续候选有支持才允许越位；nil 第二返回值表示旧 ABI，保持兼容；存在但畸形的表保留原序。共享 native 引擎拒绝相反的 guard 设置。默认只读 C ABI 调用仍 legacy，测试/宿主要显式调用 `tiger_engine_set_learning_context_guard`。
+
+同次修复个人词库分片刷新交接：扫描模块归并后的 state 不再有 parts，translator 必须用 `scan_finish(state)` 产生最终行，再喂 native 事务；否则连续提交会报 `field 'parts' nil` 并冻结刷新。新增 native 学习范围/增量协议与 Lua 刷新回归。验收、收益和修坏均记录于 [修复报告](../reports/2026-10-09-contextual-learning-guard.md)，不能把两个例子成功推断为所有搭配改善。
+
 ## 当前词库布局补充（2026-10-08）
 
 两主方案的 `smart` / `smart_static` 及编译垫片现读取 `mohu_{scheme}.words`：它是原 `extended` 导入图的自包含合并产物。`tools/build_sentence_dictionary.py` 保留来源顺序、读音、编码、缺省值和重复行，不重新计算频率；根目录不再有 `chars/base/tencent/moe/classics/wanxiang/extended` 运行时分库。来源在 `tools/data/lexicon_sources/{zrm,flypy}/`，不进入发布包。native 的读音频率与 base 词注入算法仍读取同样的来源，只改了路径；二进制模型、词边信号、候选协议和用户词库命名不变。历史报告中的 `extended` / 分库路径描述的是当时版本，不回写历史结论。

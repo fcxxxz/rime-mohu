@@ -105,6 +105,27 @@ int main() {
   luaopen_tigerengine(state);
   lua_setglobal(state, "tiger");
 
+  // Character scoring keeps its first return table compatible and publishes
+  // dense boolean boundary metadata as its second return value.
+  push_method(state, "set_learning_context_guard");
+  lua_pushinteger(state, handle);
+  lua_pushboolean(state, 1);
+  assert(lua_pcall(state, 2, 1, 0) == LUA_OK);
+  assert(lua_toboolean(state, -1));
+  lua_settop(state, 0);
+  push_method(state, "context_char_scores");
+  lua_pushinteger(state, handle);
+  lua_pushliteral(state, "编辑");
+  lua_createtable(state, 2, 0);
+  lua_pushliteral(state, "码表"); lua_rawseti(state, -2, 1);
+  lua_pushliteral(state, "马标"); lua_rawseti(state, -2, 2);
+  assert(lua_pcall(state, 3, 2, 0) == LUA_OK);
+  assert(lua_istable(state, -2) && lua_istable(state, -1));
+  assert(lua_rawlen(state, -2) == 2 && lua_rawlen(state, -1) == 2);
+  lua_rawgeti(state, -1, 1);
+  assert(lua_isboolean(state, -1) && !lua_toboolean(state, -1));
+  lua_settop(state, 0);
+
   // Every bad argument must leave the C++ binding usable.  A longjmp from
   // luaL_check* used to bypass the binding mutex's destructor here.
   push_method(state, "free");

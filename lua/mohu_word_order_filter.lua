@@ -10,6 +10,8 @@
 -- 对菜单前 N 个 smart 候选批量取上下文续写分，按「模型分 − rank_penalty ×
 -- (名次−1)」融合后稳定重排——词频权威保留，模型只在上下文条件下提升
 -- 续写概率更高的候选（重排，不顶替；−7.3pp 接管实验的教训）。
+-- learning_context_guard 开启时，次选还须有前文末字与候选前两字的
+-- 真实搭配记录；纯回退分不允许翻首选，防止独立词学习泛化到新语境。
 --
 -- 评分信号（tiger/word_order_signal）：
 --   char（默认）＝ 字符续写裸分 Σ logP(候选字|上文末 2 字)，octagram 同型
@@ -99,6 +101,7 @@ end
 function F.init(env)
   local cfg = env.engine.schema.config
   env._wo_enabled = config_flag(cfg, "tiger/word_order", true)
+  env._wo_context_guard = config_flag(cfg, "tiger/learning_context_guard", true)
   env._wo_limit = math.floor(config_number(cfg, "tiger/word_order_candidates", 20, 2, 50))
   -- 收集窗口的扫描上界：防止候选流前部全是不可重排候选（补全单字洪流）
   -- 时无界拉干整条流。默认为窗口的 8 倍；正常菜单的前缀（简码/固顶）远小于此。
@@ -235,7 +238,7 @@ local function reorder(input, env)
     drain()
     return
   end
-  local ok, scores = pcall(score_fn, handle, history, texts)
+  local ok, scores, supported = pcall(score_fn, handle, history, texts)
   if not ok or type(scores) ~= "table" or #scores ~= #texts then
     -- 评分失败：直通并停用（可用性：不每键重试报错）。
     env._wo_dead = true
@@ -243,6 +246,28 @@ local function reorder(input, env)
     for _, c in ipairs(block) do yield(c) end
     drain()
     return
+  end
+
+  -- An older scorer returns no support table. Present but malformed metadata
+  -- is an invalid batch, not permission to fall back to unguarded promotions.
+  if env._wo_context_guard and env._wo_signal == "char" and supported ~= nil then
+    local valid = type(supported) == "table" and #supported == #texts
+    if valid then
+      for index = 1, #texts do
+        if type(supported[index]) ~= "boolean" then valid = false; break end
+      end
+      for key in pairs(supported) do
+        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > #texts then
+          valid = false; break
+        end
+      end
+    end
+    if not valid then
+      yield_prefix()
+      for _, c in ipairs(block) do yield(c) end
+      drain()
+      return
+    end
   end
 
   -- 融合：F_k = 模型分 − rank_penalty × (原名次−1)。候选要越过前面的
@@ -254,7 +279,13 @@ local function reorder(input, env)
   local active = {}  -- 参与重排的槽位（slots 内序号，升序）＋融合分
   for k = 1, #slots do
     local score = tonumber(scores[k])
-    if type(score) == "number" and score == score and (not word_signal or score > -19.9) then
+    -- Keep the first eligible candidate as the baseline. A later candidate
+    -- needs complete boundary evidence to replace it; fallback-only scores
+    -- leave that candidate's slot unchanged. Older scorers return one table.
+    local eligible = word_signal or not env._wo_context_guard or
+      supported == nil or k == 1 or supported[k] == true
+    if eligible and type(score) == "number" and score == score and
+        (not word_signal or score > -19.9) then
       active[#active + 1] = { pos = k, s = score - penalty * (k - 1) }
     end
   end

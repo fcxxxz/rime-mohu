@@ -291,7 +291,9 @@ local function ensure_engine(env)
     { conf("engine_lib") or "", conf("model") or "", conf("lexicon") or "",
       conf("beam") or "", conf("all_ranks") or "",
       conf("word_scorer_model") or "", conf("semantic_model") or "",
-      conf("semantic_vocab") or "" }, "\28")
+      conf("semantic_vocab") or "",
+      (conf("learning_context_guard") == "false" or
+       conf("learning_context_guard") == "0") and "0" or "1" }, "\28")
   if engine_handle ~= nil then
     if engine_raw_signature == raw_signature then return engine_handle end
     if not engine_config_error_logged then
@@ -432,6 +434,13 @@ local function ensure_engine(env)
         status:find("word_scorer=off", 1, true) == nil then
       word_scorer_ready = true
     end
+  end
+  -- Old runtimes retain their ABI behavior; upgraded runtimes restrict
+  -- standalone learning to observed contexts without deleting user data.
+  if type(tigerengine.set_learning_context_guard) == "function" then
+    local guarded = conf("learning_context_guard")
+    pcall(tigerengine.set_learning_context_guard, h,
+      guarded ~= "false" and guarded ~= "0")
   end
   -- 读音先验权重：tiger/reading_prior_weight（0 关闭，默认 1.0）。旧 ABI
   -- dylib 无该函数时静默保持引擎内建默认；非法值回退默认。
@@ -604,7 +613,12 @@ local function personal_start_apply(env, state)
   if personal_txn_available() then
     local ok = pcall(tigerengine.personal_begin, engine_handle)
     if ok then
-      env._mohu_personal_feed = { parts = state.parts, index = 1 }
+      -- scan state accumulates merged rows, not preformatted parts. Finalize
+      -- once so alternate spellings contribute their summed commit counts.
+      local payload = personal_lexicon.scan_finish(state)
+      local parts = {}
+      for row in payload:gmatch("[^\n]+\n") do parts[#parts + 1] = row end
+      env._mohu_personal_feed = { parts = parts, index = 1 }
       -- 顺势喂入第一片。
       personal_feed_tick(env)
       return

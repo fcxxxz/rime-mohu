@@ -344,12 +344,13 @@ int l_context_char_scores(lua_State* L) {
     }
   }
   std::vector<double> scores((size_t)n, 0.0);
+  std::vector<int> supported((size_t)n, 0);
   int rc = 0;
   char error[512] = {0};
   if (n > 0) {
     std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
-    rc = tiger_engine_context_char_scores((int)handle_value, context,
-        joined.c_str(), (int)n, scores.data());
+    rc = tiger_engine_context_char_scores_supported((int)handle_value, context,
+        joined.c_str(), (int)n, scores.data(), supported.data());
     if (rc < 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
   }
   if (rc < 0) {
@@ -362,7 +363,12 @@ int l_context_char_scores(lua_State* L) {
     lua_pushnumber(L, scores[(size_t)i]);
     lua_rawseti(L, -2, i + 1);
   }
-  return 1;
+  lua_createtable(L, (int)n, 0);
+  for (lua_Integer i = 0; i < n; ++i) {
+    lua_pushboolean(L, supported[(size_t)i]);
+    lua_rawseti(L, -2, i + 1);
+  }
+  return 2;
 }
 
 int l_set_user_model_weight(lua_State* L) {
@@ -379,6 +385,21 @@ int l_set_user_model_weight(lua_State* L) {
     if (rc != 0) std::snprintf(error, sizeof(error), "%s", tiger_last_error());
   }
   if (rc < 0) return luaL_error(L, "%s", error[0] ? error : "user model weight update failed");
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+int l_set_learning_context_guard(lua_State* L) {
+  lua_Integer value = luaL_checkinteger(L, 1);
+  luaL_argcheck(L, value >= std::numeric_limits<int>::min() &&
+                   value <= std::numeric_limits<int>::max(), 1, "engine handle is out of range");
+  int on = lua_toboolean(L, 2);
+  int rc;
+  {
+    std::lock_guard<std::mutex> lock(g_lua_binding_mutex);
+    rc = tiger_engine_set_learning_context_guard((int)value, on);
+  }
+  if (rc < 0) return luaL_error(L, "learning context guard update failed");
   lua_pushboolean(L, 1);
   return 1;
 }
@@ -771,6 +792,7 @@ int luaopen_tigerengine(lua_State* L) {
       {"context_word_scores", l_context_word_scores},
       {"context_char_scores", l_context_char_scores},
       {"set_user_model_weight", l_set_user_model_weight},
+      {"set_learning_context_guard", l_set_learning_context_guard},
       {"set_user_model_gain_cap", l_set_user_model_gain_cap},
       {"set_personal_edge_internal_cap", l_set_personal_edge_internal_cap},
       {"set_bos_user_gain_cap", l_set_bos_user_gain_cap},

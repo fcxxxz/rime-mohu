@@ -40,6 +40,10 @@ int tiger_engine_update_user_model(int handle, const char* text);
 int tiger_engine_forget_text(int handle, const char* text, int times);
 /* static_weight is the static model's share in (0, 1]; 1 disables the layer. */
 int tiger_engine_set_user_model_weight(int handle, double static_weight);
+/* Opt-in contextual learning guard (0 legacy, 1 guarded). Keep snapshot format
+ * unchanged; restrict personal backoff, composed BOS and internal known-word
+ * boosts to their observed contexts. Main Mohu schemas enable it. */
+int tiger_engine_set_learning_context_guard(int handle, int on);
 /* Cap the positive cumulative user-model gain on one decoded path, in nats.
  * 0 disables the cap. This limits historical trigram amplification without
  * removing user counts or personal lexical edges. Range [0, 32]. */
@@ -151,6 +155,12 @@ int tiger_engine_context_word_scores(int handle, const char* context_text,
 int tiger_engine_context_char_scores(int handle, const char* context_text,
                                      const char* candidates, int candidate_count,
                                      double* out_scores);
+/* Same scores plus observed boundary evidence: context's last CJK char and
+ * the candidate's first two codepoints form an observed static/personal
+ * trigram. Both output arrays have candidate_count entries. */
+int tiger_engine_context_char_scores_supported(int handle, const char* context_text,
+                                     const char* candidates, int candidate_count,
+                                     double* out_scores, int* out_supported);
 /* 进程内魔虎语义 C2 scorer。候选为换行分隔 UTF-8，native_scores 与候选
  * 同序；成功返回 candidate_count，失败返回 -1。 */
 int tiger_semantic_create(const char* model_path, const char* vocab_path,

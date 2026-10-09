@@ -297,6 +297,8 @@ tiger:
   # 周期性卡顿。根因与验证见 docs/reports/2026-09-11-personal-lexicon-refresh-lag.md。
   # 用户调频层：上屏文本喂入内存三元计数表，与静态模型按权重融合
   user_model: true
+  # 独立选词只影响整词；句内学习与跨候选越位需要真实搭配证据。
+  learning_context_guard: true
   user_model_weight: 0.85          # 静态模型权重（1.0 = 关闭用户层）
   # 单条解码路径的用户 trigram 累计正增益上限（nats）。防止历史词链
   # 把冷启动自由句抬几十 nats；0 关闭封顶。个人词边与用户计数不删除。

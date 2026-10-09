@@ -43,6 +43,10 @@ V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema �
 
 如果 native 已加载但结果仍受个人历史影响，请检查 `mohu/config/user-ngram.snapshot`。默认 `tiger/user_model: true`、`user_model_weight: 0.85` 会把上屏记录与 V5 模型融合；清空或暂时关闭该用户层，才能观察纯 V5 模型排序。
 
+可选的轻量语义权重提供单文件 `mohu-semantic-qwen2.5-0.5b-4bit.zip`，
+放在 `latest` Release。解压后将型号文件夹放到 `mohu/model/`；配套运行条件
+和配置见 [语义重排说明](docs/semantic-rerank.md)。
+
 ### 放置 V5 模型
 
 从 GitHub Release 下载 `mohu-sentence-ngram-v5.bin`，放到：

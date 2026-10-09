@@ -456,6 +456,7 @@ jobs:
             '- 手机精简版（Android Trime / iOS 仓输入法）：`rime-mohu-mobile-zrm-lite.zip` / `rime-mohu-mobile-flypy-lite.zip`，无模型无 native；想要整句自行导入模型并配合定制版前端，日常输入与用户词记忆开箱即用。' \
             '' \
             '桌面方案包不包含模型文件，适用于空的或专门准备的 Rime 用户目录。' \
+            '可选轻量语义模型：mohu-semantic-qwen2.5-0.5b-4bit.zip，解压后把型号文件夹放入 mohu/model/；仅适用于已安装本机语义服务的 macOS Apple Silicon 用户，配置 ?model=0.5b-4bit。详见仓库 docs/semantic-rerank.md。' \
             '' \
             '本次构建提交：'"${GITHUB_SHA::7}" > "$notes_file"
           if gh release view latest >/dev/null 2>&1; then

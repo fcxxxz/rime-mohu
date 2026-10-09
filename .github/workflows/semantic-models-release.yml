@@ -1,6 +1,6 @@
 name: semantic-models-release
 
-# 在 runner 上下载模型并把分卷传到 release semantic-models-v1。
+# 在 runner 上下载模型；小模型发布单 ZIP，超过资产上限才保留 tar 分卷。
 # 触发：手动（workflow_dispatch，选择 bf16 原版 / MLX 量化档）。
 # 量化档实测（零泄漏 438 句）：8bit 三档零损失（+35/+41/+53）、
 # 0.5B-4bit -1 分（+34）；3bit 已判死不发布。
@@ -38,6 +38,12 @@ jobs:
       REPO: ${{ matrix.repo }}
       RUN_FLAG: ${{ (matrix.kind == 'bf16' && inputs.run_bf16) || (matrix.kind == 'mlx' && inputs.run_quant) }}
     steps:
+      - name: Check out packaging tools
+        uses: actions/checkout@v4
+
+      - name: Verify semantic model packaging
+        run: python -m unittest tests.test_semantic_model_pack -v
+
       - name: Skip if not selected
         if: env.RUN_FLAG != 'true'
         run: echo "skipping ${TAG} (${REPO})"
@@ -57,9 +63,9 @@ jobs:
         run: |
           set -e
           python - <<'EOF'
-          import os, shutil, glob
+          import os, shutil, glob, re
           repo = os.environ["REPO"]
-          patterns = ["*.json", "*.txt", "*.jinja", "*.safetensors"]
+          patterns = ["*.json", "*.txt", "*.jinja", "*.safetensors", "*.md", "LICENSE*", "NOTICE*"]
           try:
               from huggingface_hub import snapshot_download
               p = snapshot_download(repo, allow_patterns=patterns)
@@ -73,18 +79,22 @@ jobs:
           src = snap[0] if snap else p
           os.makedirs("/tmp/model", exist_ok=True)
           for f in os.listdir(src):
-              shutil.copy2(os.path.join(src, f), "/tmp/model/" + f)
+              source = os.path.join(src, f)
+              if os.path.isfile(source):
+                  shutil.copy2(source, "/tmp/model/" + f)
+          if not os.path.isfile("/tmp/model/LICENSE"):
+              base = repo if repo.startswith("Qwen/") else "Qwen/" + re.sub(r"-[0-9]+bit$", "", repo.split("/", 1)[1])
+              from huggingface_hub import hf_hub_download
+              license_path = hf_hub_download(base, "LICENSE")
+              shutil.copy2(license_path, "/tmp/model/LICENSE")
           print("files:", sorted(os.listdir("/tmp/model")))
           EOF
 
-      - name: Split into volumes
+      - name: Package model for installation
         if: env.RUN_FLAG == 'true'
         run: |
-          set -e
-          mkdir -p /tmp/vol
-          cd /tmp/model
-          tar -cf - . | split -b 1900m - "/tmp/vol/mohu-semantic-qwen2.5-${TAG}.tar.part-"
-          ls -la /tmp/vol/
+          python tools/pack_semantic_model.py --model-dir /tmp/model \
+            --output-dir /tmp/vol --tag "$TAG" --repo "$REPO"
 
       - name: Upload to release
         if: env.RUN_FLAG == 'true'
@@ -93,12 +103,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -e
-          for f in /tmp/vol/*; do
-            name=$(basename "$f")
-            if gh release view semantic-models-v1 --json assets \
-               -q '.assets[].name' | grep -qx "$name"; then
-              gh release delete-asset semantic-models-v1 "$name" --yes
-            fi
-          done
           gh release upload semantic-models-v1 /tmp/vol/* --clobber
+          # The default download page also carries the lightweight model.
+          if [ "$TAG" = '0.5b-4bit' ]; then
+            gh release upload latest /tmp/vol/*.zip /tmp/vol/*.sha256 --clobber
+          fi
           echo "uploaded ${TAG}"

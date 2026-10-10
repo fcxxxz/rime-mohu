@@ -216,6 +216,8 @@ tigress_ci 诗词词库）。native 词表也没有这两句。待观察项：�
 差值为链深结构成本）。完整定位、数字与探针方法见
 [每键延迟报告](../reports/2026-09-14-perkey-latency.md)。
 
+**2026-10-10 长词补全接线核查**：早期“smart 不产出长词补全”的结论不适用于完整读音已收录的词。librime 1.16 小型词库实测：四个完整音节可以产生 `completion` 长词候选。当前主表 7,020 个长词中 2,688 个未进整句词库，构建补充完整读音后补全可达；小鹤同步派生。新增 `mohu_completion_filter` 在显式管理后限制长补全默认 3 条，防止它们绕过句形配额（字数超过已打音节数原本属于豁免）。这项配额按明确的 completion 类型判断，不能将简码词、普通句形或同音候选数量混算。详见 [长词接线与数量限制报告](../reports/2026-10-10-long-word-completion.md)。
+
 **2026-09-09 整句菜单显示裁剪（不改排序）**：新增
 `lua/mohu_sentence_visibility_filter.lua`（挂 word_order 之后、
 candidate_override 之前），配置 `tiger/sentence_visible_candidates`

@@ -14,6 +14,13 @@ from pathlib import Path
 
 import yaml
 
+try:
+    from .long_word_completion import flypy_rows
+    from .long_word_completion import master_long_word_rows as derive_long_words
+except ImportError:
+    from long_word_completion import flypy_rows
+    from long_word_completion import master_long_word_rows as derive_long_words
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SUFFIXES = ('chars', 'base', 'words', 'tencent', 'moe', 'classics', 'wanxiang')
 
@@ -25,7 +32,8 @@ def source_paths(scheme: str, root: Path = ROOT) -> list[Path]:
             for suffix in SOURCE_SUFFIXES]
 
 
-def merge_dictionary(name: str, sources: list[Path], destination: Path) -> int:
+def merge_dictionary(name: str, sources: list[Path], destination: Path,
+                     supplemental_rows: list[tuple[str, str, str]] = ()) -> int:
     """Atomically stream source rows using a common text/code/weight layout."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f'.{destination.name}.', dir=destination.parent)
@@ -84,6 +92,15 @@ def merge_dictionary(name: str, sources: list[Path], destination: Path) -> int:
                         output.write(rendered)
                         digest.update(rendered)
                         count += 1
+            if supplemental_rows:
+                prefix = b'\n# Source: master-table long words (derived full spellings)\n'
+                output.write(prefix)
+                digest.update(prefix)
+                for row in supplemental_rows:
+                    rendered = ('\t'.join(row) + '\n').encode('utf-8')
+                    output.write(rendered)
+                    digest.update(rendered)
+                    count += 1
             output.seek(version_offset)
             output.write(digest.hexdigest()[:12].encode('ascii'))
         # Do not change mtime on an identical build; deployment uses checksums.
@@ -107,11 +124,21 @@ def same_bytes(left: Path, right: Path) -> bool:
     return True
 
 
+def master_long_word_rows(root: Path = ROOT):
+    return derive_long_words(root, source_paths('zrm', root))
+
+
 def build(root: Path = ROOT) -> None:
+    supplemental, report = master_long_word_rows(root)
     for scheme in ('zrm', 'flypy'):
         destination = root / f'mohu_{scheme}.words.dict.yaml'
-        count = merge_dictionary(f'mohu_{scheme}.words', source_paths(scheme, root), destination)
+        rows = supplemental if scheme == 'zrm' else flypy_rows(supplemental)
+        count = merge_dictionary(f'mohu_{scheme}.words', source_paths(scheme, root), destination,
+                                 supplemental_rows=rows)
         print(f'{destination.name}: {count} source rows, no imported runtime tables')
+    print(f"Master long words: {report['master_long_words']}, existing: "
+          f"{report['already_in_corpus']}, derived: {report['derived']}, "
+          f"unresolved: {len(report['unresolved'])}")
 
 
 if __name__ == '__main__':

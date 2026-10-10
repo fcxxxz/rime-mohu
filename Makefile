@@ -350,6 +350,7 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	uv run tools/import_classics.py check
 	uv run python -m unittest tests.test_classics_import -v
 	uv run python -m unittest tests.test_tiger_aux tests.test_unified_dictionary -v
+	uv run python -m unittest tests.test_sentence_dictionary tests.test_long_word_completion -v
 	uv run python -m unittest tests.test_qwen_semantic_rerank -v
 	uv run --with torch python -m unittest tests.test_semantic_pipeline_model -v
 	uv run python -m unittest tests.test_tiger_lexicon_fly -v
@@ -369,6 +370,7 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MOHU_LUA_BIN) tests/mohu_candidate_override_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_candidate_weight_reset_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_charset_filter_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_completion_filter_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_contextual_translator_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_ijrq_fixed_test.lua

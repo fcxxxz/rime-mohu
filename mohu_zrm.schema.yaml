@@ -103,6 +103,7 @@ engine:
     - lua_filter@*mohu_ijrq_filter
     - lua_filter@*mohu_candidate_override*override_order_filter
     - lua_filter@*mohu_candidate_override*override_filter
+    - lua_filter@*mohu_completion_filter  # 长词补全限额；显式置顶/调序优先
     - lua_filter@*mohu_hint_filter
     - simplifier@emoji
     - lua_filter@*mohu_charset_filter@post_conversion
@@ -505,6 +506,8 @@ mohu:
   # 输入四码时，如果固顶码表中含有对应条目，则注入到首选之后。
   inject_table_chars: true    # 是否输出固顶码表单字，例：输入 cisa 时，首屏显示「词」
   inject_table_words: true    # 是否输出简码码表词语，例：输入 lmsd 时，次选为「两面三刀」
+  # 长词补全数量（不含正常首选、简码词和普通词组）；-1 不限，0 关闭。
+  word_completion_limit: 3
   # 旧版本配置保留占位；当前不按排名门槛决定四码字词让位。
   # 逐对规则维护在 mohu/four_code_yield_pairs_<方案>.txt；勿用此值调序。
   four_code_char_yield_rank: 2000

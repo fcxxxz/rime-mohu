@@ -78,7 +78,7 @@ deploy:
         assert: eq(cand[1].text, '利') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '梨') and eq(cand[2].comment, '⚡️')
       - send: lixp
         assert: eq(cand[1].text, '黎') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '励')
-      # 暮 由 four_code_char_yield_exempt 豁免四码让位规则
+      # 同码字词基础顺序来自主表，随后单字出简让全仍生效
       - send: mulo
         assert: eq(cand[1].text, '幕') and eq(cand[2].text, '暮') and eq(cand[2].comment, '⚡️')
       # 手工加词

@@ -253,5 +253,15 @@ do
   check("semantic ranking preserves an invisible shadow pin", result[1] == pin)
 end
 
+do
+  local fixed = candidate("金丹", "mohu_table_full_word")
+  local genuine = candidate("金丹", "phrase")
+  fixed.get_genuine = function() return genuine end
+  model_calls.response = { 1.0, 5.0, 3.0 }
+  model_calls.requests = 0
+  local result = run({ fixed, candidate("金蛋"), candidate("紧胆"), candidate("近蛋") })
+  check("full-word table position stays frozen without a visible quick icon", result[1] == fixed)
+end
+
 print(string.format("%d passed, %d failed", checks.passed, checks.failed))
 if checks.failed > 0 then os.exit(1) end

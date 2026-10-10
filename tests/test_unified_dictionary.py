@@ -41,6 +41,14 @@ class UnifiedDictionaryTest(unittest.TestCase):
         self.assertEqual(meta['columns'], ['text', 'code'])
         self.assertTrue(all(len(r) == 2 for r in rows))
 
+    def test_mohu_name_uses_its_actual_full_spelling(self):
+        for scheme in ('zrm', 'flypy'):
+            _, rows = dictionary(ROOT / f'mohu_{scheme}.dict.yaml')
+            pairs = {(row[0], row[1]) for row in rows}
+            self.assertFalse(('魔虎', 'morj') in pairs, f'{scheme}: 魔虎 must not use mo-ran')
+            for pair in [('魔虎', 'mohu'), ('魔虎', 'mr'), ('蓦然', 'morj'), ('默然', 'morj')]:
+                self.assertTrue(pair in pairs, f'{scheme}: missing {pair}')
+
     def test_validator_accepts_two_columns_without_changing_source(self):
         with TemporaryDirectory() as directory:
             path = Path(directory) / 'mohu_zrm.dict.yaml'
@@ -103,6 +111,15 @@ class UnifiedDictionaryTest(unittest.TestCase):
         text = (ROOT / 'Makefile').read_text()
         self.assertNotIn('fixed_tiger', text)
         self.assertNotIn('sync_flykey_quickcodes.py --apply', text)
+
+    def test_four_code_collisions_have_no_separate_yield_authority(self):
+        self.assertEqual(list((ROOT / 'mohu').glob('four_code_yield_pairs_*.txt')), [])
+        self.assertFalse((ROOT / 'tools/build_four_code_yield_pairs.py').exists())
+        for scheme in ('zrm', 'flypy'):
+            config = yaml.safe_load((ROOT / f'mohu_{scheme}.schema.yaml').read_text())
+            self.assertNotIn('four_code_char_yield_rank', config['mohu'])
+            self.assertNotIn('four_code_char_yield_exempt', config['mohu'])
+        self.assertNotIn('load_four_code_yield_pairs', (ROOT / 'lua/mohu.lua').read_text())
 
 
 if __name__ == '__main__':

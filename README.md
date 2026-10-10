@@ -93,7 +93,7 @@ make pack
 
 对应展开目录仍是 `dist-zrm/` 和 `dist-flypy/`。zip 内文件直接位于根目录，解压到 Rime 用户目录后重新部署；更新引擎时还需完全退出并重启鼠须管。包内不带模型，保留原有 `mohu/model/mohu-sentence-ngram-v5.bin`。
 
-四码字词逐对覆盖改 `mohu/four_code_yield_pairs_zrm.txt`（自然码）或 `mohu/four_code_yield_pairs_flypy.txt`（小鹤）；每行是“词<Tab>让位的字”。单字有短码时，输入完整四码还会受 `mohu/ijrq/enable` 的“出简让全”规则影响：完整码保留，首选后移；不用从主码表删除完整码。
+四码单字与二字词撞码的基础顺序也直接改主码表的同码行序，不再维护单独的字词避让表。三字以上四码简词仍跟在正常首选之后。单字有短码时，输入完整四码还会受 `mohu/ijrq/enable` 的“出简让全”规则影响：完整码保留，首选后移；不用从主码表删除完整码。
 
 <details>
 <summary>只更新数据、单独打包或运行测试时的其他命令</summary>

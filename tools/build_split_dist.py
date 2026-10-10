@@ -69,10 +69,8 @@ def copy_runtime_directories(scheme: str, destination: Path) -> None:
     # 覆盖安装会把用户开关重置成仓库里的测试残值。
     (destination / "lua" / "option_state_data.lua").unlink(missing_ok=True)
 
-    other_scheme = "flypy" if scheme == "zrm" else "zrm"
     mohu_destination = destination / "mohu"
     copy_path(ROOT / "mohu", mohu_destination)
-    (mohu_destination / f"four_code_yield_pairs_{other_scheme}.txt").unlink()
 
     opencc_destination = destination / "opencc"
     opencc_destination.mkdir()

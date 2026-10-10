@@ -29,6 +29,7 @@ function Module.init(env)
         or env.engine.schema.config:get_string("translator/dictionary")
     env.quick_code_hint_reverse = nil
     env.quick_code_hint_skip_chars = env.engine.schema.config:get_bool("mohu/quick_code_hint_skip_chars") or false
+    env.quick_code_indicator = env.engine.schema.config:get_string("mohu/quick_code_indicator") or "⚡️"
     env.quick_code_hint_indicator = env.engine.schema.config:get_string("mohu/quick_code_hint_indicator")
     if env.quick_code_hint_indicator == nil then
         env.quick_code_hint_indicator = env.engine.schema.config:get_string("mohu/quick_code_indicator")
@@ -143,6 +144,24 @@ function Module.get_quickcode_hint(env, cand, gcand)
     return codes_hint
 end
 
+-- Ordering and display are separate: a full word retains a nonvisual
+-- fixed-table identity, rather than using a quick-code icon for protection.
+-- Explicit shorter-code hints (e.g. ⚡jq for 进去) are retained.
+function Module.display_full_word(env, cand)
+    if cand.type == "pinned" then return cand end
+    if env.quick_code_indicator == "" then return cand end
+    if cand.comment ~= env.quick_code_indicator then return cand end
+    local len = utf8.len(cand.text)
+    if not len or len < 2 or type(cand.preedit) ~= "string" then return cand end
+    local spelling = cand.preedit:gsub("%s", "")
+    if #spelling < 2 * len then return cand end
+    local genuine = cand:get_genuine()
+    -- Rime inherits the underlying comment when a Shadow comment is empty.
+    -- Clear only the display marker; keep the original learning object.
+    genuine.comment = ""
+    return ShadowCandidate(genuine, "mohu_table_full_word", cand.text, "", false)
+end
+
 function Module.func(translation, env)
     local enable_aux_hint = env.engine.context:get_option("aux_hint")
     if enable_aux_hint and not env.aux_table_load_attempted then
@@ -158,7 +177,7 @@ function Module.func(translation, env)
 
     if not enable_aux_hint and not enable_quick_code_hint and not env.is_auxfilter then
         for cand in translation:iter() do
-            yield(cand)
+            yield(Module.display_full_word(env, cand))
         end
         return
     end
@@ -227,7 +246,7 @@ function Module.func(translation, env)
                 gcand.comment = gcand.comment .. major_sep .. env.quick_code_hint_indicator .. qchint
             end
         end
-        yield(cand)
+        yield(Module.display_full_word(env, cand))
         ::continue::
     end
 end

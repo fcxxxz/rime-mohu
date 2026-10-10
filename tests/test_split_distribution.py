@@ -95,12 +95,7 @@ class SplitDistributionTest(unittest.TestCase):
                     self.assertFalse((output / f"{schema_id}.schema.yaml").exists())
 
                 self.assertEqual([], sorted(output.glob(f"mohu_{other}*")))
-                self.assertTrue(
-                    (output / "mohu" / f"four_code_yield_pairs_{scheme}.txt").is_file()
-                )
-                self.assertFalse(
-                    (output / "mohu" / f"four_code_yield_pairs_{other}.txt").exists()
-                )
+                self.assertEqual([], list((output / "mohu").glob("four_code_yield_pairs_*.txt")))
                 self.assertEqual([], sorted(output.glob("*.userdb*")))
                 self.assertFalse((output / "zh-hans-t-essay-bgw.gram").exists())
                 self.assertFalse((output / "zh-hans-t-essay-bgc.gram").exists())

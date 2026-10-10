@@ -188,3 +188,38 @@ local hinted=require("mohu_hint_filter").get_auxcode_hint({is_auxfilter=true,
  aux_table={[utf8.codepoint("如")]="bd",[utf8.codepoint("果")]="qe"}},pin_phrase,pin_phrase,true)
 assert(hinted=="bd qe","pinned learning Phrase retains its word auxiliary hints")
 print("pinned Phrase word hints: ok")
+
+-- A fixed-table ordering marker is not evidence of an abbreviated word.
+-- Preserve the genuine Phrase and a nonvisual identity for later filters,
+-- while hiding the bare icon when the whole double-pinyin word was entered.
+env.is_auxfilter = false
+quick_code_hint, aux_hint = false, false
+filter.init(env)
+yielded = {}
+local full_word = candidate()
+full_word.text, full_word.preedit, full_word.comment = "金丹", "jn dj", "⚡️"
+filter.func(translation(full_word), env)
+assert(yielded[1].comment == "", "jndj is 金丹's full spelling, not a quick code")
+assert(yielded[1]:get_genuine() == full_word and full_word.comment == "" and
+    yielded[1].comment == "" and yielded[1].type == "mohu_table_full_word" and
+    full_word.type == "phrase",
+    "hiding the icon must retain the learning Phrase and fixed-order protection")
+quick_code_hint = true
+yielded = {}
+full_word.comment = "⚡️"
+filter.func(translation(full_word), env)
+assert(yielded[1].comment == "", "enabling quick-code hints must not invent an abbreviation")
+quick_code_hint = false
+for _, item in ipairs({{"哪里", "nal"}, {"机难轻失", "jnqu"}}) do
+    yielded = {}
+    local short_word = candidate()
+    short_word.text, short_word.preedit, short_word.comment = item[1], item[2], "⚡️"
+    filter.func(translation(short_word), env)
+    assert(yielded[1].comment == "⚡️", "genuine shortened word codes retain their icon")
+end
+filter.fini(env)
+print("full word versus abbreviated word display: ok")
+local ordinary = candidate()
+ordinary.text, ordinary.preedit, ordinary.comment = "金丹", "jn dj", ""
+assert(filter.display_full_word({quick_code_indicator = ""}, ordinary) == ordinary,
+    "an empty indicator must not classify every ordinary word as a protected table entry")

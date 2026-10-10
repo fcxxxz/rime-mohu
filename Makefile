@@ -373,6 +373,7 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MOHU_LUA_BIN) tests/mohu_completion_filter_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_contextual_translator_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_express_tiger_test.lua
+	$(MOHU_LUA_BIN) tests/mohu_four_code_table_order_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_ijrq_fixed_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_freestyle_config_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_hint_filter_runtime_test.lua

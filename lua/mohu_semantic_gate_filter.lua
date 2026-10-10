@@ -88,7 +88,7 @@ end
 local function reorderable(env, cand)
   -- A shadow may retain a genuine lexical phrase for learning while its
   -- outer identity records a pin with no visible indicator.
-  if cand.type == "pinned" then return false end
+  if cand.type == "pinned" or cand.type == "mohu_table_full_word" then return false end
   local g = cand.get_genuine and cand:get_genuine() or cand
   local t = g.type
   if t == "punct" or t == "pinned" then return false end

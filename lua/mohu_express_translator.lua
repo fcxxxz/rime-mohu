@@ -1,20 +1,15 @@
 -- Mohu Translator (for Express Editor)
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.14.0
+-- Ver: 0.15.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
 --
--- 0.14.0: 四码普通模式的固顶单字让位改由 mohu/four_code_yield_pairs_<方案>.txt
--- 决定：smart 流中首个表内二字词排到行内所列单字之前，被顶单字仍保次选
--- （一个读音至多一个词顶字）；其余单字维持固顶。移除静态字频门槛
--- mohu/four_code_char_yield_rank，成对表缺失时保守降级为所有单字固顶。
+-- 0.15.0: 四码单字与二字词撞码时直接采用主码表行序；三字以上简词仍为
+-- 次位补充候选。没有单字撞码时保留 smart 调频与缺词补出，不再读取避让表。
 --
--- 0.13.0: 四码普通（动词）模式按静态字频决定固顶单字是否前置：
--- tiger_rank 排名大于 mohu/four_code_char_yield_rank（默认 2000）的
--- 生僻字让位给词，改由 inject_table_chars 注入到首选之后；高频字
--- 维持固顶。门槛设为 0 时全部让位（魔然行为）。
+-- 0.13.0: 四码普通模式的固顶字词排序仍按旧的字频/让位机制处理。
 --
 -- 0.12.2: 五码词辅候选消费辅码，未匹配时才回退到四码词
 --
@@ -182,19 +177,6 @@ function top.init(env)
 
     env.quick_code_indicator_skip_chars = env.engine.schema.config:get_bool("mohu/quick_code_indicator_skip_chars") or false
 
-    -- 四码固顶单字让位给词：由 mohu/four_code_yield_pairs_<方案>.txt 决定
-    -- 哪些二字词可以顶到行内所列单字之前；表缺失时所有单字固顶（保守降级）。
-    local schema_id = env.engine.schema.schema_id or ""
-    env.four_code_yield_variant = schema_id:find("flypy", 1, true) and "flypy" or "zrm"
-    env.four_code_yield_scan_limit = 20
-
-    -- 按字豁免四码让位规则（例如手工指定的次级简码）
-    env.four_code_char_yield_exempt = {}
-    local exempt_chars = env.engine.schema.config:get_string("mohu/four_code_char_yield_exempt") or ""
-    for _, cp in utf8.codes(exempt_chars) do
-        env.four_code_char_yield_exempt[cp] = true
-    end
-
     -- output 状态
     env.output_i = 0
     env.output_injected_secondary = {}
@@ -231,6 +213,7 @@ function top.func(input, seg, env)
     local quick_code_hint = env.engine.context:get_option("quick_code_hint")
     local aux_hint = env.engine.context:get_option("aux_hint")
     local indicator = env.quick_code_indicator
+    local smart_iter
 
     -- 用户尚未选过字时，调用码表。
     local is_sentence_making = not (env.engine.context.input == input)
@@ -252,52 +235,27 @@ function top.func(input, seg, env)
                     -- 如果只打开固词模式，则 *只* 优先输出 2 字词
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, false, function(len) return len == 2 end)
                 else
-                    -- 普通模式下，被 four_code_yield_pairs 表内首个二字词顶掉的
-                    -- 单字让位（改由注入逻辑放到首选之后，仍保次选），其余四码
-                    -- 固顶单字前置输出。
-                    local peek = top.peek_four_code_yield(env, input, seg, env.enable_word_filter and aux_hint)
-                    env.four_code_yield_peek = peek
-                    -- A two-character row in the editable table may use a
-                    -- four-key short spelling that the sentence dictionary
-                    -- does not contain (for example 几乎=johu while its
-                    -- ordinary sentence spelling is jihu).  Keep the
-                    -- fixed word visible when smart did not produce the
-                    -- same text; otherwise the smart fallback can hide the
-                    -- exact code-table entry.
-                    local fixed_words = {}
-                    for cand in mohu.query_translation(env.code_table, input, seg, nil) do
-                        if utf8.len(cand.text) == 2 then
-                            fixed_words[#fixed_words + 1] = cand
+                    local rows, fixed_words = {}, {}
+                    for cand in fixed_res:iter() do
+                        rows[#rows + 1] = cand
+                        if utf8.len(cand.text) == 2 then fixed_words[#fixed_words + 1] = cand end
+                    end
+                    if not top.output_four_code_collision(env, rows, is_sentence_making) and #fixed_words > 0 then
+                        -- No character collision: retain smart ranking, while
+                        -- keeping maintained aliases such as 几乎=johu visible.
+                        local buffer
+                        buffer, smart_iter = top.peek_smart_prefix(env, input, seg, env.enable_word_filter and aux_hint)
+                        for _, cand in ipairs(top.collect_missing_fixed_words(fixed_words, buffer)) do
+                            bind_lexical_provenance(env, cand, "fixed", lexical_translator_name(env, env.code_table))
+                            top.output_word_from_fixed(env, cand, is_sentence_making)
                         end
-                    end
-                    local smart_words = {}
-                    for _, cand in ipairs(peek.buffer) do
-                        smart_words[cand.text] = true
-                    end
-                    for _, cand in ipairs(top.collect_missing_fixed_words(fixed_words, peek.buffer)) do
-                        bind_lexical_provenance(env, cand, "fixed", lexical_translator_name(env, env.code_table))
-                        top.output_word_from_fixed(env, cand, is_sentence_making)
-                    end
-                    top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, nil, function(cand)
-                        local cp = utf8.codepoint(cand.text)
-                        if env.four_code_char_yield_exempt[cp] then
-                            return true
-                        end
-                        return not peek.chars[cp]
-                    end)
-                    -- 固顶单字已输出时，>2 字的码表词紧随字后补出。这些词原本
-                    -- 只能靠下方「码表零输出才注入」的兜底，而注入的 drain 发生
-                    -- 在首个候选之后、字一输出时机即过——码位被单字「双拼+辅码」
-                    -- 全码占据的多字词会整条不可见（如 yuhx 上「游手好闲」撞
-                    -- 「鹆」yu+hx）。无字固顶的码不进此分支，仍由注入块放到
-                    -- smart 首选之后，行为不变。
-                    if env.inject_table_words and env.output_i > 0 then
-                        local fixed_name = lexical_translator_name(env, env.code_table)
-                        for cand in mohu.query_translation(env.code_table, input, seg, nil) do
-                            bind_lexical_provenance(env, cand, "fixed", fixed_name)
-                            if utf8.len(cand.text) > 2 and not is_sentence_making then
-                                cand:get_genuine().comment = indicator
-                                top.output(env, top.secondary_word(cand))
+                        if env.inject_table_words and env.output_i > 0 and not is_sentence_making then
+                            for _, cand in ipairs(rows) do
+                                if utf8.len(cand.text) > 2 then
+                                    bind_lexical_provenance(env, cand, "fixed", lexical_translator_name(env, env.code_table))
+                                    cand.comment = indicator
+                                    top.output(env, top.secondary_word(cand))
+                                end
                             end
                         end
                     end
@@ -383,15 +341,7 @@ function top.func(input, seg, env)
 
     -- smart 在 fixed 之后输出。
     -- 当需要词辅时，保留 comment，以「提前」（用户输入词辅前）提示辅助码。
-    -- 四码普通模式已为让位判定预取过 smart 流：重放缓冲后续接原流，避免二次查询。
-    local smart_iter
-    if env.four_code_yield_peek ~= nil then
-        local peek = env.four_code_yield_peek
-        env.four_code_yield_peek = nil
-        if peek.iter ~= nil then
-            smart_iter = top.chain_candidates(peek.buffer, peek.iter)
-        end
-    end
+    -- 缺词检查若预取了 smart 流，继续重放同一查询。
     if smart_iter == nil then
         smart_iter = top.raw_query_smart(env, input, seg, env.enable_word_filter and aux_hint)
     end
@@ -548,47 +498,6 @@ function top.collect_missing_fixed_words(fixed_words, smart_candidates)
     return missing
 end
 
----四码让位候选资格：解包 Shadow/Uniquified 等包装后，必须是完整的
----二字候选，且真身不是动态组句（Sentence 伪词）。
----@param cand table
----@return boolean
-function top.is_four_code_yield_word_candidate(cand)
-    local genuine = cand.get_genuine and cand:get_genuine() or cand
-    if utf8.len(genuine.text) ~= 2 then
-        return false
-    end
-    local dynamic = genuine.get_dynamic_type and genuine:get_dynamic_type() or nil
-    return dynamic ~= "Sentence"
-end
-
----Scan a candidate stream for the first word present in the yield pair
----table, buffering every pulled candidate so the caller can replay the
----stream without a second translator query.
----@param iter function
----@param pairs_data table word -> yieldable chars
----@param limit integer maximum candidates to pull
----@return table buffer, table|nil word
-function top.find_four_code_yield_word(iter, pairs_data, limit)
-    local buffer = {}
-    while true do
-        local cand = iter()
-        if cand == nil then
-            break
-        end
-        table.insert(buffer, cand)
-        if top.is_four_code_yield_word_candidate(cand) then
-            local genuine = cand.get_genuine and cand:get_genuine() or cand
-            if pairs_data[genuine.text] then
-                return buffer, cand
-            end
-        end
-        if limit and #buffer >= limit then
-            break
-        end
-    end
-    return buffer, nil
-end
-
 ---Replay buffered candidates first, then resume the remaining stream.
 ---@param buffer table
 ---@param iter function
@@ -604,43 +513,29 @@ function top.chain_candidates(buffer, iter)
     end
 end
 
----Query the smart stream once for the four-code yield decision.
----Returns the resumable iterator, the pulled candidate buffer, and the
----set (keyed by codepoint) of characters the found word may precede.
+---Buffer the smart prefix once for maintained word-alias fallback.
+---Return the prefix and an iterator that replays it before resuming.
 ---@param env table
 ---@param input string
 ---@param seg table
 ---@param with_comment boolean
----@return table
-function top.peek_four_code_yield(env, input, seg, with_comment)
-    local peek = { iter = nil, buffer = {}, chars = {} }
+---@return table, function|nil
+function top.peek_smart_prefix(env, input, seg, with_comment)
+    local buffer = {}
     local iter = top.raw_query_smart(env, input, seg, with_comment)
-    if iter == nil then
-        return peek
+    if iter == nil then return buffer, nil end
+    for _ = 1, 20 do
+        local cand = iter()
+        if cand == nil then break end
+        buffer[#buffer + 1] = cand
     end
-    local pairs_data = mohu.load_four_code_yield_pairs(env.four_code_yield_variant)
-    if pairs_data == nil then
-        -- 成对表缺失：保守降级，所有单字固顶，smart 流原样交还。
-        peek.iter = iter
-        return peek
-    end
-    local buffer, word = top.find_four_code_yield_word(iter, pairs_data, env.four_code_yield_scan_limit)
-    peek.buffer = buffer
-    peek.iter = iter
-    if word ~= nil then
-        local genuine = word.get_genuine and word:get_genuine() or word
-        for char in pairs(pairs_data[genuine.text]) do
-            peek.chars[utf8.codepoint(char)] = true
-        end
-    end
-    return peek
+    return buffer, top.chain_candidates(buffer, iter)
 end
 
 -- | 每次 translation 开始前应该初始化 output 状态
 function top.output_begin(env)
     env.output_i = 0
     env.output_injected_secondary = {}
-    env.four_code_yield_peek = nil
 end
 
 -- | 支持候选注入的 yield
@@ -652,7 +547,7 @@ function top.output(env, cand)
         -- drain injected cands
         local cands = env.output_injected_secondary
         env.output_injected_secondary = {}
-        for i, c in pairs(cands) do
+        for _, c in ipairs(cands) do
             top.output(env, c)
         end
     end
@@ -698,14 +593,42 @@ function top.output_table_order(env, translation, is_sentence_making)
     end
 end
 
-function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word, char_filter)
+-- Exact character/word collisions use one authority: table row order.
+-- Longer abbreviations remain secondary and never take a primary slot.
+function top.output_four_code_collision(env, rows, is_sentence_making)
+    local has_char = false
+    for _, cand in ipairs(rows) do
+        if utf8.len(cand.text) == 1 then has_char = true; break end
+    end
+    if not has_char then return false end
+    local primary, secondary = {}, {}
+    local name = lexical_translator_name(env, env.code_table)
+    for _, cand in ipairs(rows) do
+        bind_lexical_provenance(env, cand, "fixed", name)
+        if utf8.len(cand.text) <= 2 then
+            primary[#primary + 1] = cand
+        elseif env.inject_table_words and not is_sentence_making then
+            secondary[#secondary + 1] = cand
+        end
+    end
+    for _, cand in ipairs(secondary) do
+        cand.comment = env.quick_code_indicator
+        env.output_injected_secondary[#env.output_injected_secondary + 1] = top.secondary_word(cand)
+    end
+    for _, cand in ipairs(primary) do
+        top.output_from_fixed(env, cand, is_sentence_making)
+    end
+    return true
+end
+
+function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word)
     local chars = {}
     local words = {}
     local fixed_name = lexical_translator_name(env, env.code_table)
     for cand in translation:iter() do
         bind_lexical_provenance(env, cand, "fixed", fixed_name)
         local cand_len = utf8.len(cand.text)
-        if include_chars and cand_len == 1 and (char_filter == nil or char_filter(cand)) then
+        if include_chars and cand_len == 1 then
             table.insert(chars, cand)
         elseif cand_len > 1 and include_word and include_word(cand_len) then
             table.insert(words, cand)

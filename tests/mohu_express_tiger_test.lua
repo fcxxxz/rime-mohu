@@ -219,4 +219,19 @@ translator.output_table_order(order_env, fake_translation({ mock_candidate("哪�
 assert(#table_rows == 1 and table_rows[1].text == "𦰡", "partial sentence selection must retain its char-only constraint")
 yield = original_yield
 
+local saved_shadow = ShadowCandidate
+ShadowCandidate = function(original, kind, text, comment)
+    local value = { type = kind, text = text, comment = comment, preedit = original.preedit }
+    function value:get_genuine() return original end
+    return value
+end
+local abbreviated = mock_candidate("机难轻失")
+abbreviated.type, abbreviated.preedit, abbreviated.comment = "table", "jnqu", "`F"
+local marked = translator.secondary_word(abbreviated)
+assert(marked.type == "mohu_secondary_word" and marked:get_genuine() == abbreviated,
+    "secondary word marker must survive Rime while retaining the original candidate")
+assert(marked.comment == "`F" and abbreviated.type == "table",
+    "secondary marker must not change fixed-candidate provenance or reordering")
+ShadowCandidate = saved_shadow
+
 print("Mohu express IJRQ ordering tests passed")

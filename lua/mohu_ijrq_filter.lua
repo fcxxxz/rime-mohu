@@ -2,9 +2,11 @@
 --
 -- Part of Project Mohu
 -- License: GPLv3
--- Version: 0.4.0
+-- Version: 0.4.1
 
 -- ChangeLog:
+--
+-- 0.4.1: 普通模式四码简词跟随最终首选，不继承全码单字让位前的位置。
 --
 -- 0.4.0: 合并后的完整单字候选统一出简让全，固定码表不再绕过；词语规则独立。
 --
@@ -33,6 +35,7 @@ function Module.init(env)
     env.char_hint = config:get_bool("mohu/ijrq/show_hint") == true
     env.char_suffix = config:get_string("mohu/ijrq/suffix") or "o"
     env.pin_indicator = config:get_string("mohu/pin/indicator") or "📌"
+    env.quick_code_indicator = config:get_string("mohu/quick_code_indicator") or "⚡️"
     if env.char_enabled and type(ReverseLookup) == "function" then
         local dictionary = config:get_string("translator/dictionary") or "mohu_zrm"
         local ok, reverse = pcall(ReverseLookup, dictionary)
@@ -71,6 +74,30 @@ function Module.defer_full_code_characters(iter, env, raw)
     local deferred, memo, ordinary_seen = {}, {}, {}
     local ordinary_count, next_deferred = 0, 1
     local flushing, exhausted = false, false
+    local secondary, next_secondary, secondary_ready = {}, 1, false
+    local relocate_secondary = #raw == 4 and not env.engine.context:get_option("inflexible")
+    local function is_secondary(cand)
+        if not relocate_secondary or utf8.len(cand.text) <= 2 then return false end
+        local genuine = cand.get_genuine and cand:get_genuine() or cand
+        if cand.type == "pinned" or genuine.type == "pinned" then return false end
+        if type(cand.comment) == "string" and env.pin_indicator ~= "" and
+            cand.comment:sub(1, #env.pin_indicator) == env.pin_indicator then return false end
+        local start = tonumber(cand.start or genuine.start) or 0
+        local finish = tonumber(cand._end or genuine._end) or #raw
+        if start ~= 0 or finish ~= #raw then return false end
+        -- Producer marker survives Rime userdata rewrapping and does not
+        -- depend on a visible quick-code icon or on ordinary phrase length.
+        return cand.type == "mohu_secondary_word"
+    end
+    local function count_ordinary(cand)
+        -- uniquifier runs later; count distinct visible text so duplicate
+        -- streams cannot release a character too early.
+        if not ordinary_seen[cand.text] then
+            ordinary_seen[cand.text] = true
+            ordinary_count = ordinary_count + 1
+        end
+        if ordinary_count >= env.char_defer and #deferred > 0 then flushing = true end
+    end
     local function short_code(cand)
         local genuine = cand.get_genuine and cand:get_genuine() or cand
         local text = cand.text
@@ -92,6 +119,15 @@ function Module.defer_full_code_characters(iter, env, raw)
     end
     return function()
         while true do
+            if secondary_ready then
+                local cand = secondary[next_secondary]
+                if cand then
+                    next_secondary = next_secondary + 1
+                    count_ordinary(cand)
+                    return cand
+                end
+                secondary, next_secondary, secondary_ready = {}, 1, false
+            end
             if flushing or exhausted then
                 local cand = deferred[next_deferred]
                 if cand then
@@ -104,6 +140,9 @@ function Module.defer_full_code_characters(iter, env, raw)
             local cand = iter()
             if not cand then
                 exhausted = true
+                -- If there is no ordinary alternative, retain the abbreviated
+                -- words before the deferred characters instead of losing them.
+                secondary_ready = #secondary > 0
             else
                 local short = short_code(cand)
                 if short then
@@ -115,14 +154,11 @@ function Module.defer_full_code_characters(iter, env, raw)
                     else
                         return cand
                     end
+                elseif ordinary_count == 0 and #deferred > 0 and is_secondary(cand) then
+                    secondary[#secondary + 1] = cand
                 else
-                    -- uniquifier runs later; count distinct visible text so
-                    -- duplicate streams cannot release a character too early.
-                    if not ordinary_seen[cand.text] then
-                        ordinary_seen[cand.text] = true
-                        ordinary_count = ordinary_count + 1
-                    end
-                    if ordinary_count >= env.char_defer and #deferred > 0 then flushing = true end
+                    count_ordinary(cand)
+                    secondary_ready = #secondary > 0
                     return cand
                 end
             end
@@ -131,12 +167,23 @@ function Module.defer_full_code_characters(iter, env, raw)
 end
 
 function Module.func(t_input, env)
+    local function restore_type(cand)
+        if cand and cand.type == "mohu_secondary_word" then
+            local genuine = cand:get_genuine()
+            -- ShadowCandidate retains its original display override even when
+            -- reorder updates the genuine comment. Remove that wrapper after
+            -- positioning so hint filters cannot expose the internal marker.
+            genuine.comment = cand.comment == "`F" and env.quick_code_indicator or cand.comment
+            return genuine
+        end
+        return cand
+    end
     if not env.enabled and (not env.char_enabled or not env.char_reverse) then
-        for cand in t_input:iter() do yield(cand) end
+        for cand in t_input:iter() do yield(restore_type(cand)) end
         return
     end
     if mohu.is_reverse_lookup(env) then
-        for cand in t_input:iter() do yield(cand) end
+        for cand in t_input:iter() do yield(restore_type(cand)) end
         return
     end
     local context = env.engine.context
@@ -147,6 +194,8 @@ function Module.func(t_input, env)
         (input_len == 4 or (input_len == 5 and input:sub(5) == env.char_suffix)) then
         iter = Module.defer_full_code_characters(iter, env, input)
     end
+    local positioned_iter = iter
+    iter = function() return restore_type(positioned_iter()) end
     if not env.enabled then
         mohu.yield_all(iter)
         return

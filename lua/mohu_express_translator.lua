@@ -276,7 +276,7 @@ function top.func(input, seg, env)
                             bind_lexical_provenance(env, cand, "fixed", fixed_name)
                             if utf8.len(cand.text) > 2 and not is_sentence_making then
                                 cand:get_genuine().comment = indicator
-                                top.output(env, cand)
+                                top.output(env, top.secondary_word(cand))
                             end
                         end
                     end
@@ -315,14 +315,15 @@ function top.func(input, seg, env)
                 if cand_len ~= 1 or (cand_len == 1 and not env.quick_code_indicator_skip_chars) then
                     cand:get_genuine().comment = indicator
                 end
+                local injected = cand_len > 2 and top.secondary_word(cand) or cand
                 if not inject_has_priority then
-                    table.insert(env.output_injected_secondary, cand)
+                    table.insert(env.output_injected_secondary, injected)
                 else
                     num_injections = num_injections + 1
                     if cand_len == 1 then
-                        inject_chars[num_injections] = cand
+                        inject_chars[num_injections] = injected
                     else
-                        inject_words[num_injections] = cand
+                        inject_words[num_injections] = injected
                     end
                 end
             end
@@ -624,6 +625,14 @@ function top.output_char_from_fixed(env, cand)
         cand.comment = env.quick_code_indicator
     end
     top.output(env, cand)
+end
+
+-- Candidate userdata may be rewrapped between translators and filters, so
+-- Lua weak-key provenance cannot carry this runtime positioning contract.
+-- Keep the original table candidate as genuine; IJRQ removes the outer marker
+-- before explicit candidate management and display.
+function top.secondary_word(cand)
+    return ShadowCandidate(cand, "mohu_secondary_word", cand.text, cand.comment, false)
 end
 
 function top.output_word_from_fixed(env, cand, is_sentence_making)

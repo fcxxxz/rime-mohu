@@ -31,6 +31,8 @@ YAML 文件头声明 `name: mohu_zrm`、`sort: original` 和 `text/code` 两列�
 
 码表可以同时保留 `咦 yid` 和 `咦 yidm`。`yid` 是简码；启用 `mohu/ijrq/enable` 后，完整四码 `yidm` 会把有前缀简码的单字后移，完整码仍然可选。这个“出简让全”在 fixed/native/smart 候选合并后统一处理，不能只检查 smart 分支；明确置顶和候选调序仍保留用户意图。
 
+普通模式下，四码简词是首选后的补充候选，不因前面的全码单字“出简让全”而升到首选。例如 `jnqu` 中，`进` 是 `jn` 双拼加 `qu` 辅码的全码（简码为 `jn`），应让位；四码简词 `机难轻失` 跟在最终首选 `进去` 之后。没有单字让位、固词模式及显式置顶／调序仍遵循原有规则。
+
 四码字词逐对覆盖另有入口：`mohu/four_code_yield_pairs_zrm.txt`（自然码）和 `mohu/four_code_yield_pairs_flypy.txt`（小鹤）。它控制具体二字词可以排在哪些完整码单字之前；和按短码让位的规则不同。schema 中 `four_code_char_yield_rank` 是旧配置占位，当前不参与这项判断。
 
 词末追加一位辅码，如 `puii` → `puiid`，走词辅筛选/原生解码；`哧`、`嗤` 都有首辅 `d`，这一位不能分清二者。单字“出简让全”不会自动改写这组词的排序；词语级让全由独立的 `mohu/ijrq/enable_word` 开关控制。

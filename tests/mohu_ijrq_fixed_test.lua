@@ -2,7 +2,7 @@ package.path = './lua/?.lua;' .. package.path
 local actual_mohu = require('mohu')
 actual_mohu.is_reverse_lookup = function(env) return env.engine.context.reverse == true end
 local filter = require('mohu_ijrq_filter')
-local codes = { ['咦'] = 'yid yidm', ['邑'] = 'yidm', ['甲'] = 'j', ['暮'] = 'mulo' }
+local codes = { ['咦'] = 'yid yidm', ['邑'] = 'yidm', ['甲'] = 'j', ['暮'] = 'mulo', ['进'] = 'jn jnqu' }
 ReverseLookup = function() return { lookup = function(_,text) return codes[text] or '' end } end
 rime_api = { get_time_ms = function() return 1000 end }
 log = { error = function(message) error(message) end }
@@ -61,6 +61,61 @@ local distinct,seen={},{}
 for _,c in ipairs(repeated) do if not seen[c.text] then seen[c.text]=true;distinct[#distinct+1]=c.text end end
 assert(distinct[6]=='咦','duplicate alternatives cannot put the full-code character back on page one')
 
+local function secondary(text, finish)
+ local original=cand(text,finish)
+ local c=cand(text,finish,'mohu_secondary_word')
+ function c:get_genuine() return original end
+ return c
+end
+local function texts(items)
+ local result={}
+ for _,c in ipairs(items) do result[#result+1]=c.text end
+ return table.concat(result,'|')
+end
+local jnqu={cand('进'),secondary('机难轻失'),cand('进去'),cand('禁区'),cand('进取'),cand('进区'),cand('金曲')}
+assert(texts(run('jnqu',jnqu))=='进去|机难轻失|禁区|进取|进区|进|金曲',
+ 'a secondary abbreviation must follow the final first candidate, not inherit a deferred character slot')
+assert(texts(run('jnqu',{cand('进'),secondary('机难轻失'),secondary('另一简词'),cand('进去'),cand('禁区'),cand('进取'),cand('进区')}))
+ =='进去|机难轻失|另一简词|禁区|进取|进|进区','multiple abbreviations retain order and count toward the defer slot')
+assert(texts(run('jnqu',{secondary('机难轻失'),cand('进去'),cand('禁区')}))=='机难轻失|进去|禁区',
+ 'without a deferred character, existing injection priority stays unchanged')
+assert(texts(run('jnqu',{cand('进'),secondary('机难轻失'),cand('进去'),cand('禁区'),cand('进取'),cand('进区'),cand('金曲')},{['mohu/ijrq/enable']=false}))=='进|机难轻失|进去|禁区|进取|进区|金曲',
+ 'disabled IJRQ keeps the original order')
+assert(texts(run('jnqu',{cand('进'),secondary('机难轻失'),cand('进去'),cand('禁区'),cand('进取'),cand('进区'),cand('金曲')},nil,{inflexible=true}))=='机难轻失|进去|禁区|进取|进区|进|金曲',
+ 'fixed-word mode retains its explicit fixed-word priority')
+assert(texts(run('jnqu',{cand('进'),cand('正常长词'),cand('进去')}))=='正常长词|进去|进',
+ 'a non-injected long candidate must not be treated as a secondary abbreviation')
+assert(texts(run('jnqu',{cand('暮'),secondary('机难轻失'),cand('进去')}))=='暮|机难轻失|进去',
+ 'a non-yielding full-code character keeps its first slot')
+local leading_pin=cand('机难轻失',4,'pinned')
+assert(run('jnqu',{leading_pin,cand('进'),cand('进去')})[1]==leading_pin,'explicit abbreviation pin stays first')
+local wrapped_pin=secondary('机难轻失');wrapped_pin.type='pinned'
+assert(run('jnqu',{wrapped_pin,cand('进'),cand('进去')})[1]==wrapped_pin,'fixed provenance must not override a pin')
+local partial_secondary=secondary('机难轻失',2)
+assert(run('jnqu',{partial_secondary,cand('进去')})[1].text=='机难轻失','partial selection is not an injected full-span abbreviation')
+assert(texts(run('jnquo',{secondary('机难轻失',5),cand('进去',5)}))=='机难轻失|进去',
+ 'full-code suffix input must not apply four-code word injection rules')
+assert(texts(run('jnqu',{cand('进'),secondary('机难轻失')}))=='机难轻失|进',
+ 'no ordinary alternative must not discard either the abbreviation or the character')
+local duplicates=run('jnqu',{cand('进'),secondary('机难轻失'),cand('进去'),cand('进去'),cand('禁区'),cand('进取'),cand('进区')})
+local unique,seen_words={},{}
+for _,c in ipairs(duplicates) do if not seen_words[c.text] then seen_words[c.text]=true;unique[#unique+1]=c end end
+assert(texts(unique)=='进去|机难轻失|禁区|进取|进区|进','duplicate streams cannot steal the final first slot or defer position')
+assert(run('jnqu',{cand('进'),secondary('机难轻失'),cand('进去')})[2].type=='table',
+ 'internal injection marker must not leak to final candidates')
+assert(run('jnqu',{secondary('机难轻失')},{['mohu/ijrq/enable']=false})[1].type=='table',
+ 'disabled IJRQ must also remove the internal marker')
+assert(run('jnqu',{secondary('机难轻失')},nil,{reverse=true})[1].type=='table',
+ 'reverse lookup must also remove the internal marker')
+local single_slot=run('jnqu',{cand('进'),secondary('机难轻失'),cand('进去'),cand('禁区')},
+ {['mohu/ijrq/defer']=1})
+assert(texts(single_slot)=='进去|机难轻失|进|禁区','secondary block follows first even with a one-candidate defer')
+assert(texts(run('jnqu',{cand('进'),secondary('简词一'),secondary('简词二'),secondary('简词三'),
+ secondary('简词四'),secondary('简词五'),secondary('简词六'),cand('进去'),cand('禁区')}))
+ =='进去|简词一|简词二|简词三|简词四|简词五|简词六|进|禁区',
+ 'a long secondary block stays intact and can defer the character beyond the minimum')
+print('secondary abbreviation IJRQ: ok')
+
 -- Reorder replaces a pin with its smart phrase for learning. Keep pin identity
 -- even when the user hides its display indicator.
 local reorder=require('mohu_reorder_filter')
@@ -93,3 +148,17 @@ filter.func({iter=function() local i=0;return function() i=i+1;return word_items
 assert(word_yielded[1]==word_items[1],'word-level IJRQ must preserve a pinned first candidate')
 filter.fini(word_env)
 print('word-level pinned IJRQ: ok')
+
+-- Real ShadowCandidate comments are independent of genuine comments. The
+-- reordered display annotation must survive unwrapping before hint filters.
+local display_original=cand('机难轻失');display_original.comment='`F'
+local display_shadow=cand('机难轻失',4,'mohu_secondary_word');display_shadow.comment='⚡️'
+function display_shadow:get_genuine() return display_original end
+local display_output=run('jnqu',{cand('进'),display_shadow,cand('进去')})
+assert(display_output[2]==display_original and display_output[2].comment=='⚡️',
+ 'secondary cleanup must remove the wrapper and retain the converted display comment')
+assert(display_original.type=='table','cleanup must preserve the original lexical type')
+local stale=secondary('机难轻失');stale.comment='`F';stale:get_genuine().comment='⚡️'
+assert(run('jnqu',{cand('进'),stale,cand('进去')})[2].comment=='⚡️',
+ 'an immutable stale Shadow comment must not overwrite the converted quick-code indicator')
+print('secondary display comment: ok')

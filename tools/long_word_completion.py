@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterator
+from itertools import product
 from pathlib import Path
 
 import regex
@@ -57,28 +58,42 @@ def master_long_word_rows(root: Path, sources: list[Path]) -> tuple[list[tuple[s
               for i in range(len(text)) for j in range(i + 2, len(text) + 1)}
     chars: dict[str, dict[str, tuple[int, str]]] = {}
     terms: dict[str, tuple[int, tuple[str, ...]]] = {}
+    phrase_rows: dict[str, tuple[int, tuple[str, ...]]] = {}
+    char_aliases: dict[str, set[str]] = {}
+    source_pairs: set[tuple[str, str]] = set()
     present = set()
     for source in sources:
         if not source.exists():
             continue
         for text, code, weight in dictionary_rows(source):
+            source_pairs.add((text, code))
             if text in targets:
                 present.add(text)
             letters = bare(text)
-            if letters not in wanted and len(text) != 1:
-                continue
             tokens = tuple(code.split())
-            if len(tokens) != len(letters) or not all(TOKEN.fullmatch(t) for t in tokens):
-                continue
-            score = int(weight or 0)
-            if len(text) == 1 and len(letters) == 1:
+            if len(text) == 1 and len(letters) == 1 and len(tokens) == 1 and TOKEN.fullmatch(tokens[0]):
+                score = int(weight or 0)
                 readings = chars.setdefault(text, {})
                 syllable = tokens[0][:2]
                 if syllable != 'pp' and (syllable not in readings or score > readings[syllable][0]):
                     readings[syllable] = (score, tokens[0])
-            elif letters in wanted and (letters not in terms or score > terms[letters][0]):
+                if source.name.endswith('.words.dict.yaml') and score > 0:
+                    char_aliases.setdefault(text, set()).add(tokens[0])
+                continue
+            if len(letters) > 4 and len(tokens) == len(letters) and all(TOKEN.fullmatch(t) for t in tokens):
+                score = int(weight or 0)
+                previous = phrase_rows.get(text)
+                if previous is None or score > previous[0]:
+                    phrase_rows[text] = (score, tokens)
+            if letters not in wanted and len(text) != 1:
+                continue
+            if len(tokens) != len(letters) or not all(TOKEN.fullmatch(t) for t in tokens):
+                continue
+            score = int(weight or 0)
+            if letters in wanted and (letters not in terms or score > terms[letters][0]):
                 terms[letters] = (score, tokens)
     rows = []
+    aliases = []
     unresolved = []
     fallback_words = []
     for text in targets:
@@ -117,9 +132,33 @@ def master_long_word_rows(root: Path, sources: list[Path]) -> tuple[list[tuple[s
         rows.append((text, ' '.join(tokens), '1'))
         if fallback:
             fallback_words.append(text)
+        phrase_rows[text] = (1, tokens)
+
+    # Some characters have a maintained alternative full syllable, such as
+    # 几: ji;oj and jo;oj.  Existing long phrases must inherit these aliases;
+    # otherwise jo + the remaining exact syllables falls back to independent
+    # short-code characters instead of reaching the phrase.  Cap the Cartesian
+    # expansion so repeated variant characters cannot explode the dictionary.
+    for text, (weight, tokens) in phrase_rows.items():
+        letters = bare(text)
+        choices = []
+        for char, token in zip(letters, tokens):
+            alternatives = sorted({token} | char_aliases.get(char, set()))
+            choices.append([value for value in alternatives if value[:2] != 'pp'])
+        variants = product(*choices)
+        for variant in variants:
+            code = ' '.join(variant)
+            if code == ' '.join(tokens) or (text, code) in source_pairs:
+                continue
+            aliases.append((text, code, str(weight)))
+            if len(aliases) >= 200_000:
+                break
+        if len(aliases) >= 200_000:
+            break
+    rows.extend(aliases)
     return rows, {'master_long_words': len(targets), 'already_in_corpus': len(present),
-                  'derived': len(rows), 'unresolved': unresolved,
-                  'uses_character_fallback': fallback_words}
+                  'derived': len(rows) - len(aliases), 'aliases': len(aliases),
+                  'unresolved': unresolved, 'uses_character_fallback': fallback_words}
 
 
 def flypy_rows(rows: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:

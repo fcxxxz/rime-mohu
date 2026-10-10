@@ -235,3 +235,11 @@ assert(marked.comment == "`F" and abbreviated.type == "table",
 ShadowCandidate = saved_shadow
 
 print("Mohu express IJRQ ordering tests passed")
+
+local missing_fixed = translator.collect_missing_fixed_words(
+    {{text = "几乎"}, {text = "噗嗤"}, {text = "三心二意"}},
+    {{text = "几虎"}, {text = "噗嗤"}, {text = "普通词"}})
+assert(#missing_fixed == 2 and missing_fixed[1].text == "几乎" and
+    missing_fixed[2].text == "三心二意",
+    "four-key fixed words missing from smart candidates must be recoverable")
+print("four-key fixed word fallback: ok")

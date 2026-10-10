@@ -257,6 +257,27 @@ function top.func(input, seg, env)
                     -- 固顶单字前置输出。
                     local peek = top.peek_four_code_yield(env, input, seg, env.enable_word_filter and aux_hint)
                     env.four_code_yield_peek = peek
+                    -- A two-character row in the editable table may use a
+                    -- four-key short spelling that the sentence dictionary
+                    -- does not contain (for example 几乎=johu while its
+                    -- ordinary sentence spelling is jihu).  Keep the
+                    -- fixed word visible when smart did not produce the
+                    -- same text; otherwise the smart fallback can hide the
+                    -- exact code-table entry.
+                    local fixed_words = {}
+                    for cand in mohu.query_translation(env.code_table, input, seg, nil) do
+                        if utf8.len(cand.text) == 2 then
+                            fixed_words[#fixed_words + 1] = cand
+                        end
+                    end
+                    local smart_words = {}
+                    for _, cand in ipairs(peek.buffer) do
+                        smart_words[cand.text] = true
+                    end
+                    for _, cand in ipairs(top.collect_missing_fixed_words(fixed_words, peek.buffer)) do
+                        bind_lexical_provenance(env, cand, "fixed", lexical_translator_name(env, env.code_table))
+                        top.output_word_from_fixed(env, cand, is_sentence_making)
+                    end
                     top.output_fixed_chars_first(env, fixed_res, is_sentence_making, true, nil, function(cand)
                         local cp = utf8.codepoint(cand.text)
                         if env.four_code_char_yield_exempt[cp] then
@@ -508,6 +529,23 @@ function top.order_exact_four_candidates(candidates, has_short_code, defer_count
         table.insert(result, immediate_set[index])
     end
     return result
+end
+
+---Return exact two-character fixed-code words absent from the smart prefix.
+---The helper is pure so the short-code fallback can be regression-tested
+---without constructing a Rime Translation userdata stream.
+function top.collect_missing_fixed_words(fixed_words, smart_candidates)
+    local smart_texts = {}
+    for _, cand in ipairs(smart_candidates or {}) do
+        smart_texts[cand.text] = true
+    end
+    local missing = {}
+    for _, cand in ipairs(fixed_words or {}) do
+        if not smart_texts[cand.text] then
+            missing[#missing + 1] = cand
+        end
+    end
+    return missing
 end
 
 ---四码让位候选资格：解包 Shadow/Uniquified 等包装后，必须是完整的

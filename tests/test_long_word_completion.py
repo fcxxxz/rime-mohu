@@ -53,6 +53,23 @@ class LongWordCompletionTest(unittest.TestCase):
             self.assertIn('yn;zi hh;px', code)
             self.assertNotIn('yn;zi xy;px', code)
 
+    def test_existing_long_phrase_gets_primary_character_code_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            folder = self.fixture(root)
+            master = root / 'mohu_zrm.dict.yaml'
+            master.write_text(master.read_text() +
+                              '几处早莺争暖树\tjiiuzkyyvgnruu\n')
+            (folder / 'mohu_zrm.base.dict.yaml').write_text(
+                (folder / 'mohu_zrm.base.dict.yaml').read_text() +
+                '几处早莺争暖树\tji;oj iu;hy zk;on yy;lw vg;xb nr;oy uu;er\t9\n')
+            (folder / 'mohu_zrm.words.dict.yaml').write_text(
+                '---\nname: words\n...\n几\tjo;oj\t1\n')
+            rows, report = merger.master_long_word_rows(root)
+            self.assertIn(('几处早莺争暖树',
+                           'jo;oj iu;hy zk;on yy;lw vg;xb nr;oy uu;er', '9'), rows)
+            self.assertGreaterEqual(report['aliases'], 1)
+
     def test_supplemental_rows_participate_in_hash_and_preserve_all_source_rows(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1,4 +1,5 @@
-# 【万象词库来源】同步生成的外部词条，参与合并整句词库；请走同步脚本。
+# 【万象来源词库｜自动同步/生成，请勿直接编辑】
+# 用途：作为整句词库和词频来源之一；修改请走 tools/sync_wanxiang.py 的同步流程。
 # Rime dictionary
 # encoding: utf-8
 # license: CC-BY-4.0 (upstream); generated adaptation
@@ -6,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "8ea9620cc2fb"
+version: "0975de374a74"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -1449,6 +1450,7 @@ columns:
 一批吧	yi;fi pi;uv ba;dm	374
 一批干部	yi;fi pi;uv gj;eg bu;id	526
 一批录取	yi;fi pi;uv lu;bk qu;qr	729
+一找我	yi;fi vk;up wo;tu	126
 一把付清	yi;fi ba;um fu;jk qy;ka	162
 一把刀了	yi;fi ba;um dk;pd le;rl	230
 一把到了	yi;fi ba;um dk;yp le;rl	171
@@ -8842,17 +8844,6 @@ columns:
 不中不中	bu;cb vs;dg bu;cb vs;dg	194
 不中吃	bu;cb vs;dg ii;de	648
 不中啊	bu;cb vs;dg aa;dt	346
-不丹人口	bu;cb dj;mz rf;jr kb;dk	180
-不丹佛教	bu;cb dj;mz fo;jt jc;qh	153
-不丹全国	bu;cb dj;mz qr;jn go;rn	266
-不丹关系	bu;cb dj;mz gr;hm xi;ti	153
-不丹国家	bu;cb dj;mz go;rn jw;wj	320
-不丹文化	bu;cb dj;mz wf;vw hw;jv	130
-不丹社会	bu;cb dj;mz ue;fg hv;jb	153
-不丹艺术	bu;cb dj;mz yi;la uu;ei	117
-不丹语言	bu;cb dj;mz yu;sw yj;sy	180
-不丹边界	bu;cb dj;mz bm;su jx;qj	225
-不丹选举	bu;cb dj;mz xr;qp ju;kh	180
 不为你	bu;cb wz;is ni;jx	675
 不为功名	bu;cb wz;is gs;us my;ld	279
 不为外人	bu;cb wz;is wl;ly rf;jr	616
@@ -18200,11 +18191,6 @@ columns:
 中青政	vs;dg qy;av vg;fs	387
 中青路	vs;dg qy;av lu;ps	166
 中青院	vs;dg qy;av yr;tw	374
-中非内战	vs;dg fz;rf nz;mj vj;yd	144
-中非外交	vs;dg fz;rf wl;ly jc;ab	117
-中非政府	vs;dg fz;rf vg;fs fu;xj	270
-中非皇家	vs;dg fz;rf hd;un jw;wj	130
-中非皇帝	vs;dg fz;rf hd;un di;iw	117
 中面层	vs;dg mm;bm cg;cb	248
 中音频	vs;dg yn;xy pn;ss	378
 中项	vs;dg xd;uw	972
@@ -23218,10 +23204,6 @@ columns:
 也采纳	ye;ey cl;ye na;im	454
 也错了	ye;ey co;zl le;rl	639
 也长了	ye;ey vh;pc le;rl	896
-也门军事	ye;ey mf;am jp;wy ui;fd	441
-也门机场	ye;ey mf;am ji;eo ih;ga	252
-也门社会	ye;ey mf;am ue;fg hv;jb	360
-也门革命	ye;ey mf;am ge;tg my;jd	202
 也闪了	ye;ey uj;aj le;rl	127
 也问	ye;ey wf;ad	1156
 也问了	ye;ey wf;ad le;rl	801
@@ -52917,8 +52899,6 @@ columns:
 伊旗	yi;jb qi;le	103
 伊春河	yi;jb ip;ai he;kz	230
 伊朗吧	yi;jb lh;ii ba;dm	189
-伊朗学家	yi;jb lh;ii xt;kw jw;wj	225
-伊朗航天	yi;jb lh;ii hh;iz tm;fm	256
 伊森堡	yi;jb sf;ee bk;jd	320
 伊水之滨	yi;jb uv;ks vi;ri bn;kw	144
 伊河大桥	yi;jb he;kz da;md qc;et	152
@@ -98655,21 +98635,8 @@ columns:
 冰山地狱	by;wk uj;vs di;ge yu;ms	279
 冰山来客	by;wk uj;vs ll;ah ke;ws	194
 冰山梁	by;wk uj;vs ld;kp	225
-冰岛乐团	by;wk dk;xv yt;by tr;rn	144
-冰岛公司	by;wk dk;xv gs;hk si;af	130
-冰岛国家	by;wk dk;xv go;rn jw;wj	513
-冰岛国立	by;wk dk;xv go;rn li;il	230
-冰岛地形	by;wk dk;xv di;ge xy;fl	117
-冰岛外交	by;wk dk;xv wl;ly jc;ab	297
 冰岛女	by;wk dk;xv nv;bn	495
-冰岛宗教	by;wk dk;xv zs;wf jc;qh	117
-冰岛文化	by;wk dk;xv wf;vw hw;jv	194
-冰岛法律	by;wk dk;xv fa;kg lv;wb	117
 冰岛石	by;wk dk;xv ui;ms	144
-冰岛社会	by;wk dk;xv ue;fg hv;jb	288
-冰岛艺术	by;wk dk;xv yi;la uu;ei	261
-冰岛语版	by;wk dk;xv yu;sw bj;ax	117
-冰岛语言	by;wk dk;xv yu;sw yj;sy	117
 冰峰裂谷	by;wk fg;vh lx;gp gu;hg	180
 冰峰谷	by;wk fg;vh gu;hg	166
 冰峰雪岭	by;wk fg;vh xt;tb ly;vj	261
@@ -103280,11 +103247,6 @@ columns:
 刚来成都	gh;mb ll;ah ig;na du;qo	387
 刚构桥	gh;mb gb;en qc;et	387
 刚果人	gh;mb go;qe rf;jr	531
-刚果咖啡	gh;mb go;qe ka;ds fz;dr	144
-刚果国家	gh;mb go;qe go;rn jw;wj	266
-刚果惊魂	gh;mb go;qe jy;hg hp;ba	234
-刚果战争	gh;mb go;qe vj;yd vg;xb	441
-刚果语支	gh;mb go;qe yu;sw vi;ci	279
 刚架拱桥	gh;mb jw;sd gs;ul qc;et	117
 刚柔流	gh;mb rb;it lq;kb	454
 刚查了	gh;mb ia;eo le;rl	675
@@ -108643,14 +108605,6 @@ columns:
 加拉门迪	jw;sd la;ui mf;am di;du	212
 加拉隆	jw;sd la;ui ls;th	256
 加拼音	jw;sd pn;uh yn;xy	351
-加拿大有	jw;sd na;jd da;md yb;nv	752
-加拿大杨	jw;sd na;jd da;md yh;ea	153
-加拿大球	jw;sd na;jd da;md qq;nf	450
-加拿大统	jw;sd na;jd da;md ts;ib	526
-加拿大胶	jw;sd na;jd da;md jc;va	130
-加拿大车	jw;sd na;jd da;md ie;yc	256
-加拿大雁	jw;sd na;jd da;md yj;xj	423
-加拿大馆	jw;sd na;jd da;md gr;qw	234
 加持了	jw;sd ii;ug le;rl	479
 加授	jw;sd ub;uy	147
 加推	jw;sd tv;uu	251
@@ -108856,15 +108810,7 @@ columns:
 加紧了	jw;sd jn;pr le;rl	302
 加红	jw;sd hs;iu	1107
 加纳克	jw;sd na;im ke;cp	292
-加纳地区	jw;sd na;im di;ge qu;nb	162
 加纳城市	jw;sd na;im ig;gn ui;zr	162
-加纳外交	jw;sd na;im wl;ly jc;ab	153
-加纳大学	jw;sd na;im da;md xt;kw	144
-加纳战机	jw;sd na;im vj;yd ji;eo	171
-加纳政治	jw;sd na;im vg;fs vi;kk	189
-加纳文化	jw;sd na;im wf;vw hw;jv	144
-加纳铁路	jw;sd na;im tx;zt lu;ps	153
-加纳门将	jw;sd na;im mf;am jd;al	130
 加细	jw;sd xi;iq	117
 加绒打底	jw;sd rs;ip da;ua di;xb	369
 加维诺	jw;sd wz;iu no;sl	180
@@ -108905,7 +108851,6 @@ columns:
 加蒂诺	jw;sd di;li no;sl	450
 加蒜	jw;sd sr;lf	1005
 加蓝听海	jw;sd lj;lp ty;dt hl;ke	225
-加蓬外交	jw;sd pg;lh wl;ly jc;ab	234
 加薪吗	jw;sd xn;li ma;dn	333
 加薪吧	jw;sd xn;li ba;dm	279
 加薪啊	jw;sd xn;li aa;dt	414
@@ -110983,7 +110928,6 @@ columns:
 北奥大厦	bz;av ao;tm da;md ua;xf	162
 北子岛	bz;av zi;hi dk;xv	382
 北宁湾	bz;av ny;wa wj;kz	315
-北宁省人	bz;av ny;wa ug;yt rf;jr	162
 北宅站	bz;av vl;wt vj;iy	171
 北安东	bz;av an;wb ds;ry	297
 北安公园	bz;av an;wb gs;hk yr;rm	171
@@ -117122,26 +117066,7 @@ columns:
 南雄组	nj;nm xs;nk zu;if	162
 南雅	nj;nm ya;lu	693
 南青专线	nj;nm qy;av vr;ma xm;if	144
-南非体育	nj;nm fz;rf ti;je yu;bv	256
-南非健康	nj;nm fz;rf jm;jb kh;xb	130
-南非内阁	nj;nm fz;rf nz;mj ge;as	117
-南非刺桐	nj;nm fz;rf ci;em ts;em	153
-南非动物	nj;nm fz;rf ds;bs wu;qn	189
 南非叶	nj;nm fz;rf ye;dn	230
-南非山脉	nj;nm fz;rf uj;vs ml;vi	117
-南非建筑	nj;nm fz;rf jm;bu vu;ru	180
-南非植物	nj;nm fz;rf vi;en wu;qn	180
-南非民族	nj;nm fz;rf mn;dm zu;le	238
-南非沙漠	nj;nm fz;rf ua;ky mo;kl	207
-南非法官	nj;nm fz;rf fa;kg gr;wk	144
-南非电信	nj;nm fz;rf dm;oa xn;js	130
-南非电视	nj;nm fz;rf dm;oa ui;fe	194
-南非科技	nj;nm fz;rf ke;xj ji;uc	189
-南非艺术	nj;nm fz;rf yi;la uu;ei	274
-南非铁路	nj;nm fz;rf tx;zt lu;ps	351
-南非银行	nj;nm fz;rf yn;zi hh;px	153
-南非陆军	nj;nm fz;rf lu;tu jp;wy	234
-南非鸵鸟	nj;nm fz;rf to;xw nc;xn	130
 南面官	nj;nm mm;bm gr;wk	405
 南面山	nj;nm mm;bm uj;vs	418
 南面而坐	nj;nm mm;bm er;le zo;jj	248
@@ -118255,88 +118180,20 @@ columns:
 印尼时	yn;bf ni;cv ui;ok	392
 印巷小馆	yn;bf xd;lh xc;yx gr;qw	392
 印广法师	yn;bf gd;xg fa;kg ui;pf	110
-印度主题	yn;bf du;xl vu;in ti;ot	162
-印度事务	yn;bf du;xl ui;fd wu;hs	428
 印度会	yn;bf du;xl hv;jb	603
-印度体育	yn;bf du;xl ti;je yu;bv	364
-印度佛寺	yn;bf du;xl fo;jt si;gk	153
-印度作品	yn;bf du;xl zo;jw pn;dd	153
 印度佬	yn;bf du;xl lk;jq	351
-印度健康	yn;bf du;xl jm;jb kh;xb	117
-印度僧侣	yn;bf du;xl sg;jh lv;jd	266
-印度公路	yn;bf du;xl gs;hk lu;ps	266
 印度兰	yn;bf du;xl lj;ht	243
-印度动物	yn;bf du;xl ds;bs wu;qn	256
-印度博客	yn;bf du;xl bo;nn ke;ws	117
-印度发明	yn;bf du;xl fa;sr my;ov	171
-印度司法	yn;bf du;xl si;af fa;kg	189
 印度吧	yn;bf du;xl ba;dm	382
 印度味	yn;bf du;xl wz;da	392
-印度商船	yn;bf du;xl uh;im ir;io	248
 印度啊	yn;bf du;xl aa;dt	342
-印度国家	yn;bf du;xl go;rn jw;wj	702
-印度土邦	yn;bf du;xl tu;gt bh;at	315
-印度地名	yn;bf du;xl di;ge my;ld	153
-印度地形	yn;bf du;xl di;ge xy;fl	144
-印度地铁	yn;bf du;xl di;ge tx;zt	194
-印度娱乐	yn;bf du;xl yu;bd le;by	130
-印度婚礼	yn;bf du;xl hp;bb li;fa	558
-印度学家	yn;bf du;xl xt;kw jw;wj	374
-印度宫殿	yn;bf du;xl gs;wd dm;cl	171
-印度家族	yn;bf du;xl jw;wj zu;le	117
-印度岛屿	yn;bf du;xl dk;xv yu;vf	117
 印度岩	yn;bf du;xl yj;vm	162
-印度崖豆	yn;bf du;xl ya;vx db;zd	117
-印度工会	yn;bf du;xl gs;ug hv;jb	212
-印度律师	yn;bf du;xl lv;wb ui;pf	279
-印度执法	yn;bf du;xl vi;uk fa;kg	180
-印度改革	yn;bf du;xl gl;vh ge;tg	256
-印度教堂	yn;bf du;xl jc;qh th;sg	117
-印度教练	yn;bf du;xl jc;qh lm;ir	117
-印度智慧	yn;bf du;xl vi;od hv;aa	212
-印度杂志	yn;bf du;xl za;ke vi;gh	202
 印度林	yn;bf du;xl ln;ee	130
 印度枣	yn;bf du;xl zk;em	274
-印度植物	yn;bf du;xl vi;en wu;qn	207
 印度榕	yn;bf du;xl rs;ew	234
-印度橡树	yn;bf du;xl xd;ew uu;er	180
-印度橡胶	yn;bf du;xl xd;ew jc;va	338
-印度洪水	yn;bf du;xl hs;kl uv;ks	464
-印度港口	yn;bf du;xl gh;kl kb;dk	306
-印度王国	yn;bf du;xl wh;nw go;rn	202
-印度王室	yn;bf du;xl wh;nw ui;wy	117
-印度王朝	yn;bf du;xl wh;nw ik;no	234
-印度电力	yn;bf du;xl dm;oa li;sl	333
-印度电视	yn;bf du;xl dm;oa ui;fe	428
-印度的塔	yn;bf du;xl de;un ta;gl	328
-印度的门	yn;bf du;xl de;un mf;am	153
-印度矿业	yn;bf du;xl kd;mx ye;cy	144
-印度竞争	yn;bf du;xl jy;id vg;xb	274
-印度篮球	yn;bf du;xl lj;rp qq;nf	130
 印度纸	yn;bf du;xl vi;ib	171
-印度组织	yn;bf du;xl zu;if vi;id	171
-印度编剧	yn;bf du;xl bm;im ju;cc	117
-印度舞者	yn;bf du;xl wu;el ve;qo	130
-印度苦楝	yn;bf du;xl ku;lc lm;ex	234
-印度苹果	yn;bf du;xl py;le go;qe	153
-印度菜菜	yn;bf du;xl cl;ly cl;ly	531
 印度蓝	yn;bf du;xl lj;lp	320
-印度蔊菜	yn;bf du;xl hj;lc cl;ly	189
-印度街道	yn;bf du;xl jx;pg dk;ho	117
-印度诗歌	yn;bf du;xl ui;sg ge;zz	117
-印度谷螟	yn;bf du;xl gu;hg my;cw	189
-印度豪猪	yn;bf du;xl hk;gj vu;mq	153
-印度贵族	yn;bf du;xl gv;co zu;le	220
-印度轻木	yn;bf du;xl qy;yr mu;em	171
-印度边界	yn;bf du;xl bm;su jx;qj	338
-印度选举	yn;bf du;xl xr;qp ju;kh	315
-印度通史	yn;bf du;xl ts;kt ui;db	162
-印度部落	yn;bf du;xl bu;id lo;lk	117
 印度阶	yn;bf du;xl jx;tj	230
-印度阿三	yn;bf du;xl aa;tz sj;ts	138
 印度馆	yn;bf du;xl gr;qw	356
-印度鸟类	yn;bf du;xl nc;xn lz;pm	130
-印度黑钱	yn;bf du;xl hz;ph qm;zf	207
 印度龙	yn;bf du;xl ls;tl	328
 印成了	yn;bf ig;na le;rl	639
 印戒细胞	yn;bf jx;pl xi;iq bk;vn	472
@@ -120284,6 +120141,7 @@ columns:
 去吃虾	qu;gk ii;de xw;cf	365
 去吃酒	qu;gk ii;de jq;ky	549
 去吃饭吗	qu;gk ii;de fj;qx ma;dn	526
+去吃饼	qu;gk ii;de by;qh	343
 去合肥	qu;gk he;jd fz;vm	657
 去吉大	qu;gk ji;gd da;md	400
 去吉安	qu;gk ji;gd an;wb	284
@@ -125866,17 +125724,6 @@ columns:
 古川市	gu;cg ir;oc ui;zr	522
 古川町	gu;cg ir;oc ty;qa	459
 古巨蜥	gu;cg ju;nn xi;ce	315
-古巴交通	gu;cg ba;mb jc;ab ts;kt	202
-古巴品牌	gu;cg ba;mb pn;dd pl;au	130
-古巴大学	gu;cg ba;mb da;md xt;kw	130
-古巴机场	gu;cg ba;mb ji;eo ih;ga	180
-古巴民族	gu;cg ba;mb mn;dm zu;le	292
-古巴海域	gu;cg ba;mb hl;ke yu;gp	288
-古巴演员	gu;cg ba;mb yj;kw yr;do	130
-古巴生物	gu;cg ba;mb ug;ls wu;qn	180
-古巴艺术	gu;cg ba;mb yi;la uu;ei	238
-古巴记者	gu;cg ba;mb ji;sv ve;qo	180
-古巴铁路	gu;cg ba;mb tx;zt lu;ps	162
 古布阿苏	gu;cg bu;nr aa;tz su;ls	189
 古希腊史	gu;cg xi;bn la;vl ui;db	810
 古希腊文	gu;cg xi;bn la;vl wf;vw	932
@@ -128803,10 +128650,6 @@ columns:
 叶镇辉	ye;dn vf;zn hv;mw	315
 叶长庚	ye;dn ih;pc gg;xb	212
 叶长青	ye;dn ih;pc qy;av	333
-叶门关系	ye;dn mf;am gr;hm xi;ti	162
-叶门外交	ye;dn mf;am wl;ly jc;ab	382
-叶门政府	ye;dn mf;am vg;fs fu;xj	243
-叶门政治	ye;dn mf;am vg;fs vi;kk	162
 叶问堂	ye;dn wf;ad th;sg	212
 叶问弟子	ye;dn wf;ad di;ht zi;hi	194
 叶间动脉	ye;dn jm;ao ds;bs ml;vi	130
@@ -154491,7 +154334,6 @@ columns:
 多响应	do;ll xd;dt yy;xk	378
 多哏儿	do;ll gf;di er;pe	225
 多哥人	do;ll ge;zz rf;jr	262
-多哥足球	do;ll ge;zz zu;pu qq;nf	202
 多哥队	do;ll ge;zz dv;tj	315
 多唱	do;ll ih;do	769
 多啦王	do;ll la;du wh;nw	117
@@ -166120,7 +165962,7 @@ columns:
 好之后	hk;bh vi;ri hb;xf	1310
 好之旅	hk;bh vi;ri lv;le	310
 好乏	hk;bh fa;tr	423
-好乐买	hk;bh le;by ml;aw	612
+好乐买	hk;bh le;by ml;aw	112
 好乐无荒	hk;bh le;by wu;du hd;lf	207
 好乐观啊	hk;bh le;by gr;re aa;dt	171
 好乖哦	hk;bh gy;la oo;dt	418
@@ -188593,7 +188435,7 @@ columns:
 小鬼湖	xc;yx gv;ag hu;kc	342
 小鬼神偷	xc;yx gv;ag uf;fo tb;jj	130
 小鬼鱼	xc;yx gv;ag yu;wv	201
-小魏	xc;yx wz;xb	112
+小魏	xc;yx wz;xb	812
 小鱼丸	xc;yx yu;wv wj;ki	418
 小鱼了	xc;yx yu;wv le;rl	450
 小鱼仔	xc;yx yu;wv zl;jh	450
@@ -197555,22 +197397,17 @@ columns:
 巴蜀风情	ba;mb uu;yn fg;ob qy;ha	387
 巴蜀飘香	ba;mb uu;yn pc;vf xd;xo	202
 巴西利	ba;mb xi;vx li;xp	787
-巴西利卡	ba;mb xi;vx li;xp ka;yf	652
 巴西吧	ba;mb xi;vx ba;dm	117
 巴西国	ba;mb xi;vx go;rn	315
 巴西女	ba;mb xi;vx nv;bn	724
 巴西拉	ba;mb xi;vx la;ui	338
 巴西果	ba;mb xi;vx go;qe	1004
-巴西烧烤	ba;mb xi;vx uk;cp kk;cq	608
-巴西牛排	ba;mb xi;vx nq;qn pl;ur	261
-巴西班让	ba;mb xi;vx bj;pn rh;sy	428
 巴西用	ba;mb xi;vx ys;ty	360
 巴西盖	ba;mb xi;vx gl;ga	129
 巴西红	ba;mb xi;vx hs;iu	490
 巴西莱	ba;mb xi;vx ll;la	351
 巴西菜	ba;mb xi;vx cl;ly	360
 巴西豆	ba;mb xi;vx db;zd	320
-巴西非勒	ba;mb xi;vx fz;rf le;ts	189
 巴西马	ba;mb xi;vx ma;nm	680
 巴西黑	ba;mb xi;vx hz;ph	490
 巴豆油	ba;mb db;zd yb;kd	225
@@ -198683,55 +198520,14 @@ columns:
 希耶塔	xi;bn ye;qt ta;gl	288
 希耶尔河	xi;bn ye;qt er;xy he;kz	261
 希腊七贤	xi;bn la;vl qi;rq xm;pr	310
-希腊三贤	xi;bn la;vl sj;ts xm;pr	194
-希腊主义	xi;bn la;vl vu;in yi;ib	234
 希腊也	xi;bn la;vl ye;ey	594
-希腊作品	xi;bn la;vl zo;jw pn;dd	230
-希腊作家	xi;bn la;vl zo;jw jw;wj	504
-希腊公主	xi;bn la;vl gs;hk vu;in	333
-希腊发明	xi;bn la;vl fa;sr my;ov	220
 希腊吧	xi;bn la;vl ba;dm	234
 希腊品牌	xi;bn la;vl pn;dd pl;au	180
-希腊地震	xi;bn la;vl di;ge vf;tf	162
-希腊城堡	xi;bn la;vl ig;gn bk;jd	144
-希腊城镇	xi;bn la;vl ig;gn vf;zn	230
-希腊外交	xi;bn la;vl wl;ly jc;ab	374
-希腊媒体	xi;bn la;vl mz;bz ti;je	328
-希腊学者	xi;bn la;vl xt;kw ve;qo	500
 希腊小	xi;bn la;vl xc;yx	567
-希腊小说	xi;bn la;vl xc;yx uo;sh	189
-希腊山脉	xi;bn la;vl uj;vs ml;vi	117
-希腊广场	xi;bn la;vl gd;xg ih;ga	230
-希腊广播	xi;bn la;vl gd;xg bo;ut	256
-希腊建立	xi;bn la;vl jm;bu li;il	288
-希腊律师	xi;bn la;vl lv;wb ui;pf	162
-希腊战争	xi;bn la;vl vj;yd vg;xb	320
-希腊战神	xi;bn la;vl vj;yd uf;fo	256
-希腊报纸	xi;bn la;vl bk;uz vi;ib	212
-希腊教父	xi;bn la;vl jc;qh fu;hb	243
-希腊数字	xi;bn la;vl uu;pb zi;wh	320
 希腊族	xi;bn la;vl zu;le	396
-希腊机场	xi;bn la;vl ji;eo ih;ga	162
-希腊歌曲	xi;bn la;vl ge;zz qu;yq	130
-希腊民族	xi;bn la;vl mn;dm zu;le	436
-希腊法律	xi;bn la;vl fa;kg lv;wb	248
-希腊海神	xi;bn la;vl hl;ke uf;fo	225
-希腊演员	xi;bn la;vl yj;kw yr;do	266
-希腊火山	xi;bn la;vl ho;ch uj;vs	130
-希腊王储	xi;bn la;vl wh;nw iu;js	324
-希腊王后	xi;bn la;vl wh;nw hb;xf	288
-希腊田径	xi;bn la;vl tm;qt jy;wr	189
-希腊电视	xi;bn la;vl dm;oa ui;fe	189
 希腊男性	xi;bn la;vl nj;qs xy;hl	243
-希腊篮球	xi;bn la;vl lj;rp qq;nf	338
 希腊籍	xi;bn la;vl ji;ra	436
-希腊组织	xi;bn la;vl zu;if vi;id	153
-希腊美术	xi;bn la;vl mz;gm uu;ei	194
-希腊航空	xi;bn la;vl hh;iz ks;eu	153
 希腊菜	xi;bn la;vl cl;ly	549
-希腊贵族	xi;bn la;vl gv;co zu;le	252
-希腊足球	xi;bn la;vl zu;pu qq;nf	590
-希腊选举	xi;bn la;vl xr;qp ju;kh	202
 希良梨	xi;bn ld;ii li;xp	279
 希芒河	xi;bn mh;lf he;kz	194
 希芙之发	xi;bn fu;lh vi;ri fa;sr	130
@@ -212842,74 +212638,14 @@ columns:
 德善	de;wn uj;gh	1012
 德善堂	de;wn uj;gh th;sg	333
 德善行	de;wn uj;gh xy;px	342
-德国主题	de;wn go;rn vu;in ti;ot	130
-德国书籍	de;wn go;rn uu;aa ji;ra	162
-德国人瑞	de;wn go;rn rf;jr rv;nv	194
 德国仓	de;wn go;rn ch;jz	194
-德国会议	de;wn go;rn hv;jb yi;si	297
-德国伯爵	de;wn go;rn bo;ju jt;yy	180
-德国债务	de;wn go;rn vl;ja wu;hs	162
-德国健康	de;wn go;rn jm;jb kh;xb	207
 德国公园	de;wn go;rn gs;hk yr;rm	117
-德国公爵	de;wn go;rn gs;hk jt;yy	180
-德国军歌	de;wn go;rn jp;wy ge;zz	162
-德国分会	de;wn go;rn ff;hp hv;jb	171
 德国制	de;wn go;rn vi;qr	882
-德国剧院	de;wn go;rn ju;cc yr;tw	225
-德国勋章	de;wn go;rn xp;do vh;xn	153
-德国协会	de;wn go;rn xx;ns hv;jb	171
-德国印象	de;wn go;rn yn;bf xd;wx	292
-德国同盟	de;wn go;rn ts;mf mg;ov	230
 德国吧	de;wn go;rn ba;dm	234
-德国商会	de;wn go;rn uh;im hv;jb	369
-德国商场	de;wn go;rn uh;im ih;ga	130
-德国商店	de;wn go;rn uh;im dm;xy	171
 德国啊	de;wn go;rn aa;dt	315
-德国国家	de;wn go;rn go;rn jw;wj	932
-德国国花	de;wn go;rn go;rn hw;lj	144
-德国娱乐	de;wn go;rn yu;bd le;by	207
-德国学会	de;wn go;rn xt;kw hv;jb	130
-德国宝石	de;wn go;rn bk;wn ui;ms	130
-德国导弹	de;wn go;rn dk;vk dj;bh	252
-德国展览	de;wn go;rn vj;cl lj;pr	202
-德国巴士	de;wn go;rn ba;mb ui;gs	117
-德国市长	de;wn go;rn ui;zr vh;pc	171
-德国废除	de;wn go;rn fz;xs iu;tj	248
-德国指数	de;wn go;rn vi;uv uu;pb	788
-德国攀登	de;wn go;rn pj;eb dg;hz	162
-德国日报	de;wn go;rn ri;or bk;uz	202
-德国林业	de;wn go;rn ln;ee ye;cy	144
-德国植物	de;wn go;rn vi;en wu;qn	531
-德国比利	de;wn go;rn bi;vv li;xp	626
-德国民俗	de;wn go;rn mn;dm su;jh	153
-德国海战	de;wn go;rn hl;ke vj;yd	153
-德国火炮	de;wn go;rn ho;ch pk;cn	162
-德国爱格	de;wn go;rn ai;yw ge;es	153
 德国片	de;wn go;rn pm;ap	248
-德国牧羊	de;wn go;rn mu;qh yh;gy	770
-德国男爵	de;wn go;rn nj;qs jt;yy	171
-德国的水	de;wn go;rn de;un uv;ks	374
-德国的门	de;wn go;rn de;un mf;am	248
-德国皇储	de;wn go;rn hd;un iu;js	189
-德国皇后	de;wn go;rn hd;un hb;xf	180
-德国监狱	de;wn go;rn jm;pr yu;ms	392
-德国盲人	de;wn go;rn mh;fq rf;jr	202
 德国相	de;wn go;rn xd;eq	711
-德国矿业	de;wn go;rn kd;mx ye;cy	117
-德国纪念	de;wn go;rn ji;iv nm;ja	270
-德国编辑	de;wn go;rn bm;im ji;yd	144
-德国罪犯	de;wn go;rn zv;yr fj;mz	130
-德国美术	de;wn go;rn mz;gm uu;ei	225
-德国装甲	de;wn go;rn vd;ag jw;sj	540
-德国象征	de;wn go;rn xd;wx vg;wf	162
 德国豹	de;wn go;rn bk;mn	459
-德国选举	de;wn go;rn xr;qp ju;kh	306
-德国都芳	de;wn go;rn du;qo fh;ll	256
-德国雕塑	de;wn go;rn dc;mg su;hs	436
-德国高仪	de;wn go;rn gk;gg yi;ji	212
-德国鱼雷	de;wn go;rn yu;wv lz;tq	342
-德国默片	de;wn go;rn mo;pm pm;ap	180
-德国鼓手	de;wn go;rn gu;hc ub;us	130
 德坎波斯	de;wn kj;ge bo;kr si;zh	423
 德坤瑶医	de;wn kp;go yk;ny yi;no	117
 德城区的	de;wn ig;gn qu;nb de;un	288
@@ -217530,7 +217266,6 @@ columns:
 恩多拉	en;rm do;ll la;ui	346
 恩大施福	en;rm da;md ui;le fu;ff	117
 恩奎斯特	en;rm kv;mg si;zh te;qg	396
-恩好的	en;rm hk;bh de;un	450
 恩孔达	en;rm ks;ha da;mu	338
 恩宠圣母	en;rm is;wt ug;rg mu;km	338
 恩宠项链	en;rm is;wt xd;uw lm;zy	144
@@ -258636,33 +258371,6 @@ columns:
 捷亚航空	jx;uf ya;fc hh;iz ks;eu	117
 捷信	jx;uf xn;js	579
 捷信中国	jx;uf xn;js vs;dg go;rn	284
-捷克动画	jx;uf ke;cp ds;bs hw;fq	189
-捷克医生	jx;uf ke;cp yi;no ug;ls	144
-捷克品牌	jx;uf ke;cp pn;dd pl;au	162
-捷克国家	jx;uf ke;cp go;rn jw;wj	603
-捷克坦克	jx;uf ke;cp tj;go ke;cp	130
-捷克城堡	jx;uf ke;cp ig;gn bk;jd	117
-捷克外交	jx;uf ke;cp wl;ly jc;ab	360
-捷克大学	jx;uf ke;cp da;md xt;kw	202
-捷克小说	jx;uf ke;cp xc;yx uo;sh	306
-捷克建筑	jx;uf ke;cp jm;bu vu;ru	266
-捷克教育	jx;uf ke;cp jc;qh yu;bv	248
-捷克斯洛	jx;uf ke;cp si;zh lo;ks	1202
-捷克枪械	jx;uf ke;cp qd;ej xx;ep	207
-捷克植物	jx;uf ke;cp vi;en wu;qn	153
-捷克水晶	jx;uf ke;cp uv;ks jy;oo	266
-捷克滑雪	jx;uf ke;cp hw;kf xt;tb	117
-捷克画家	jx;uf ke;cp hw;fq jw;wj	288
-捷克社会	jx;uf ke;cp ue;fg hv;jb	374
-捷克科技	jx;uf ke;cp ke;xj ji;uc	162
-捷克联赛	jx;uf ke;cp lm;qh sl;wq	270
-捷克航空	jx;uf ke;cp hh;iz ks;eu	382
-捷克艺术	jx;uf ke;cp yi;la uu;ei	324
-捷克记者	jx;uf ke;cp ji;sv ve;qo	171
-捷克语版	jx;uf ke;cp yu;sw bj;ax	180
-捷克语言	jx;uf ke;cp yu;sw yj;sy	194
-捷克贵族	jx;uf ke;cp gv;co zu;le	189
-捷克通讯	jx;uf ke;cp ts;kt xp;sa	180
 捷克造	jx;uf ke;cp zk;qd	261
 捷列克河	jx;uf lx;gp ke;cp he;kz	360
 捷利物流	jx;uf li;xp wu;qn lq;kb	117
@@ -265305,7 +265013,6 @@ columns:
 文英馆	wf;vw yy;lm gr;qw	297
 文荣医院	wf;vw rs;lw yi;no yr;tw	315
 文莉爱心	wf;vw li;lx ai;yw xn;hx	130
-文莱关系	wf;vw ll;la gr;hm xi;ti	117
 文著协	wf;vw vu;lq xx;ns	248
 文蛤肉	wf;vw ge;cj rb;mj	328
 文行忠信	wf;vw xy;px vs;dg xn;js	356
@@ -265412,9 +265119,6 @@ columns:
 斐多篇	fz;rv do;ll pm;rm	396
 斐川町	fz;rv ir;oc ty;qa	477
 斐林	fz;rv ln;ee	230
-斐济体育	fz;rv ji;kq ti;je yu;bv	162
-斐济岛屿	fz;rv ji;kq dk;xv yu;vf	162
-斐济足球	fz;rv ji;kq zu;pu qq;nf	202
 斐讯	fz;rv xp;sa	670
 斐迪南多	fz;rv di;du nj;nm do;ll	281
 斑叶兰	bj;nv ye;dn lj;ht	148
@@ -270070,149 +269774,22 @@ columns:
 日期内	ri;or qi;zh nz;mj	626
 日期吧	ri;or qi;zh ba;dm	369
 日期啊	ri;or qi;zh aa;dt	410
-日本三和	ri;or bf;ef sj;ts he;xd	144
-日本专题	ri;or bf;ef vr;ma ti;ot	171
-日本丛书	ri;or bf;ef cs;jj uu;aa	117
-日本主义	ri;or bf;ef vu;in yi;ib	378
-日本主教	ri;or bf;ef vu;in jc;qh	261
 日本也	ri;or bf;ef ye;ey	1130
 日本书	ri;or bf;ef uu;aa	882
 日本了	ri;or bf;ef le;rl	828
-日本人不	ri;or bf;ef rf;jr bu;cb	882
-日本人哦	ri;or bf;ef rf;jr oo;dt	338
-日本人在	ri;or bf;ef rf;jr zl;ng	968
-日本人很	ri;or bf;ef rf;jr hf;wi	788
-日本人是	ri;or bf;ef rf;jr ui;ot	824
-日本人瑞	ri;or bf;ef rf;jr rv;nv	220
-日本仓库	ri;or bf;ef ch;jz ku;xy	180
-日本伯爵	ri;or bf;ef bo;ju jt;yy	130
-日本佛寺	ri;or bf;ef fo;jt si;gk	238
 日本佬	ri;or bf;ef lk;jq	360
-日本僧人	ri;or bf;ef sg;jh rf;jr	536
-日本僧侣	ri;or bf;ef sg;jh lv;jd	378
-日本儿歌	ri;or bf;ef er;pe ge;zz	117
-日本军衔	ri;or bf;ef jp;wy xm;pz	212
-日本冰球	ri;or bf;ef by;wk qq;nf	153
-日本刀歌	ri;or bf;ef dk;pd ge;zz	207
-日本刺客	ri;or bf;ef ci;em ke;ws	171
-日本剑圣	ri;or bf;ef jm;jk ug;rg	171
-日本剑豪	ri;or bf;ef jm;jk hk;gj	202
-日本剧院	ri;or bf;ef ju;cc yr;tw	162
-日本半岛	ri;or bf;ef bj;hu dk;xv	130
-日本卖的	ri;or bf;ef ml;na de;un	410
-日本原单	ri;or bf;ef yr;xu dj;hq	252
 日本吗	ri;or bf;ef ma;dn	603
 日本啊	ri;or bf;ef aa;dt	536
-日本国企	ri;or bf;ef go;rn qi;js	117
-日本国家	ri;or bf;ef go;rn jw;wj	1035
-日本地形	ri;or bf;ef di;ge xy;fl	270
-日本堕胎	ri;or bf;ef do;tn tl;vk	117
-日本墓葬	ri;or bf;ef mu;lo zh;lg	171
-日本外教	ri;or bf;ef wl;ly jc;qh	285
-日本大创	ri;or bf;ef da;md id;jz	288
-日本大将	ri;or bf;ef da;md jd;al	194
-日本大蠊	ri;or bf;ef da;md lm;cx	117
-日本女官	ri;or bf;ef nv;bn gr;wk	144
-日本女贞	ri;or bf;ef nv;bn vf;yo	144
-日本奴隶	ri;or bf;ef nu;br li;bk	202
-日本婚姻	ri;or bf;ef hp;bb yn;br	180
-日本学会	ri;or bf;ef xt;kw hv;jb	284
-日本官制	ri;or bf;ef gr;wk vi;qr	130
-日本客船	ri;or bf;ef ke;ws ir;io	130
-日本将其	ri;or bf;ef jd;al qi;zh	760
 日本山	ri;or bf;ef uj;vs	855
-日本山脉	ri;or bf;ef uj;vs ml;vi	117
-日本工具	ri;or bf;ef gs;ug ju;qh	144
-日本并称	ri;or bf;ef by;hl ig;xx	117
-日本广场	ri;or bf;ef gd;xg ih;ga	212
-日本庄园	ri;or bf;ef vd;xg yr;rm	117
 日本弓	ri;or bf;ef gs;bg	436
-日本性别	ri;or bf;ef xy;hl bx;ds	171
-日本成人	ri;or bf;ef ig;na rf;jr	680
-日本手球	ri;or bf;ef ub;us qq;nf	171
-日本执法	ri;or bf;ef vi;uk fa;kg	117
-日本扩张	ri;or bf;ef ko;ux vh;bp	428
-日本政策	ri;or bf;ef vg;fs ce;re	490
-日本教堂	ri;or bf;ef jc;qh th;sg	117
-日本旅馆	ri;or bf;ef lv;le gr;qw	364
-日本早樱	ri;or bf;ef zk;on yy;eo	266
 日本时	ri;or bf;ef ui;ok	260
-日本昆虫	ri;or bf;ef kp;ov is;cc	346
-日本景观	ri;or bf;ef jy;og gr;re	144
-日本朝日	ri;or bf;ef ik;no ri;or	729
-日本机枪	ri;or bf;ef ji;eo qd;ej	117
 日本条螽	ri;or bf;ef tc;he vs;hw	153
-日本林业	ri;or bf;ef ln;ee ye;cy	171
-日本柳杉	ri;or bf;ef lq;eb uj;ee	369
-日本树莺	ri;or bf;ef uu;er yy;lw	288
-日本桥梁	ri;or bf;ef qc;et ld;kp	162
-日本森林	ri;or bf;ef sf;ee ln;ee	315
-日本民家	ri;or bf;ef mn;dm jw;wj	212
-日本民谣	ri;or bf;ef mn;dm yk;sy	418
-日本水务	ri;or bf;ef uv;ks wu;hs	110
-日本沉船	ri;or bf;ef if;kw ir;io	212
-日本沉默	ri;or bf;ef if;kw mo;pm	107
-日本河川	ri;or bf;ef he;kz ir;oc	194
 日本沼虾	ri;or bf;ef vk;kp xw;cf	230
-日本海战	ri;or bf;ef hl;ke vj;yd	189
 日本漆	ri;or bf;ef qi;ke	346
-日本演歌	ri;or bf;ef yj;kw ge;zz	446
-日本瀑布	ri;or bf;ef pu;ko bu;nr	374
-日本火灾	ri;or bf;ef ho;ch zl;wc	130
-日本火炮	ri;or bf;ef ho;ch pk;cn	153
-日本灾难	ri;or bf;ef zl;wc nj;ru	144
-日本热门	ri;or bf;ef re;uk mf;am	423
-日本煤炭	ri;or bf;ef mz;cz tj;vn	153
-日本煤矿	ri;or bf;ef mz;cz kd;mx	117
-日本牧师	ri;or bf;ef mu;qh ui;pf	130
 日本猴	ri;or bf;ef hb;mj	328
-日本现在	ri;or bf;ef xm;ne zl;ng	778
-日本理学	ri;or bf;ef li;nd xt;kw	162
 日本用	ri;or bf;ef ys;ty	760
 日本病	ri;or bf;ef by;af	365
-日本的区	ri;or bf;ef de;un qu;nb	288
-日本的坂	ri;or bf;ef de;un bj;gx	207
-日本的塔	ri;or bf;ef de;un ta;gl	162
-日本的市	ri;or bf;ef de;un ui;zr	482
-日本的村	ri;or bf;ef de;un cp;ek	266
-日本的王	ri;or bf;ef de;un wh;nw	328
-日本的町	ri;or bf;ef de;un ty;qa	234
-日本的郡	ri;or bf;ef de;un jp;bt	162
-日本的门	ri;or bf;ef de;un mf;am	333
-日本盲人	ri;or bf;ef mh;fq rf;jr	144
-日本矿业	ri;or bf;ef kd;mx ye;cy	292
-日本硬币	ri;or bf;ef yy;mf bi;tr	153
-日本神职	ri;or bf;ef uf;fo vi;qd	130
-日本神道	ri;or bf;ef uf;fo dk;ho	558
-日本离婚	ri;or bf;ef li;zb hp;bb	180
-日本税务	ri;or bf;ef uv;xh wu;hs	171
-日本竞赛	ri;or bf;ef jy;id sl;wq	144
-日本端午	ri;or bf;ef dr;iv wu;en	225
-日本维基	ri;or bf;ef wz;iu ji;zh	315
-日本舞踊	ri;or bf;ef wu;el ys;pk	342
-日本舞蹈	ri;or bf;ef wu;el dk;py	388
-日本花街	ri;or bf;ef hw;lj jx;pg	144
-日本茶人	ri;or bf;ef ia;lj rf;jr	162
-日本茶具	ri;or bf;ef ia;lj ju;qh	162
-日本薯蓣	ri;or bf;ef uu;ly yu;li	248
-日本虚拟	ri;or bf;ef xu;zc ni;uv	369
-日本西铁	ri;or bf;ef xi;vx tx;zt	306
-日本词语	ri;or bf;ef ci;sa yu;sw	162
-日本谍报	ri;or bf;ef dx;sl bk;uz	202
-日本象印	ri;or bf;ef xd;wx yn;bf	306
-日本象棋	ri;or bf;ef xd;wx qi;ez	302
-日本财产	ri;or bf;ef cl;on ij;ix	279
-日本超人	ri;or bf;ef ik;pp rf;jr	441
-日本跳水	ri;or bf;ef tc;pp uv;ks	162
 日本部	ri;or bf;ef bu;id	662
-日本金松	ri;or bf;ef jn;zj ss;eh	230
-日本铜矿	ri;or bf;ef ts;zm kd;mx	117
-日本银币	ri;or bf;ef yn;zi bi;tr	130
-日本银矿	ri;or bf;ef yn;zi kd;mx	153
-日本雕刻	ri;or bf;ef dc;mg ke;kp	279
-日本鱼雷	ri;or bf;ef yu;wv lz;tq	279
-日本鳗鲡	ri;or bf;ef mj;wo li;wf	288
-日本鸟类	ri;or bf;ef nc;xn lz;pm	256
 日朴茨茅	ri;or pu;ey ci;lw mk;li	670
 日机	ri;or ji;eo	191
 日来的	ri;or ll;ah de;un	954
@@ -276305,26 +275882,7 @@ columns:
 智冠股份	vi;od gr;wm gu;vr ff;jh	248
 智凡迪	vi;od fj;oi di;du	297
 智创联合	vi;od id;jz lm;qh he;jd	180
-智利会议	vi;od li;xp hv;jb yi;si	130
-智利体育	vi;od li;xp ti;je yu;bv	117
-智利外交	vi;od li;xp wl;ly jc;ab	320
-智利峡湾	vi;od li;xp xw;vh wj;kz	117
-智利建立	vi;od li;xp jm;bu li;il	117
-智利建筑	vi;od li;xp jm;bu vu;ru	180
-智利教育	vi;od li;xp jc;qh yu;bv	171
-智利文化	vi;od li;xp wf;vw hw;jv	117
-智利旅游	vi;od li;xp lv;le yb;kl	153
-智利民族	vi;od li;xp mn;dm zu;le	189
-智利法律	vi;od li;xp fa;kg lv;wb	130
 智利海	vi;od li;xp hl;ke	621
-智利电视	vi;od li;xp dm;oa ui;fe	238
-智利矿难	vi;od li;xp kd;mx nj;ru	220
-智利社会	vi;od li;xp ue;fg hv;jb	378
-智利联赛	vi;od li;xp lm;qh sl;wq	234
-智利航空	vi;od li;xp hh;iz ks;eu	256
-智利艺术	vi;od li;xp yi;la uu;ei	292
-智利边界	vi;od li;xp bm;su jx;qj	153
-智利选举	vi;od li;xp xr;qp ju;kh	130
 智利馆	vi;od li;xp gr;qw	152
 智力争霸	vi;od li;sl vg;xb ba;tt	130
 智力吧	vi;od li;sl ba;dm	549
@@ -281308,41 +280866,17 @@ columns:
 朝鲁门	ik;no lu;wo mf;am	212
 朝鲜世宗	ik;no xm;wg ui;la zs;wf	531
 朝鲜世祖	ik;no xm;wg ui;la zu;ff	432
-朝鲜东海	ik;no xm;wg ds;ry hl;ke	382
-朝鲜中央	ik;no xm;wg vs;dg yh;mm	734
-朝鲜人参	ik;no xm;wg rf;jr uf;km	288
-朝鲜传说	ik;no xm;wg ir;jm uo;sh	225
-朝鲜作家	ik;no xm;wg zo;jw jw;wj	279
-朝鲜公主	ik;no xm;wg gs;hk vu;in	207
 朝鲜去	ik;no xm;wg qu;gk	459
-朝鲜后宫	ik;no xm;wg hb;xf gs;wd	171
 朝鲜吧	ik;no xm;wg ba;dm	328
-朝鲜和平	ik;no xm;wg he;xd py;eh	261
 朝鲜啊	ik;no xm;wg aa;dt	369
-朝鲜国务	ik;no xm;wg go;rn wu;hs	360
-朝鲜国家	ik;no xm;wg go;rn jw;wj	734
-朝鲜国防	ik;no xm;wg go;rn fh;tl	567
-朝鲜地名	ik;no xm;wg di;ge my;ld	162
-朝鲜外文	ik;no xm;wg wl;ly wf;vw	248
 朝鲜女	ik;no xm;wg nv;bn	652
-朝鲜宗室	ik;no xm;wg zs;wf ui;wy	162
 朝鲜屯	ik;no xm;wg tp;fs	284
 朝鲜成宗	ik;no xm;wg ig;na zs;wf	414
 朝鲜时	ik;no xm;wg ui;ok	695
-朝鲜民俗	ik;no xm;wg mn;dm su;jh	230
-朝鲜民谣	ik;no xm;wg mn;dm yk;sy	189
-朝鲜汉诗	ik;no xm;wg hj;kr ui;sg	234
 朝鲜海	ik;no xm;wg hl;ke	634
-朝鲜烧烤	ik;no xm;wg uk;cp kk;cq	243
 朝鲜画	ik;no xm;wg hw;fq	423
-朝鲜篮球	ik;no xm;wg lj;rp qq;nf	171
 朝鲜舞	ik;no xm;wg wu;el	400
-朝鲜象棋	ik;no xm;wg xd;wx qi;ez	171
-朝鲜边界	ik;no xm;wg bm;su jx;qj	230
-朝鲜邮票	ik;no xm;wg yb;dt pc;vf	310
 朝鲜面	ik;no xm;wg mm;bm	459
-朝鲜革命	ik;no xm;wg ge;tg my;jd	482
-朝鲜饮食	ik;no xm;wg yn;qe ui;qs	144
 期不少于	qi;zh bu;cb uk;yt yu;fn	544
 期不至	qi;zh bu;cb vi;yi	212
 期以	qi;zh yi;vj	100
@@ -288694,7 +288228,7 @@ columns:
 柏悦府	bo;eu yt;hh fu;xj	234
 柏悦酒店	bo;eu yt;hh jq;ky dm;xy	760
 柏拉仁诺	bl;eu la;ui rf;jm no;sl	202
-柏拉图的	bl;eu la;ui tu;rh de;un	909
+柏拉图的	bo;eu la;ui tu;rh de;un	909
 柏斯	bl;eu si;zh	128
 柏斯基	bl;eu si;zh ji;zh	189
 柏斯琴行	bl;eu si;zh qn;nn xy;px	369
@@ -303942,9 +303476,6 @@ columns:
 沙燕桥	ua;ky yj;ld qc;et	333
 沙爹米粉	ua;ky dx;hb mi;pm ff;ph	144
 沙特国	ua;ky te;qg go;rn	756
-沙特尔区	ua;ky te;qg er;xy qu;nb	522
-沙特愿景	ua;ky te;qg yr;xu jy;og	320
-沙特战争	ua;ky te;qg vj;yd vg;xb	207
 沙特拉	ua;ky te;qg la;ui	387
 沙王大桥	ua;ky wh;nw da;md qc;et	130
 沙玛珠	ua;ky ma;nn vu;nt	320
@@ -309581,89 +309112,13 @@ columns:
 法器啊	fa;kg qi;dd aa;dt	261
 法因数控	fa;kg yn;rm uu;pb ks;ue	464
 法团	fa;kg tr;rn	1303
-法国世纪	fa;kg go;rn ui;la ji;iv	526
-法国东南	fa;kg go;rn ds;ry nj;nm	981
-法国乐团	fa;kg go;rn yt;by tr;rn	207
-法国书店	fa;kg go;rn uu;aa dm;xy	202
-法国事件	fa;kg go;rn ui;fd jm;jq	130
-法国产业	fa;kg go;rn ij;ix ye;cy	117
-法国人瑞	fa;kg go;rn rf;jr rv;nv	171
-法国传说	fa;kg go;rn ir;jm uo;sh	144
-法国伯爵	fa;kg go;rn bo;ju jt;yy	252
-法国佛教	fa;kg go;rn fo;jt jc;qh	194
-法国修女	fa;kg go;rn xq;jg nv;bn	238
-法国健康	fa;kg go;rn jm;jb kh;xb	320
-法国儿歌	fa;kg go;rn er;pe ge;zz	130
-法国公爵	fa;kg go;rn gs;hk jt;yy	248
-法国军医	fa;kg go;rn jp;wy yi;no	130
-法国军团	fa;kg go;rn jp;wy tr;rn	346
-法国刑法	fa;kg go;rn xy;fl fa;kg	234
-法国创新	fa;kg go;rn id;jz xn;ie	189
-法国别墅	fa;kg go;rn bx;ds uu;di	153
-法国刺客	fa;kg go;rn ci;em ke;ws	180
-法国剧院	fa;kg go;rn ju;cc yr;tw	212
-法国动物	fa;kg go;rn ds;bs wu;qn	490
-法国勋章	fa;kg go;rn xp;do vh;xn	189
-法国协会	fa;kg go;rn xx;ns hv;jb	212
 法国吧	fa;kg go;rn ba;dm	364
 法国啊	fa;kg go;rn aa;dt	428
-法国国家	fa;kg go;rn go;rn jw;wj	1125
-法国国花	fa;kg go;rn go;rn hw;lj	220
-法国地质	fa;kg go;rn di;ge vi;xn	392
-法国天气	fa;kg go;rn tm;fm qi;vq	117
 法国女	fa;kg go;rn nv;bn	972
-法国娱乐	fa;kg go;rn yu;bd le;by	153
-法国学会	fa;kg go;rn xt;kw hv;jb	144
-法国宇航	fa;kg go;rn yu;wf hh;iz	441
-法国宣传	fa;kg go;rn xr;wf ir;jm	162
-法国宪法	fa;kg go;rn xm;wq fa;kg	495
-法国宫殿	fa;kg go;rn gs;wd dm;cl	194
-法国导弹	fa;kg go;rn dk;vk dj;bh	144
-法国小厨	fa;kg go;rn xc;yx iu;xz	238
-法国展览	fa;kg go;rn vj;cl lj;pr	171
-法国山谷	fa;kg go;rn uj;vs gu;hg	117
-法国岛屿	fa;kg go;rn dk;xv yu;vf	162
-法国市长	fa;kg go;rn ui;zr vh;pc	162
-法国干酪	fa;kg go;rn gj;eg lk;ys	117
-法国幻影	fa;kg go;rn hr;ia yy;og	302
-法国废除	fa;kg go;rn fz;xs iu;tj	306
-法国手球	fa;kg go;rn ub;us qq;nf	212
-法国改革	fa;kg go;rn gl;vh ge;tg	180
-法国旅馆	fa;kg go;rn lv;le gr;qw	153
-法国旗帜	fa;kg go;rn qi;le vi;rd	212
-法国智库	fa;kg go;rn vi;od ku;xy	153
-法国村庄	fa;kg go;rn cp;ek vd;xg	266
-法国案件	fa;kg go;rn an;wb jm;jq	130
-法国森林	fa;kg go;rn sf;ee ln;ee	207
-法国死亡	fa;kg go;rn si;gv wh;fw	171
-法国民法	fa;kg go;rn mn;dm fa;kg	504
-法国洞穴	fa;kg go;rn ds;km xt;ex	194
-法国浓汤	fa;kg go;rn ns;kw th;ka	130
-法国火山	fa;kg go;rn ho;ch uj;vs	162
-法国火炮	fa;kg go;rn ho;ch pk;cn	144
-法国烤鸭	fa;kg go;rn kk;cq ya;sx	130
-法国甜食	fa;kg go;rn tm;az ui;qs	144
-法国生物	fa;kg go;rn ug;ls wu;qn	490
-法国田径	fa;kg go;rn tm;qt jy;wr	320
-法国的性	fa;kg go;rn de;un xy;hl	171
-法国的水	fa;kg go;rn de;un uv;ks	292
-法国的汤	fa;kg go;rn de;un th;ka	180
-法国的门	fa;kg go;rn de;un mf;am	194
-法国矿业	fa;kg go;rn kd;mx ye;cy	266
-法国福利	fa;kg go;rn fu;ff li;xp	171
-法国税务	fa;kg go;rn uv;xh wu;hs	144
-法国舞者	fa;kg go;rn wu;el ve;qo	153
-法国航天	fa;kg go;rn hh;iz tm;fm	212
 法国菊	fa;kg go;rn ju;ln	194
 法国蓝	fa;kg go;rn lj;lp	612
 法国街	fa;kg go;rn jx;pg	490
-法国警官	fa;kg go;rn jy;lg gr;wk	144
-法国赌场	fa;kg go;rn du;oq ih;ga	130
-法国通讯	fa;kg go;rn ts;kt xp;sa	171
-法国道路	fa;kg go;rn dk;ho lu;ps	144
-法国都彭	fa;kg go;rn du;qo pg;he	324
 法国金	fa;kg go;rn jn;zj	500
-法国食物	fa;kg go;rn ui;qs wu;qn	234
 法在心中	fa;kg zl;ng xn;hx vs;dg	266
 法在身边	fa;kg zl;ng uf;zs bm;su	338
 法域	fa;kg yu;gp	460
@@ -310196,49 +309651,10 @@ columns:
 波儿面	bo;kr er;pe mm;bm	310
 波克兰	bo;kr ke;cp lj;ht	418
 波克波克	bo;kr ke;cp bo;kr ke;cp	117
-波兰主教	bo;kr lj;ht vu;in jc;qh	297
-波兰人名	bo;kr lj;ht rf;jr my;ld	171
-波兰公主	bo;kr lj;ht gs;hk vu;in	252
-波兰剧院	bo;kr lj;ht ju;cc yr;tw	194
-波兰动画	bo;kr lj;ht ds;bs hw;fq	144
-波兰卫生	bo;kr lj;ht wz;zf ug;ls	153
-波兰发明	bo;kr lj;ht fa;sr my;ov	144
-波兰品牌	bo;kr lj;ht pn;dd pl;au	180
-波兰商业	bo;kr lj;ht uh;im ye;cy	162
-波兰国界	bo;kr lj;ht go;rn jx;qj	130
-波兰坦克	bo;kr lj;ht tj;go ke;cp	171
-波兰堕胎	bo;kr lj;ht do;tn tl;vk	162
-波兰媒体	bo;kr lj;ht mz;bz ti;je	320
 波兰市	bo;kr lj;ht ui;zr	526
-波兰建筑	bo;kr lj;ht jm;bu vu;ru	338
-波兰律师	bo;kr lj;ht lv;wb ui;pf	194
 波兰德	bo;kr lj;ht de;wn	293
-波兰戏剧	bo;kr lj;ht xi;rp ju;cc	346
-波兰战争	bo;kr lj;ht vj;yd vg;xb	387
-波兰报纸	bo;kr lj;ht bk;uz vi;ib	207
-波兰新闻	bo;kr lj;ht xn;ie wf;aq	162
-波兰旅游	bo;kr lj;ht lv;le yb;kl	238
 波兰时	bo;kr lj;ht ui;ok	205
-波兰机场	bo;kr lj;ht ji;eo ih;ga	153
-波兰来客	bo;kr lj;ht ll;ah ke;ws	405
-波兰歌手	bo;kr lj;ht ge;zz ub;us	270
-波兰歌曲	bo;kr lj;ht ge;zz qu;yq	220
-波兰比利	bo;kr lj;ht bi;vv li;xp	396
-波兰民族	bo;kr lj;ht mn;dm zu;le	540
-波兰法律	bo;kr lj;ht fa;kg lv;wb	279
-波兰港口	bo;kr lj;ht gh;kl kb;dk	162
-波兰电视	bo;kr lj;ht dm;oa ui;fe	387
-波兰社会	bo;kr lj;ht ue;fg hv;jb	558
 波兰站	bo;kr lj;ht vj;iy	279
-波兰组织	bo;kr lj;ht zu;if vi;id	212
-波兰能源	bo;kr lj;ht ng;kv yr;kx	130
-波兰航空	bo;kr lj;ht hh;iz ks;eu	504
-波兰选举	bo;kr lj;ht xr;qp ju;kh	220
-波兰通讯	bo;kr lj;ht ts;kt xp;sa	117
-波兰邮政	bo;kr lj;ht yb;dt vg;fs	194
-波兰银行	bo;kr lj;ht yn;zi hh;px	171
-波兰音乐	bo;kr lj;ht yn;xy yt;by	392
-波兰领地	bo;kr lj;ht ly;jk di;ge	266
 波兹德	bo;kr zi;hi de;wn	189
 波冈达	bo;kr gh;mb da;mu	450
 波分	bo;kr ff;hp	918
@@ -310573,9 +309989,6 @@ columns:
 波马雷	bo;kr ma;nm lz;tq	405
 波鲁裘斯	bo;kr lu;wo qq;fk si;zh	297
 波鳞	bo;kr ln;wp	239
-波黑克族	bo;kr hz;ph ke;cp zu;le	234
-波黑外交	bo;kr hz;ph wl;ly jc;ab	117
-波黑联邦	bo;kr hz;ph lm;qh bh;at	500
 波龙	bo;kr ls;tl	662
 泣涕涟涟	qi;ki ti;kh lm;ky lm;ky	315
 泣血蝇虫	qi;ki xt;ta yy;cd is;cc	324
@@ -310849,54 +310262,11 @@ columns:
 泰和社区	tl;ai he;xd ue;fg qu;nb	162
 泰和花园	tl;ai he;xd hw;lj yr;rm	243
 泰和酒店	tl;ai he;xd jq;ky dm;xy	212
-泰国中文	tl;ai go;rn vs;dg wf;vw	342
-泰国主题	tl;ai go;rn vu;in ti;ot	189
-泰国乐团	tl;ai go;rn yt;by tr;rn	153
-泰国佛像	tl;ai go;rn fo;jt xd;jw	252
-泰国佛寺	tl;ai go;rn fo;jt si;gk	202
-泰国公共	tl;ai go;rn gs;hk gs;lh	356
-泰国动物	tl;ai go;rn ds;bs wu;qn	180
-泰国司法	tl;ai go;rn si;af fa;kg	252
 泰国吧	tl;ai go;rn ba;dm	396
-泰国商业	tl;ai go;rn uh;im ye;cy	292
-泰国商场	tl;ai go;rn uh;im ih;ga	202
 泰国啊	tl;ai go;rn aa;dt	342
-泰国国家	tl;ai go;rn go;rn jw;wj	788
-泰国国徽	tl;ai go;rn go;rn hv;wv	207
-泰国地铁	tl;ai go;rn di;ge tx;zt	130
 泰国女	tl;ai go;rn nv;bn	729
-泰国娱乐	tl;ai go;rn yu;bd le;by	292
-泰国宫殿	tl;ai go;rn gs;wd dm;cl	117
-泰国小说	tl;ai go;rn xc;yx uo;sh	189
-泰国庙宇	tl;ai go;rn mc;xd yu;wf	225
-泰国律师	tl;ai go;rn lv;wb ui;pf	144
-泰国战争	tl;ai go;rn vj;yd vg;xb	153
-泰国排球	tl;ai go;rn pl;ur qq;nf	130
-泰国文学	tl;ai go;rn wf;vw xt;kw	194
-泰国植物	tl;ai go;rn vi;en wu;qn	130
-泰国水灾	tl;ai go;rn uv;ks zl;wc	320
-泰国沙滩	tl;ai go;rn ua;ky tj;kr	144
-泰国海湾	tl;ai go;rn hl;ke wj;kz	162
-泰国游戏	tl;ai go;rn yb;kl xi;rp	130
 泰国猫	tl;ai go;rn mk;ml	225
-泰国环境	tl;ai go;rn hr;nc jy;gx	162
-泰国生物	tl;ai go;rn ug;ls wu;qn	144
-泰国的塔	tl;ai go;rn de;un ta;gl	117
-泰国石油	tl;ai go;rn ui;ms yb;kd	189
-泰国神话	tl;ai go;rn uf;fo hw;sa	144
-泰国第三	tl;ai go;rn di;rt sj;ts	432
-泰国第五	tl;ai go;rn di;rt wu;wu	153
-泰国篮球	tl;ai go;rn lj;rp qq;nf	153
-泰国舞者	tl;ai go;rn wu;el ve;qo	144
-泰国芒果	tl;ai go;rn mh;lf go;qe	378
-泰国设计	tl;ai go;rn ue;sr ji;sn	248
-泰国象棋	tl;ai go;rn xd;wx qi;ez	297
-泰国达人	tl;ai go;rn da;mu rf;jr	212
-泰国选举	tl;ai go;rn xr;qp ju;kh	288
-泰国通讯	tl;ai go;rn ts;kt xp;sa	171
-泰国雕塑	tl;ai go;rn dc;mg su;hs	117
 泰国风	tl;ai go;rn fg;ob	734
-泰国鱼露	tl;ai go;rn yu;wv lu;tp	288
 泰坦三号	tl;ai tj;go sj;ts hk;df	243
 泰坦之力	tl;ai tj;go vi;ri li;sl	194
 泰坦之握	tl;ai tj;go vi;ri wo;uc	162
@@ -313928,12 +313298,7 @@ columns:
 海因兹	hl;ke yn;rm zi;hi	531
 海图制图	hl;ke tu;rh vi;qr tu;rh	189
 海图改正	hl;ke tu;rh gl;vh vg;fs	117
-海地共和	hl;ke di;ge gs;lh he;xd	418
 海地区	hl;ke di;ge qu;nb	1440
-海地国家	hl;ke di;ge go;rn jw;wj	508
-海地律师	hl;ke di;ge lv;wb ui;pf	130
-海地足球	hl;ke di;ge zu;pu qq;nf	279
-海地革命	hl;ke di;ge ge;tg my;jd	396
 海圻舰	hl;ke qi;gt jm;ie	306
 海坛山	hl;ke tj;gb uj;vs	207
 海坛街	hl;ke tj;gb jx;pg	319
@@ -331933,7 +331298,6 @@ columns:
 瑞士吧	rv;nv ui;gs ba;dm	288
 瑞士德	rv;nv ui;gs de;wn	711
 瑞士蓝	rv;nv ui;gs lj;lp	225
-瑞士褐牛	rv;nv ui;gs he;to nq;qn	162
 瑞士馆	rv;nv ui;gs gr;qw	306
 瑞声	rv;nv ug;gc	630
 瑞天投资	rv;nv tm;fm tb;ur zi;we	162
@@ -339102,6 +338466,7 @@ columns:
 的废了	de;un fz;xs le;rl	657
 的开吧	de;un kl;fl ba;dm	306
 的形式	de;un xy;fl ui;pu	603
+的得分	de;un de;wo ff;hp	117
 的忙	de;un mh;hf	1305
 的快乐	de;un ky;hn le;by	1665
 的快吧	de;un ky;hn ba;dm	346
@@ -351411,20 +350776,6 @@ columns:
 秘阁	mi;xh ge;as	585
 秘阁修撰	mi;xh ge;as xq;jg vr;uv	320
 秘魔岩	mi;xh mo;za yj;vm	238
-秘鲁交通	bi;xh lu;wo jc;ab ts;kt	130
-秘鲁会议	bi;xh lu;wo hv;jb yi;si	144
-秘鲁体育	bi;xh lu;wo ti;je yu;bv	171
-秘鲁国家	bi;xh lu;wo go;rn jw;wj	441
-秘鲁外交	bi;xh lu;wo wl;ly jc;ab	266
-秘鲁将军	bi;xh lu;wo jd;al jp;wy	153
-秘鲁战争	bi;xh lu;wo vj;yd vg;xb	117
-秘鲁文学	bi;xh lu;wo wf;vw xt;kw	171
-秘鲁民族	bi;xh lu;wo mn;dm zu;le	225
-秘鲁法律	bi;xh lu;wo fa;kg lv;wb	162
-秘鲁海域	bi;xh lu;wo hl;ke yu;gp	504
-秘鲁电影	bi;xh lu;wo dm;oa yy;og	130
-秘鲁铁路	bi;xh lu;wo tx;zt lu;ps	180
-秘鲁音乐	bi;xh lu;wo yn;xy yt;by	180
 租一个	zu;xf yi;fi ge;jg	868
 租一些	zu;xf yi;fi xx;sv	850
 租上	zu;xf uh;yf	752
@@ -359847,15 +359198,6 @@ columns:
 约拿情结	yt;in na;jd qy;ha jx;ig	346
 约斯省	yt;in si;zh ug;yt	414
 约旦国	yt;in dj;of go;rn	608
-约旦国家	yt;in dj;of go;rn jw;wj	324
-约旦外交	yt;in dj;of wl;ly jc;ab	297
-约旦建立	yt;in dj;of jm;bu li;il	130
-约旦文化	yt;in dj;of wf;vw hw;jv	180
-约旦河流	yt;in dj;of he;kz lq;kb	234
-约旦王妃	yt;in dj;of wh;nw fz;bv	162
-约旦社会	yt;in dj;of ue;fg hv;jb	117
-约旦考古	yt;in dj;of kk;qf gu;cg	202
-约旦边界	yt;in dj;of bm;su jx;qj	189
 约束出现	yt;in uu;xs iu;sm xm;ne	194
 约束反力	yt;in uu;xs fj;xr li;sl	207
 约束变量	yt;in uu;xs bm;zc ld;of	324
@@ -364215,40 +363557,8 @@ columns:
 缅希科夫	mm;ib xi;bn ke;xj fu;hf	292
 缅怀吧	mm;ib hy;hc ba;dm	306
 缅族	mm;ib zu;le	688
-缅甸佛寺	mm;ib dm;nq fo;jt si;gk	171
-缅甸侨民	mm;ib dm;nq qc;jt mn;dm	230
-缅甸公路	mm;ib dm;nq gs;hk lu;ps	212
-缅甸军阀	mm;ib dm;nq jp;wy fa;aj	189
-缅甸农业	mm;ib dm;nq ns;wt ye;cy	230
-缅甸国家	mm;ib dm;nq go;rn jw;wj	531
-缅甸地震	mm;ib dm;nq di;ge vf;tf	230
-缅甸大学	mm;ib dm;nq da;md xt;kw	130
-缅甸将军	mm;ib dm;nq jd;al jp;wy	117
-缅甸广播	mm;ib dm;nq gd;xg bo;ut	248
-缅甸建筑	mm;ib dm;nq jm;bu vu;ru	180
-缅甸战争	mm;ib dm;nq vj;yd vg;xb	212
-缅甸教育	mm;ib dm;nq jc;qh yu;bv	144
-缅甸条约	mm;ib dm;nq tc;he yt;in	315
-缅甸毒枭	mm;ib dm;nq du;ak xc;xe	261
-缅甸河流	mm;ib dm;nq he;kz lq;kb	189
-缅甸法律	mm;ib dm;nq fa;kg lv;wb	130
 缅甸海	mm;ib dm;nq hl;ke	405
-缅甸环境	mm;ib dm;nq hr;nc jy;gx	130
-缅甸电力	mm;ib dm;nq dm;oa li;sl	220
-缅甸电影	mm;ib dm;nq dm;oa yy;og	212
-缅甸石油	mm;ib dm;nq ui;ms yb;kd	162
-缅甸矿业	mm;ib dm;nq kd;mx ye;cy	153
 缅甸绿	mm;ib dm;nq lv;ib	207
-缅甸能源	mm;ib dm;nq ng;kv yr;kx	130
-缅甸警察	mm;ib dm;nq jy;lg ia;wh	234
-缅甸象棋	mm;ib dm;nq xd;wx qi;ez	238
-缅甸起义	mm;ib dm;nq qi;pv yi;ib	117
-缅甸选举	mm;ib dm;nq xr;qp ju;kh	153
-缅甸通讯	mm;ib dm;nq ts;kt xp;sa	130
-缅甸金融	mm;ib dm;nq jn;zj rs;nc	117
-缅甸铁路	mm;ib dm;nq tx;zt lu;ps	306
-缅甸银行	mm;ib dm;nq yn;zi hh;px	234
-缅甸黄檀	mm;ib dm;nq hd;nh tj;ez	117
 缅茨姆峰	mm;ib ci;lw mu;bk fg;vh	162
 缅语	mm;ib yu;sw	121
 缆车轨道	lj;ip ie;yc gv;yk dk;ho	162
@@ -364713,6 +364023,7 @@ columns:
 缺页了	qt;an ye;wy le;rl	513
 缺页啊	qt;an ye;wy aa;dt	400
 缺额时	qt;an ee;ws ui;ok	324
+缺鱼	qt;an yu;wv	634
 缺齿	qt;an ii;lc	495
 罂粟油	yy;oo su;vp yb;kd	144
 罂粟花开	yy;oo su;vp hw;lj kl;fl	212
@@ -367645,18 +366956,6 @@ columns:
 老报社	lk;ql bk;uz ue;fg	297
 老报馆	lk;ql bk;uz gr;qw	274
 老拿	lk;ql na;jd	868
-老挝交通	lk;ql wo;uk jc;ab ts;kt	171
-老挝关系	lk;ql wo;uk gr;hm xi;ti	225
-老挝动物	lk;ql wo;uk ds;bs wu;qn	225
-老挝国家	lk;ql wo;uk go;rn jw;wj	536
-老挝城市	lk;ql wo;uk ig;gn ui;zr	130
-老挝大学	lk;ql wo;uk da;md xt;kw	130
-老挝寺庙	lk;ql wo;uk si;gk mc;xd	194
-老挝建筑	lk;ql wo;uk jm;bu vu;ru	153
-老挝机场	lk;ql wo;uk ji;eo ih;ga	130
-老挝社会	lk;ql wo;uk ue;fg hv;jb	180
-老挝铁路	lk;ql wo;uk tx;zt lu;ps	230
-老挝饮食	lk;ql wo;uk yn;qe ui;qs	153
 老掉的	lk;ql dc;uy de;un	410
 老掉线	lk;ql dc;uy xm;if	639
 老掌沟	lk;ql vh;su gb;kn	320
@@ -376832,41 +376131,10 @@ columns:
 芫荽子	yj;lm sv;ly zi;hi	256
 芬伯格	ff;lh bo;ju ge;es	418
 芬克斯坦	ff;lh ke;cp si;zh tj;go	202
-芬兰乐队	ff;lh lj;ht yt;by dv;tj	279
-芬兰关系	ff;lh lj;ht gr;hm xi;ti	189
-芬兰冰球	ff;lh lj;ht by;wk qq;nf	297
 芬兰吧	ff;lh lj;ht ba;dm	234
-芬兰品牌	ff;lh lj;ht pn;dd pl;au	261
-芬兰商人	ff;lh lj;ht uh;im rf;jr	117
-芬兰国家	ff;lh lj;ht go;rn jw;wj	662
 芬兰堡	ff;lh lj;ht bk;jd	252
-芬兰外交	ff;lh lj;ht wl;ly jc;ab	387
 芬兰女	ff;lh lj;ht nv;bn	522
-芬兰娱乐	ff;lh lj;ht yu;bd le;by	130
-芬兰小说	ff;lh lj;ht xc;yx uo;sh	194
 芬兰市	ff;lh lj;ht ui;zr	418
-芬兰广播	ff;lh lj;ht gd;xg bo;ut	482
-芬兰建立	ff;lh lj;ht jm;bu li;il	261
-芬兰建筑	ff;lh lj;ht jm;bu vu;ru	374
-芬兰律师	ff;lh lj;ht lv;wb ui;pf	144
-芬兰报纸	ff;lh lj;ht bk;uz vi;ib	171
-芬兰文化	ff;lh lj;ht wf;vw hw;jv	328
-芬兰机场	ff;lh lj;ht ji;eo ih;ga	153
-芬兰森林	ff;lh lj;ht sf;ee ln;ee	256
-芬兰歌手	ff;lh lj;ht ge;zz ub;us	288
-芬兰民族	ff;lh lj;ht mn;dm zu;le	464
-芬兰法律	ff;lh lj;ht fa;kg lv;wb	225
-芬兰滑雪	ff;lh lj;ht hw;kf xt;tb	189
-芬兰电力	ff;lh lj;ht dm;oa li;sl	117
-芬兰电视	ff;lh lj;ht dm;oa ui;fe	266
-芬兰男性	ff;lh lj;ht nj;qs xy;hl	189
-芬兰画家	ff;lh lj;ht hw;fq jw;wj	234
-芬兰社会	ff;lh lj;ht ue;fg hv;jb	454
-芬兰科技	ff;lh lj;ht ke;xj ji;uc	144
-芬兰萨米	ff;lh lj;ht sa;lt mi;pm	234
-芬兰议员	ff;lh lj;ht yi;si yr;do	117
-芬兰语言	ff;lh lj;ht yu;sw yj;sy	297
-芬兰贵族	ff;lh lj;ht gv;co zu;le	144
 芬兰馆	ff;lh lj;ht gr;qw	220
 芬军	ff;lh jp;wy	580
 芬利	ff;lh li;xp	439
@@ -377721,17 +376989,7 @@ columns:
 苏世独立	su;ls ui;la du;mc li;il	266
 苏东	su;ls ds;ry	726
 苏东剧变	su;ls ds;ry ju;cc bm;zc	482
-苏丹军事	su;ls dj;mz jp;wy ui;fd	162
 苏丹四	su;ls dj;mz si;ys	189
-苏丹外交	su;ls dj;mz wl;ly jc;ab	270
-苏丹政变	su;ls dj;mz vg;fs bm;zc	288
-苏丹文化	su;ls dj;mz wf;vw hw;jv	144
-苏丹染料	su;ls dj;mz rj;kk lc;pj	153
-苏丹民族	su;ls dj;mz mn;dm zu;le	194
-苏丹王朝	su;ls dj;mz wh;nw ik;no	472
-苏丹社会	su;ls dj;mz ue;fg hv;jb	180
-苏丹边界	su;ls dj;mz bm;su jx;qj	238
-苏丹阿布	su;ls dj;mz aa;tz bu;nr	468
 苏丽	su;ls li;fv	707
 苏书岩	su;ls uu;aa yj;vm	162
 苏书记	su;ls uu;aa ji;sv	270
@@ -378684,80 +377942,11 @@ columns:
 英哲睿	yy;lm ve;ut rv;gh	171
 英商	yy;lm uh;im	144
 英商怡	yy;lm uh;im yi;hk	374
-英国上院	yy;lm go;rn uh;yf yr;tw	207
-英国下院	yy;lm go;rn xw;fy yr;tw	274
-英国主题	yy;lm go;rn vu;in ti;ot	117
-英国乡谊	yy;lm go;rn xd;ix yi;sw	212
-英国书商	yy;lm go;rn uu;aa uh;im	189
 英国于	yy;lm go;rn yu;fn	774
-英国人于	yy;lm go;rn rf;jr yu;fn	405
-英国人瑞	yy;lm go;rn rf;jr rv;nv	117
-英国伯爵	yy;lm go;rn bo;ju jt;yy	261
-英国佛教	yy;lm go;rn fo;jt jc;qh	202
-英国儿歌	yy;lm go;rn er;pe ge;zz	130
-英国元帅	yy;lm go;rn yr;mp uy;pr	252
-英国军事	yy;lm go;rn jp;wy ui;fd	572
-英国击剑	yy;lm go;rn ji;um jm;jk	144
-英国别墅	yy;lm go;rn bx;ds uu;di	171
-英国刺客	yy;lm go;rn ci;em ke;ws	180
-英国剧团	yy;lm go;rn ju;cc tr;rn	225
-英国剧院	yy;lm go;rn ju;cc yr;tw	306
-英国勋章	yy;lm go;rn xp;do vh;xn	180
-英国化石	yy;lm go;rn hw;jv ui;ms	153
 英国吧	yy;lm go;rn ba;dm	392
-英国周刊	yy;lm go;rn vb;mg kj;ep	243
 英国啊	yy;lm go;rn aa;dt	356
-英国国家	yy;lm go;rn go;rn jw;wj	950
-英国国立	yy;lm go;rn go;rn li;il	432
-英国地形	yy;lm go;rn di;ge xy;fl	320
-英国地质	yy;lm go;rn di;ge vi;xn	508
-英国天空	yy;lm go;rn tm;fm ks;eu	562
-英国子爵	yy;lm go;rn zi;hi jt;yy	144
-英国宪制	yy;lm go;rn xm;wq vi;qr	324
-英国导弹	yy;lm go;rn dk;vk dj;bh	144
-英国少将	yy;lm go;rn uk;yt jd;al	162
-英国少校	yy;lm go;rn uk;yt xc;ea	194
-英国展览	yy;lm go;rn vj;cl lj;pr	189
-英国岛屿	yy;lm go;rn dk;xv yu;vf	180
-英国市区	yy;lm go;rn ui;zr qu;nb	117
-英国执法	yy;lm go;rn vi;uk fa;kg	171
-英国报社	yy;lm go;rn bk;uz ue;fg	202
-英国文献	yy;lm go;rn wf;vw xm;nm	171
-英国日报	yy;lm go;rn ri;or bk;uz	171
-英国条约	yy;lm go;rn tc;he yt;in	144
-英国桥梁	yy;lm go;rn qc;et ld;kp	153
-英国残疾	yy;lm go;rn cj;gf ji;ao	180
-英国民俗	yy;lm go;rn mn;dm su;jh	162
-英国消防	yy;lm go;rn xc;ky fh;tl	189
-英国清教	yy;lm go;rn qy;ka jc;qh	428
-英国港口	yy;lm go;rn gh;kl kb;dk	338
-英国火山	yy;lm go;rn ho;ch uj;vs	117
-英国灯塔	yy;lm go;rn dg;ca ta;gl	117
 英国片	yy;lm go;rn pm;ap	342
-英国王冠	yy;lm go;rn wh;nw gr;wm	220
-英国电讯	yy;lm go;rn dm;oa xp;sa	410
-英国画作	yy;lm go;rn hw;fq zo;jw	162
-英国的性	yy;lm go;rn de;un xy;hl	212
-英国的门	yy;lm go;rn de;un mf;am	202
-英国短片	yy;lm go;rn dr;oz pm;ap	171
-英国矿业	yy;lm go;rn kd;mx ye;cy	230
-英国矿工	yy;lm go;rn kd;mx gs;ug	270
-英国码头	yy;lm go;rn ma;mn tb;wm	153
-英国神话	yy;lm go;rn uf;fo hw;sa	189
-英国离婚	yy;lm go;rn li;zb hp;bb	225
-英国税务	yy;lm go;rn uv;xh wu;hs	382
 英国红	yy;lm go;rn hs;iu	621
-英国纹章	yy;lm go;rn wf;iv vh;xn	328
-英国线规	yy;lm go;rn xm;if gv;he	162
-英国药物	yy;lm go;rn yk;li wu;qn	225
-英国财富	yy;lm go;rn cl;on fu;wf	117
-英国跳水	yy;lm go;rn tc;pp uv;ks	328
-英国车库	yy;lm go;rn ie;yc ku;xy	162
-英国边界	yy;lm go;rn bm;su jx;qj	117
-英国酒精	yy;lm go;rn jq;ky jy;pa	153
-英国雕塑	yy;lm go;rn dc;mg su;hs	428
-英国频道	yy;lm go;rn pn;ss dk;ho	288
-英国鼓手	yy;lm go;rn gu;hc ub;us	284
 英士大学	yy;lm ui;gs da;md xt;kw	392
 英大基金	yy;lm da;md ji;zh jn;zj	220
 英姿吧	yy;lm zi;we ba;dm	224
@@ -380291,84 +379480,16 @@ columns:
 药鼠尾草	yk;li uu;ps wz;cv ck;lo	117
 荷乙作赛	he;lj yi;ai zo;jw sl;wq	162
 荷伯特	he;lj bo;ju te;qg	185
-荷兰中学	he;lj lj;ht vs;dg xt;kw	117
-荷兰主教	he;lj lj;ht vu;in jc;qh	207
-荷兰主题	he;lj lj;ht vu;in ti;ot	130
-荷兰乐团	he;lj lj;ht yt;by tr;rn	153
-荷兰人瑞	he;lj lj;ht rf;jr rv;nv	171
-荷兰公主	he;lj lj;ht gs;hk vu;in	266
-荷兰公路	he;lj lj;ht gs;hk lu;ps	207
-荷兰关系	he;lj lj;ht gr;hm xi;ti	279
-荷兰农民	he;lj lj;ht ns;wt mn;dm	202
-荷兰动物	he;lj lj;ht ds;bs wu;qn	346
-荷兰动画	he;lj lj;ht ds;bs hw;fq	207
-荷兰医院	he;lj lj;ht yi;no yr;tw	225
-荷兰发明	he;lj lj;ht fa;sr my;ov	248
 荷兰吧	he;lj lj;ht ba;dm	279
-荷兰品牌	he;lj lj;ht pn;dd pl;au	378
-荷兰商船	he;lj lj;ht uh;im ir;io	315
-荷兰啤酒	he;lj lj;ht pi;du jq;ky	274
 荷兰园	he;lj lj;ht yr;rm	472
-荷兰国家	he;lj lj;ht go;rn jw;wj	837
-荷兰国立	he;lj lj;ht go;rn li;il	410
-荷兰地形	he;lj lj;ht di;ge xy;fl	117
 荷兰城	he;lj lj;ht ig;gn	536
-荷兰城堡	he;lj lj;ht ig;gn bk;jd	328
-荷兰外交	he;lj lj;ht wl;ly jc;ab	454
-荷兰宗教	he;lj lj;ht zs;wf jc;qh	117
 荷兰岛	he;lj lj;ht dk;xv	205
 荷兰市	he;lj lj;ht ui;zr	247
-荷兰广播	he;lj lj;ht gd;xg bo;ut	333
-荷兰建立	he;lj lj;ht jm;bu li;il	306
-荷兰律师	he;lj lj;ht lv;wb ui;pf	266
-荷兰战争	he;lj lj;ht vj;yd vg;xb	230
-荷兰战俘	he;lj lj;ht vj;yd fu;jy	261
-荷兰执法	he;lj lj;ht vi;uk fa;kg	144
-荷兰报纸	he;lj lj;ht bk;uz vi;ib	202
 荷兰拍	he;lj lj;ht pl;uu	288
-荷兰教堂	he;lj lj;ht jc;qh th;sg	212
-荷兰新闻	he;lj lj;ht xn;ie wf;aq	171
 荷兰时	he;lj lj;ht ui;ok	479
-荷兰杂志	he;lj lj;ht za;ke vi;gh	171
-荷兰植物	he;lj lj;ht vi;en wu;qn	360
-荷兰比利	he;lj lj;ht bi;vv li;xp	778
-荷兰民俗	he;lj lj;ht mn;dm su;jh	153
-荷兰汉学	he;lj lj;ht hj;kr xt;kw	306
-荷兰法律	he;lj lj;ht fa;kg lv;wb	405
-荷兰法院	he;lj lj;ht fa;kg yr;tw	288
-荷兰海事	he;lj lj;ht hl;ke ui;fd	194
-荷兰海员	he;lj lj;ht hl;ke yr;do	144
-荷兰海盗	he;lj lj;ht hl;ke dk;we	171
-荷兰漫画	he;lj lj;ht mj;ko hw;fq	189
-荷兰生物	he;lj lj;ht ug;ls wu;qn	310
-荷兰电信	he;lj lj;ht dm;oa xn;js	180
-荷兰电视	he;lj lj;ht dm;oa ui;fe	310
-荷兰男性	he;lj lj;ht nj;qs xy;hl	369
 荷兰的	he;lj lj;ht de;un	1210
-荷兰的水	he;lj lj;ht de;un uv;ks	252
-荷兰的风	he;lj lj;ht de;un fg;ob	396
-荷兰科技	he;lj lj;ht ke;xj ji;uc	117
-荷兰纪念	he;lj lj;ht ji;iv nm;ja	194
-荷兰组织	he;lj lj;ht zu;if vi;id	171
-荷兰美术	he;lj lj;ht mz;gm uu;ei	153
-荷兰美素	he;lj lj;ht mz;gm su;ai	225
-荷兰能源	he;lj lj;ht ng;kv yr;kx	324
-荷兰艺人	he;lj lj;ht yi;la rf;jr	153
 荷兰薯	he;lj lj;ht uu;ly	220
 荷兰街	he;lj lj;ht jx;pg	387
-荷兰语区	he;lj lj;ht yu;sw qu;nb	387
-荷兰语言	he;lj lj;ht yu;sw yj;sy	279
-荷兰贵族	he;lj lj;ht gv;co zu;le	297
-荷兰超市	he;lj lj;ht ik;pp ui;zr	220
-荷兰边界	he;lj lj;ht bm;su jx;qj	171
-荷兰运河	he;lj lj;ht yp;bu he;kz	261
-荷兰选举	he;lj lj;ht xr;qp ju;kh	153
-荷兰金融	he;lj lj;ht jn;zj rs;nc	189
-荷兰铁路	he;lj lj;ht tx;zt lu;ps	477
-荷兰露天	he;lj lj;ht lu;tp tm;fm	130
-荷兰音乐	he;lj lj;ht yn;xy yt;by	374
-荷兰食品	he;lj lj;ht ui;qs pn;dd	234
-荷兰餐厅	he;lj lj;ht cj;gr ty;xa	207
 荷兰馆	he;lj lj;ht gr;qw	306
 荷军	he;lj jp;wy	372
 荷包吧	he;lj bk;nv ba;dm	230
@@ -402479,8 +401600,6 @@ columns:
 贝子府	bz;ob zi;hi fu;xj	396
 贝子花园	bz;ob zi;hi hw;lj yr;rm	202
 贝字旁	bz;ob zi;wh ph;iw	248
-贝宁外交	bz;ob ny;wa wl;ly jc;ab	117
-贝宁政府	bz;ob ny;wa vg;fs fu;xj	153
 贝家花园	bz;ob jw;wj hw;lj yr;rm	297
 贝尔丁	bz;ob er;xy dy;ad	288
 贝尔丰	bz;ob er;xy fg;af	351
@@ -406381,55 +405500,11 @@ columns:
 越华路	yt;pn hw;jv lu;ps	364
 越单纯越	yt;pn dj;hq ip;if yt;pn	369
 越卖	yt;pn ml;na	722
-越南中央	yt;pn nj;nm vs;dg yh;mm	423
-越南传说	yt;pn nj;nm ir;jm uo;sh	256
-越南体育	yt;pn nj;nm ti;je yu;bv	171
-越南元首	yt;pn nj;nm yr;mp ub;ho	130
-越南公主	yt;pn nj;nm gs;hk vu;in	171
-越南公安	yt;pn nj;nm gs;hk an;wb	450
-越南公路	yt;pn nj;nm gs;hk lu;ps	162
-越南北属	yt;pn nj;nm bz;av uu;ct	252
 越南区	yt;pn nj;nm qu;nb	256
-越南叛乱	yt;pn nj;nm pj;hu lr;aa	144
-越南口岸	yt;pn nj;nm kb;dk an;vx	130
 越南吧	yt;pn nj;nm ba;dm	279
-越南商人	yt;pn nj;nm uh;im rf;jr	243
-越南地名	yt;pn nj;nm di;ge my;ld	194
-越南地形	yt;pn nj;nm di;ge xy;fl	207
-越南妇女	yt;pn nj;nm fu;bb nv;bn	513
-越南娱乐	yt;pn nj;nm yu;bd le;by	171
-越南学校	yt;pn nj;nm xt;kw xc;ea	117
-越南将领	yt;pn nj;nm jd;al ly;jk	130
-越南戏剧	yt;pn nj;nm xi;rp ju;cc	144
-越南战事	yt;pn nj;nm vj;yd ui;fd	144
-越南执法	yt;pn nj;nm vi;uk fa;kg	144
-越南报纸	yt;pn nj;nm bk;uz vi;ib	153
 越南时	yt;pn nj;nm ui;ok	460
-越南服装	yt;pn nj;nm fu;vz vd;ag	202
-越南条约	yt;pn nj;nm tc;he yt;in	256
-越南汤河	yt;pn nj;nm th;ka he;kz	189
 越南河	yt;pn nj;nm he;kz	864
-越南河流	yt;pn nj;nm he;kz lq;kb	171
-越南港口	yt;pn nj;nm gh;kl kb;dk	238
-越南演员	yt;pn nj;nm yj;kw yr;do	171
-越南瀑布	yt;pn nj;nm pu;ko bu;nr	189
-越南电力	yt;pn nj;nm dm;oa li;sl	171
-越南画家	yt;pn nj;nm hw;fq jw;wj	162
 越南的	yt;pn nj;nm de;un	1210
-越南的社	yt;pn nj;nm de;un ue;fg	230
-越南皇室	yt;pn nj;nm hd;un ui;wy	220
-越南科技	yt;pn nj;nm ke;xj ji;uc	252
-越南篮球	yt;pn nj;nm lj;rp qq;nf	144
-越南组织	yt;pn nj;nm zu;if vi;id	180
-越南通讯	yt;pn nj;nm ts;kt xp;sa	320
-越南银行	yt;pn nj;nm yn;zi hh;px	248
-越南面条	yt;pn nj;nm mm;bm tc;he	153
-越南革命	yt;pn nj;nm ge;tg my;jd	441
-越南饮料	yt;pn nj;nm yn;qe lc;pj	153
-越南鬼子	yt;pn nj;nm gv;ag zi;hi	234
-越南鱼露	yt;pn nj;nm yu;wv lu;tp	207
-越南黄檀	yt;pn nj;nm hd;nh tj;ez	117
-越南黎朝	yt;pn nj;nm li;xp ik;no	207
 越卡	yt;pn ka;yf	322
 越危险	yt;pn wz;xx xm;tj	806
 越厚	yt;pn hb;xo	539
@@ -437223,7 +436298,6 @@ columns:
 雀舌茶	qt;yu ue;as ia;lj	342
 雀跃了	qt;yu yt;pt le;rl	504
 雀跃吧	qt;yu yt;pt ba;dm	230
-雀鱼	qt;yu yu;wv	634
 雀麦草	qt;yu ml;ah ck;lo	171
 雀鼠谷	qt;yu uu;ps gu;hg	279
 雁何往	yj;xj he;jz wh;wi	225
@@ -441288,70 +440362,10 @@ columns:
 韩后	hj;no hb;xf	602
 韩嘉彦	hj;no jw;hs yj;ix	189
 韩团	hj;no tr;rn	832
-韩国丑闻	hj;no go;rn ib;ag wf;aq	117
-韩国专题	hj;no go;rn vr;ma ti;ot	162
-韩国中华	hj;no go;rn vs;dg hw;jv	378
-韩国体操	hj;no go;rn ti;je ck;ud	194
-韩国健康	hj;no go;rn jm;jb kh;xb	302
-韩国公子	hj;no go;rn gs;hk zi;hi	243
-韩国击剑	hj;no go;rn ji;um jm;jk	171
-韩国动物	hj;no go;rn ds;bs wu;qn	225
-韩国勋章	hj;no go;rn xp;do vh;xn	171
-韩国卡拉	hj;no go;rn ka;yf la;ui	117
-韩国原单	hj;no go;rn yr;xu dj;hq	220
-韩国发展	hj;no go;rn fa;sr vj;cl	630
-韩国发明	hj;no go;rn fa;sr my;ov	306
 韩国啊	hj;no go;rn aa;dt	382
 韩国国	hj;no go;rn go;rn	1188
-韩国国家	hj;no go;rn go;rn jw;wj	810
-韩国地形	hj;no go;rn di;ge xy;fl	153
-韩国地震	hj;no go;rn di;ge vf;tf	117
-韩国大信	hj;no go;rn da;md xn;js	171
-韩国天文	hj;no go;rn tm;fm wf;vw	207
-韩国妆容	hj;no go;rn vd;ab rs;wh	180
-韩国学术	hj;no go;rn xt;kw uu;ei	266
-韩国导弹	hj;no go;rn dk;vk dj;bh	266
-韩国展览	hj;no go;rn vj;cl lj;pr	162
-韩国开发	hj;no go;rn kl;fl fa;sr	464
-韩国性别	hj;no go;rn xy;hl bx;ds	144
-韩国成人	hj;no go;rn ig;na rf;jr	180
-韩国戒严	hj;no go;rn jx;pl yj;fc	194
-韩国打糕	hj;no go;rn da;ua gk;pg	238
-韩国拳击	hj;no go;rn qr;hh ji;um	220
-韩国排球	hj;no go;rn pl;ur qq;nf	252
-韩国新教	hj;no go;rn xn;ie jc;qh	162
 韩国时	hj;no go;rn ui;ok	909
-韩国李勋	hj;no go;rn li;eh xp;do	274
 韩国村	hj;no go;rn cp;ek	231
-韩国柔道	hj;no go;rn rb;it dk;ho	261
-韩国棒球	hj;no go;rn bh;ea qq;nf	450
-韩国死亡	hj;no go;rn si;gv wh;fw	153
-韩国法官	hj;no go;rn fa;kg gr;wk	130
-韩国消防	hj;no go;rn xc;ky fh;tl	266
-韩国温泉	hj;no go;rn wf;ko qr;uk	189
-韩国港口	hj;no go;rn gh;kl kb;dk	266
-韩国火山	hj;no go;rn ho;ch uj;vs	117
-韩国环境	hj;no go;rn hr;nc jy;gx	378
-韩国的区	hj;no go;rn de;un qu;nb	225
-韩国的市	hj;no go;rn de;un ui;zr	320
-韩国的水	hj;no go;rn de;un uv;ks	369
-韩国的洞	hj;no go;rn de;un ds;km	117
-韩国的道	hj;no go;rn de;un dk;ho	212
-韩国的门	hj;no go;rn de;un mf;am	162
-韩国监狱	hj;no go;rn jm;pr yu;ms	194
-韩国直送	hj;no go;rn vi;nq ss;hm	220
-韩国福利	hj;no go;rn fu;ff li;xp	130
-韩国米糕	hj;no go;rn mi;pm gk;pg	117
-韩国罪案	hj;no go;rn zv;yr an;wb	171
-韩国美发	hj;no go;rn mz;gm fa;sr	248
-韩国能源	hj;no go;rn ng;kv yr;kx	153
-韩国著名	hj;no go;rn vu;lq my;ld	742
-韩国西海	hj;no go;rn xi;vx hl;ke	328
-韩国语系	hj;no go;rn yu;sw xi;ti	284
-韩国象棋	hj;no go;rn xd;wx qi;ez	117
-韩国通讯	hj;no go;rn ts;kt xp;sa	468
-韩国铁路	hj;no go;rn tx;zt lu;ps	585
-韩国餐馆	hj;no go;rn cj;gr gr;qw	657
 韩圈	hj;no qr;rh	568
 韩场镇	hj;no ih;ga vf;zn	139
 韩垓镇	hj;no gl;gk vf;zn	155
@@ -445943,10 +444957,8 @@ columns:
 马都拉	ma;nm db;qo la;ui	540
 马都拉岛	ma;nm db;qo la;ui dk;xv	356
 马里博	ma;nm li;dl bo;nn	680
-马里文化	ma;nm li;dl wf;vw hw;jv	261
 马里村	ma;nm li;dl cp;ek	254
 马里迪	ma;nm li;dl di;du	104
-马里音乐	ma;nm li;dl yn;xy yt;by	202
 马金托什	ma;nm jn;zj to;ut ui;jn	288
 马金镇	ma;nm jn;zj vf;zn	175
 马銮路	ma;nm lr;zc lu;ps	180
@@ -452681,22 +451693,14 @@ columns:
 黑屏了	hz;ph py;ch le;rl	738
 黑屏时	hz;ph py;ch ui;ok	477
 黑山上	hz;ph uj;vs uh;yf	310
-黑山之战	hz;ph uj;vs vi;ri vj;yd	144
-黑山事件	hz;ph uj;vs ui;fd jm;jq	153
 黑山云	hz;ph uj;vs yp;by	117
 黑山人	hz;ph uj;vs rf;jr	490
 黑山妖	hz;ph uj;vs yk;bt	171
-黑山姥姥	hz;ph uj;vs lk;bq lk;bq	238
-黑山威福	hz;ph uj;vs wz;nf fu;ff	117
 黑山寺	hz;ph uj;vs si;gk	220
-黑山岩画	hz;ph uj;vs yj;vm hw;fq	144
 黑山峡	hz;ph uj;vs xw;vh	288
-黑山政府	hz;ph uj;vs vg;fs fu;xj	261
 黑山派	hz;ph uj;vs pl;kx	432
 黑山猪	hz;ph uj;vs vu;mq	396
 黑山的	hz;ph uj;vs de;un	626
-黑山社会	hz;ph uj;vs ue;fg hv;jb	374
-黑山足球	hz;ph uj;vs zu;pu qq;nf	374
 黑岛	hz;ph dk;xv	711
 黑岛龟人	hz;ph dk;xv gv;wg rf;jr	230
 黑崎同学	hz;ph qi;vm ts;mf xt;kw	189

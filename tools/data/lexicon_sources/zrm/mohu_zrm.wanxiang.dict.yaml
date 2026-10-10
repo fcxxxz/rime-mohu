@@ -7,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "0975de374a74"
+version: "21d059bc952d"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -253386,6 +253386,7 @@ columns:
 报身份证	bk;uz uf;zs ff;jh vg;sf	320
 报达文化	bk;uz da;mu wf;vw hw;jv	117
 报过名了	bk;uz go;ku my;ld le;rl	171
+报这个	bk;uz ve;vu ge;jg	183
 报送到	bk;uz ss;hm dk;yp	286
 报选题	bk;uz xr;qp ti;ot	410
 报道了	bk;uz dk;ho le;rl	654
@@ -253541,6 +253542,7 @@ columns:
 抱残守阙	bk;un cj;gf ub;wk qt;ah	117
 抱瓮老人	bk;un wg;hk lk;ql rf;jr	266
 抱的姿势	bk;un de;un zi;we ui;uk	495
+抱着个	bk;un ve;gq ge;jg	320
 抱着了	bk;un ve;gq le;rl	518
 抱着亲	bk;un ve;gq qn;ie	477
 抱着吧	bk;un ve;gq ba;dm	382
@@ -297257,6 +297259,7 @@ columns:
 比较艰巨	bi;vv jc;ya jm;ri ju;nn	356
 比较薄弱	bi;vv jc;ya bo;lk ro;bw	900
 比较费劲	bi;vv jc;ya fz;to jn;ru	846
+比较费时	bi;vv jc;ya fz;to ui;ok	152
 比较迟	bi;vv jc;ya ii;ci	806
 比较重的	bi;vv jc;ya vs;ld de;un	927
 比较重要	bi;vv jc;ya vs;ld yk;vb	1292
@@ -354833,7 +354836,7 @@ columns:
 等考完试	dg;rg kk;qf wj;wm ui;sp	400
 等能光谱	dg;rg ng;kv gd;mg pu;sh	202
 等腰的	dg;rg yk;vv de;un	252
-等至	dg;rg vi;yi	981
+等至	dg;rg vi;yi	211
 等色线	dg;rg se;xm xm;if	117
 等花了	dg;rg hw;lj le;rl	374
 等花纹	dg;rg hw;lj wf;iv	328

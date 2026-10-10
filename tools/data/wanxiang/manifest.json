@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "0975de374a7420fdb58143bc78ea906c65fe3a31",
+  "revision": "21d059bc952dadeba1508dff8012f2ead28366c1",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,12 +9,12 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "0922110945a8b762f003a84470dc8e6a44c427ad1c18974a6dfeb34dd5de43df"
+      "sha256": "04333e8a0f55b11aaa0d62c41d569d3a953882d00006d34ed031708a8de80046"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
       "raw_path": "raw/lianxiang.dict.yaml",
-      "sha256": "ce8e318586b34e1d34d8a3bb1023725f5da9de9a44cd4b2722b87a08f7bef6e1"
+      "sha256": "eecf929ab633f8a95dd4d11024b056d0f0cb5d5317c0364888cc226ba68a2bb3"
     },
     "cuoyin": {
       "path": "dicts/cuoyin.dict.yaml",
@@ -24,7 +24,7 @@
     "duoyin": {
       "path": "dicts/duoyin.dict.yaml",
       "raw_path": "raw/duoyin.dict.yaml",
-      "sha256": "039fa4effc4b793119f2eff3872d012328ab093ed47582ac8082cf14b8a86e14"
+      "sha256": "b31bec6c64cc78bd1eec9fab0d978a6c040957e9dc83bc8bacdcc5ddf82d15b7"
     },
     "shici": {
       "path": "dicts/shici.dict.yaml",

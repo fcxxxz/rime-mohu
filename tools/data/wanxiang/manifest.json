@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "8ea9620cc2fb8b2d5afe76d7f7f201a793504592",
+  "revision": "0975de374a7420fdb58143bc78ea906c65fe3a31",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,12 +9,12 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "e4c72d2b556a827f91669f67480c1cf975bebf061a97aa4ee0d70f7a890c8da7"
+      "sha256": "0922110945a8b762f003a84470dc8e6a44c427ad1c18974a6dfeb34dd5de43df"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
       "raw_path": "raw/lianxiang.dict.yaml",
-      "sha256": "d43c7f2111f262637bcc3b57f6d9d157d4c9f1e0dac510c51383cbf3b4f2816a"
+      "sha256": "ce8e318586b34e1d34d8a3bb1023725f5da9de9a44cd4b2722b87a08f7bef6e1"
     },
     "cuoyin": {
       "path": "dicts/cuoyin.dict.yaml",
@@ -24,17 +24,17 @@
     "duoyin": {
       "path": "dicts/duoyin.dict.yaml",
       "raw_path": "raw/duoyin.dict.yaml",
-      "sha256": "0d21cd5d45a784067786fbba98762db0a1322bb5d3d3647fd08b3df31e18e1fe"
+      "sha256": "039fa4effc4b793119f2eff3872d012328ab093ed47582ac8082cf14b8a86e14"
     },
     "shici": {
       "path": "dicts/shici.dict.yaml",
       "raw_path": "raw/shici.dict.yaml",
-      "sha256": "665d64d1dd744b742ce03048fc2253d8ac8c5f1220d7123863b5695c28baf729"
+      "sha256": "3b42b0f4064c81d5d1d8cffd12c36fda1323dafb0ee3bae6dc33a8bb11c508cf"
     },
     "diming": {
       "path": "dicts/diming.dict.yaml",
       "raw_path": "raw/diming.dict.yaml",
-      "sha256": "8d6ab2ee3237d88201edec73c164e70e2334988ba121f7ad887fd228af47f9d7"
+      "sha256": "693920bea0d37d01b178f9216e612d608182ed5cb404a3b9ed32623462ed4991"
     },
     "yixue": {
       "path": "dicts/yixue.dict.yaml",
@@ -54,7 +54,7 @@
     "mingren": {
       "path": "dicts/mingren.dict.yaml",
       "raw_path": "raw/mingren.dict.yaml",
-      "sha256": "7d9855a387f29fa0b1f657a4293cc376fe937c2b5bd08d408d3682f5144aa688"
+      "sha256": "4ccff251ee7e4a211dd1891fd13d0e93cebf415f51a331cd447fb47848f25178"
     },
     "yiren": {
       "path": "dicts/yiren.dict.yaml",
@@ -64,7 +64,7 @@
     "wuzhong": {
       "path": "dicts/wuzhong.dict.yaml",
       "raw_path": "raw/wuzhong.dict.yaml",
-      "sha256": "771cb95b51ec44176da4e214a7733d2628c54853a48ae939df0bb2e49c314068"
+      "sha256": "9e5a786587d05b2144a68846b6ec70182150b2ba217d782ef80dfb2e09a227d3"
     },
     "renming": {
       "path": "dicts/renming.dict.yaml",

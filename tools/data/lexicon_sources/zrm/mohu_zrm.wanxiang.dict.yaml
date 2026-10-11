@@ -7,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "21d059bc952d"
+version: "abb8cde76820"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -18604,12 +18604,7 @@ columns:
 临江街	ln;pr jd;ku jx;pg	459
 临池心解	ln;pr ii;ke xn;hx jx;xt	194
 临池管见	ln;pr ii;ke gr;rw jm;ej	180
-临汾一中	ln;pr ff;kh yi;fi vs;dg	243
-临汾三中	ln;pr ff;kh sj;ts vs;dg	194
-临汾历史	ln;pr ff;kh li;xs ui;db	117
 临汾城	ln;pr ff;kh ig;gn	378
-临汾市区	ln;pr ff;kh ui;zr qu;nb	342
-临汾文化	ln;pr ff;kh wf;vw hw;jv	144
 临汾的	ln;pr ff;kh de;un	500
 临汾站	ln;pr ff;kh vj;iy	284
 临汾西	ln;pr ff;kh xi;vx	382
@@ -26347,6 +26342,7 @@ columns:
 云城西路	yp;by ig;gn xi;vx lu;ps	320
 云塘校区	yp;by th;gx xc;ea qu;nb	382
 云壤基地	yp;by rh;gt ji;zh di;ge	297
+云多	yp;by do;ll	343
 云大的	yp;by da;md de;un	423
 云大西路	yp;by da;md xi;vx lu;ps	261
 云天楼	yp;by tm;fm lb;ep	297
@@ -35297,7 +35293,7 @@ columns:
 他一上	ta;je yi;fi uh;yf	657
 他一下	ta;je yi;fi xw;fy	1184
 他一世	ta;je yi;fi ui;la	112
-他一丝	ta;je yi;fi si;ii	483
+他一丝	ta;je yi;fi si;ii	155
 他一两	ta;je yi;fi ld;ml	567
 他一个	ta;je yi;fi ge;jg	1616
 他一串	ta;je yi;fi ir;dd	500
@@ -42482,6 +42478,7 @@ columns:
 他意图	ta;je yi;xh tu;rh	504
 他意外	ta;je yi;xh wl;ly	819
 他意志	ta;je yi;xh vi;gh	128
+他意思	ta;je yi;xh si;qh	483
 他意愿	ta;je yi;xh yr;xu	296
 他意料	ta;je yi;xh lc;pj	662
 他意欲	ta;je yi;xh yu;he	116
@@ -86832,7 +86829,6 @@ columns:
 促音便	cu;jp yn;xy bm;jf	284
 促黄体	cu;jp hd;nh ti;je	562
 促黑激素	cu;jp hz;ph ji;ku su;ai	220
-俄亚	ee;jt ya;fc	387
 俄亥俄城	ee;jt hl;kh ee;jt ig;gn	153
 俄伊战争	ee;jt yi;jb vj;yd vg;xb	238
 俄初山	ee;jt iu;tp uj;vs	364
@@ -92377,7 +92373,6 @@ columns:
 入围作者	ru;ju wz;rg zo;jw ve;qo	230
 入围吧	ru;ju wz;rg ba;dm	160
 入围照片	ru;ju wz;rg vk;op pm;ap	212
-入国	ru;ju go;rn	750
 入土了	ru;ju tu;gt le;rl	504
 入地蜈蚣	ru;ju di;ge wu;cd gs;ch	117
 入场了	ru;ju ih;ga le;rl	612
@@ -92524,6 +92519,7 @@ columns:
 入账时	ru;ju vh;op ui;ok	459
 入赘了	ru;ju vv;ap le;rl	382
 入路	ru;ju lu;ps	889
+入过	ru;ju go;ku	1750
 入迷了	ru;ju mi;pu le;rl	720
 入选吧	ru;ju xr;qp ba;dm	202
 入道相国	ru;ju dk;ho xd;eq go;rn	194
@@ -97709,6 +97705,7 @@ columns:
 冒得办法	mk;oq de;wo bj;sh fa;kg	194
 冒昧了	mk;oq mz;oa le;rl	464
 冒昧问	mk;oq mz;oa wf;ad	585
+冒水	mk;oq uv;ks	120
 冒汗了	mk;oq hj;ke le;rl	634
 冒泡了	mk;oq pk;kn le;rl	558
 冒泡吧	mk;oq pk;kn ba;dm	292
@@ -128015,7 +128012,6 @@ columns:
 台湾园	tl;kd wj;kz yr;rm	248
 台湾城	tl;kd wj;kz ig;gn	508
 台湾带	tl;kd wj;kz dl;lw	630
-台湾日报	tl;kd wj;kz ri;or bk;uz	639
 台湾时	tl;kd wj;kz ui;ok	654
 台湾木	tl;kd wj;kz mu;em	526
 台湾杉	tl;kd wj;kz uj;ee	454
@@ -162882,7 +162878,6 @@ columns:
 太单薄了	tl;mi dj;hq bo;lk le;rl	680
 太占	tl;mi vj;yd	1071
 太占地	tl;mi vj;yd di;ge	648
-太原三	tl;mi yr;xu sj;ts	414
 太原不	tl;mi yr;xu bu;cb	410
 太原到	tl;mi yr;xu dk;yp	490
 太原北	tl;mi yr;xu bz;av	554
@@ -162953,6 +162948,7 @@ columns:
 太和街	tl;mi he;xd jx;pg	428
 太和路口	tl;mi he;xd lu;ps kb;dk	189
 太和集团	tl;mi he;xd ji;ue tr;rn	201
+太哇塞了	tl;mi wa;dg sl;wq le;rl	264
 太响亮	tl;mi xd;dt ld;go	428
 太哏儿	tl;mi gf;di er;pe	261
 太啰嗦	tl;mi lo;dy so;dn	738
@@ -187505,6 +187501,7 @@ columns:
 小皮特	xc;yx pi;rp te;qg	450
 小皮蛋	xc;yx pi;rp dj;tc	522
 小盅	xc;yx vs;dg	116
+小盖	xc;yx gl;ga	235
 小盖总成	xc;yx gl;ga zs;hd ig;na	162
 小盗龙	xc;yx dk;we ls;tl	554
 小盘上	xc;yx pj;ia uh;yf	432
@@ -193231,7 +193228,6 @@ columns:
 岱海	dl;jp hl;ke	522
 岱海湖	dl;jp hl;ke hu;kc	194
 岱道庵路	dl;jp dk;ho an;xm lu;ps	130
-岳伦	yt;tf lp;jj	185
 岳华	yt;tf hw;jv	239
 岳南铁道	yt;tf nj;nm tx;zt dk;ho	302
 岳叔	yt;tf uu;yf	204
@@ -193264,19 +193260,11 @@ columns:
 岳王	yt;tf wh;nw	389
 岳王路	yt;tf wh;nw lu;ps	266
 岳能科技	yt;tf ng;kv ke;xj ji;uc	266
-岳西县委	yt;tf xi;vx xm;fk wz;xb	171
 岳西路	yt;tf xi;vx lu;ps	266
-岳西高腔	yt;tf xi;vx gk;gg qd;ve	171
 岳鄂王庙	yt;tf ee;dd wh;nw mc;xd	144
-岳阳一中	yt;tf yh;to yi;fi vs;dg	117
-岳阳兴长	yt;tf yh;to xy;kh ih;pc	418
 岳阳北站	yt;tf yh;to bz;av vj;iy	202
-岳阳县委	yt;tf yh;to xm;fk wz;xb	212
-岳阳大学	yt;tf yh;to da;md xt;kw	153
-岳阳恒立	yt;tf yh;to hg;hf li;il	194
 岳阳村	yt;tf yh;to cp;ek	127
 岳阳的	yt;tf yh;to de;un	214
-岳阳经济	yt;tf yh;to jy;ir ji;kq	320
 岳阳镇	yt;tf yh;to vf;zn	242
 岳飞故里	yt;tf fz;cf gu;ch li;dl	153
 岳飞治军	yt;tf fz;cf vi;kk jp;wy	117
@@ -202808,6 +202796,7 @@ columns:
 应着眼于	yy;xk vo;gq yj;qi yu;fn	464
 应答了	yy;xk da;rj le;rl	450
 应算	yy;xk sr;rq	774
+应统	yy;xk ts;ib	351
 应缴费用	yy;xk jc;iu fz;to ys;ty	297
 应考时	yy;xk kk;qf ui;ok	405
 应考虑为	yy;xk kk;qf lv;zh wz;is	400
@@ -215314,7 +215303,6 @@ columns:
 念青五笔	nm;ja qy;av wu;wu bi;rv	243
 忻保高速	xn;ht bk;jd gk;gg su;xu	207
 忻城伯	xn;ht ig;gn bo;ju	248
-忻州一中	xn;ht vb;oo yi;fi vs;dg	205
 忻州人	xn;ht vb;oo rf;jr	304
 忻州的	xn;ht vb;oo de;un	285
 忻河铁路	xn;ht he;kz tx;zt lu;ps	153
@@ -244671,6 +244659,7 @@ columns:
 技进乎道	ji;uc jn;qu hu;th dk;ho	256
 抄一些	ik;uy yi;fi xx;sv	513
 抄不来	ik;uy bu;cb ll;ah	302
+抄两遍	ik;uy ld;ml bm;mi	192
 抄了去	ik;uy le;rl qu;gk	252
 抄了吧	ik;uy le;rl ba;dm	130
 抄写一遍	ik;uy xx;wf yi;fi bm;mi	369
@@ -253809,6 +253798,8 @@ columns:
 抽资	ib;ud zi;we	396
 抽走了	ib;ud zb;pz le;rl	756
 抽起了	ib;ud qi;pv le;rl	536
+抽起烟	ib;ud qi;pv yj;cr	269
+抽起烟来	ib;ud qi;pv yj;cr ll;ah	126
 抽身吧	ib;ud uf;zs ba;dm	230
 抽过来	ib;ud go;ku ll;ah	428
 抽采	ib;ud cl;ye	454
@@ -266764,15 +266755,9 @@ columns:
 新津国际	xn;ie jn;kb go;rn ji;tf	171
 新津河	xn;ie jn;kb he;kz	274
 新津的	xn;ie jn;kb de;un	141
-新洲一中	xn;ie vb;ko yi;fi vs;dg	266
-新洲中学	xn;ie vb;ko vs;dg xt;kw	117
 新洲人	xn;ie vb;ko rf;jr	432
-新洲大桥	xn;ie vb;ko da;md qc;et	144
-新洲小学	xn;ie vb;ko xc;yx xt;kw	162
 新洲的	xn;ie vb;ko de;un	356
-新洲码头	xn;ie vb;ko ma;mn tb;wm	266
 新洲站	xn;ie vb;ko vj;iy	274
-新洲路口	xn;ie vb;ko lu;ps kb;dk	130
 新活	xn;ie ho;ka	194
 新济洲	xn;ie ji;kq vb;ko	288
 新浦社区	xn;ie pu;kn ue;fg qu;nb	130
@@ -269627,6 +269612,7 @@ columns:
 日图三餐	ri;or tu;rh sj;ts cj;gr	130
 日圆的	ri;or yr;rd de;un	742
 日地关系	ri;or di;ge gr;hm xi;ti	369
+日场次	ri;or ih;ga ci;we	109
 日均多	ri;or jp;gn do;ll	288
 日坐伤官	ri;or zo;jj uh;je gr;wk	333
 日坛中学	ri;or tj;gb vs;dg xt;kw	356
@@ -269678,6 +269664,7 @@ columns:
 日常吧	ri;or ih;sr ba;dm	572
 日常啊	ri;or ih;sr aa;dt	400
 日常规律	ri;or ih;sr gv;he lv;wb	450
+日常词	ri;or ih;sr ci;sa	152
 日常费用	ri;or ih;sr fz;to ys;ty	464
 日干乔	ri;or gj;eg qc;tm	333
 日平台	ri;or py;eh tl;kd	549
@@ -274646,9 +274633,7 @@ columns:
 晃过去	hd;om go;ku qu;gk	612
 晃过来	hd;om go;ku ll;ah	495
 晃醒了	hd;om xy;yo le;rl	374
-晋中文化	jn;fc vs;dg wf;vw hw;jv	153
 晋中的	jn;fc vs;dg de;un	392
-晋中经济	jn;fc vs;dg jy;ir ji;kq	162
 晋人	jn;fc rf;jr	233
 晋代开始	jn;fc dl;jp kl;fl ui;bk	171
 晋代魏	jn;fc dl;jp wz;xb	320
@@ -274681,16 +274666,10 @@ columns:
 晋国正卿	jn;fc go;rn vg;fs qy;bi	266
 晋国的	jn;fc go;rn de;un	498
 晋图学刊	jn;fc tu;rh xt;kw kj;ep	117
-晋城二中	jn;fc ig;gn er;me vs;dg	117
-晋城交通	jn;fc ig;gn jc;ab ts;kt	162
-晋城八中	jn;fc ig;gn ba;hb vs;dg	288
 晋城北	jn;fc ig;gn bz;av	360
 晋城北站	jn;fc ig;gn bz;av vj;iy	130
-晋城市郊	jn;fc ig;gn ui;zr jc;ab	243
-晋城文化	jn;fc ig;gn wf;vw hw;jv	117
 晋城的	jn;fc ig;gn de;un	518
 晋城站	jn;fc ig;gn vj;iy	209
-晋城经济	jn;fc ig;gn jy;ir ji;kq	220
 晋城话	jn;fc ig;gn hw;sa	288
 晋太康	jn;fc tl;mi kh;xb	585
 晋宁一中	jn;fc ny;wa yi;fi vs;dg	189
@@ -274713,6 +274692,7 @@ columns:
 晋昭公	jn;fc vk;op gs;hk	338
 晋朝书法	jn;fc ik;no uu;aa fa;kg	207
 晋朝官员	jn;fc ik;no gr;wk yr;do	328
+晋朝年号	jn;fc ik;no nm;ev hk;df	144
 晋朝时	jn;fc ik;no ui;ok	315
 晋朝的	jn;fc ik;no de;un	490
 晋朝皇后	jn;fc ik;no hd;un hb;xf	234
@@ -275131,11 +275111,6 @@ columns:
 普仁	pu;hc rf;jm	533
 普仁街	pu;hc rf;jm jx;pg	342
 普仁集团	pu;hc rf;jm ji;ue tr;rn	117
-普伦基特	pu;hc lp;jj ji;zh te;qg	297
-普伦普顿	pu;hc lp;jj pu;hc dp;fs	248
-普伦格尔	pu;hc lp;jj ge;es er;xy	162
-普伦蒂斯	pu;hc lp;jj di;li si;zh	423
-普伦蒂湾	pu;hc lp;jj di;li wj;kz	220
 普佑寺	pu;hc yb;jn si;gk	346
 普克语	pu;hc ke;cp yu;sw	360
 普克鲁胺	pu;hc ke;cp lu;wo an;vw	162
@@ -275281,7 +275256,6 @@ columns:
 普梅河	pu;hc mz;ee he;kz	144
 普沃斯	pu;hc wo;kt si;zh	382
 普沃斯基	pu;hc wo;kt si;zh ji;zh	180
-普洛斯佩	pu;hc lo;ks si;zh pz;jo	369
 普洱交通	pu;hc er;kq jc;ab ts;kt	144
 普洱吧	pu;hc er;kq ba;dm	234
 普洱文化	pu;hc er;kq wf;vw hw;jv	130
@@ -275320,33 +275294,21 @@ columns:
 普维拉	pu;hc wz;iu la;ui	248
 普维敦斯	pu;hc wz;iu dp;gh si;zh	279
 普罗万城	pu;hc lo;yl wj;fp ig;gn	117
-普罗伯特	pu;hc lo;yl bo;ju te;qg	180
 普罗克托	pu;hc lo;yl ke;cp to;ut	418
 普罗克特	pu;hc lo;yl ke;cp te;qg	482
-普罗列塔	pu;hc lo;yl lx;gp ta;gl	356
 普罗塔克	pu;hc lo;yl ta;gl ke;cp	153
 普罗塔哥	pu;hc lo;yl ta;gl ge;zz	248
-普罗姆斯	pu;hc lo;yl mu;bk si;zh	117
 普罗富莫	pu;hc lo;yl fu;wf mo;lo	387
 普罗布斯	pu;hc lo;yl bu;nr si;zh	441
 普罗库金	pu;hc lo;yl ku;xy jn;zj	310
-普罗德摩	pu;hc lo;yl de;wn mo;zu	392
-普罗恩萨	pu;hc lo;yl en;rm sa;lt	189
-普罗文斯	pu;hc lo;yl wf;vw si;zh	202
-普罗斯珀	pu;hc lo;yl si;zh po;nu	356
 普罗普	pu;hc lo;yl pu;hc	369
 普罗替林	pu;hc lo;yl ti;hh ln;ee	153
 普罗柯比	pu;hc lo;yl ke;ez bi;vv	270
 普罗泰戈	pu;hc lo;yl tl;ai ge;pg	436
-普罗瓦尔	pu;hc lo;yl wa;rw er;xy	212
 普罗科夫	pu;hc lo;yl ke;xj fu;hf	130
 普罗科普	pu;hc lo;yl ke;xj pu;hc	315
 普罗科皮	pu;hc lo;yl ke;xj pi;rp	472
-普罗维斯	pu;hc lo;yl wz;iu si;zh	144
-普罗维杰	pu;hc lo;yl wz;iu jx;ec	212
 普罗艺术	pu;hc lo;yl yi;la uu;ei	189
-普罗霍洛	pu;hc lo;yl ho;tu lo;ks	306
-普罗霍雷	pu;hc lo;yl ho;tu lz;tq	144
 普翁斯克	pu;hc wg;hk si;zh ke;cp	194
 普老师	pu;hc lk;ql ui;pf	213
 普联	pu;hc lm;qh	801
@@ -275509,7 +275471,6 @@ columns:
 普颜不花	pu;hc yj;ix bu;cb hw;lj	189
 普马兰加	pu;hc ma;nm lj;ht jw;sd	468
 普马嗪	pu;hc ma;nm qn;da	117
-普鲁伊特	pu;hc lu;wo yi;jb te;qg	356
 普鲁旺斯	pu;hc lu;wo wh;on si;zh	144
 普鲁本辛	pu;hc lu;wo bf;ef xn;nx	436
 普鲁特河	pu;hc lu;wo te;qg he;kz	441
@@ -280553,10 +280514,8 @@ columns:
 服饰时	fu;vz ui;qe ui;ok	299
 服饰美	fu;vz ui;qe mz;gm	608
 朔天运河	uo;hs tm;fm yp;bu he;kz	171
-朔州支线	uo;hs vb;oo vi;ci xm;if	162
 朔州的	uo;hs vb;oo de;un	297
 朔州站	uo;hs vb;oo vj;iy	153
-朔州经济	uo;hs vb;oo jy;ir ji;kq	153
 朔州西	uo;hs vb;oo xi;vx	238
 朔州郡	uo;hs vb;oo jp;bt	238
 朔庄省	uo;hs vd;xg ug;yt	396
@@ -282799,7 +282758,6 @@ columns:
 机能低下	ji;eo ng;kv di;jb xw;fy	536
 机能修复	ji;eo ng;kv xq;jg fu;eo	212
 机能发育	ji;eo ng;kv fa;sr yu;bv	423
-机能回复	ji;eo ng;kv hv;rd fu;eo	129
 机能失常	ji;eo ng;kv ui;th ih;sr	234
 机能实验	ji;eo ng;kv ui;ww yj;nj	328
 机能异常	ji;eo ng;kv yi;vl ih;sr	374
@@ -293576,6 +293534,7 @@ columns:
 次下了	ci;we xw;fy le;rl	395
 次临界的	ci;we ln;pr jx;qj de;un	144
 次买了	ci;we ml;aw le;rl	1269
+次了	ci;we le;rl	773
 次了吧	ci;we le;rl ba;dm	796
 次了啊	ci;we le;rl aa;dt	513
 次二级	ci;we er;me ji;ic	464
@@ -309592,6 +309551,7 @@ columns:
 泡海椒	pk;kn hl;ke jc;ey	297
 泡澡了	pk;kn zk;kd le;rl	436
 泡澡吧	pk;kn zk;kd ba;dm	248
+泡烂	pk;kn lj;ch	140
 泡烂了	pk;kn lj;ch le;rl	495
 泡状细胞	pk;kn vd;am xi;iq bk;vn	220
 泡的吧	pk;kn de;un ba;dm	281
@@ -312324,53 +312284,19 @@ columns:
 济北王墓	ji;kq bz;av wh;nw mu;lo	162
 济医附院	ji;kq yi;no fu;tj yr;tw	162
 济华燃气	ji;kq hw;jv rj;cv qi;vq	207
-济南七中	ji;kq nj;nm qi;rq vs;dg	180
-济南三中	ji;kq nj;nm sj;ts vs;dg	144
-济南之星	ji;kq nj;nm vi;ri xy;ol	324
 济南二安	ji;kq nj;nm er;me an;wb	238
-济南五中	ji;kq nj;nm wu;wu vs;dg	153
 济南人了	ji;kq nj;nm rf;jr le;rl	144
 济南仓	ji;kq nj;nm ch;jz	180
-济南体育	ji;kq nj;nm ti;je yu;bv	194
 济南公园	ji;kq nj;nm gs;hk yr;rm	130
 济南军事	ji;kq nj;nm jp;wy ui;fd	144
 济南华联	ji;kq nj;nm hw;jv lm;qh	225
-济南古城	ji;kq nj;nm gu;cg ig;gn	207
 济南吧	ji;kq nj;nm ba;dm	306
-济南哪里	ji;kq nj;nm na;da li;dl	508
-济南商场	ji;kq nj;nm uh;im ih;ga	144
-济南园林	ji;kq nj;nm yr;rm ln;ee	220
-济南大雨	ji;kq nj;nm da;md yu;tv	162
-济南太守	ji;kq nj;nm tl;mi ub;wk	315
-济南妇幼	ji;kq nj;nm fu;bb yb;is	207
-济南威海	ji;kq nj;nm wz;nf hl;ke	288
-济南学校	ji;kq nj;nm xt;kw xc;ea	180
-济南宾馆	ji;kq nj;nm bn;wt gr;qw	243
-济南工业	ji;kq nj;nm gs;ug ye;cy	279
-济南市内	ji;kq nj;nm ui;zr nz;mj	356
-济南市局	ji;kq nj;nm ui;zr ju;ca	288
-济南市民	ji;kq nj;nm ui;zr mn;dm	693
-济南市的	ji;kq nj;nm ui;zr de;un	644
-济南市里	ji;kq nj;nm ui;zr li;dl	194
-济南师范	ji;kq nj;nm ui;pf fj;lk	315
-济南广播	ji;kq nj;nm gd;xg bo;ut	378
-济南玉函	ji;kq nj;nm yu;ni hj;ak	207
-济南电信	ji;kq nj;nm dm;oa xn;js	180
-济南电力	ji;kq nj;nm dm;oa li;sl	117
 济南画院	ji;kq nj;nm hw;fq yr;tw	137
 济南的天	ji;kq nj;nm de;un tm;fm	418
-济南的那	ji;kq nj;nm de;un na;au	230
 济南的雪	ji;kq nj;nm de;un xt;tb	117
-济南监狱	ji;kq nj;nm jm;pr yu;ms	117
 济南科明	ji;kq nj;nm ke;xj my;ov	171
-济南组织	ji;kq nj;nm zu;if vi;id	144
 济南绕城	ji;kq nj;nm rk;ip ig;gn	333
-济南警察	ji;kq nj;nm jy;lg ia;wh	266
 济南贵和	ji;kq nj;nm gv;co he;xd	243
-济南车展	ji;kq nj;nm ie;yc vj;cl	374
-济南郊区	ji;kq nj;nm jc;ab qu;nb	153
-济南银屑	ji;kq nj;nm yn;zi xx;cy	279
-济南面塑	ji;kq nj;nm mm;bm su;hs	130
 济善堂	ji;kq uj;gh th;sg	262
 济夫卡	ji;kq fu;hf ka;yf	202
 济宁公司	ji;kq ny;wa gs;hk si;af	171
@@ -342507,6 +342433,7 @@ columns:
 真把人	vf;nq ba;um rf;jr	518
 真抠	vf;nq kb;un	603
 真招人	vf;nq vk;up rf;jr	454
+真拼	vf;nq pn;uh	603
 真拼了	vf;nq pn;uh le;rl	297
 真挺	vf;nq ty;ut	1102
 真损	vf;nq sp;ud	405
@@ -359262,6 +359189,7 @@ columns:
 约面试	yt;in mm;bm ui;sp	639
 约鲁巴人	yt;in lu;wo ba;mb rf;jr	459
 级专家	ji;ic vr;ma jw;wj	896
+级了	ji;ic le;rl	1555
 级了吧	ji;ic le;rl ba;dm	109
 级以后	ji;ic yi;vj hb;xf	1004
 级任务	ji;ic rf;jt wu;hs	1120
@@ -389941,6 +389869,7 @@ columns:
 要作死	yk;vb zo;jw si;gv	688
 要你上他	yk;vb ni;jx uh;yf ta;je	130
 要你了	yk;vb ni;jx le;rl	882
+要你加入	yk;vb ni;jx jw;sd ru;ju	348
 要你对我	yk;vb ni;jx dv;rk wo;tu	495
 要你就	yk;vb ni;jx jq;gy	684
 要你教我	yk;vb ni;jx jc;qh wo;tu	288
@@ -404317,6 +404246,7 @@ columns:
 走医院	zb;pz yi;no yr;tw	328
 走十分钟	zb;pz ui;ns ff;hp vs;zd	580
 走千走万	zb;pz qm;lq zb;pz wj;fp	144
+走单	zb;pz dj;hq	291
 走去了	zb;pz qu;gk le;rl	837
 走去吧	zb;pz qu;gk ba;dm	297
 走去时	zb;pz qu;gk ui;ok	634
@@ -405544,7 +405474,6 @@ columns:
 越女争锋	yt;pn nv;bn vg;xb fg;zh	162
 越好吧	yt;pn hk;bh ba;dm	706
 越好啊	yt;pn hk;bh aa;dt	666
-越姐	yt;pn jx;bf	203
 越娘	yt;pn nd;bi	357
 越婢汤	yt;pn bi;bu th;ka	220
 越存越多	yt;pn cp;ng yt;pn do;ll	284
@@ -410751,13 +410680,8 @@ columns:
 运回了	yp;bu hv;rd le;rl	490
 运在东南	yp;bu zl;ng ds;ry nj;nm	171
 运城中学	yp;bu ig;gn vs;dg xt;kw	279
-运城历史	yp;bu ig;gn li;xs ui;db	117
 运城号	yp;bu ig;gn hk;df	238
-运城宾馆	yp;bu ig;gn bn;wt gr;qw	162
-运城师范	yp;bu ig;gn ui;pf fj;lk	225
 运城战役	yp;bu ig;gn vj;yd yi;wr	256
-运城文化	yp;bu ig;gn wf;vw hw;jv	117
-运城没有	yp;bu ig;gn mz;kr yb;nv	153
 运城的	yp;bu ig;gn de;un	558
 运城站	yp;bu ig;gn vj;iy	315
 运城路	yp;bu ig;gn lu;ps	324
@@ -411692,6 +411616,7 @@ columns:
 还捡了	hl;cu jm;uj le;rl	252
 还换了	hl;cu hr;ux le;rl	729
 还换了个	hl;cu hr;ux le;rl ge;jg	418
+还掉	hr;cu dc;uy	397
 还掉下	hl;cu dc;uy xw;fy	356
 还掌握了	hl;cu vh;su wo;uc le;rl	531
 还掌握着	hl;cu vh;su wo;uc ve;gq	495
@@ -418118,6 +418043,7 @@ columns:
 邀上	yk;ul uh;yf	205
 邀了吧	yk;ul le;rl ba;dm	133
 邀你共	yk;ul ni;jx gs;lh	513
+邀你加入	yk;ul ni;jx jw;sd ru;ju	229
 邀到	yk;ul dk;yp	137
 邀功了	yk;ul gs;us le;rl	338
 邀月	yk;ul yt;vy	609
@@ -425685,7 +425611,6 @@ columns:
 金朝君主	jn;zj ik;no jp;bt vu;in	117
 金朝宗室	jn;zj ik;no zs;wf ui;wy	328
 金朝官员	jn;zj ik;no gr;wk yr;do	270
-金朝年号	jn;zj ik;no nm;ev hk;df	144
 金朝建国	jn;zj ik;no jm;bu go;rn	153
 金朝战争	jn;zj ik;no vj;yd vg;xb	117
 金朝文学	jn;zj ik;no wf;vw xt;kw	171
@@ -438340,77 +438265,13 @@ columns:
 青岗岭	qy;av gh;vm ly;vj	207
 青岚大道	qy;av lj;vo da;md dk;ho	284
 青岚湖	qy;av lj;vo hu;kc	261
-青岛一木	qy;av dk;xv yi;fi mu;em	207
-青岛七中	qy;av dk;xv qi;rq vs;dg	162
-青岛三中	qy;av dk;xv sj;ts vs;dg	189
-青岛之星	qy;av dk;xv vi;ri xy;ol	297
-青岛五中	qy;av dk;xv wu;wu vs;dg	117
 青岛仓	qy;av dk;xv ch;jz	144
-青岛会展	qy;av dk;xv hv;jb vj;cl	238
-青岛住宅	qy;av dk;xv vu;ji vl;wt	153
-青岛公路	qy;av dk;xv gs;hk lu;ps	117
-青岛六中	qy;av dk;xv lq;al vs;dg	225
-青岛包装	qy;av dk;xv bk;nv vd;ag	130
-青岛区市	qy;av dk;xv qu;nb ui;zr	162
-青岛原浆	qy;av dk;xv yr;xu jd;al	374
-青岛哪里	qy;av dk;xv na;da li;dl	423
 青岛啊	qy;av dk;xv aa;dt	382
-青岛地理	qy;av dk;xv di;ge li;nd	207
-青岛外事	qy;av dk;xv wl;ly ui;fd	274
-青岛大包	qy;av dk;xv da;md bk;nv	364
-青岛大雨	qy;av dk;xv da;md yu;tv	153
-青岛奥达	qy;av dk;xv ao;tm da;mu	171
-青岛学校	qy;av dk;xv xt;kw xc;ea	180
-青岛展览	qy;av dk;xv vj;cl lj;pr	144
 青岛市公安局	qy;av dk;xv ui;zr gs;hk an;wb ju;ca	317
-青岛市内	qy;av dk;xv ui;zr nz;mj	468
 青岛市工商局	qy;av dk;xv ui;zr gs;ug uh;im ju;ca	282
 青岛市教育局	qy;av dk;xv ui;zr jc;qh yu;bv ju;ca	321
 青岛市文物局	qy;av dk;xv ui;zr wf;vw wu;qn ju;ca	146
-青岛市的	qy;av dk;xv ui;zr de;un	639
-青岛市里	qy;av dk;xv ui;zr li;dl	171
-青岛师范	qy;av dk;xv ui;pf fj;lk	292
-青岛广场	qy;av dk;xv gd;xg ih;ga	117
-青岛广播	qy;av dk;xv gd;xg bo;ut	410
-青岛广电	qy;av dk;xv gd;xg dm;oa	333
-青岛延吉	qy;av dk;xv yj;ts ji;gd	130
-青岛成达	qy;av dk;xv ig;na da;mu	180
-青岛文物	qy;av dk;xv wf;vw wu;qn	162
 青岛时	qy;av dk;xv ui;ok	294
-青岛有线	qy;av dk;xv yb;nv xm;if	225
-青岛民俗	qy;av dk;xv mn;dm su;jh	238
-青岛流亭	qy;av dk;xv lq;kb ty;ga	490
-青岛浒苔	qy;av dk;xv hu;ks tl;lk	153
-青岛海产	qy;av dk;xv hl;ke ij;ix	144
-青岛海军	qy;av dk;xv hl;ke jp;wy	423
-青岛海博	qy;av dk;xv hl;ke bo;nn	189
-青岛海岛	qy;av dk;xv hl;ke dk;xv	130
-青岛海湾	qy;av dk;xv hl;ke wj;kz	387
-青岛海立	qy;av dk;xv hl;ke li;il	320
-青岛港的	qy;av dk;xv gh;kl de;un	392
-青岛灯塔	qy;av dk;xv dg;ca ta;gl	171
-青岛炼化	qy;av dk;xv lm;cr hw;jv	117
-青岛烟台	qy;av dk;xv yj;cr tl;kd	675
-青岛烟草	qy;av dk;xv yj;cr ck;lo	117
-青岛电信	qy;av dk;xv dm;oa xn;js	153
-青岛的天	qy;av dk;xv de;un tm;fm	410
-青岛的那	qy;av dk;xv de;un na;au	333
-青岛监狱	qy;av dk;xv jm;pr yu;ms	153
-青岛石油	qy;av dk;xv ui;ms yb;kd	324
-青岛碱厂	qy;av dk;xv jm;mn ih;xc	130
-青岛科大	qy;av dk;xv ke;xj da;md	180
-青岛红酒	qy;av dk;xv hs;iu jq;ky	117
-青岛纺机	qy;av dk;xv fh;il ji;eo	117
-青岛纺织	qy;av dk;xv fh;il vi;id	297
-青岛聚品	qy;av dk;xv ju;qr pn;dd	256
-青岛艺校	qy;av dk;xv yi;la xc;ea	117
-青岛记者	qy;av dk;xv ji;sv ve;qo	171
-青岛诗人	qy;av dk;xv ui;sg rf;jr	130
-青岛足球	qy;av dk;xv zu;pu qq;nf	504
-青岛车展	qy;av dk;xv ie;yc vj;cl	230
-青岛道路	qy;av dk;xv dk;ho lu;ps	230
-青岛邮电	qy;av dk;xv yb;dt dm;oa	315
-青岛金石	qy;av dk;xv jn;zj ui;ms	212
 青岩刘	qy;av yj;vm lq;vp	477
 青岩区域	qy;av yj;vm qu;nb yu;gp	194
 青岩山	qy;av yj;vm uj;vs	243
@@ -443533,6 +443394,7 @@ columns:
 饿到	ee;qt dk;yp	891
 饿到了	ee;qt dk;yp le;rl	441
 饿吃了	ee;qt ii;de le;rl	468
+饿呀	ee;qt ya;dl	387
 饿啊我	ee;qt aa;dt wo;tu	436
 饿就吃	ee;qt jq;gy ii;de	522
 饿就饿	ee;qt jq;gy ee;qt	252
@@ -444345,7 +444207,6 @@ columns:
 马亦雄骏	ma;nm yi;zc xs;nk jp;nk	117
 马亮	ma;nm ld;go	732
 马代选岛	ma;nm dl;jp xr;qp dk;xv	356
-马休	ma;nm xq;je	684
 马伟	ma;nm wz;jg	118
 马伦哥	ma;nm lp;jj ge;zz	334
 马伦戈	ma;nm lp;jj ge;pg	459

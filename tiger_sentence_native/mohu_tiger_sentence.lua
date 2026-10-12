@@ -120,6 +120,9 @@ end
 -- ---------------------------------------------------------------- 引擎装载
 
 local engine_handle = nil
+-- One query-specific record: candidate userdata identities do not survive
+-- every librime translator/filter boundary. Never reuse for another input.
+local sentence_head_evidence = nil
 local engine_error = nil
 local engine_error_logged = false
 local decode_output_error_logged = false
@@ -1646,6 +1649,33 @@ function M.acquire_char_scorer(env)
   return nil
 end
 
+-- Suffix correction requires both a clear decode margin and direct V5 text
+-- evidence. Reuse the live handle without another decode or model load.
+function M.native_sentence_evidence(env, native_text, smart_text, start, finish)
+  local record = sentence_head_evidence
+  if not record or record.handle ~= engine_handle or start ~= 0 or
+      type(native_text) ~= "string" or type(smart_text) ~= "string" or
+      native_text ~= record.text or utf8_length(smart_text) ~= record.length then return false end
+  local context = env and env.engine and env.engine.context
+  if not context or context.input ~= record.input or finish ~= #record.input then return false end
+  local schema_id = env.engine.schema and env.engine.schema.schema_id or ""
+  if schema_id ~= record.schema_id then return false end
+  if type(tigerengine.context_char_scores) ~= "function" then return false end
+  local history = ""
+  if context.get_option and context:get_option("neural_rerank") then return false end
+  if context.get_option and context:get_option("contextual_order") and context.commit_history then
+    local hist = context.commit_history
+    if type(hist.latest_text) == "function" then
+      local ok, text = pcall(hist.latest_text, hist)
+      if ok and type(text) == "string" then history = text end
+    elseif type(hist.latest_text) == "string" then history = hist.latest_text end
+  end
+  local ok, scores = pcall(tigerengine.context_char_scores,
+    engine_handle, history, { native_text, smart_text })
+  return ok and type(scores) == "table" and #scores == 2 and
+    finite_number(scores[1]) and finite_number(scores[2]) and scores[1] - scores[2] >= 4.0
+end
+
 -- 词证据分歧门：top1 在公共前缀后接不成词拼装而 top2 接词典多字词
 -- 时返回 1（引擎 freq_rank 查表，旧 ABI 无该函数时恒 0＝不开门）。
 function M.word_disagreement(env, texts)
@@ -1739,6 +1769,7 @@ local function decode_context_takeover(env)
 end
 
 function M.translator.func(input, seg, env)
+  sentence_head_evidence = nil
   if not seg:has_tag("abc") then return end
   if env and env._tiger_engine_ready == false then return end
   local context = env.engine.context
@@ -1803,6 +1834,19 @@ function M.translator.func(input, seg, env)
     return
   end
   decoded.items = sentence_items
+
+  local first, second = decoded.items[1], decoded.items[2]
+  if segment_start == 0 and segment_end_raw_boundary == nil and first and second and
+      finite_number(first.score) and finite_number(second.score) and
+      first.score - second.score >= 4.5 then
+    local length = utf8_length(first.text)
+    if length == 3 or length == 4 then
+      sentence_head_evidence = {
+        handle = engine_handle, input = context_input_raw, text = first.text, length = length,
+        schema_id = env.engine.schema and env.engine.schema.schema_id or "",
+      }
+    end
+  end
 
   local yielded = 0
   local prefix_bytes = #prefix_text

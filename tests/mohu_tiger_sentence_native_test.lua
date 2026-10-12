@@ -6,6 +6,7 @@ local yielded = {}
 local create_calls = 0
 local free_calls = 0
 local decode_output
+local score_output = { -10, -14.2 }
 
 rime_api = {
   get_user_data_dir = function() return "/tmp/mohu-tiger-native-test" end,
@@ -95,6 +96,10 @@ package.loadlib = function()
         free_calls = free_calls + 1
       end,
       decode = function() return decode_output, 0.2 end,
+      context_char_scores = function(_, _, texts)
+        assert(#texts == 2)
+        return score_output
+      end,
     }
   end
 end
@@ -181,6 +186,45 @@ decode_output = table.concat({
 yielded = {}
 native.translator.func("abcdef", segment, env)
 assert(#yielded == 0, "malformed native scores must fail open")
+
+decode_output = table.concat({
+  "0 0 0 0 2 0",
+  "第四扇门\tdi si uj mf\t-10\t-10\t1\t3:2,6:4,9:6,12:8",
+  "第四山门\tdi si ujmf\t-15\t-15\t1\t3:2,6:4,12:8",
+  "",
+}, "\n")
+ctx.input = "disiujmf"
+segment._end = 8
+yielded = {}
+native.translator.func(ctx.input, segment, env)
+assert(native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "both native margin and direct character-score advantage support the correction")
+score_output = { -10, -13.9 }
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "a small character-score advantage must not override smart")
+score_output = { -10, -14.2 }
+ctx.input = "disjujmf"
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "evidence must never leak across input strings")
+ctx.input = "disiujmf"
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 6),
+  "complete-sentence evidence must not apply to a clipped input segment")
+engine.schema.schema_id = "another"
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "evidence must never leak across schemas")
+engine.schema.schema_id = nil
+score_output = { -10, 0/0 }
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "nonfinite scoring fails open")
+score_output = { -10, -14.2 }
+ctx.options.neural_rerank = true
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "V5 suffix evidence must not override an enabled neural path")
+ctx.options.neural_rerank = false
+decode_output = decode_output:gsub("%-15\t%-15", "-14.4\t-14.4")
+native.translator.func(ctx.input, segment, env)
+assert(not native.native_sentence_evidence(env, "第四扇门", "第四山门", 0, 8),
+  "direct text scores alone do not bypass the decode-margin requirement")
 
 native.translator.fini(env)
 assert(free_calls == 1, "shared native engine must be freed once")

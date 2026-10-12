@@ -1,10 +1,13 @@
 -- Mohu Reorder Filter
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.3.3
+-- Ver: 0.3.4
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.3.4: 三、四字 native 可补回与 smart 首个真实前缀词一致的整句；
+--        前缀相同时，需同时满足解码领先和直接字符评分的保守门槛。
 --
 -- 0.3.3: 同文去重扩展到全部输出位置：pin/fixed 替换位已输出的文本，
 --        native 侧（含 _personal 个人词）同文本跳过。修复置顶后 personal
@@ -85,8 +88,9 @@ end
 -- 输入的候选格式是：
 --   [pinned]* [fixed1]* [native]* smart1{1} [fixed2]* smart2+
 -- native 候选有独立身份，不参与 fixed -> smart 替换，输出在 fixed 与 smart 之间。
--- 当词库候选存在时，native 只允许输出词库也能覆盖的文本；这样模型只负责
--- 在词库可行集合内排序，不会用静态码表绕过用户词造出错误分词。例外是
+-- 三、四字 native 通常只输出词库也能覆盖的文本。若没有同跨度真实整词，
+-- smart 组句又违背其首个真实多字前缀，则允许 native 补回保留此前缀的整句。
+-- 这样不把部分词组或动态组句当成完整词库权威，也保留用户词保护。例外是
 -- >=5 字候选与两字候选：两字终态候选只可能在两音节带辅码的输入上产生
 -- （更多音节的输入无法被两段消费完），用户已显式消歧，独立输出。
 --
@@ -100,6 +104,7 @@ local kDone        = 2
 
 function Top.func(t_input, env)
     local ctx = {
+        env = env,
         phase = kCollecting,  -- 当前状态
         fixed_list = {},      -- 等待匹配的固定候选
         fixed_next = 1,       -- 下一个待匹配的固定候选匹配的
@@ -108,6 +113,10 @@ function Top.func(t_input, env)
         trailing_list = {},   -- fixed 匹配完成后暂存的其余候选（上界 trailing_limit）
         flushed_early = false, -- 尾部超限提前冲刷后置位：后续候选直通
         lexicon_texts = {},   -- 本轮非 native 候选的文本集合
+        lexical_spans = {},   -- 真实词条覆盖的输入跨度；组句/补全/部分词不混用
+        lexical_unknown_span = false, -- 缺少跨度时保持原先的保守词库保护
+        preferred_prefixes = {}, -- 每个起点上首个真实多字词（保持 smart 排序）
+        composed_spans = {}, -- 同跨度首个 smart 动态组句
         yielded_texts = {},   -- 本轮已实际输出过的文本集合（pin/fixed 替换位、
                               -- native 输出），同文去重的唯一判据
         threshold = env.reorder_threshold,
@@ -144,19 +153,75 @@ function Top.func(t_input, env)
                 ctx.flushed_early = true
                 Top.yield_exact(env, cand)
             else
-                ctx.lexicon_texts[cand.text] = true
+                Top.note_lexical_candidate(ctx, cand)
                 table.insert(ctx.trailing_list, cand)
             end
         elseif ctx.phase == kCollecting then
-            ctx.lexicon_texts[cand.text] = true
+            Top.note_lexical_candidate(ctx, cand)
             Top.handle_collecting(env, ctx, cand)
         else
-            ctx.lexicon_texts[cand.text] = true
+            Top.note_lexical_candidate(ctx, cand)
             Top.handle_matching(env, ctx, cand)
         end
     end
 
     Top.flush(env, ctx, true)
+end
+
+local function candidate_span(cand)
+    local start, finish = tonumber(cand.start), tonumber(cand._end)
+    if not start or not finish or start < 0 or finish <= start then return nil end
+    return tostring(start) .. ":" .. tostring(finish), start, finish
+end
+
+-- Script-translator Sentence is an assembled path, not a dictionary entry.
+-- Keep real whole-word authority separate from evidence for a lexical prefix.
+function Top.note_lexical_candidate(ctx, cand)
+    ctx.lexicon_texts[cand.text] = true
+    local genuine = cand:get_genuine()
+    local dynamic = genuine.get_dynamic_type and genuine:get_dynamic_type() or nil
+    local span, start, finish = candidate_span(cand)
+    if dynamic == "Sentence" or (dynamic == nil and genuine.type == "sentence") then
+        if span and not ctx.composed_spans[span] then ctx.composed_spans[span] = cand.text end
+        return
+    end
+    if genuine.type == "completion" then return end
+    local kind = genuine.type
+    if dynamic ~= "Phrase" and kind ~= "phrase" and kind ~= "user_phrase" and
+        kind ~= "table" and kind ~= "pinned" and kind ~= "mohu_reordered" then return end
+    if span then
+        ctx.lexical_spans[span] = true
+        if utf8.len(cand.text) >= 2 and not ctx.preferred_prefixes[start] then
+            ctx.preferred_prefixes[start] = { text = cand.text, finish = finish }
+        end
+    else
+        ctx.lexical_unknown_span = true
+    end
+end
+
+function Top.native_requires_lexicon_match(ctx, cand)
+    if next(ctx.lexicon_texts) == nil then return false end
+    if ctx.lexical_unknown_span then return true end
+    local span, start, finish = candidate_span(cand)
+    if not span or ctx.lexical_spans[span] then return true end
+    local prefix = ctx.preferred_prefixes[start]
+    local composed = ctx.composed_spans[span]
+    -- Preserve the preferred lexical prefix. When smart agrees on that prefix,
+    -- only a query-scoped native head with strong full-text evidence may
+    -- correct the suffix; the ordinary lexicon guard otherwise stays intact.
+    if prefix and prefix.finish < finish and
+        cand.text:sub(1, #prefix.text) == prefix.text then
+        if not composed or composed:sub(1, #prefix.text) ~= prefix.text then return false end
+        if composed ~= cand.text then
+            local ok, native = pcall(require, "mohu_sentence")
+            if ok and type(native.native_sentence_evidence) == "function" then
+                local scored, strong = pcall(native.native_sentence_evidence,
+                    ctx.env, cand.text, composed, start, finish)
+                if scored and strong == true then return false end
+            end
+        end
+    end
+    return true
 end
 
 --------------------------------------------------------------------------------
@@ -274,9 +339,10 @@ function Top.flush(env, ctx, include_delay_slot)
             native_type == "mohu_flypy_personal"
         -- text_length == 2：两音节带辅码输入的两字终态，独立输出（见文件头说明）。
         if not ctx.yielded_texts[c.text]
-            and (next(ctx.lexicon_texts) == nil or ctx.lexicon_texts[c.text]
+            and (ctx.lexicon_texts[c.text]
             or text_length >= native_independent_min_length
-            or text_length == 2 or is_personal) then
+            or text_length == 2 or is_personal
+            or not Top.native_requires_lexicon_match(ctx, c)) then
             Top.yield_exact(env, c)
             ctx.yielded_texts[c.text] = true
         end
@@ -305,6 +371,10 @@ function Top.flush(env, ctx, include_delay_slot)
     ctx.smart_list = {}
     ctx.trailing_list = {}
     ctx.lexicon_texts = {}
+    ctx.lexical_spans = {}
+    ctx.lexical_unknown_span = false
+    ctx.preferred_prefixes = {}
+    ctx.composed_spans = {}
 end
 
 --- cand 是否有可能被重排（即是否有可能是 smart 输出）。

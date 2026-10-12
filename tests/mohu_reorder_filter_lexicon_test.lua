@@ -1,15 +1,26 @@
 package.path = "lua/?.lua;" .. package.path
 
 local filter = require("mohu_reorder_filter")
+local evidence = false
+package.loaded["mohu_sentence"] = {
+  native_sentence_evidence = function(_, native_text, smart_text)
+    return evidence and native_text == "第四扇门" and smart_text == "第四山门"
+  end,
+}
 
-local function candidate(kind, text, preedit, comment)
+local function candidate(kind, text, preedit, comment, start, finish)
   local value = {
     type = kind,
     text = text,
     preedit = preedit or "mohu uh ke",
     comment = comment or "",
+    start = start,
+    _end = finish,
   }
   function value:get_genuine() return self end
+  function value:get_dynamic_type()
+    return kind == "sentence" and "Sentence" or "Phrase"
+  end
   return value
 end
 
@@ -42,7 +53,7 @@ end
 
 local output = run({
   candidate("mohu_zrm", "万户上课"),
-  candidate("sentence", "魔虎尚可"),
+  candidate("phrase", "魔虎尚可"),
 })
 assert(#output == 1 and output[1].text == "魔虎尚可",
   "native-only hallucinated segmentation must be removed when the dictionary has a candidate")
@@ -52,6 +63,56 @@ local native_only = run({
 })
 assert(#native_only == 1 and native_only[1].text == "模型候选",
   "native candidates remain available when no dictionary candidate exists")
+
+local full_native = candidate("mohu_zrm", "第一扇门", "di yi uj mf", "", 0, 8)
+local composed = candidate("sentence", "地一扇门", "di yi uj mf", "", 0, 8)
+local partial_word = candidate("phrase", "第一扇", "di yi uj", "", 0, 6)
+local partial_prefix = candidate("phrase", "第一", "di yi", "", 0, 4)
+local composed_menu = run({full_native, composed, partial_word, partial_prefix})
+assert(composed_menu[1] == full_native,
+  "a dynamic smart sentence and prefix words must not veto a full native sentence")
+local full_lexical = candidate("phrase", "完整词条", "di yi uj mf", "", 0, 8)
+local lexical_menu = run({full_native, composed, partial_word, full_lexical})
+assert(lexical_menu[1] ~= full_native,
+  "a real lexical entry covering the same span retains the short-native lexicon guard")
+local matched_menu = run({full_native,
+  candidate("phrase", "第一扇门", "di yi uj mf", "", 0, 8), full_lexical})
+assert(matched_menu[1] == full_native,
+  "a native candidate independently present in the lexicon remains allowed")
+local suffix = candidate("phrase", "扇门", "uj mf", "", 4, 8)
+assert(run({full_native, composed, suffix, partial_word})[1] == full_native,
+  "a lexical suffix cannot veto completion of the independently preferred prefix")
+local completion = candidate("completion", "第一扇门后", "di yi uj mf", "", 0, 8)
+assert(run({full_native, composed, completion, partial_word})[1] == full_native,
+  "a longer completion is not a lexical entry for the entered sentence")
+local wrapped = candidate("phrase", "地一扇门", "di yi uj mf", "", 0, 8)
+function wrapped:get_genuine() return composed end
+assert(run({full_native, wrapped, partial_word})[1] == full_native,
+  "a wrapped dynamic sentence must still be distinguished from a real phrase")
+local renamed_phrase = candidate("sentence", "完整词条", "di yi uj mf", "", 0, 8)
+function renamed_phrase:get_dynamic_type() return "Phrase" end
+assert(run({full_native, renamed_phrase})[1] ~= full_native,
+  "the underlying Phrase class, rather than a mutable label, establishes word identity")
+local consistent = candidate("sentence", "第一扇们", "di yi uj mf", "", 0, 8)
+assert(run({full_native, consistent, partial_word})[1] == consistent,
+  "do not override smart's suffix when its sentence already preserves the preferred prefix")
+local unmatched = candidate("mohu_zrm", "滴一扇门", "di yi uj mf", "", 0, 8)
+assert(run({unmatched, composed, partial_word})[1] == composed,
+  "a native sentence inconsistent with the preferred prefix must remain guarded")
+assert(run({full_native, composed})[1] == composed,
+  "without an independent lexical prefix, retain the existing guard")
+local fourth = candidate("mohu_zrm", "第四扇门", "di si uj mf", "", 0, 8)
+local mountain = candidate("sentence", "第四山门", "di si uj mf", "", 0, 8)
+local fourth_prefix = candidate("phrase", "第四", "di si", "", 0, 4)
+evidence = true
+assert(run({fourth, mountain, fourth_prefix})[1] == fourth,
+  "strong full-sentence evidence must permit a native suffix correction")
+assert(run({fourth, mountain, fourth_prefix,
+    candidate("phrase", "第四山门", "di si uj mf", "", 0, 8)})[1] ~= fourth,
+  "strong model evidence must not bypass a real full-span dictionary entry")
+evidence = false
+assert(run({fourth, mountain, fourth_prefix})[1] == mountain,
+  "weak or unavailable full-sentence evidence must retain smart ordering")
 
 local long_sentence = run({
   candidate("mohu_zrm", "你不要再精神内耗了"),

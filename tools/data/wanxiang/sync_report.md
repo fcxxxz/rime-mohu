@@ -1,15 +1,15 @@
 # 万象同步报告
 
-- upstream revision: `0975de374a7420fdb58143bc78ea906c65fe3a31`
-- selected entries: 453681
-- added: 4
-- removed: 1001
-- pronunciation changed: 453683
-- duplicate existing words: 932518
+- upstream revision: `abb8cde7682028dca76d3d449562b6854b33efaf`
+- selected entries: 453545
+- added: 22
+- removed: 161
+- pronunciation changed: 453529
+- duplicate existing words: 932354
 - skipped because already in moran seed: 67
 - pronunciation conflicts: 1149
-- dropped below min upstream weight (<100): 757754
-- rejected source rows: 406
+- dropped below min upstream weight (<100): 757662
+- rejected source rows: 405
 - dropped for missing auxiliary: 1
 - moran seed total / merged: 958747 / 237
 

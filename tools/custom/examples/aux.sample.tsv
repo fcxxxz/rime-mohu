@@ -1,0 +1,22 @@
+# 【辅码表示例】只列要改的字，没列的字保持虎码辅码。
+#
+# 每行四列（TSV，用 Tab 分隔）：
+#   字<Tab>正常辅码<Tab>14位兼容码(可省)<Tab>13位兼容码(可省)
+# 辅码为 1–2 个小写字母。
+#
+# 默认虎码辅码参考（保持不动就是这样）：
+#   一=fi   的=un(13位ui)   是=ot   不=cb   了=rl   我=tu(13位tp)
+#   命=jd(13位jz)
+#
+# 构建命令：
+#   uv run tools/custom/build_custom_scheme.py --aux 我的辅码.tsv
+# 缺字默认回退虎码并在构建报告里列数量；--strict 可改为缺字报错。
+# 想整体替换辅码：先跑
+#   uv run tools/custom/build_custom_scheme.py --emit-aux-template
+# 导出 83,975 行虎码全量模板，改完再 --aux 传回来。
+的	dr
+是	u
+一	yi		ys
+命	nb
+魔	mh
+虎	hu

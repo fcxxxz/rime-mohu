@@ -1,0 +1,58 @@
+# 自然码双拼（内置预设；与 tools/zrmify.py 等价，供参考与「复制后改成
+# 自己的布局」的起点）。改完运行 tools/custom/build_custom_scheme.py。
+name: zrm
+display: 自然码
+
+initials:
+  zh: v
+  ch: i
+  sh: u
+
+finals:
+  a: a
+  o: o
+  e: e
+  i: i
+  u: u
+  v: v             # ü（lv/nv/lve/nve 的韵母）
+  ai: l
+  ei: z
+  ui: v
+  ao: k
+  ou: b
+  iu: q
+  ie: x
+  ve: t            # üe（lve/nve）
+  ue: t            # üe（jue/que/xue/yue）
+  an: j
+  en: f
+  in: n
+  un: p
+  ang: h
+  eng: g
+  ing: y
+  ong: s
+  ia: w
+  iao: c
+  ian: m
+  iang: d
+  iong: s
+  ua: w
+  uo: o
+  uai: y
+  uan: r
+  uang: d
+
+zero:
+  a: aa
+  o: oo
+  e: ee
+  ai: ai
+  ei: ei
+  ao: ao
+  ou: ou
+  an: an
+  en: en
+  ang: ah
+  eng: eg
+  er: er

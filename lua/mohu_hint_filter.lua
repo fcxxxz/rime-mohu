@@ -25,6 +25,8 @@ function Module.init(env)
 
     env.is_auxfilter = env.name_space == "auxfilter"
     env.aux_priority_indicator = env.engine.schema.config:get_string("mohu/aux_priority_indicator") or "▾"
+    -- 自定义方案可指向独立辅码表（默认共享 lua/zrmdb.txt）。
+    env.aux_db_path = env.engine.schema.config:get_string("mohu/aux_db")
     env.quick_code_hint_dictionary = env.engine.schema.config:get_string("mohu/quick_code_hint_dictionary")
         or env.engine.schema.config:get_string("translator/dictionary")
     env.quick_code_hint_reverse = nil
@@ -47,6 +49,7 @@ function Module.fini(env)
     env.aux_table = nil
     env.aux_table_load_attempted = false
     env.aux_priority_indicator = nil
+    env.aux_db_path = nil
     env.quick_code_hint_dictionary = nil
     env.quick_code_hint_reverse = nil
     collectgarbage()
@@ -165,7 +168,7 @@ end
 function Module.func(translation, env)
     local enable_aux_hint = env.engine.context:get_option("aux_hint")
     if enable_aux_hint and not env.aux_table_load_attempted then
-        env.aux_table = mohu.load_zrmdb()
+        env.aux_table = mohu.load_zrmdb(env.aux_db_path)
         env.aux_table_load_attempted = true
     end
     enable_aux_hint = enable_aux_hint and env.aux_table ~= nil

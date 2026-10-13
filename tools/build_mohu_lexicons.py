@@ -153,12 +153,18 @@ def load_inject_words(base: Path) -> dict[str, tuple[int, str]]:
     return words
 
 
-def load_reading_frequencies(path: Path) -> dict[tuple[str, str], int]:
-    """读单字词典，返回 (单字, 自然码双拼音节) -> 读音条件简频。
+def load_reading_frequencies(
+    path: Path,
+    is_syllable=None,
+) -> dict[tuple[str, str], int]:
+    """读单字词典，返回 (单字, 双拼音节) -> 读音条件简频。
 
     词典权重列与 chars.txt 的读音简频同源（如「万」mo=1 / wj=1201402），
-    同一 (字, 音节) 多辅码行取最大值去重。
+    同一 (字, 音节) 多辅码行取最大值去重。is_syllable 默认按自然码
+    往返校验；自定义方案传目标布局的 is_code。
     """
+    if is_syllable is None:
+        is_syllable = _is_natural_syllable
     result: dict[tuple[str, str], int] = {}
     in_body = False
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -179,7 +185,7 @@ def load_reading_frequencies(path: Path) -> dict[tuple[str, str], int]:
                 value = int(float(weight))
         for token in fields[1].split():
             syllable = token.split(";", 1)[0][:2]
-            if not _is_natural_syllable(syllable):
+            if not is_syllable(syllable):
                 continue
             key = (fields[0], syllable)
             if value > result.get(key, -1):
@@ -246,12 +252,48 @@ def _canonical_syllables(code: str, text: str,
     return syllables
 
 
+def convert_two_char_short_code(
+    code: str,
+    text: str,
+    character_syllables: dict[str, set[str]] | None,
+    converter=None,
+) -> str | None:
+    """二字词三码简码按词内读音判型转换；判定不了返回 None。
+
+    码形有二：「双拼+声母」（如 哪里 na+l，雾凇遗产）与「声母+双拼」
+    （如 任务 r+wu，手工高频简词）。前两键是否恰为有效音节不足以区分
+    （rw 既是音节 ruá，又是 r|wu 的前缀），必须对照字音：
+    - 双拼+声母：code[:2] 是 A 的双拼、尾键是 B 的声母 → 转换 code[:2]；
+    - 声母+双拼：code[1:] 是 B 的双拼、首键是 A 的声母 → 转换 code[1:]。
+    两形同真时按前者处理（legacy 多数形态）。字音缺失时不猜，返回 None
+    交由调用方走原有兜底。
+    """
+    if converter is None:
+        converter = _convert_syllable
+    if len(text) != 2 or len(code) != 3 or not character_syllables:
+        return None
+    sa = character_syllables.get(text[0])
+    sb = character_syllables.get(text[1])
+    if not sa or not sb:
+        return None
+    if code[:2] in sa and any(s.startswith(code[2]) for s in sb):
+        return converter(code[:2]) + code[2]
+    if code[1:] in sb and any(s.startswith(code[0]) for s in sa):
+        return code[0] + converter(code[1:])
+    return None
+
+
 def _convert_code(code: str, text: str,
-                 character_syllables: dict[str, set[str]] | None) -> str:
+                 character_syllables: dict[str, set[str]] | None,
+                 converter=None) -> str:
     syllables = _canonical_syllables(code, text, character_syllables)
     if syllables is None:
-        return code
-    converted = "".join(_convert_syllable(syllable) for syllable in syllables)
+        converted = convert_two_char_short_code(
+            code, text, character_syllables, converter)
+        return converted if converted is not None else code
+    if converter is None:
+        converter = _convert_syllable
+    converted = "".join(converter(syllable) for syllable in syllables)
     return converted + code[2 * len(text):]
 
 
@@ -293,10 +335,26 @@ def _reverted_zrm_fly_code(code: str, text: str,
 def build_rows(rows: list[ROW_KEY], scheme: str,
                character_syllables: dict[str, set[str]] | None = None,
                word_weights: dict[str, tuple[int, str]] | None = None,
+               *,
+               converter=None,
+               fly: dict[str, str] | None = None,
                ) -> list[ROW_OUT]:
-    if scheme not in {"zrm", "flypy"}:
-        raise ValueError(f"unsupported scheme: {scheme}")
-    fly = FLY_ZRM if scheme == "zrm" else FLY_FLYPY
+    """构建目标方案的词表行。
+
+    默认行为不变：scheme 为 zrm（恒等）或 flypy（小鹤转换 + 各自飞键
+    集合）。自定义方案传入 converter（自然码音节 → 目标码，两字母）与
+    fly（通常为空 dict——自定义方案不带飞键）：源表中的自然码飞键变体
+    行先按 FLY_INVERSE 还原为基础码，再经 converter 转到目标码形。
+    """
+    if converter is None:
+        if scheme not in {"zrm", "flypy"}:
+            raise ValueError(f"unsupported scheme: {scheme}")
+        convert_needed = scheme == "flypy"
+    else:
+        convert_needed = True
+    if fly is None:
+        fly = {} if converter is not None else (
+            FLY_ZRM if scheme == "zrm" else FLY_FLYPY)
     fly_inverse = {target: source for source, target in fly.items()}
     source_index = {(code, text) for code, text, *_ in rows}
     word_weights = word_weights or {}
@@ -323,12 +381,15 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
     output: set[ROW_OUT] = set()
     for source_code, text, rank, freq, reading, _source_canonical in rows:
         code = source_code
-        if scheme == "flypy":
+        if convert_needed:
             reverted = _reverted_zrm_fly_code(
                 source_code, text, character_syllables, source_index)
             if reverted is not None:
                 code = reverted
-        base_code = code if scheme == "zrm" else _convert_code(code, text, character_syllables)
+        base_code = (
+            code if not convert_needed
+            else _convert_code(code, text, character_syllables, converter)
+        )
         output.add(emit(base_code, text, rank, freq, reading))
         for variant in _fly_closure(base_code, text, fly):
             output.add(emit(variant, text, rank, freq, reading))

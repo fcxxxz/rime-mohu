@@ -231,9 +231,11 @@ end
 local function configure(env)
   local cfg = env and env.engine and env.engine.schema and env.engine.schema.config
   local scheme = config_string(cfg, "tiger/scheme") or "zrm"
-  if scheme ~= "zrm" and scheme ~= "flypy" then scheme = "zrm" end
+  -- 自定义构建方案（tools/custom/build_custom_scheme.py）传入自己的
+  -- 方案 id 与 mohu_<id> 候选类型；非法值仍回落 zrm。
+  if not scheme:match("^[a-z][a-z0-9]*$") then scheme = "zrm" end
   local candidate_type = config_string(cfg, "tiger/candidate_type")
-  if candidate_type ~= "mohu_zrm" and candidate_type ~= "mohu_flypy" then
+  if not candidate_type or not candidate_type:match("^mohu_[a-z0-9]+$") then
     candidate_type = "mohu_" .. scheme
   end
   if env then

@@ -1,0 +1,60 @@
+# 拼音加加双拼（内置预设；键位表来自维基百科「双拼」条目）。
+# 特点：zh=V / ch=U / sh=I（ch、sh 与自然码相反）；零声母规则为
+# 「韵母首字母 + 韵母键」（如 ai→as、ang→ag、er→eq）。
+name: jiajia
+display: 拼音加加
+
+initials:
+  zh: v
+  ch: u
+  sh: i
+
+finals:
+  a: a
+  o: o
+  e: e
+  i: i
+  u: u
+  v: v             # ü
+  ai: s
+  ei: w
+  ui: v
+  ao: d
+  ou: p
+  iu: n
+  ie: m
+  ve: x            # üe
+  ue: x
+  an: f
+  en: r
+  in: l
+  un: z
+  ang: g
+  eng: t
+  ing: q
+  ong: y
+  iong: y
+  ia: b
+  iao: k
+  ian: j
+  iang: h
+  ua: b
+  uo: o
+  uai: x
+  uan: c
+  uang: h
+  er: q
+
+zero:
+  a: aa
+  o: oo
+  e: ee
+  ai: as
+  ei: ew
+  ao: ad
+  ou: op
+  an: af
+  ang: ag
+  en: er
+  eng: et
+  er: eq

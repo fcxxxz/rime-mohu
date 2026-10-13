@@ -41,7 +41,8 @@ local BIG_SYLLABLES = {
 }
 
 function Module.init(env)
-    env.aux_table = mohu.load_zrmdb()
+    -- 自定义方案可指向独立辅码表（默认共享 lua/zrmdb.txt）。
+    env.aux_table = mohu.load_zrmdb(env.engine.schema.config:get_string("mohu/aux_db"))
     contextual.init_pair(env, "translator")
     env.prefetch_threshold = env.engine.schema.config:get_int("mohu/prefetch") or -1
 

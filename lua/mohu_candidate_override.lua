@@ -1,6 +1,8 @@
 -- Mohu candidate override support.
 -- Stores per-code ordering and soft-deletion preferences outside source dictionaries.
 
+local mohu = require("mohu")
+
 local M = {}
 
 local kAccepted = 1
@@ -547,7 +549,7 @@ local function is_soft_deletable(cand)
     -- 名单，Shift+Delete 对其静默 kNoop——引擎组合路径学出的搭配
     -- （vgxju 的「整车」jū）删不掉。隐藏记录对 native 候选本来生效
     -- （record_applies 不排除），这里放行进入标准软隐藏路径。
-    if cand_type == "mohu_zrm" or cand_type == "mohu_flypy" then
+    if mohu.is_native_candidate_type(cand_type) then
         return true
     end
     return lexical_types[cand_type] == true
@@ -1166,7 +1168,7 @@ local function finish_permanent_delete(context, env, selected, text, stored_code
     -- （vgxju 的「整车」jū——用户词删了、菜单里还在）。对 native 类型
     -- 补写隐藏记录，让「删了就没了」对组合候选同样成立。
     local native_type = genuine_candidate(selected).type
-    if native_type == "mohu_zrm" or native_type == "mohu_flypy" then
+    if mohu.is_native_candidate_type(native_type) then
         pcall(function() env.override_store:set_hidden(code, text, true) end)
     end
     refresh_override_memory(env)
@@ -1179,7 +1181,7 @@ end
 -- native 类型同时反学习一次提交量。
 local function commit_soft_hide(context, env, selected, text, code)
     local native_type = genuine_candidate(selected).type
-    if native_type == "mohu_zrm" or native_type == "mohu_flypy" then
+    if mohu.is_native_candidate_type(native_type) then
         forget_engine_user_model(text, 1)
     end
     if env.override_store:set_hidden(code, text, true) then

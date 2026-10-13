@@ -1,0 +1,97 @@
+## 魔虎·华南虎（自然码双拼 + 华南虎形码推导辅码）功能冒烟
+## 辅码取位：华南虎全码 1-2 位为正常辅码、1+3/1+4 位为兼容位。
+## 先构建：uv run tools/custom/build_custom_scheme.py \
+##   --sp tools/custom/layouts/zrm.yaml --shape-code research/tiger_aux/output/hnh_original.source.tsv \
+##   --name huananhu --display 华南虎
+
+schema: mohu_huananhu
+source_dir: ../custom-dist/mohu_huananhu
+script: |
+  function eq(left, right)
+    print('Left  = ' .. tostring(left))
+    print('Right = ' .. tostring(right))
+    return left == true and right == true or left == right
+  end
+
+  function has_text(candidates, text)
+    for _, candidate in ipairs(candidates) do
+      if candidate.text == text then return true end
+    end
+    return false
+  end
+
+  function text_index(candidates, text)
+    for index, candidate in ipairs(candidates) do
+      if candidate.text == text then return index end
+    end
+    return nil
+  end
+
+deploy:
+  double_pinyin_only:
+    tests:
+      # 双拼层不因辅码变化：吗=ma、了=l、和=h
+      - send: ma
+        assert: eq(cand[1].text, '吗')
+      - send: l
+        assert: eq(cand[1].text, '了')
+      - send: h
+        assert: eq(cand[1].text, '和')
+
+  huananhu_aux:
+    tests:
+      # 的=de+sd（华南虎全码 sdd 的 1-2 位）；de 读音无词，全码字置首
+      - send: desd
+        assert: eq(cand[1].text, '的')
+      # 命=my+wj、是=ui+hr：这些读音在词库有词（明晚/使唤），express 0.16+
+      # 出简让全后字让位给词、字仍可达（0.15 时代是全码字置首）
+      - send: mywj
+        assert: eq(cand[1].text, '明晚') and has_text(cand, '命')
+      - send: uihr
+        assert: eq(cand[1].text, '使唤') and has_text(cand, '是')
+      # 三码（双拼+首辅）
+      - send: myw
+        assert: has_text(cand, '命')
+      - send: uih
+        assert: has_text(cand, '是')
+      # 全码后缀 o：显式全码。已知缺口：自定义辅码下提升有限（命 列第 6，
+      # 不再置首）——待后续修 ijrq 对派生辅码全码的提升，此处只断言可达。
+      - send: mywjo
+        assert: has_text(cand, '命')
+      # 旧虎码全码 myjd：华南虎辅码下不再是命的码位，首选按读音出词（名将）
+      - send: myjd
+        assert: eq(cand[1].text, '名将')
+
+  short_code_position:
+    tests:
+      # 三简位一码一字：yjy 行序最前=衍（延/厌被推后，只剩全码）
+      - send: yjy
+        assert: eq(cand[1].text, '衍') and eq(cand[1].comment, '⚡️')
+      # yjyy/yjyp 读音有词（眼影）或有全码竞争字（魇）：字退居词后或由
+      # 码表字固顶，简词随后——0.16+ 语义
+      - send: yjyy
+        assert: eq(cand[1].text, '眼影') and has_text(cand, '延')
+      - send: yjyp
+        assert: eq(cand[1].text, '魇') and has_text(cand, '又惊又怕')
+
+  words_and_sentence:
+    tests:
+      # 二字词走音节层：命令=myly
+      - send: myly
+        assert: eq(cand[1].text, '命令')
+      # 词组：世界=uijx。噬 是无短码的竞争字（华南虎全码 ui+jx），按
+      # 竞争字固顶设计排第一，世界紧随其后
+      - send: uijx
+        assert: eq(cand[1].text, '噬') and eq(cand[2].text, '世界')
+      # 原生整句（V5 模型经 symlink 提供）：我们都是
+      - send: 'womfdbui{space}'
+        assert: eq(commit, '我们都是')
+
+  composition_yield:
+    # 0.18.0 组合让位随构建器集成：华南虎双拼=自然码，vgsh 读音无词换、
+    # yybd 与自然码同判（读音无词）——各自资产独立派生。
+    tests:
+      - send: vgsh
+        assert: eq(cand[1].text, '这个时候')
+      - send: yybd
+        assert: eq(cand[1].text, '源源不断')

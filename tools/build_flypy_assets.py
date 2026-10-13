@@ -9,6 +9,10 @@ from pathlib import Path
 import fly_keys  # noqa: E402
 import flypyify
 import zrmify
+from build_mohu_lexicons import (  # noqa: E402
+    convert_two_char_short_code,
+    load_character_syllables,
+)
 from build_sentence_dictionary import build as build_sentence_dictionaries
 from sync_flykey_quickcodes import build_expected  # noqa: E402
 from tiger_aux import load_auxiliary_tsv
@@ -49,7 +53,7 @@ def convert_syllable(code: str) -> str:
         raise ValueError(f"cannot convert natural-code syllable {code!r}") from exc
 
 
-def convert_spelling_code(code: str) -> str:
+def convert_spelling_code(code: str, converter=convert_syllable) -> str:
     converted = []
     for token in code.split(" "):
         if not token:
@@ -58,7 +62,7 @@ def convert_spelling_code(code: str) -> str:
             converted.append(token)
             continue
         spelling, auxiliary = token.split(";", 1)
-        converted.append(f"{convert_syllable(spelling)};{auxiliary}")
+        converted.append(f"{converter(spelling)};{auxiliary}")
     return " ".join(converted)
 
 
@@ -81,19 +85,26 @@ def keep_primary_auxiliaries(
     return " ".join(result)
 
 
-def convert_table_code(word: str, code: str) -> str:
+def convert_table_code(word: str, code: str, converter=convert_syllable,
+                       character_syllables: dict[str, set[str]] | None = None) -> str:
     if len(word) == 1 and len(code) > 1 and code[0] != "o":
-        return convert_syllable(code[:2]) + code[2:]
+        return converter(code[:2]) + code[2:]
     if len(word) == 2 and len(code) == 4:
-        return convert_syllable(code[:2]) + convert_syllable(code[2:])
+        return converter(code[:2]) + converter(code[2:])
     if len(word) == 2 and len(code) == 3:
+        # 二字词三码需按词内读音判型（双拼+声母 / 声母+双拼），不能盲把
+        # 前两键当首字音节转换（rw 既是 ruá 又是 r|wu 的一部分）。
+        converted = convert_two_char_short_code(
+            code, word, character_syllables, converter)
+        if converted is not None:
+            return converted
         try:
-            return convert_syllable(code[:2]) + code[2]
+            return converter(code[:2]) + code[2]
         except ValueError:
             # Unreasonable short codes such as 默认/mry are scheme-independent.
             return code
     if len(word) == 3 and len(code) == 4:
-        return code[:2] + convert_syllable(code[2:])
+        return code[:2] + converter(code[2:])
     return code
 
 
@@ -156,6 +167,9 @@ def convert_code_table(source_name: str, target_name: str) -> str:
     """Convert the editable master directly; never allocate or overwrite its rows."""
     text = (ROOT / source_name).read_text(encoding="utf-8")
     text = replace_dictionary_name(text, target_name)
+    chars_source = ROOT / "tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml"
+    character_syllables = (
+        load_character_syllables(chars_source) if chars_source.exists() else None)
     lines = []
     in_body = False
     fly_drop = False
@@ -181,7 +195,8 @@ def convert_code_table(source_name: str, target_name: str) -> str:
         if in_body and not raw.startswith("#") and "\t" in raw:
             fields = raw.rstrip("\n").split("\t")
             if len(fields) >= 2 and re.fullmatch(r"[a-z]+", fields[1]):
-                fields[1] = convert_table_code(fields[0], fields[1])
+                fields[1] = convert_table_code(
+                    fields[0], fields[1], character_syllables=character_syllables)
             raw = "\t".join(fields) + ("\n" if raw.endswith("\n") else "")
         lines.append(raw)
     converted = "".join(lines)

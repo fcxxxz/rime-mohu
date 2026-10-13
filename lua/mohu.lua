@@ -35,16 +35,22 @@ function Module.open_rime_file(rel_path, pathsep)
     return nil
 end
 
----Load zrmdb.txt bundled with the standard Mohu distribution.
+---Load an auxiliary-code table (zrmdb) from the Rime directories.
+---path 以 `/` 分隔、相对用户目录；nil 时加载共享的 lua/zrmdb.txt。
+---自定义构建方案通过 schema 的 mohu/aux_db 指向自己的
+---lua/zrmdb_<scheme>.txt，多个方案共存时辅码表互不覆盖。
+---@param path string? relative path or nil for the shared default
 ---@return table<integer,table<string>>?
-function Module.load_zrmdb()
-    if Module.aux_table then
-        return Module.aux_table
-    end
+function Module.load_zrmdb(path)
     local pathsep = (package.config or '/'):sub(1, 1)
-    local file = Module.open_rime_file('lua' .. pathsep .. 'zrmdb.txt', pathsep)
+    local rel_path = path and path:gsub('/', pathsep) or ('lua' .. pathsep .. 'zrmdb.txt')
+    Module.aux_tables = Module.aux_tables or {}
+    if Module.aux_tables[rel_path] then
+        return Module.aux_tables[rel_path]
+    end
+    local file = Module.open_rime_file(rel_path, pathsep)
     if not file then
-        log.error('failed to open auxfile!')
+        log.error('failed to open auxfile: ' .. rel_path)
         return nil
     end
     local aux_table = {}
@@ -56,8 +62,19 @@ function Module.load_zrmdb()
         end
     end
     file:close()
-    Module.aux_table = aux_table
-    return Module.aux_table
+    Module.aux_tables[rel_path] = aux_table
+    return aux_table
+end
+
+---判断候选类型是否为原生引擎候选（任意方案）。
+---原生类型形如 mohu_<方案id>（小写字母数字，如 mohu_zrm、mohu_flypy、
+---自定义构建的 mohu_<name>）；带下划线的类型（mohu_table_full_word 等）
+---是显示包装，不是原生候选。
+---@param candidate_type string?
+---@return boolean
+function Module.is_native_candidate_type(candidate_type)
+    return type(candidate_type) == "string"
+        and candidate_type:match("^mohu_[a-z0-9]+$") ~= nil
 end
 
 ---Load the first-occurrence Tiger rank bundled with this schema.

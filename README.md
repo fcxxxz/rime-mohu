@@ -73,8 +73,9 @@ V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema �
 | 全局 Rime 配置 | `default.yaml` | 否 |
 | 常用字/全字集过滤名单 | `mohu_charset.dict.yaml` | 来源于虎码数据；字后的 `t` 是分类标记 |
 | 虎码反查与拼音反查 | `tiger.dict.yaml`、`mohu_pinyin.dict.yaml` | `mohu_pinyin.dict.yaml` 自动生成 |
+| 换双拼布局/辅助码自建方案 | `tools/custom/`（布局 YAML + 辅码/形码 TSV） | 是，一条命令构建派生方案 |
 
-最常见的两个入口是：**改编码去 `mohu_zrm.dict.yaml`，加人工整句词去 `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml`**。改完后运行 `make check-code-table` 和 `make dict`；不要直接改 `mohu_*.words.dict.yaml`，因为下一次构建会重新生成它。
+最常见的两个入口是：**改编码去 `mohu_zrm.dict.yaml`，加人工整句词去 `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml`**。改完后运行 `make check-code-table` 和 `make dict`；不要直接改 `mohu_*.words.dict.yaml`，因为下一次构建会重新生成它。想用自己的双拼或辅助码构建一个可共存的魔虎派生方案（含原生整句引擎），见 [自定义双拼/辅助码](docs/custom-scheme.md)：`uv run tools/custom/build_custom_scheme.py --sp 布局.yaml --shape-code 形码.tsv`。
 
 `tools/data/lexicon_sources/flypy/` 和根目录的 `mohu_flypy.words.dict.yaml` 都是小鹤派生/合并结果，通常不直接维护。发布包通过白名单选择运行文件，构建中间文件不会全部进入 Git。
 

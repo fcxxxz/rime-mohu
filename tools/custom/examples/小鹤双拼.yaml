@@ -1,0 +1,74 @@
+# 【参考样板】小鹤双拼布局 —— 复制本文件、改成你自己的布局。
+#
+# 三块内容：
+#   initials  声母：与拼音同形的（b p m f d t n l g k h j q x r z c y w）
+#             不用写；只写 zh/ch/sh 三个。注意有的方案 ch、sh 与自然码相反
+#             （如拼音加加 ch=u、sh=i，见 tools/custom/layouts/jiajia.yaml）。
+#   finals    韵母→键：一行一个韵母；同一个键管多个韵母就写多行
+#             （如 ue: t 和 ve: t）。ü 用 v 形（lv/nv/ju/qu/xu 的韵母都
+#             能自动对上）；抄键位图时 üe 写 ve 或 ue 哪个都行，缺的另一个
+#             会在校验时报出来提醒你补。
+#   zero      零声母音节（a/o/e 开头、没有声母的）：直接规定整个音节的
+#             两位打法（自然码/小鹤：a→aa、ang→ah；拼音加加式则是
+#             ai→as、ang→ag——照你方案的规则抄）。
+#
+# 保存后构建：
+#   uv run tools/custom/build_custom_scheme.py --sp 我的布局.yaml
+# 工具会在全部 414 个合法音节上展开校验：漏韵母、编码不是两字母、
+# 两个音节撞同一个键，都会用中文报错指明位置。
+name: flypy        # 方案 id：小写字母开头，仅小写字母数字；产物叫 mohu_<name>
+display: 小鹤      # 显示名：出现在方案选单里（魔虎·小鹤）
+
+initials:
+  zh: v
+  ch: i
+  sh: u
+
+finals:
+  a: a
+  o: o
+  e: e
+  i: i
+  u: u
+  v: v             # ü
+  ai: d
+  ei: w
+  ui: v
+  ao: c
+  ou: z
+  iu: q
+  ie: p
+  ve: t            # üe（lve/nve）
+  ue: t            # üe（jue/que/xue/yue）
+  an: j
+  en: f
+  in: b
+  un: y
+  ang: h
+  eng: g
+  ing: k
+  ong: s
+  iong: s
+  ia: x
+  iao: n
+  ian: m
+  iang: l
+  ua: x
+  uo: o
+  uai: k
+  uan: r
+  uang: l
+
+zero:
+  a: aa
+  o: oo
+  e: ee
+  ai: ai
+  ei: ei
+  ao: ao
+  ou: ou
+  an: an
+  en: en
+  ang: ah
+  eng: eg
+  er: er

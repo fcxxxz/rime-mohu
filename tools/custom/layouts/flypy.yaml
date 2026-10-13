@@ -1,0 +1,57 @@
+# 小鹤双拼（内置预设；与 tools/flypyify.py 等价）。
+name: flypy
+display: 小鹤
+
+initials:
+  zh: v
+  ch: i
+  sh: u
+
+finals:
+  a: a
+  o: o
+  e: e
+  i: i
+  u: u
+  v: v
+  ai: d
+  ei: w
+  ui: v
+  ao: c
+  ou: z
+  iu: q
+  ie: p
+  ve: t
+  ue: t
+  an: j
+  en: f
+  in: b
+  un: y
+  ang: h
+  eng: g
+  ing: k
+  ong: s
+  ia: x
+  iao: n
+  ian: m
+  iang: l
+  iong: s
+  ua: x
+  uo: o
+  uai: k
+  uan: r
+  uang: l
+
+zero:
+  a: aa
+  o: oo
+  e: ee
+  ai: ai
+  ei: ei
+  ao: ao
+  ou: ou
+  an: an
+  en: en
+  ang: ah
+  eng: eg
+  er: er

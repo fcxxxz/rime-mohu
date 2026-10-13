@@ -1,10 +1,18 @@
 -- Mohu Translator (for Express Editor)
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.15.0
+-- Ver: 0.17.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.17.0: 混合码位（竞争字与二字词同码）词行走 smart 动态排序、可调频；
+-- 行序只决定字的落位（词前字固顶、词后字保次选）。纯字码位仍按主表
+-- 行序块输出。简快码/让位类候选不参与调频的语义不变。
+--
+-- 0.16.0: 撞码判定排除出简让全的单字行：短码是当前输入前缀的字已被
+-- IJRQ 让全、不在码位顶部竞争，不再冻结二字词行序；这类码位回到
+-- smart 权重序（可调频）。真撞码（庳 bixu 类无更短码）行为不变。
 --
 -- 0.15.0: 四码单字与二字词撞码时直接采用主码表行序；三字以上简词仍为
 -- 次位补充候选。没有单字撞码时保留 smart 调频与缺词补出，不再读取避让表。
@@ -240,7 +248,7 @@ function top.func(input, seg, env)
                         rows[#rows + 1] = cand
                         if utf8.len(cand.text) == 2 then fixed_words[#fixed_words + 1] = cand end
                     end
-                    if not top.output_four_code_collision(env, rows, is_sentence_making) and #fixed_words > 0 then
+                    if not top.output_four_code_collision(env, rows, is_sentence_making, input) and #fixed_words > 0 then
                         -- No character collision: retain smart ranking, while
                         -- keeping maintained aliases such as 几乎=johu visible.
                         local buffer
@@ -364,12 +372,10 @@ function top.func(input, seg, env)
                 if utf8.len(cand.text) ~= 1 then
                     return false
                 end
-                local fixed_codes = env.rfixed():lookup(cand.text)
-                for code in fixed_codes:gmatch("%S+") do
-                    if #code < 4 and string.sub(input, 1, #code) == code then
-                        short_codes[cand] = code
-                        return true
-                    end
+                local code = top.char_short_code_prefix(env, cand.text, input)
+                if code then
+                    short_codes[cand] = code
+                    return true
                 end
                 return false
             end
@@ -595,12 +601,60 @@ end
 
 -- Exact character/word collisions use one authority: table row order.
 -- Longer abbreviations remain secondary and never take a primary slot.
-function top.output_four_code_collision(env, rows, is_sentence_making)
-    local has_char = false
-    for _, cand in ipairs(rows) do
-        if utf8.len(cand.text) == 1 then has_char = true; break end
+---Return the character's short code when it prefixes the current input,
+---i.e. the exact condition IJRQ uses to yield a full-code char (出简让全).
+---@param env table
+---@param char string
+---@param input string
+---@return string|nil
+function top.char_short_code_prefix(env, char, input)
+    if not input or not env.rfixed then return nil end
+    local fixed_codes = env.rfixed():lookup(char)
+    for code in fixed_codes:gmatch("%S+") do
+        if #code < 4 and string.sub(input, 1, #code) == code then
+            return code
+        end
     end
-    if not has_char then return false end
+    return nil
+end
+
+function top.output_four_code_collision(env, rows, is_sentence_making, input)
+    -- 撞码只算竞争单字：出简让全的字（有 <4 码且为当前输入前缀）不在
+    -- 码位顶部竞争，不参与撞码判定。
+    local competing = {}
+    local first_word_index = nil
+    for i, cand in ipairs(rows) do
+        local cand_len = utf8.len(cand.text)
+        if cand_len == 1 then
+            if top.char_short_code_prefix(env, cand.text, input) == nil then
+                competing[#competing + 1] = i
+            end
+        elseif cand_len == 2 and first_word_index == nil then
+            first_word_index = i
+        end
+    end
+    if #competing == 0 then return false end
+    if first_word_index ~= nil then
+        -- 混合码位（竞争字与二字词同码）：词行走 smart 动态排序、可调频，
+        -- 行序只决定字的落位——词行前的字固顶输出；词行后的字保次选。
+        -- 未固顶时不在本函数注入，交由既有首选后注入块统一处理（含
+        -- 出简字与简快词），避免重复；固顶后注入块被 fixed_triggered
+        -- 跳过，尾随字在此排队。
+        local name = lexical_translator_name(env, env.code_table)
+        local led = false
+        for _, i in ipairs(competing) do
+            local cand = rows[i]
+            bind_lexical_provenance(env, cand, "fixed", name)
+            if i < first_word_index then
+                top.output_from_fixed(env, cand, is_sentence_making)
+                led = true
+            elseif led then
+                env.output_injected_secondary[#env.output_injected_secondary + 1] = cand
+            end
+        end
+        return false
+    end
+    -- 纯字码位（无二字词行）：保持主表行序块输出。
     local primary, secondary = {}, {}
     local name = lexical_translator_name(env, env.code_table)
     for _, cand in ipairs(rows) do

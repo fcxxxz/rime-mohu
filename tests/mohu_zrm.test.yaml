@@ -316,5 +316,23 @@ deploy:
       - send: pcykxirolqfgvihvxt
         assert: has_text(cand, '飘飖兮若流风之回雪')
 
+  composition_yield:
+    # 0.18.0 组合让位：4 键读音在词库无二字词条时，smart 单字拼装让出
+    # 首选给四码简词；读音有词的码位（vguh 有 政商）一律不换，简词保持次位。
+    tests:
+      - send: yybd
+        assert: eq(cand[1].text, '源源不断') and has_text(cand, '应𰻝')
+      - send: bdbu
+        assert: eq(cand[1].text, '不打不相识') and has_text(cand, '不得不说')
+      - send: vgsh
+        assert: eq(cand[1].text, '这个时候')
+      - send: vguh
+        assert: eq(cand[2].text, '这个时候') and not eq(cand[1].text, '这个时候')
+      - send: ahri
+        # 零权重导入残渣（昂日，moe 源）不算"读音有词"：简词置首、词条退居次位
+        assert: eq(cand[1].text, '安好如初') and eq(cand[2].text, '昂日')
+      - send: jnqu
+        assert: eq(cand[1].text, '进去') and eq(cand[2].text, '机难轻失')
+
 
 # yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

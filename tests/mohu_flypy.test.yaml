@@ -169,4 +169,13 @@ deploy:
       - send: qmhxfuyu
         assert: has_text(cand, '铅华弗御')
 
+  composition_yield:
+    # 小鹤同规则（0.18.0）：vgsh 读音无词、拼装让位给 这个时候；
+    # yybd 读音有词、不换——与自然码 yybd 行为相反，验证方案各自生效。
+    tests:
+      - send: vgsh
+        assert: eq(cand[1].text, '这个时候')
+      - send: yybd
+        assert: not eq(cand[1].text, '源源不断') and has_text(cand, '源源不断')
+
 # yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

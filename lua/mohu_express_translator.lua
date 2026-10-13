@@ -1,10 +1,15 @@
 -- Mohu Translator (for Express Editor)
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.17.0
+-- Ver: 0.18.0
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.18.0: 4 键读音在词库没有任何二字词条时，smart 层的单字拼装候选
+-- 让出首选给注入的四码简词（读音有词的码位一律不换，无论该词是不是
+-- 首选；注入列表混有出简字的码位也不换）。词条判定用
+-- lua/<dict>.word2_codes.txt（make dict 生成），资产缺失时规则自动关闭。
 --
 -- 0.17.0: 混合码位（竞争字与二字词同码）词行走 smart 动态排序、可调频；
 -- 行序只决定字的落位（词前字固顶、词后字保次选）。纯字码位仍按主表
@@ -152,6 +157,7 @@ function top.init(env)
     local dictionary = env.engine.schema.config:get_string("translator/dictionary") or "mohu_zrm"
     env.code_table_reverse = ReverseLookup(dictionary)
     env.rfixed = function() return env.code_table_reverse end
+    env.word2_dictionary = dictionary
 
     -- 简快码相关配置项
     env.quick_code_indicator = env.engine.schema.config:get_string("mohu/quick_code_indicator") or "⚡️"
@@ -354,6 +360,13 @@ function top.func(input, seg, env)
         smart_iter = top.raw_query_smart(env, input, seg, env.enable_word_filter and aux_hint)
     end
     if smart_iter ~= nil then
+        if top.composition_yields_to_secondary(env, input) then
+            local cands = env.output_injected_secondary
+            env.output_injected_secondary = {}
+            for _, c in ipairs(cands) do
+                top.output(env, c)
+            end
+        end
         local ijrq_enabled = env.ijrq_enable
             and (env.engine.context.input == input)
             and ((input_len == 4) or (input_len == 5 and input:sub(5,5) == env.ijrq_suffix))
@@ -698,6 +711,29 @@ end
 
 -- | Query the smart translator for input, and transform the comment
 -- | for candidates whose length is 2 or 3 characters long.
+-- 4 键读音在词库没有任何二字词条、主表也没有基础行时，smart 层的首个
+-- 候选必然是单字拼装而非词条，此时让注入的四码简词先出（2026-10-13
+-- 定案：读音有词的码位一律不换，无论该词是不是首选；注入列表混有
+-- 单字——出简让全的字——的码位不换，保持既有让位语义）。
+function top.composition_yields_to_secondary(env, input)
+    if env.output_i ~= 0 or type(input) ~= "string" or #input ~= 4 then
+        return false
+    end
+    if not env.word2_dictionary then
+        return false
+    end
+    local cands = env.output_injected_secondary
+    if cands == nil or #cands == 0 then
+        return false
+    end
+    for _, c in ipairs(cands) do
+        if utf8.len(c.text) < 3 then
+            return false
+        end
+    end
+    return not mohu.word2_codes_has_entry(env.word2_dictionary, input)
+end
+
 function top.raw_query_smart(env, input, seg, with_comment)
     local translator = contextual.get_for_input(env, input)
     local translator_name = lexical_translator_name(env, translator)

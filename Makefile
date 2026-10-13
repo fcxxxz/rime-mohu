@@ -48,11 +48,12 @@ flykey-check: tools/data/mohu_fly_keys.tsv tools/fly_keys.py tools/sync_flykey_c
 mohu_flypy_custom_phrases.txt: mohu_zrm_custom_phrases.txt tools/build_flypy_assets.py
 	uv run tools/build_flypy_assets.py --custom-phrases-only
 
-mohu_lexicons: tiger_sentence_native/mohu_tiger.lexicon.txt tools/build_mohu_lexicons.py tools/flypyify.py tools/zrmify.py
+mohu_lexicons: tiger_sentence_native/mohu_tiger.lexicon.txt tools/build_mohu_lexicons.py tools/flypyify.py tools/zrmify.py tools/gen_word2_codes.py
 	test -f tools/data/lexicon_sources/zrm/mohu_zrm.chars.dict.yaml
 	uv run tools/build_mohu_lexicons.py
 	test -f tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
 	test -f tiger_sentence_native/data/flypy/mohu_flypy.lexicon.txt
+	uv run tools/gen_word2_codes.py
 
 check-code-table:
 	uv run python tools/check_code_table.py

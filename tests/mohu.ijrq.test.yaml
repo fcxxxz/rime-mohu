@@ -1,5 +1,5 @@
 schema: mohu_zrm
-source_dir: ../dist
+source_dir: ../dist-zrm
 script: |
   function eq(left, right)
     print('Left  = ' .. tostring(left))

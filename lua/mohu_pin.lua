@@ -1079,20 +1079,25 @@ function pin_processor.func(key_event, env)
         context:refresh_non_confirmed_composition()
         -- + -, prioritize the current pinned candidate
     elseif keycode == 0x2d then
-        -- If text is not from a pinned candidate, do nothing.
+        -- If text is not from a pinned candidate, pass through:
+        -- override_processor 的候选调序共用 Ctrl+减号/等号，非置顶候选
+        -- 必须放行（2026-10-08 pin 提到 processors 首位后吞键曾使调序失效）。
         local idx = user_db.move_pin_up(input, text)
-        context:refresh_non_confirmed_composition()
         if idx ~= nil then
+            context:refresh_non_confirmed_composition()
             pin_processor.highlight_index(env, idx-1)
+            return kAccepted
         end
+        return kNoop
         -- + =, + +, deprioritize the current pinned candidate
     elseif keycode == 0x3d or keycode == 0x2b then
-        -- If text is not from a pinned candidate, do nothing.
         local idx = user_db.move_pin_down(input, text)
-        context:refresh_non_confirmed_composition()
         if idx ~= nil then
+            context:refresh_non_confirmed_composition()
             pin_processor.highlight_index(env, idx-1)
+            return kAccepted
         end
+        return kNoop
         -- + a
     elseif keycode == 0x61 then
         -- todo: add quick code

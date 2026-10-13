@@ -1,5 +1,8 @@
 schema: mohu_zrm
-source_dir: ../dist
+# 指向构建产物 dist-zrm（make dist-zrm）；勿用仓库根的 dist/——那是
+# 历史遗留的陈旧快照，会让集成测试永远跑在旧代码上（2026-10-13 调序
+# 回归因此漏检五天）。
+source_dir: ../dist-zrm
 script: |
   function eq(left, right)
     print('Left  = ' .. tostring(left))
@@ -50,7 +53,9 @@ deploy:
       # lmjxy 的五码输入依赖词辅提权
       mohu/enable_word_filter: true
     tests:
-      - send: 'lmjx{Down}{Shift+Delete}'
+      # 内置词删除自 2026-09-20 起两段式：第一按进入待隐藏，两秒内
+      # 第二按才写隐藏记录。
+      - send: 'lmjx{Down}{Shift+Delete}{Shift+Delete}'
         assert: eq(cand[1].text, '链接') and not has_text(cand, '连接')
       - send: 'lmjxy'
         assert: has_text(cand, '连接')
@@ -65,26 +70,39 @@ deploy:
     patch:
       mohu/candidate_override/db_name: mohu_candidate_override_mira_shift_backspace
     tests:
+      # 2026-09-20 mohu_tab_nav 接管后，Shift+BackSpace 删的是倒数第二
+      # 站点（上一字码末尾）的字母：lmjx 删 m 得 ljx。
       - send: 'lmjx{Down}{Shift+BackSpace}'
-        assert: eq(cand[1].text, '连')
+        assert: eq(cand[1].text, '逻辑性')
 
-  delete_learned_user_phrase:
+  fullcode_word_two_press_hide:
+    # 历史用例 delete_learned_user_phrase 验证自造词永久删除；全码改由
+    # table translator 输出（enable_user_dict: false）后，mira 下提交不再
+    # 产生 smart 用户词典条目，永久删除路径无法在此环境构造（真机自造词
+    # 走 native 个人词层，由 mohu_personal_lexicon 测试覆盖）。本块验证
+    # 全码内置词的两按隐藏与管理器记录。
     patch:
-      smart/user_dict: mohu_candidate_override_mira_user_phrase_dict
       mohu/candidate_override/db_name: mohu_candidate_override_mira_user_phrase_delete
     tests:
       - send: 'vsehmcey{space}'
         assert: eq(commit, '柊杪')
-      # 第一按清空学习权重：词条保留在候选里，只是不再被个人词层顶起。
-      - send: 'vsmc{Shift+Delete}'
-        assert: has_text(cand, '柊杪')
-      # 两秒内第二按：永久删除，词条从候选消失。
-      - send: 'vsmc{Shift+Delete}'
+      # 两段式：两秒内第二按才写隐藏记录。
+      - send: 'vsehmcey{Shift+Delete}{Shift+Delete}'
         assert: not has_text(cand, '柊杪')
       - send: '{Escape}{Control+Shift+M}{space}'
-        assert: eq(cand[1].text, '没有记录')
+        assert: eq(cand[1].text, '柊杪')
       - send: '{Escape}{Control+Shift+M}{Down}{Down}{Down}{Down}{Down}{space}'
         assert: eq(cand[1].text, '没有记录')
+
+  delete_first_press_keeps_word:
+    patch:
+      mohu/candidate_override/db_name: mohu_candidate_override_mira_user_phrase_clear
+    tests:
+      # 第一按只进入待隐藏状态：词条保留在候选里。
+      - send: 'vsehmcey{space}'
+        assert: eq(commit, '柊杪')
+      - send: 'vsehmcey{Shift+Delete}'
+        assert: has_text(cand, '柊杪')
 
   reset_current_code:
     patch:
@@ -99,7 +117,9 @@ deploy:
     patch:
       mohu/candidate_override/db_name: mohu_candidate_override_mira_hidden_rank
     tests:
-      - send: 'lmjx{Down}{Control+minus}{Shift+Delete}{Escape}lmjx{Down}{Control+minus}{Escape}lmjx{Control+Shift+M}{Shift+Delete}{Escape}lmjx'
+      # 隐藏为两段式（第一按只待隐藏），藏住的 rank 要能挺过后来的再次
+      # 调序与恢复。
+      - send: 'lmjx{Down}{Control+minus}{Shift+Delete}{Shift+Delete}{Escape}lmjx{Down}{Control+minus}{Escape}lmjx{Control+Shift+M}{Shift+Delete}{Escape}lmjx'
         assert: eq(cand[1].text, '连接')
 
   pin_precedence:
@@ -141,14 +161,14 @@ deploy:
     patch:
       mohu/candidate_override/db_name: mohu_candidate_override_mira_simplified_identity
     tests:
-      - send: 'lmjx{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
+      - send: 'lmjx{Shift+Delete}{Shift+Delete}{Escape}lmjx{Control+Shift+M}'
         assert: has_text(cand, '链接') and has_comment(cand, 'Shift%+Delete 恢复')
 
   global_manager_hidden:
     patch:
       mohu/candidate_override/db_name: mohu_candidate_override_mira_global_hidden
     tests:
-      - send: 'lmjx{Down}{Shift+Delete}{Escape}{Control+Shift+M}'
+      - send: 'lmjx{Down}{Shift+Delete}{Shift+Delete}{Escape}{Control+Shift+M}'
         assert: eq(cand[1].text, '隐藏的内置词') and eq(cand[3].text, '手动 Pin')
       - send: '{Control+Shift+M}{space}'
         assert: eq(cand[1].text, '连接') and cand[1].comment:find('lmjx')

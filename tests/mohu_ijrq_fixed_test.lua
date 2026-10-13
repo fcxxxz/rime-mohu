@@ -2,7 +2,8 @@ package.path = './lua/?.lua;' .. package.path
 local actual_mohu = require('mohu')
 actual_mohu.is_reverse_lookup = function(env) return env.engine.context.reverse == true end
 local filter = require('mohu_ijrq_filter')
-local codes = { ['咦'] = 'yid yidm', ['邑'] = 'yidm', ['甲'] = 'j', ['暮'] = 'mulo', ['进'] = 'jn jnqu' }
+local codes = { ['咦'] = 'yid yidm', ['邑'] = 'yidm', ['甲'] = 'j', ['暮'] = 'mulo', ['进'] = 'jn jnqu',
+ ['庳'] = 'bixu', ['弇'] = 'yjjd' }
 ReverseLookup = function() return { lookup = function(_,text) return codes[text] or '' end } end
 rime_api = { get_time_ms = function() return 1000 end }
 log = { error = function(message) error(message) end }
@@ -87,6 +88,10 @@ assert(texts(run('jnqu',{cand('进'),cand('正常长词'),cand('进去')}))=='�
  'a non-injected long candidate must not be treated as a secondary abbreviation')
 assert(texts(run('jnqu',{cand('暮'),secondary('机难轻失'),cand('进去')}))=='暮|机难轻失|进去',
  'a non-yielding full-code character keeps its first slot')
+assert(texts(run('bixu',{cand('必须'),secondary('变成现实'),cand('庳'),cand('必需')}))=='必须|庳|变成现实|必需',
+ 'a displaced full-code character keeps 次选 above same-code secondary abbreviations')
+assert(texts(run('yjjd',{cand('演讲'),secondary('引经据典'),secondary('研究决定'),cand('弇')}))=='演讲|弇|引经据典|研究决定',
+ 'secondary abbreviation runs wait past a non-yielding full-code character')
 local leading_pin=cand('机难轻失',4,'pinned')
 assert(run('jnqu',{leading_pin,cand('进'),cand('进去')})[1]==leading_pin,'explicit abbreviation pin stays first')
 local wrapped_pin=secondary('机难轻失');wrapped_pin.type='pinned'

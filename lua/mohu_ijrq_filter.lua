@@ -2,9 +2,12 @@
 --
 -- Part of Project Mohu
 -- License: GPLv3
--- Version: 0.4.1
+-- Version: 0.4.2
 
 -- ChangeLog:
+--
+-- 0.4.2: 四码简词不再越过不让全的全码单字：被顶字保次选，单字优先于
+--        同码简快码词（必须 → 庳 → 变成现实）。
 --
 -- 0.4.1: 普通模式四码简词跟随最终首选，不继承全码单字让位前的位置。
 --
@@ -117,6 +120,22 @@ function Module.defer_full_code_characters(iter, env, raw)
         memo[text] = found
         return found or nil
     end
+    -- 简快词不得越过的对象：整段消费、未置顶、且本码上不让全的全码单字。
+    local function secondary_waits_for(cand)
+        if cand == nil or utf8.len(cand.text) ~= 1 then return false end
+        if cand.type == "pinned" then return false end
+        local genuine = cand.get_genuine and cand:get_genuine() or cand
+        if genuine.type == "pinned" then return false end
+        if type(cand.comment) == "string" and env.pin_indicator ~= "" and
+            cand.comment:sub(1, #env.pin_indicator) == env.pin_indicator then return false end
+        local start = tonumber(cand.start or genuine.start) or 0
+        local finish = tonumber(cand._end or genuine._end) or #raw
+        if start ~= 0 or finish ~= #raw then return false end
+        return short_code(cand) == nil
+    end
+    -- 简快词的三个落位：让位字之后（0.4.1 最终首选跟随）、全码单字之后
+    -- （被顶字保次选，字优先于简快词）、否则保持自然位置。
+    local held = nil
     return function()
         while true do
             if secondary_ready then
@@ -127,6 +146,12 @@ function Module.defer_full_code_characters(iter, env, raw)
                     return cand
                 end
                 secondary, next_secondary, secondary_ready = {}, 1, false
+            end
+            if held then
+                local cand = held
+                held = nil
+                count_ordinary(cand)
+                return cand
             end
             if flushing or exhausted then
                 local cand = deferred[next_deferred]
@@ -154,8 +179,16 @@ function Module.defer_full_code_characters(iter, env, raw)
                     else
                         return cand
                     end
-                elseif ordinary_count == 0 and #deferred > 0 and is_secondary(cand) then
+                elseif is_secondary(cand)
+                    and ((ordinary_count == 0 and #deferred > 0)
+                        or ordinary_count > 0) then
+                    -- 让位字跟随（0.4.1）或已过首选的中段简快词（待全码单字判定位）
                     secondary[#secondary + 1] = cand
+                elseif #secondary > 0 and ordinary_count > 0
+                    and not secondary_waits_for(cand) then
+                    -- 简快词保持自然位置：先放缓冲的词组，再出这条普通候选
+                    held = cand
+                    secondary_ready = true
                 else
                     count_ordinary(cand)
                     secondary_ready = #secondary > 0

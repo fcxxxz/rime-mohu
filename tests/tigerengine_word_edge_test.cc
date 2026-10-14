@@ -265,9 +265,73 @@ int main() {
     }
   }
 
-  // 非法权重拒绝：负数与超界值（词边 >4、文本词典 >16）。
+  // 词边词频梯度回归（≤10 键短输入区间）：viiiyikb（支持一口气，8 键）
+  // 的「支持」走已知权重（110184）的内部词边、「只吃一口气」拆单字边——
+  // 开启梯度后词路径增益严格更大且被 freq×grad 上界约束；回 0 逐字节还原。
+  // 同一梯度在 32 键旗舰句（≥12 键整句区间）必须零效果（长度门控）。
+  {
+    const std::string kRaw8 = "viiiyikb";
+    const std::string kWord8 = "支持一口气";
+    const std::string kGlue8 = "只吃一口气";
+    std::vector<std::string> freq_off = decode_lines(h, kRaw8.c_str(), 5);
+    double word_off = score_of(freq_off, kWord8);
+    double glue_off = score_of(freq_off, kGlue8);
+    std::vector<std::string> sent_off = decode_lines(h, kRaw, 5);
+    if (word_off <= -1e8 || glue_off <= -1e8) {
+      printf("skip: short-input pair missing for freq gradient regression\n");
+    } else {
+      if (tiger_engine_set_word_edge_freq_weight(h, 12.0) != 1) {
+        printf("fail: enable word edge freq gradient\n");
+        return 1;
+      }
+      std::vector<std::string> freq_on = decode_lines(h, kRaw8.c_str(), 20);
+      double word_on = score_of(freq_on, kWord8);
+      double glue_on = score_of(freq_on, kGlue8);
+      if (word_on <= -1e8) {
+        printf("fail: word path must survive the freq gradient\n");
+        return 1;
+      }
+      // 梯度 demote 粘连路径出深榜是合法结果；两路径都在榜时做有界差断言：
+      // 共享边（一口气）增益相同，差额即「支持」边的 freq×grad ∈ (0, 12]。
+      if (glue_on > -1e8) {
+        const double word_gain = word_on - word_off;
+        const double glue_gain = glue_on - glue_off;
+        if (!(word_gain - glue_gain > 0.0 && word_gain - glue_gain <= 12.0 + 1e-9)) {
+          printf("fail: short-input word path must gain more than glue path, bounded by freq\n");
+          return 1;
+        }
+      }
+      // 长度门控：≥12 键整句区间对梯度逐字节不敏感。
+      std::vector<std::string> sent_on = decode_lines(h, kRaw, 5);
+      if (sent_on != sent_off) {
+        printf("fail: freq gradient must not touch sentence-length inputs\n");
+        return 1;
+      }
+      // 词形整段命中豁免：bagerf 的「八个人」「把个人」都是全码词形词条
+      // （word_form_share > 0），梯度必须整体关闭——否则「把+个人」借
+      // 高频词「个人」的梯度反杀整段命中的「八个人」。
+      std::vector<std::string> form_on = decode_candidates(h, "bagerf", 5);
+      if (!form_on.empty() && form_on[0] != "八个人") {
+        printf("fail: word-form authority must be exempt from the freq gradient\n");
+        return 1;
+      }
+      if (tiger_engine_set_word_edge_freq_weight(h, 0.0) != 1) {
+        printf("fail: disable word edge freq gradient\n");
+        return 1;
+      }
+      std::vector<std::string> freq_restored = decode_lines(h, kRaw8.c_str(), 5);
+      if (freq_restored != freq_off) {
+        printf("fail: freq gradient 0 must restore byte-identical output\n");
+        return 1;
+      }
+    }
+  }
+
+  // 非法权重拒绝：负数与超界值（词边 >4、文本词典 >16、词频梯度 >32）。
   if (tiger_engine_set_word_edge_weight(h, -0.5) != -1 ||
       tiger_engine_set_word_edge_weight(h, 4.5) != -1 ||
+      tiger_engine_set_word_edge_freq_weight(h, -0.5) != -1 ||
+      tiger_engine_set_word_edge_freq_weight(h, 32.5) != -1 ||
       tiger_engine_set_text_lexicon_weight(h, -0.5) != -1 ||
       tiger_engine_set_text_lexicon_weight(h, 16.5) != -1) {
     printf("fail: out-of-range weights must be rejected\n");
@@ -277,5 +341,6 @@ int main() {
   tiger_engine_free(h);
   printf("ok: word edge prior flips 支持 over 只吃 and stays reversible\n");
   printf("ok: text lexicon prior votes 同一个 over 统一个\n");
+  printf("ok: word edge freq gradient is bounded and reversible\n");
   return 0;
 }

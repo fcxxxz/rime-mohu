@@ -2428,6 +2428,17 @@ struct Engine {
   // 投票，对应 librime/万象 entry_weight+Query 的加法融合结构（词频地板
   // 垫在字符模型下）。0 = 关闭并逐字节保持旧行为。
   double word_edge_weight = 0.0;
+  // 词边词频梯度（方案 B 收尾，2026-10-14）：固定 word_edge_weight 压不住
+  // 「焊后+热情」类强搭配字链（8+ nats）对真词边的整段反杀——hjhbreqy 的
+  // 「憨厚热情」输给「焊后热情」6.8 nats、全参数旋钮封顶仍差 4.3。>0 时
+  // 静态多字内部词边在固定分之上按词典权重梯度（log(w+2)/log(200万)，
+  // 地板 0.35、上限 1.0，与 text_lexicon_bonus 同形）追加有界分，即
+  // librime entry_weight 的「词频按量加权」语义。**仅限 ≤10 键短输入**
+  // （打分点硬门控）：19,996 句网格实测无门控时 fw06 即 -6.6pp，整句区间
+  // 维持固定分。仅静态词边：个人词边维持固定分（其 boost 由提交计数
+  // 驱动），未知权重行（0/20001）不追加（兼容旧码表与测试小词表）。
+  // 0 = 关闭并逐字节保持旧行为。
+  double word_edge_freq_weight = 0.0;
   bool auxiliary_word_edges = true;
   double auxiliary_context_guard = 0.5;
   // 文本词典先验：>0 时，完整文本命中词表多字条目（任意码形——如
@@ -2982,6 +2993,19 @@ struct Engine {
                     int64_t minimum_consumed_end) {
     if (minimum_consumed_end < 0) minimum_consumed_end = -1;
     bool allow_all = all_ranks_always || length <= 4;
+    // 词频梯度的第二道门：输入恰被静态词形整段命中（≥3 字全码词，
+    // word_form_share > 0）时关闭梯度——词形权威（word_form_weight ×
+    // 码内占比）是该输入的既定裁决机制，内部边梯度会让高频尾巴词
+    // （bagerf 的 把+个人 借「个人」grad 1.0）反杀整段真词（八个人）。
+    bool freq_gradient_ok = word_edge_freq_weight > 0.0 && length <= 10;
+    if (freq_gradient_ok) {
+      const auto wit = lex.codes.find(std::string(raw, 0, length));
+      if (wit != lex.codes.end()) {
+        for (const auto& e : wit->second) {
+          if (e.word_form_share > 0.0) { freq_gradient_ok = false; break; }
+        }
+      }
+    }
     const auto auxiliary_spans = auxiliary_word_edges && length >= 5 && (word_mode || word_edge_weight > 0.0)
         ? auxiliary_character_spans(raw, length)
         : std::vector<std::vector<AuxiliaryCharacterSpan>>{};
@@ -3167,8 +3191,29 @@ struct Engine {
             const bool personal_whole_prior = word_edge_weight > 0.0 && !word_mode &&
                                               cand.personal &&
                                               cand.chars.size() > 1 && whole_input_edge;
-            if ((word_prior_edge && !whole_input_edge) || personal_whole_prior)
-              score += word_edge_weight;
+            if ((word_prior_edge && !whole_input_edge) || personal_whole_prior) {
+              double edge_bonus = word_edge_weight;
+              // 词频梯度只作用于 ≤10 键（≤5 字）短输入且无静态词形整段
+              // 命中的区间（freq_gradient_ok，见 expand_range 头部注释）：
+              // 这里至多 2-3 个跨、字符 LM 几乎没有上下文锚点，字拼装墙
+              // （焊后热情 压 憨厚热情 6.8 nats）只能靠词典词频证据压制；
+              // ≥12 键（≥6 字）是整句区间，词边均匀加大会整体改写切分
+              // 空间——19,996 句网格实测 fw06 即 -6.6pp（58.9%）、fw14
+              // -16.6pp，回退:修复达 5-10:1，故该区间保持 corpus 调优过的
+              // 固定 word_edge_weight（门控后整句输出与梯度关闭逐字节一致）。
+              // 语料最短 6 字=12 键，10/12 之间无语料覆盖，由结构论证
+              // （边数 ≤5、无跨句累积）与短输入探针兜底。
+              if (freq_gradient_ok && word_prior_edge && !whole_input_edge) {
+                const double lex_weight = known_lex_weight(cand);
+                if (lex_weight > 0.0) {
+                  double grad = std::log(lex_weight + 2.0) / std::log(2000000.0);
+                  if (grad < 0.35) grad = 0.35;
+                  if (grad > 1.0) grad = 1.0;
+                  edge_bonus += word_edge_freq_weight * grad;
+                }
+              }
+              score += edge_bonus;
+            }
             // 词形整段命中权威：输入恰被一条全码词典词（≥3 字）整段覆盖时按码内
             // 权重占比投票（word_form_weight × share）。同码高权重词得到
             // 更多词形证据——bagerf 的「八个人(354):把个人(173)」在全局对数
@@ -4328,6 +4373,32 @@ int tiger_engine_set_word_edge_weight(int handle, double weight) {
     return 1;
   } catch (...) {
     set_error("word edge weight update failed");
+    return -1;
+  }
+}
+
+/* 词边词频梯度权重：0 关闭（默认，内部词边先验维持固定 word_edge_weight）；
+   >0 时静态多字内部词边在固定分之上按词典权重梯度（log(w+2)/log(200万)，
+   地板 0.35、上限 1.0）追加有界分。未知权重行（0/20001）不追加，兼容旧
+   码表与测试小词表；个人词边不受影响。范围 [0, 32]。 */
+int tiger_engine_set_word_edge_freq_weight(int handle, double weight) {
+  try {
+    std::lock_guard<std::mutex> lock(g_engine_mutex);
+    if (handle < 0 || handle >= (int)g_engines.size() || !g_engines[handle]) {
+      set_error("invalid engine handle");
+      return -1;
+    }
+    if (!(weight >= 0.0 && weight <= 32.0)) {
+      set_error("word edge freq weight must be in [0, 32]");
+      return -1;
+    }
+    Engine* e = g_engines[handle].get();
+    if (e->word_edge_freq_weight == weight) return 0;
+    e->word_edge_freq_weight = weight;
+    e->invalidate_overlay_cache();
+    return 1;
+  } catch (...) {
+    set_error("word edge freq weight update failed");
     return -1;
   }
 }

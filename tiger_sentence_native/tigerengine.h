@@ -84,6 +84,12 @@ int tiger_engine_set_composed_reading_prior_weight(int handle, double weight);
  * word edge, mirroring librime's entry_weight + grammar additive fusion.
  * Range [0, 4]. */
 int tiger_engine_set_word_edge_weight(int handle, double weight);
+/* Word-edge frequency gradient: 0 disables (default; internal word edges keep
+ * the flat word_edge_weight bonus); >0 adds a bounded freq-weighted bonus on
+ * top for static multi-char internal edges, using the same gradient shape as
+ * the text-lexicon prior (log(w+2)/log(2M), floor 0.35, cap 1.0). Unknown
+ * weights (0/20001) and personal edges are unaffected. Range [0, 32]. */
+int tiger_engine_set_word_edge_freq_weight(int handle, double weight);
 /* Auxiliary spellings retain full-code dictionary-word identity. Default on;
  * 0 disables query-local auxiliary word projections. Returns 1 applied,
  * 0 unchanged, -1 error. The dictionary/code table is never rewritten. */

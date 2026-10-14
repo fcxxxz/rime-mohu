@@ -95,6 +95,7 @@ def load_engine(
     expected_model_sha256: str | None = TIGER_NGRAM_SHA256,
     expected_lexicon_sha256: str | None = TIGER_LEXICON_SHA256,
     word_edge_weight: float | None = None,
+    word_edge_freq_weight: float | None = None,
 ):
     if expected_engine_sha256 is not None:
         verify_file_hash(lib_path, expected_engine_sha256, label="Tiger engine")
@@ -130,6 +131,15 @@ def load_engine(
             lib.tiger_engine_free(handle)
             message = lib.tiger_last_error().decode()
             raise SystemExit(f"set word edge weight failed: {message}")
+    if word_edge_freq_weight is not None:
+        # 词边词频梯度网格评测：0=固定分旧行为，>0 按词典权重梯度追加。
+        lib.tiger_engine_set_word_edge_freq_weight.argtypes = [ctypes.c_int, ctypes.c_double]
+        lib.tiger_engine_set_word_edge_freq_weight.restype = ctypes.c_int
+        rc = lib.tiger_engine_set_word_edge_freq_weight(handle, ctypes.c_double(word_edge_freq_weight))
+        if rc < 0:
+            lib.tiger_engine_free(handle)
+            message = lib.tiger_last_error().decode()
+            raise SystemExit(f"set word edge freq weight failed: {message}")
     try:
         if expected_engine_sha256 is not None:
             verify_file_hash(lib_path, expected_engine_sha256, label="Tiger engine after load")
@@ -295,6 +305,8 @@ def main() -> None:
     parser.add_argument("--allow-unpinned-resources", action="store_true")
     parser.add_argument("--word-edge-weight", type=float, default=None,
                         help="词边先验权重（0=旧行为基线；缺省用引擎默认 0）")
+    parser.add_argument("--word-edge-freq-weight", type=float, default=None,
+                        help="词边词频梯度权重（0=固定分旧行为；缺省用引擎默认 0）")
     parser.add_argument("--lua-frameworks", type=Path, default=DEFAULT_SQUIRREL_FRAMEWORKS)
     args = parser.parse_args()
     try:
@@ -334,6 +346,7 @@ def main() -> None:
         expected_model_sha256=expected_model_sha256,
         expected_lexicon_sha256=expected_lexicon_sha256,
         word_edge_weight=args.word_edge_weight,
+        word_edge_freq_weight=args.word_edge_freq_weight,
     )
     try:
         run_manifest: dict[str, object] = {
@@ -344,6 +357,7 @@ def main() -> None:
             "shard": {"index": shard_index, "count": shard_count},
             "allow_unpinned_resources": args.allow_unpinned_resources,
             "word_edge_weight": args.word_edge_weight,
+            "word_edge_freq_weight": args.word_edge_freq_weight,
             "resources": {
                 "engine": resource_metadata(args.lib, expected_engine_sha256, label="Tiger engine"),
                 "model": resource_metadata(args.model, expected_model_sha256, label="Tiger n-gram"),

@@ -156,6 +156,7 @@ local composed_reading_prior_weight_default = 1.0
 -- native 对应物），修「只吃一口气」类跨词界粘连反杀（详见
 -- docs/reports/2026-09-13-word-edge-prior.md）。0 关闭并逐字节保持旧行为。
 local word_edge_weight_default = 1.5
+local word_edge_freq_weight_default = 0
 
 -- 文本词典先验默认权重：整候选文本命中词表多字条目（任意码形，如
 -- 「同一个」挂简码 tyg）时在输出分上加该有界分。词边先验按编码内部
@@ -298,6 +299,7 @@ local function ensure_engine(env)
       conf("word_scorer_model") or "", conf("semantic_model") or "",
       conf("semantic_vocab") or "",
       conf("auxiliary_word_edges") or "", conf("auxiliary_context_guard") or "",
+      conf("word_edge_weight") or "", conf("word_edge_freq_weight") or "",
       (conf("learning_context_guard") == "false" or
        conf("learning_context_guard") == "0") and "0" or "1" }, "\28")
   if engine_handle ~= nil then
@@ -478,6 +480,20 @@ local function ensure_engine(env)
   end
   if type(tigerengine.set_word_edge_weight) == "function" then
     pcall(tigerengine.set_word_edge_weight, h, word_edge_weight)
+  end
+  -- 词边词频梯度：tiger/word_edge_freq_weight（0 关闭=固定分旧行为）。
+  -- >0 时静态多字内部词边在固定分之上按词典权重梯度加有界分，压
+  -- 「焊后+热情」类强搭配字链对真词边的整段反杀。旧 ABI dylib 无该
+  -- 函数时静默跳过；非法值回退默认 0。
+  do
+    local freq_weight = tonumber(conf("word_edge_freq_weight"))
+    if freq_weight == nil or not finite_number(freq_weight) or
+        freq_weight < 0 or freq_weight > 32 then
+      freq_weight = word_edge_freq_weight_default
+    end
+    if type(tigerengine.set_word_edge_freq_weight) == "function" then
+      pcall(tigerengine.set_word_edge_freq_weight, h, freq_weight)
+    end
   end
   if type(tigerengine.set_auxiliary_word_edges) == "function" then
     local enabled = conf("auxiliary_word_edges")

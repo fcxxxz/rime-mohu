@@ -1,10 +1,14 @@
 -- Mohu Translator (for Express Editor)
 -- Copyright (c) 2023, 2024, 2025, 2026 ksqsf
 --
--- Ver: 0.18.0
+-- Ver: 0.18.1
 --
 -- This file is part of Project Mohu
 -- Licensed under GPLv3
+--
+-- 0.18.1: 显式全码 5 键（yyxx+o）：未整段消费输入的候选（音节桶单字）
+--         不再参与出简让全位移，统一排在让全字之后（华南虎 mywjo→命
+--         第 1；zrm jwwjo→家、lgwjo→冷同步修复）。4 键行为不变。
 --
 -- 0.18.0: 4 键读音在词库没有任何二字词条时，smart 层的单字拼装候选
 -- 让出首选给注入的四码简词（读音有词的码位一律不换，无论该词是不是
@@ -412,14 +416,22 @@ function top.func(input, seg, env)
             -- 启用出简让全时
             local immediate_set = {}
             local deferred_set = {}
+            -- 显式全码 5 键（yyxx+suffix）：未整段消费输入的候选（音节桶
+            -- 溢出的单字/词语，preedit 只覆盖前 2-4 键）不参与让全位移，
+            -- 且排在让全字之后——显式全码针对的是精确码位，音节填充词
+            -- 不应把目标字顶下去（华南虎 mywjo→命、zrm jwwjo→家）。
+            local partial_set = {}
             for cand in smart_iter do
                 local cand_len = utf8.len(cand.text)
                 local defer = false
+                local genuine = cand.get_genuine and cand:get_genuine() or cand
+                local finish = tonumber(cand._end or genuine._end) or #input
+                local partial = finish ~= #input
                 -- 如果输出有词，说明在拼词，用户很可能要使用高频字，故此时停止出简让全。
-                if (ijrq_enabled and cand_len > 1) then
+                if (not partial and ijrq_enabled and cand_len > 1) then
                     ijrq_enabled = false
                 end
-                if (ijrq_enabled and cand_len == 1) then
+                if (not partial and ijrq_enabled and cand_len == 1) then
                     local fixed_codes = env.rfixed():lookup(cand.text)
                     for code in fixed_codes:gmatch("%S+") do
                         if #code < 4
@@ -433,7 +445,9 @@ function top.func(input, seg, env)
                         end
                     end
                 end
-                if (not defer) then
+                if partial then
+                    table.insert(partial_set, cand)
+                elseif (not defer) then
                     table.insert(immediate_set, cand)
                 else
                     table.insert(deferred_set, cand)
@@ -447,6 +461,9 @@ function top.func(input, seg, env)
             end
             for i = math.min(env.ijrq_defer, #immediate_set) + 1, #immediate_set do
                 top.output(env, immediate_set[i])
+            end
+            for i = 1, #partial_set do
+                top.output(env, partial_set[i])
             end
         end
     end

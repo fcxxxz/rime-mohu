@@ -2,9 +2,12 @@
 --
 -- Part of Project Mohu
 -- License: GPLv3
--- Version: 0.4.2
+-- Version: 0.4.3
 
 -- ChangeLog:
+--
+-- 0.4.3: 显式全码（yyxx+suffix，5 键）时，未整段消费输入的音节桶候选
+--        不再计入 ordinary 位移、统一排在让全字之后；4 键让全不变。
 --
 -- 0.4.2: 四码简词不再越过不让全的全码单字：被顶字保次选，单字优先于
 --        同码简快码词（必须 → 庳 → 变成现实）。
@@ -73,8 +76,19 @@ end
 -- Streaming wrapper: defer complete single-character candidates regardless
 -- of whether they came from the code table or smart. Partial selections and
 -- explicit pins keep their position. The dictionary itself stays unchanged.
-function Module.defer_full_code_characters(iter, env, raw)
+-- With defer_partials (显式全码 yyxx+suffix), candidates that do not span the
+-- whole input (syllable-bucket leftovers from shorter parses) neither count
+-- as ordinary nor precede the deferred characters.
+function Module.defer_full_code_characters(iter, env, raw, defer_partials)
     local deferred, memo, ordinary_seen = {}, {}, {}
+    local partials, next_partial, partials_pending = {}, 1, false
+    local function is_partial(cand)
+        if not defer_partials then return false end
+        local genuine = cand.get_genuine and cand:get_genuine() or cand
+        local start = tonumber(cand.start or genuine.start) or 0
+        local finish = tonumber(cand._end or genuine._end) or #raw
+        return start ~= 0 or finish ~= #raw
+    end
     local ordinary_count, next_deferred = 0, 1
     local flushing, exhausted = false, false
     local secondary, next_secondary, secondary_ready = {}, 1, false
@@ -160,6 +174,14 @@ function Module.defer_full_code_characters(iter, env, raw)
                     return cand
                 end
                 deferred, next_deferred, flushing = {}, 1, false
+                if partials_pending then
+                    local partial = partials[next_partial]
+                    if partial then
+                        next_partial = next_partial + 1
+                        return partial
+                    end
+                    partials_pending = false
+                end
                 if exhausted then return nil end
             end
             local cand = iter()
@@ -168,6 +190,7 @@ function Module.defer_full_code_characters(iter, env, raw)
                 -- If there is no ordinary alternative, retain the abbreviated
                 -- words before the deferred characters instead of losing them.
                 secondary_ready = #secondary > 0
+                partials_pending = #partials > 0
             else
                 local short = short_code(cand)
                 if short then
@@ -179,6 +202,8 @@ function Module.defer_full_code_characters(iter, env, raw)
                     else
                         return cand
                     end
+                elseif is_partial(cand) then
+                    partials[#partials + 1] = cand
                 elseif is_secondary(cand)
                     and ((ordinary_count == 0 and #deferred > 0)
                         or ordinary_count > 0) then
@@ -225,7 +250,9 @@ function Module.func(t_input, env)
     local iter = mohu.iter_translation(t_input)
     if env.char_enabled and env.char_reverse and
         (input_len == 4 or (input_len == 5 and input:sub(5) == env.char_suffix)) then
-        iter = Module.defer_full_code_characters(iter, env, input)
+        -- yyxx+suffix 是显式全码：部分消费候选不参与让全；4 键仍按原语义。
+        local defer_partials = input_len == 5
+        iter = Module.defer_full_code_characters(iter, env, input, defer_partials)
     end
     local positioned_iter = iter
     iter = function() return restore_type(positioned_iter()) end

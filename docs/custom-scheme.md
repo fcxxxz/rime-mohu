@@ -48,7 +48,7 @@ zero:              # 零声母音节（a/o/e 开头）整音节打法，约 12 �
 
 ## 输入文件二a：辅码表（`--aux`）
 
-格式见 [tools/custom/examples/aux.sample.tsv](../tools/custom/examples/aux.sample.tsv)：
+格式见 [tools/custom/examples/aux-table.sample.tsv](../tools/custom/examples/aux-table.sample.tsv)：
 `字<Tab>正常辅码<Tab>[14位]<Tab>[13位]`，辅码 1–2 个小写字母。
 **只列要改的字**，没列的保持虎码辅码；构建报告会列出覆盖统计。
 缺字默认回退虎码，`--strict` 改为缺字报错。想整体替换辅码：

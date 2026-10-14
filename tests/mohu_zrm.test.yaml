@@ -172,6 +172,24 @@ deploy:
       - send: 'dakl'
         assert: eq(cand[1].text, '打开') and text_index(cand, '溚') > 1 and text_index(cand, '溚') <= 3
 
+  explicit_full_code:
+    # 显式全码（yyxx+o）：目标字置首；未整段消费输入的音节桶残留候选
+    # 不再参与出简让全位移（express 0.18.1 + ijrq 0.4.3）。
+    # jwwjo/lgwjo 曾被 [jw]+[wjo(晚)] 链拆解，加价假架甲/愣楞棱塄崚 压到家/冷。
+    tests:
+      - send: myjdo
+        assert: eq(cand[1].text, '命') and eq(cand[1].comment, 'myj')
+      - send: jwwjo
+        assert: eq(cand[1].text, '家')
+      - send: lgwjo
+        assert: eq(cand[1].text, '冷')
+      # 4 键让位语义不变：读音有词时字让位给词、仍可达
+      - send: myjd
+        assert: eq(cand[1].text, '名将') and text_index(cand, '命') > 1
+      # 全码位有整段消费词时词优先的语义不变
+      - send: myjzo
+        assert: eq(cand[1].text, '命作') and eq(cand[2].text, '命座') and text_index(cand, '命') > 2
+
   default:
     tests:
       - send: l

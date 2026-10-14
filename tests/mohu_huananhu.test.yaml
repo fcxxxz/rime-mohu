@@ -54,10 +54,12 @@ deploy:
         assert: has_text(cand, '命')
       - send: uih
         assert: has_text(cand, '是')
-      # 全码后缀 o：显式全码。已知缺口：自定义辅码下提升有限（命 列第 6，
-      # 不再置首）——待后续修 ijrq 对派生辅码全码的提升，此处只断言可达。
+      # 全码后缀 o：显式全码，目标字置首（express/ijrq 0.18.1/0.4.3 起，
+      # 音节桶残留单字不再参与让全位移；曾列第 6）
       - send: mywjo
-        assert: has_text(cand, '命')
+        assert: eq(cand[1].text, '命')
+      - send: uihro
+        assert: eq(cand[1].text, '是')
       # 旧虎码全码 myjd：华南虎辅码下不再是命的码位，首选按读音出词（名将）
       - send: myjd
         assert: eq(cand[1].text, '名将')

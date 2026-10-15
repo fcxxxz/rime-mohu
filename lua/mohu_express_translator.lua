@@ -100,56 +100,6 @@ local mohu = require("mohu")
 local contextual = require("mohu_contextual_translator")
 local top = {}
 
-local semantic_meta = nil
-do
-    local ok, module = pcall(require, "mohu_semantic_meta")
-    if ok and type(module) == "table" and type(module.bind) == "function" then
-        semantic_meta = module
-    end
-end
-
--- 语义谱系：fixed/smart 候选在离开查询边界前绑定不可变来源事实。
--- 绑定失败不影响候选输出；二次绑定（缓冲重放）被静默忽略。
-local function lexical_translator_name(env, translator)
-    if translator ~= nil and translator == env.static_translator then
-        return "smart_static"
-    end
-    if translator ~= nil and translator == env.code_table then
-        return "code_table"
-    end
-    return "smart"
-end
-
-local function bind_lexical_provenance(env, cand, source, translator_name)
-    if semantic_meta == nil then
-        return
-    end
-    local genuine_type = nil
-    local dynamic_type = nil
-    if cand.get_genuine ~= nil then
-        local ok, genuine = pcall(cand.get_genuine, cand)
-        if ok and genuine ~= nil and type(genuine.type) == "string" then
-            genuine_type = genuine.type
-        end
-    end
-    if cand.get_dynamic_type ~= nil then
-        local ok, dynamic = pcall(cand.get_dynamic_type, cand)
-        if ok and type(dynamic) == "string" then
-            dynamic_type = dynamic
-        end
-    end
-    pcall(semantic_meta.bind, cand, {
-        provenance_version = "mohu-lexical/v1",
-        source = source,
-        candidate_type = cand.type,
-        genuine_type = genuine_type,
-        dynamic_type = dynamic_type,
-        lexical_translator = translator_name,
-        native_score_kind = "unavailable_rime_lexical",
-        query_preedit = cand.preedit,
-    })
-end
-
 local kAny = 0
 local kChar = 1
 local kWord = 2
@@ -264,13 +214,11 @@ function top.func(input, seg, env)
                         local buffer
                         buffer, smart_iter = top.peek_smart_prefix(env, input, seg, env.enable_word_filter and aux_hint)
                         for _, cand in ipairs(top.collect_missing_fixed_words(fixed_words, buffer)) do
-                            bind_lexical_provenance(env, cand, "fixed", lexical_translator_name(env, env.code_table))
                             top.output_word_from_fixed(env, cand, is_sentence_making)
                         end
                         if env.inject_table_words and env.output_i > 0 and not is_sentence_making then
                             for _, cand in ipairs(rows) do
                                 if utf8.len(cand.text) > 2 then
-                                    bind_lexical_provenance(env, cand, "fixed", lexical_translator_name(env, env.code_table))
                                     cand.comment = indicator
                                     top.output(env, top.secondary_word(cand))
                                 end
@@ -304,9 +252,7 @@ function top.func(input, seg, env)
     local inject_words = {}  -- valid only when inject_has_priority
     local num_injections = 0 -- valid only when inject_has_priority
     if (not fixed_triggered and input_len == 4) then
-        local fixed_name = lexical_translator_name(env, env.code_table)
         for cand in mohu.query_translation(env.code_table, input, seg, nil) do
-            bind_lexical_provenance(env, cand, "fixed", fixed_name)
             local cand_len = utf8.len(cand.text)
             if (env.inject_table_chars and cand_len == 1) or (env.inject_table_words and cand_len > 2 and not is_sentence_making) then
                 if cand_len ~= 1 or (cand_len == 1 and not env.quick_code_indicator_skip_chars) then
@@ -470,9 +416,7 @@ function top.func(input, seg, env)
 
     -- 最后：如果 smart 输出为空，并且 fixed 之前没有调用过，此时再尝试调用一下
     if env.output_i == 0 then
-        local fixed_name = lexical_translator_name(env, env.code_table)
         for cand in mohu.query_translation(env.code_table, input, seg, nil) do
-            bind_lexical_provenance(env, cand, "fixed", fixed_name)
             if not is_sentence_making or utf8.len(cand.text) == 1 then
                 cand.comment = indicator
                 yield(cand)
@@ -597,7 +541,7 @@ function top.output_char_from_fixed(env, cand)
 end
 
 -- Candidate userdata may be rewrapped between translators and filters, so
--- Lua weak-key provenance cannot carry this runtime positioning contract.
+-- side-table metadata cannot carry this runtime positioning contract.
 -- Keep the original table candidate as genuine; IJRQ removes the outer marker
 -- before explicit candidate management and display.
 function top.secondary_word(cand)
@@ -620,10 +564,8 @@ function top.output_from_fixed(env, cand, is_sentence_making)
 end
 
 function top.output_table_order(env, translation, is_sentence_making)
-    local name = lexical_translator_name(env, env.code_table)
     for cand in translation:iter() do
         if not is_sentence_making or utf8.len(cand.text) == 1 then
-            bind_lexical_provenance(env, cand, "fixed", name)
             top.output_from_fixed(env, cand, is_sentence_making)
         end
     end
@@ -670,11 +612,9 @@ function top.output_four_code_collision(env, rows, is_sentence_making, input)
         -- 未固顶时不在本函数注入，交由既有首选后注入块统一处理（含
         -- 出简字与简快词），避免重复；固顶后注入块被 fixed_triggered
         -- 跳过，尾随字在此排队。
-        local name = lexical_translator_name(env, env.code_table)
         local led = false
         for _, i in ipairs(competing) do
             local cand = rows[i]
-            bind_lexical_provenance(env, cand, "fixed", name)
             if i < first_word_index then
                 top.output_from_fixed(env, cand, is_sentence_making)
                 led = true
@@ -686,9 +626,7 @@ function top.output_four_code_collision(env, rows, is_sentence_making, input)
     end
     -- 纯字码位（无二字词行）：保持主表行序块输出。
     local primary, secondary = {}, {}
-    local name = lexical_translator_name(env, env.code_table)
     for _, cand in ipairs(rows) do
-        bind_lexical_provenance(env, cand, "fixed", name)
         if utf8.len(cand.text) <= 2 then
             primary[#primary + 1] = cand
         elseif env.inject_table_words and not is_sentence_making then
@@ -708,9 +646,7 @@ end
 function top.output_fixed_chars_first(env, translation, is_sentence_making, include_chars, include_word)
     local chars = {}
     local words = {}
-    local fixed_name = lexical_translator_name(env, env.code_table)
     for cand in translation:iter() do
-        bind_lexical_provenance(env, cand, "fixed", fixed_name)
         local cand_len = utf8.len(cand.text)
         if include_chars and cand_len == 1 then
             table.insert(chars, cand)
@@ -753,9 +689,7 @@ end
 
 function top.raw_query_smart(env, input, seg, with_comment)
     local translator = contextual.get_for_input(env, input)
-    local translator_name = lexical_translator_name(env, translator)
     local transform = function(cand)
-        bind_lexical_provenance(env, cand, "smart", translator_name)
         local cand_len = utf8.len(cand.text)
         if cand_len == 2 or cand_len == 3 then
             if with_comment then

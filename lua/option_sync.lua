@@ -24,7 +24,6 @@ local COMMON_OPTIONS = {
   "inflexible",
   "unicode_comment",
   "contextual_order",
-  "neural_rerank",
   "quick_code_hint",
   "aux_hint",
 }
@@ -38,7 +37,6 @@ local SCHEMA_OPTIONS = {
     "inflexible",
     "unicode_comment",
     "contextual_order",
-    "neural_rerank",
     "quick_code_hint",
     "aux_hint",
   },
@@ -50,7 +48,6 @@ local SCHEMA_OPTIONS = {
     "inflexible",
     "unicode_comment",
     "contextual_order",
-    "neural_rerank",
     "quick_code_hint",
     "aux_hint",
   },
@@ -59,7 +56,6 @@ local SCHEMA_OPTIONS = {
 -- 状态文件里还没有记录时使用的默认值。
 local OPTION_DEFAULTS = {
   contextual_order = true,
-  neural_rerank = false,
 }
 
 local function get_context(env)

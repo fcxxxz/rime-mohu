@@ -55,13 +55,14 @@ local key_press = { release = function() return false end }
 local option_sync = require("option_sync")
 local option_state = require("option_state")
 
--- 1. 首次初始化：无 reset 的会话按默认值补齐
-local env_a, ctx_a = make_env("mohu_zrm", { neural_rerank = true })
+-- 1. 首次初始化：默认值补齐（contextual_order 有显式默认 true），
+--    无默认开关沿用会话现值并写盘。
+local env_a, ctx_a = make_env("mohu_zrm", { contextual_order = false, aux_hint = true })
 option_sync.init(env_a)
-assert(ctx_a:get_option("contextual_order") == true, "contextual_order 默认开")
+assert(ctx_a:get_option("contextual_order") == true, "contextual_order 无持久值时默认开")
+assert(option_state.get("contextual_order", false, true) == true, "默认开启写入持久状态")
 assert(ctx_a:get_option("quick_code_hint") == false, "quick_code_hint 默认关")
-assert(ctx_a:get_option("neural_rerank") == false, "neural_rerank 无持久值时默认关")
-assert(option_state.get("neural_rerank", true, true) == false, "默认关闭写入持久状态")
+assert(ctx_a:get_option("aux_hint") == true, "aux_hint 无默认时沿用会话现值")
 
 -- 2. 新会话恢复：另一个应用的会话初始化时读到文件值
 local env_b, ctx_b = make_env("mohu_flypy")
@@ -84,17 +85,17 @@ assert(ctx_d:get_option("quick_code_hint") == true, "通用开关跨方案同步
 for _, schema_id in ipairs({ "mohu_zrm", "mohu_flypy", "other_schema" }) do
     local count = 0
     for _, name in ipairs(option_sync._test_option_names(schema_id)) do
-        if name == "neural_rerank" then
+        if name == "aux_hint" then
             count = count + 1
         end
     end
-    assert(count == 1, schema_id .. " 同步名单恰好包含一次 neural_rerank")
+    assert(count == 1, schema_id .. " 同步名单恰好包含一次 aux_hint")
 end
 
-local function assert_neural_state(ctx, expected, message)
-    assert(ctx:get_option("neural_rerank") == expected, message)
+local function assert_option_state(ctx, expected, message)
+    assert(ctx:get_option("aux_hint") == expected, message)
     local persisted = assert(loadfile(state_dir .. "/lua/option_state_data.lua"))()
-    assert(persisted.neural_rerank == expected, message .. "（磁盘持久值）")
+    assert(persisted.aux_hint == expected, message .. "（磁盘持久值）")
 end
 
 local function follow(env)
@@ -108,22 +109,22 @@ for _, transition in ipairs({
     { source = ctx_b, target = ctx_a, env = env_a, enabled = true },
     { source = ctx_a, target = ctx_b, env = env_b, enabled = false },
 }) do
-    transition.source:set_option("neural_rerank", transition.enabled)
-    assert_neural_state(transition.source, transition.enabled, "菜单切换即时生效并保存")
+    transition.source:set_option("aux_hint", transition.enabled)
+    assert_option_state(transition.source, transition.enabled, "菜单切换即时生效并保存")
     follow(transition.env)
-    assert_neural_state(transition.target, transition.enabled, "开关双向跨环境跟随")
-    assert(transition.source:get_option("contextual_order") == true, "神经开关不关闭源会话 V5")
-    assert(transition.target:get_option("contextual_order") == true, "神经同步不关闭目标会话 V5")
+    assert_option_state(transition.target, transition.enabled, "开关双向跨环境跟随")
+    assert(transition.source:get_option("contextual_order") == true, "菜单切换不影响源会话 contextual_order")
+    assert(transition.target:get_option("contextual_order") == true, "开关同步不影响目标会话 contextual_order")
 end
 
 ctx_a:set_option("contextual_order", false)
-ctx_a:set_option("neural_rerank", true)
+ctx_a:set_option("aux_hint", true)
 follow(env_b)
-assert_neural_state(ctx_b, true, "V5 关闭时仍可独立开启神经开关")
-assert(ctx_b:get_option("contextual_order") == false, "开启神经开关不自动开启 V5")
+assert_option_state(ctx_b, true, "V5 关闭时仍可独立开启辅码提示")
+assert(ctx_b:get_option("contextual_order") == false, "开启辅码提示不自动开启 V5")
 ctx_b:set_option("contextual_order", true)
 follow(env_a)
-assert_neural_state(ctx_a, true, "V5 切换不改变神经开关")
+assert_option_state(ctx_a, true, "V5 切换不改变辅码提示开关")
 assert(ctx_a:get_option("contextual_order") == true, "V5 仍可独立开启")
 
 option_sync.fini(env_a)
@@ -136,19 +137,19 @@ for _, enabled in ipairs({ true, false }) do
     option_sync = require("option_sync")
     option_state = require("option_state")
     local restarted, restarted_ctx = make_env("mohu_flypy", {
-        neural_rerank = not enabled,
+        aux_hint = not enabled,
         contextual_order = enabled,
     })
     option_sync.init(restarted)
-    assert_neural_state(restarted_ctx, enabled, "重新 require 后恢复磁盘开关状态")
+    assert_option_state(restarted_ctx, enabled, "重新 require 后恢复磁盘开关状态")
     assert(restarted_ctx:get_option("contextual_order") == not enabled, "重启分别恢复两个开关")
-    local switched, switched_ctx = make_env("mohu_zrm", { neural_rerank = not enabled })
+    local switched, switched_ctx = make_env("mohu_zrm", { aux_hint = not enabled })
     option_sync.init(switched)
-    assert_neural_state(switched_ctx, enabled, "切换 schema 保留持久值")
-    restarted_ctx:set_option("neural_rerank", not enabled)
-    assert_neural_state(restarted_ctx, not enabled, "重启后继续切换并持久化")
+    assert_option_state(switched_ctx, enabled, "切换 schema 保留持久值")
+    restarted_ctx:set_option("aux_hint", not enabled)
+    assert_option_state(restarted_ctx, not enabled, "重启后继续切换并持久化")
     follow(switched)
-    assert_neural_state(switched_ctx, not enabled, "重启后仍可跨环境同步")
+    assert_option_state(switched_ctx, not enabled, "重启后仍可跨环境同步")
     option_sync.fini(restarted)
     option_sync.fini(switched)
 end

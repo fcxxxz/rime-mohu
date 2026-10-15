@@ -13,8 +13,6 @@
   安装说明-手机版.md——Android 使用随包分发 libtigerengine.so 的 Trime
   定制版；iOS 使用静态嵌入引擎的 Hamster 定制版。原版前端上整句自动
   回退。
-- 不含语义推理资产（mohu_semantic/）：手机端引擎以 onnxruntime 桩链接，
-  语义重排不可用，其余功能不受影响。
 - 不含桌面专用内容：Rime同步助手/、解除隔离.command、squirrel.yaml。
 - 附 default.custom.yaml 只启用对应方案：Trime/Hamster 的「已启用方案」
   同样落在 default.custom.yaml 的 schema_list patch 上，随包预置等价于
@@ -115,17 +113,12 @@ def strip_desktop_paths(destination: Path) -> None:
 
 
 def validate_lite_package(destination: Path) -> None:
-    """精简包红线：模型、语义推理与 native 二进制一律不得混入。"""
+    """精简包红线：模型与 native 二进制一律不得混入。"""
     model = destination / "mohu" / "model" / FIXED_MODEL_NAME
     if model.is_file():
         raise ValueError(
             f"lite package must not ship the sentence model: {model} "
             "(users import mohu-sentence-ngram-v5.bin themselves)"
-        )
-    semantic_hits = list(destination.glob("mohu_semantic/*.onnx"))
-    if semantic_hits:
-        raise ValueError(
-            f"lite package must not ship semantic inference assets: {semantic_hits[0]}"
         )
     runtime_hits = [
         path

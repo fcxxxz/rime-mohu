@@ -606,9 +606,6 @@ def assemble_package(
         runtime_dir = output / "mohu" / "runtime"
         runtime_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(engine, runtime_dir / engine.name)
-        onnx = ROOT / "tiger_sentence_native/libonnxruntime.1.dylib"
-        if onnx.is_file():
-            shutil.copy2(onnx, runtime_dir / onnx.name)
 
     if (ROOT / "解除隔离.command").is_file():
         target = output / "解除隔离.command"

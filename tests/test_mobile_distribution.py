@@ -24,7 +24,6 @@ class MobileDistributionTest(unittest.TestCase):
                     self.assertFalse(
                         (destination / "mohu" / "model" / "mohu-sentence-ngram-v5.bin").exists()
                     )
-                    self.assertFalse((destination / "mohu_semantic").exists())
                     runtime_dir = destination / "mohu" / "runtime"
                     if runtime_dir.is_dir():
                         self.assertFalse(list(runtime_dir.glob("*.dylib")))
@@ -85,14 +84,6 @@ class MobileDistributionTest(unittest.TestCase):
             model_dir.mkdir(parents=True)
             (model_dir / "mohu-sentence-ngram-v5.bin").write_bytes(b"model")
             with self.assertRaisesRegex(ValueError, "sentence model"):
-                validate_lite_package(destination)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            destination = Path(tmp) / "dist"
-            semantic_dir = destination / "mohu_semantic"
-            semantic_dir.mkdir(parents=True)
-            (semantic_dir / "mohu_semantic.onnx").write_bytes(b"onnx")
-            with self.assertRaisesRegex(ValueError, "semantic"):
                 validate_lite_package(destination)
 
 

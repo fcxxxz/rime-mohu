@@ -116,26 +116,21 @@
 
 ## 2. 架构地图
 
-**2026-09-10 魔虎语义进程内化**：外部 Python scorer 服务形态已撤销——
-librime-lua 无 luasocket 且要求用户自启进程不成立。C2 改由
-`libtigerengine.dylib` 内建 ONNX Runtime 会话推理（`semantic_infer.h`，
-`tiger/semantic_model|semantic_vocab`，默认 `mohu_semantic/` 下模型+词表，
-`mohu/runtime/libonnxruntime.1.dylib` 以 @loader_path 随包分发）。
-开关文案改为「魔虎语义关／魔虎语义开」；模型加载失败自动把开关退回
-「关」，因此开关保持「开」即加载成功。候选身份按最终菜单 slots 顺序
-传入 native（跨 filter 的 Lua userdata 身份不稳定，弱表谱系解析已移除）。
-`make tigerengine-semantic`（需 MOHU_SEMANTIC_MODEL/VOCAB 环境变量）覆盖
-原生方向性/释放测试。
+**2026-10-15 语义重排整体移除**：C2/ONNX/HTTP 语义重排全链路已从本仓
+删除——`semantic_infer.h`、`tiger_semantic_*` ABI（含 HTTP 后端与
+word_disagreement 门）、`lua/mohu_semantic_gate_filter.lua`、
+`neural_rerank` 开关、`mohu_semantic/` 模型与 onnxruntime 构建依赖全部
+不复存在；引擎 dylib 不再链接 onnxruntime。V5 的 `context_char_scores`
+原样保留，供跨候选调频使用。
 
 **2026-09-10 TinyCharLM 移除决定**：同方法生产菜单对比（同一评估器、同一门控/保护槽/
 margin、两套共 89,970 个真实菜单）中，TinyCharLM 在两种决策口径下全面回退
 （probe -3.13pp、tnews -10.24pp，0.5 融合口径同样为负），而 C2 是唯一产生净收益
 的后端（tnews +0.072pp CI 显著为正）。原生 char-LM 融合路径（`neural_infer.h`、
 `neural_rerank_policy.h`、`set_neural_rerank` ABI、`scores.neural_reranked` 回填、
-Lua 输入门控与开关观察者）已全部移除；dylib 重建后 245KB。`neural_rerank` 开关
-现在唯一驱动 C2 语义服务（`lua/mohu_semantic_gate_filter.lua`，`uniquifier` 之后，
-SCORE2 + 大端帧）。V5 的 `context_char_scores` 原样保留，供跨候选调频与语义门控
-使用。下文 2026-09-08 的神经融合段落仅作历史记录，机制已不存在。
+Lua 输入门控与开关观察者）已全部移除；dylib 重建后 245KB。V5 的 `context_char_scores` 原样保留，供
+跨候选调频使用（语义门控消费方已于 2026-10-15 随语义重排一并移除）。
+下文 2026-09-08 的神经融合段落仅作历史记录，机制已不存在。
 见 [同方法对比报告](../reports/2026-09-10-model-comparison.md)。
 
 **2026-09-08 可选神经重排补充**：以下默认 V5 边界仍有效；配置神经模型时，

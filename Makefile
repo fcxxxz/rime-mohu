@@ -9,22 +9,11 @@ TIGER_MEMORY_OUTPUT ?= .tmp/native-tests/tigerengine-windows-mapping.json
 # may leave it unset.
 TIGER_WINDOWS_RUNTIME ?=
 WINDOWS_RUNTIME_ARG = $(if $(strip $(TIGER_WINDOWS_RUNTIME)),--windows-runtime "$(TIGER_WINDOWS_RUNTIME)")
-# 魔虎语义进程内 ONNX 推理：编译期需要 onnxruntime 头文件，链接期使用
-# tiger_sentence_native/ 内随包分发的 libonnxruntime.1.dylib（@loader_path）。
-# ONNXRUNTIME_HOME 可覆盖（Windows CI 指向官方 win-x64 zip 解压目录；
-# 同时给出 include 与 include/onnxruntime 两种布局的搜索路径）。
-ONNXRUNTIME_HOME ?= /opt/homebrew/opt/onnxruntime
-ORT_INCLUDES = -I$(ONNXRUNTIME_HOME)/include/onnxruntime -I$(ONNXRUNTIME_HOME)/include -I tiger_sentence_native
+# 引擎测试编译的包含路径与额外链接参数（macOS 需要 Accelerate；MinGW 无）。
+TIGER_ENGINE_INCLUDES = -I tiger_sentence_native
 ifeq ($(OS),Windows_NT)
-ORT_TEST_LIBS = -L$(ONNXRUNTIME_HOME)/lib -lonnxruntime
-# MinGW 不识别 onnxruntime 头文件在 _WIN32 分支使用的 MSVC 写法
-# `_stdcall`（GCC 关键字是双下划线 __stdcall；x64 上该调用约定本就被
-# 忽略），用预处理器映射绕过。
-ORT_DEFINES = -D_stdcall=__stdcall
 TIGER_EXTRA_LDFLAGS =
 else
-ORT_TEST_LIBS = -L$(ONNXRUNTIME_HOME)/lib -lonnxruntime -Wl,-rpath,$(ONNXRUNTIME_HOME)/lib
-ORT_DEFINES =
 TIGER_EXTRA_LDFLAGS = -framework Accelerate
 endif
 
@@ -152,7 +141,7 @@ clean:
 # wanxiang-sync 失败即源于此）。
 UNAME_S := $(shell uname -s)
 
-tigerengine-native: tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc tiger_sentence_native/tigerengine.h tiger_sentence_native/semantic_infer.h tiger_sentence_native/libonnxruntime.1.dylib
+tigerengine-native: tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc tiger_sentence_native/tigerengine.h
 ifeq ($(UNAME_S),Darwin)
 	@test -f tiger_sentence_native/lua-5.4.6/src/lua.hpp || \
 		(echo "Lua 5.4 headers are required; see tiger_sentence_native/README.md" >&2; exit 1)
@@ -164,15 +153,15 @@ else
 endif
 
 tigerengine-safety:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_safety_test.cc tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_safety_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_safety_test.cc tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_safety_test
 	/tmp/tigerengine_safety_test
 
 tigerengine-lua-safety:
 	@if [ -f tiger_sentence_native/lua-5.4.6/src/liblua.a ]; then \
-		clang++ -std=c++17 -O2 $(ORT_INCLUDES) -I tiger_sentence_native/lua-5.4.6/src \
+		clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) -I tiger_sentence_native/lua-5.4.6/src \
 			tests/tigerengine_lua_safety_test.cc tiger_sentence_native/tigerengine.cc \
 			tiger_sentence_native/tigerengine_lua.cc tiger_sentence_native/lua-5.4.6/src/liblua.a \
-			-lm -ldl $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_lua_safety_test; \
+			-lm -ldl $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_lua_safety_test; \
 		/tmp/tigerengine_lua_safety_test; \
 	else \
 		echo "tigerengine Lua safety tests skipped (Lua 5.4 static library not present)"; \
@@ -181,58 +170,47 @@ tigerengine-lua-safety:
 # 用户调频层引擎测试：真实模型上的翻转/快照回环/权重开关；
 # 模型缺失（未安装或未设 TIGER_NGRAM）时自动跳过。
 tigerengine-user-model:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_user_model_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_user_model_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_user_model_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_user_model_test
 	/tmp/tigerengine_user_model_test
 
 tigerengine-learning-context:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_learning_context_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_learning_context_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_learning_context_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_learning_context_test
 	/tmp/tigerengine_learning_context_test
 
 tigerengine-snapshot-io:
 	@mkdir -p .tmp/native-tests
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) $(ORT_INCLUDES) \
-		tests/tigerengine_snapshot_io_test.cc tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) \
+		tests/tigerengine_snapshot_io_test.cc tiger_sentence_native/tigerengine.cc \
 		-o .tmp/native-tests/tigerengine_snapshot_io_test
 	.tmp/native-tests/tigerengine_snapshot_io_test
 
 # 读音先验引擎测试：第 5 列（读音条件简频）压制多音字罕用读音拼字
 # （mohuz→万虎）；模型缺失或旧 4 列码表时自动跳过。
 tigerengine-reading-prior:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_reading_prior_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_reading_prior_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_reading_prior_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_reading_prior_test
 	/tmp/tigerengine_reading_prior_test
 
 tigerengine-context:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_context_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_context_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_context_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_context_test
 	/tmp/tigerengine_context_test
 
-# 魔虎语义进程内 C2 scorer 测试：真实 ONNX 模型上的方向性/边界/释放；
-# MOHU_SEMANTIC_MODEL/MOHU_SEMANTIC_VOCAB 未设置时自动跳过。
-tigerengine-semantic:
-	@if [ -n "$${MOHU_SEMANTIC_MODEL:-}" ] && [ -n "$${MOHU_SEMANTIC_VOCAB:-}" ]; then \
-		clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_semantic_test.cc \
-			tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) \
-			-o /tmp/tigerengine_semantic_test; \
-		/tmp/tigerengine_semantic_test; \
-	else \
-		echo "tigerengine semantic tests skipped (MOHU_SEMANTIC_MODEL/MOHU_SEMANTIC_VOCAB not set)"; \
-	fi
 # Cross-platform ownership seam: borrowed container views must never release
 # the primary mapping. The test-only ABI is compiled into this binary only.
 tigerengine-mapping:
 	@mkdir -p .tmp/native-tests
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) -DTIGERENGINE_MAPPING_TEST \
-		$(ORT_INCLUDES) tests/tigerengine_mapping_ownership_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) -o .tmp/native-tests/tigerengine_mapping_ownership_test
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 -DTIGERENGINE_MAPPING_TEST \
+		$(TIGER_ENGINE_INCLUDES) tests/tigerengine_mapping_ownership_test.cc \
+		tiger_sentence_native/tigerengine.cc -o .tmp/native-tests/tigerengine_mapping_ownership_test
 	.tmp/native-tests/tigerengine_mapping_ownership_test
 
 tigerengine-mobile:
 	@mkdir -p .tmp/native-tests
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(ORT_DEFINES) $(ORT_INCLUDES) \
-		tests/tigerengine_mobile_test.cc tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) \
+		tests/tigerengine_mobile_test.cc tiger_sentence_native/tigerengine.cc \
 		-o .tmp/native-tests/tigerengine_mobile_test
 	python tests/tigerengine_mobile_cases.py .tmp/native-tests/tigerengine_mobile_test
 
@@ -245,59 +223,52 @@ tigerengine-windows-memory:
 
 # Deterministic word-unit/context regression; no installed model required.
 tigerengine-word-units:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_units_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_units_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_word_units_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_units_test
 	/tmp/tigerengine_word_units_test
 
 # Auxiliary words: deterministic constraint, selector, and incremental tests.
 tigerengine-aux-words:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_aux_words_test.cc \
-		$(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_aux_words_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_aux_words_test.cc \
+		$(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_aux_words_test
 	/tmp/tigerengine_aux_words_test
 
 # 词级上下文候选评分引擎测试：模型缺失时自动跳过。
 tigerengine-word-score:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_score_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_score_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_word_score_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_score_test
 	/tmp/tigerengine_word_score_test
 
 # 词边先验：静态多字词句中内部边 + 有界加分（0=旧行为）。真实 V5 模型
 # 上的翻案/可逆/整段查询不变性；模型缺失（未安装或未设 TIGER_NGRAM）时
 # 自动跳过。
 tigerengine-word-edge:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_edge_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_edge_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_word_edge_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_edge_test
 	/tmp/tigerengine_word_edge_test
-
-# 词证据分歧门：top1 接不成词而 top2 接词典词 → 开门标志。真实模型 +
-# 码表上的分类断言；资源缺失时自动跳过。
-tigerengine-word-gate:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_gate_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_gate_test
-	/tmp/tigerengine_word_gate_test
 
 # 词形整段命中加分：全码词典词（≥3 字）整段覆盖输入时按码内权重占比增加
 # 排序证据（bagerf 八个人>把个人）；开关两态下二字辅码与长句逐字节不变。
 # 真实模型 + 码表断言；资源缺失时自动跳过。
 tigerengine-word-form:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_word_form_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_form_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_word_form_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_word_form_test
 	/tmp/tigerengine_word_form_test
 
 # 长句内部个人词边封顶：静态同码真词的用户 boost 不改写长句首选
 # （认得 vs 人人的脸都憋得发紫），OOV 自造词（魔虎）保持全额；
 # gain cap 饱和后正增益闭合。真实模型 + 码表断言；资源缺失时自动跳过。
 tigerengine-personal-internal:
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tests/tigerengine_personal_internal_test.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_personal_internal_test
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tests/tigerengine_personal_internal_test.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_personal_internal_test
 	/tmp/tigerengine_personal_internal_test
 
 # Decode latency benchmark; pass the installed model explicitly, e.g.
 #   make tigerengine-bench TIGER_NGRAM=~/Library/Rime/mohu-sentence-ngram-v5.bin
 tigerengine-bench:
 	@test -n "$(TIGER_NGRAM)" || (echo "Error: set TIGER_NGRAM to mohu-sentence-ngram-v5.bin" >&2; exit 2)
-	clang++ -std=c++17 -O2 $(ORT_INCLUDES) tiger_sentence_native/bench_decode.cc \
-		tiger_sentence_native/tigerengine.cc $(ORT_TEST_LIBS) $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_bench
+	clang++ -std=c++17 -O2 $(TIGER_ENGINE_INCLUDES) tiger_sentence_native/bench_decode.cc \
+		tiger_sentence_native/tigerengine.cc $(TIGER_EXTRA_LDFLAGS) -o /tmp/tigerengine_bench
 	/tmp/tigerengine_bench "$(TIGER_NGRAM)" tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt \
 		$(TIGER_BENCH_ARGS)
 
@@ -338,11 +309,8 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-user-model
 	$(MAKE) tigerengine-reading-prior
 	$(MAKE) tigerengine-word-edge
-	$(MAKE) tigerengine-word-gate
 	$(MAKE) tigerengine-word-form
 	$(MAKE) tigerengine-context
-	$(MAKE) tigerengine-semantic
-	uv run python -m unittest tests.test_neural_toggle_schema -v
 	$(MAKE) tigerengine-mobile
 	$(MAKE) tigerengine-mapping
 	$(MAKE) tigerengine-word-score
@@ -354,8 +322,6 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	uv run python -m unittest tests.test_sp_layout tests.test_custom_aux -v
 	uv run python -m unittest tests.test_build_custom_scheme -v
 	uv run python -m unittest tests.test_sentence_dictionary tests.test_long_word_completion -v
-	uv run python -m unittest tests.test_qwen_semantic_rerank -v
-	uv run --with torch python -m unittest tests.test_semantic_pipeline_model -v
 	uv run python -m unittest tests.test_tiger_lexicon_fly -v
 	uv run python -m unittest tests.test_reading_coverage -v
 	uv run python -m unittest tests.test_mohu_lexicons -v
@@ -386,9 +352,6 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MOHU_LUA_BIN) tests/mohu_pin_store_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_pin_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_reorder_filter_lexicon_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_semantic_gate_filter_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_semantic_meta_test.lua
-	$(MOHU_LUA_BIN) tests/mohu_semantic_producer_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_sentence_visibility_filter_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_symbol_commands_test.lua
 	$(MOHU_LUA_BIN) tests/mohu_tab_nav_test.lua
@@ -405,7 +368,6 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	$(MOHU_LUA_BIN) tests/mohu_aux_db_config_test.lua
 
 	mira -C /tmp/mira-cache tests/mohu_zrm.test.yaml
-	mira -C /tmp/mira-cache tests/mohu_semantic_gate.test.yaml
 	mira -C /tmp/mira-cache tests/mohu_flypy.test.yaml
 	mira -C /tmp/mira-cache tests/tiger.test.yaml
 	mira -C /tmp/mira-cache tests/mohu_tiger_priority.test.yaml

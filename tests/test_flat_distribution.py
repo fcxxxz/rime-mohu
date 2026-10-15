@@ -141,32 +141,20 @@ class FlatDistributionTest(unittest.TestCase):
                         },
                     )
 
-    def test_flat_packages_ship_macos_engine_and_its_dependency(self) -> None:
-        # libtigerengine.dylib 以 @loader_path 解析 libonnxruntime.1.dylib。只拷引擎
-        # 会让 native 通道 dlopen 失败并静默 fail-open（模型装了也不生效），
-        # 以 dist-* 作为 source_dir 的 mira 运行同样会复现。
+    def test_flat_packages_ship_macos_engine(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             destination = Path(tmp) / "zrm"
             self.build("zrm", destination)
             runtime = destination / "mohu" / "runtime"
             engine = runtime / "libtigerengine.dylib"
-            dependency = runtime / "libonnxruntime.1.dylib"
             self.assertTrue(engine.is_file())
-            self.assertTrue(dependency.is_file())
             self.assertTrue(
                 filecmp.cmp(
-                    ROOT / "tiger_sentence_native" / "libonnxruntime.1.dylib",
-                    dependency,
+                    ROOT / "tiger_sentence_native" / "libtigerengine.dylib",
+                    engine,
                     shallow=False,
                 )
             )
-
-    def test_flat_packages_exclude_optional_semantic_model_assets(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            destination = Path(tmp) / "zrm"
-            self.build("zrm", destination)
-            self.assertFalse((destination / "mohu_semantic").exists())
-            self.assertFalse(any(destination.rglob("*.onnx")))
 
     def test_windows_runtime_requires_engine_entry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

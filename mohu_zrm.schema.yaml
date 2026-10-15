@@ -42,8 +42,6 @@ switches:
     states: [ U关, U开 ]
   - name: contextual_order
     states: [ 单次候选调频, 跨候选调频 ]
-  - name: neural_rerank
-    states: [ 魔虎语义关, 魔虎语义开 ]
   - name: quick_code_hint
     states: [ 简码提示关, 简码提示 ]
   - name: aux_hint
@@ -111,7 +109,6 @@ engine:
     - lua_filter@*mohu_charset_comment_filter  # Unicode 区位提示
     - lua_filter@*mohu_unicode_display_filter  # Unicode 编码提示
     - uniquifier
-    - lua_filter@*mohu_semantic_gate_filter  # 语义重排（共用 neural_rerank 大模型开关）
 
 navigator:
   # 在音节跳转时，跳过音节末尾的分隔符 ' ，设为 after_delimiter 恢复 Rime 默认行为
@@ -157,7 +154,7 @@ smart:
   contextual_suggestions: true
   # 是否输出未完成编码的补全候选。开启（与 moran 默认一致）：1 键时
   # smart 流会出现整字母桶的单字洪流（'w' 实测 2,889 个），必须配合
-  # word_order/semantic filter 的扫描上界（word_order_scan_limit）才不会
+  # word_order filter 的扫描上界（word_order_scan_limit）才不会
   # 被整流抽干——2026-09-14 已修复并量化，见
   # docs/reports/2026-09-14-perkey-latency.md。
   enable_completion: true
@@ -235,10 +232,6 @@ tiger:
   candidate_type: mohu_zrm
   # 原生引擎动态库路径；空字符串使用加载器的默认查找路径。
   engine_lib: ""
-  # 进程内魔虎语义 C2 模型与字符词表；仅在“魔虎语义开”且歧义门控
-  # 命中时按需加载，不启动外部服务。
-  semantic_model: mohu_semantic/mohu_semantic.onnx
-  semantic_vocab: mohu_semantic/vocab.tsv
   # 原生语言模型资源路径，不是用户词典。
   model: mohu/model
   # 原生整句引擎的编码词表路径。

@@ -7,25 +7,7 @@
 -- *******农历节气计算部分
 -- ========角度变换===============
 
-local semantic_meta = nil
-do
-  local ok, module = pcall(require, "mohu_semantic_meta")
-  if ok and type(module) == "table" and type(module.bind) == "function" then
-    semantic_meta = module
-  end
-end
-
 local function emit_temporal(candidate)
-  if semantic_meta ~= nil then
-    pcall(semantic_meta.bind, candidate, {
-      provenance_version = "mohu-temporal/v1",
-      source = "temporal",
-      candidate_type = candidate.type,
-      protected = true,
-      synthetic = true,
-      native_score_kind = "unavailable",
-    })
-  end
   yield(candidate)
 end
 

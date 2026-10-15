@@ -59,54 +59,19 @@ jobs:
           gcc -O2 -shared -DLUA_BUILD_AS_DLL $core $lib -o lua54.dll
           gcc -O2 -DLUA_BUILD_AS_DLL lua.c -o lua.exe lua54.dll
 
-      - name: Fetch onnxruntime for Windows
-        shell: msys2 {0}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # tigerengine.cc 内建魔虎语义进程内推理（semantic_infer.h），
-          # 编译与运行都需要 onnxruntime。官方 win-x64 zip：lib/ 内含
-          # onnxruntime.lib 与 onnxruntime.dll，include/ 含 C++ API 头。
-          # 2026-09-17 起 runner 上 curl 直连 github release 下载（含本仓
-          # 资产与官方源）稳定 404，objects CDN 链路异常；改用 gh CLI 走
-          # api.github.com 拉取本仓 ort-deps Release 的同内容转存，官方
-          # 源 curl 仅作后备，统一以官方 sha256 校验。
-          ORT_ZIP=onnxruntime-win-x64-1.20.1.zip
-          ORT_SHA256=78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581
-          # msys2 shell 不继承 Windows PATH，gh 用绝对路径兜底。
-          # 官方直连优先；2026-09-17 05:00-06:30 UTC 期间 runner 到
-          # objects CDN 的直链出现过临时 404（本地同时刻正常），因此保留
-          # 本仓 ort-deps 镜像作后备，两者均以官方 sha256 校验。
-          if curl --fail --location --retry 3 --retry-all-errors --output ort.zip \
-            "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/${ORT_ZIP}"; then
-            echo "fetched from upstream"
-          else
-            # gh 运行需要 PATH 里有 git：注入 runner 预装的 Git for Windows。
-            export PATH="/c/Program Files/Git/cmd:$PATH"
-            GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
-            "$GH_BIN" release download ort-deps --pattern "${ORT_ZIP}" --output ort.zip --clobber
-            test -s ort.zip
-            echo "fetched from repo mirror via gh api"
-          fi
-          echo "${ORT_SHA256}  ort.zip" | sha256sum -c -
-          python -m zipfile -e ort.zip .
-
       - name: Build and smoke-test the Windows engine
         shell: msys2 {0}
         env:
-          ORT_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
           GH_TOKEN: ${{ github.token }}
         run: |
           g++ -O2 -std=c++17 -shared -static-libgcc -static-libstdc++ \
             -D_stdcall=__stdcall \
             -I tiger_sentence_native -I lua-5.4.8/src \
-            -I "$ORT_HOME/include" -L "$ORT_HOME/lib" \
             tiger_sentence_native/tigerengine.cc tiger_sentence_native/tigerengine_lua.cc \
-            lua-5.4.8/src/lua54.dll -lonnxruntime -o libtigerengine.dll
+            lua-5.4.8/src/lua54.dll -o libtigerengine.dll
           objdump -p libtigerengine.dll | grep -q luaopen_tigerengine
-          cp "$ORT_HOME/lib/onnxruntime.dll" ./
           # 模型资产自 603f65a 起以 zip 形式发布（裸 bin 直链已不存在）；
-          # 与 ort 同理走 gh api 下载，解压后取裸 bin。
+          # 走 gh api 下载，解压后取裸 bin。
           # gh 运行需要 PATH 里有 git：注入 runner 预装的 Git for Windows。
           export PATH="/c/Program Files/Git/cmd:$PATH"
           GH_BIN="$(command -v gh || echo '/c/Program Files/GitHub CLI/gh.exe')"
@@ -116,9 +81,9 @@ jobs:
           python -m zipfile -e model.zip .
           test -s mohu-sentence-ngram-v5.bin
           g++ -O2 -std=c++17 -D_stdcall=__stdcall \
-            -I tiger_sentence_native -I "$ORT_HOME/include" \
+            -I tiger_sentence_native \
             tiger_sentence_native/nativetest.cc tiger_sentence_native/tigerengine.cc \
-            -L "$ORT_HOME/lib" -lonnxruntime -o nativetest.exe
+            -o nativetest.exe
           printf '1\tufqyhfmimh\n' > keys.txt
           ./nativetest.exe mohu-sentence-ngram-v5.bin \
             tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt keys.txt out.txt
@@ -151,10 +116,8 @@ jobs:
           TIGER_ENGINE_DLL: ${{ github.workspace }}/libtigerengine.dll
           TIGER_NGRAM: ${{ github.workspace }}/mohu-sentence-ngram-v5.bin
           TIGER_LEXICON: ${{ github.workspace }}/tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt
-          ONNXRUNTIME_HOME: ${{ github.workspace }}/onnxruntime-win-x64-1.20.1
         run: |
           make tigerengine-snapshot-io tigerengine-mobile tigerengine-mapping
-          cp "$ONNXRUNTIME_HOME/lib/onnxruntime.dll" .tmp/native-tests/
           make tigerengine-windows-memory \
             TIGER_MEMORY_OUTPUT=.tmp/native-tests/tigerengine-windows-mapping.json
 
@@ -173,7 +136,6 @@ jobs:
           --entry libtigerengine.dll
           --search-dir .
           --search-dir lua-5.4.8/src
-          --search-dir onnxruntime-win-x64-1.20.1/lib
           --search-dir /mingw64/bin
           --objdump objdump
           --output windows-runtime

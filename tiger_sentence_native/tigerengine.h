@@ -117,14 +117,6 @@ int tiger_engine_set_text_lexicon_weight(int handle, double weight);
  * final order (bagerf: 八个人 354 vs 把个人 173). Only whole-input edges: composed paths and long-sentence
  * segmentation are untouched. Range [0, 16]. */
 int tiger_engine_set_word_form_weight(int handle, double weight);
-/* Word-evidence disagreement gate: given newline-joined candidate texts in
- * ranked order, returns out_flag=1 when the top candidate continues the
- * common (codepoint-aligned) prefix with a non-word glued segment while the
- * runner-up continues with a dictionary multi-char word — i.e. lexicon
- * evidence contradicts the menu order. Use as a supplementary gate-open
- * condition when the V5 top-2 z-margin alone would close the gate. */
-int tiger_engine_word_disagreement(int handle, const char* candidates,
-                                   int candidate_count, int* out_flag);
 /* Experimental abbreviated-word internal edges: max_rank = 0 disables
  * (default; abbreviated words match the whole input only), >= 1 enables
  * static abbreviated entries (code shorter than 2 keys per char) as
@@ -177,22 +169,6 @@ int tiger_engine_context_char_scores(int handle, const char* context_text,
 int tiger_engine_context_char_scores_supported(int handle, const char* context_text,
                                      const char* candidates, int candidate_count,
                                      double* out_scores, int* out_supported);
-/* 进程内魔虎语义 C2 scorer。候选为换行分隔 UTF-8，native_scores 与候选
- * 同序；成功返回 candidate_count，失败返回 -1。 */
-int tiger_semantic_create(const char* model_path, const char* vocab_path,
-                          char* error, int error_capacity);
-int tiger_semantic_score(int handle, const char* context_text,
-                         const char* candidates, const double* native_scores,
-                         int candidate_count, double* out_scores);
-void tiger_semantic_free(int handle);
-/* HTTP 语义后端：本机常驻 Qwen scorer（127.0.0.1）。url 形如
- * http://127.0.0.1:8765；语义与 tiger_semantic_score 相同（混合分），
- * 连接被拒时异步 kickstart 服务（LaunchAgent com.mohu.rerank），
- * 350ms 超时 fail-open。 */
-int tiger_semantic_http_score(const char* url, const char* context_text,
-                              const char* candidates,
-                              const double* native_scores,
-                              int candidate_count, double* out_scores);
 /* Read/write snapshot files through UTF-8 paths. The writer uses a flushed
  * same-directory temporary file and atomically replaces an existing target.
  * The caller owns and must free() the read buffer. */

@@ -72,9 +72,6 @@ end)
 assert(merged() == "a" and merged() == "b" and merged() == "s1" and merged() == "s2",
     "chained iterator must replay the buffer before resuming the stream")
 
--- 语义谱系：fixed/smart 候选必须在查询边界绑定不可变来源事实
-local semantic_meta = require("mohu_semantic_meta")
-
 local function fake_translation(cands)
     local index = 0
     return {
@@ -98,18 +95,13 @@ function smart_stub.query(_, input, seg)
     end
     return fake_translation({ lexical("你好", "phrase"), lexical("拟好", "user_phrase") })
 end
+local bound_count = 0
 for bound in translator.raw_query_smart(smart_env, "niho", { start = 0, _end = 4 }, false) do
-    local provenance = semantic_meta.resolve(bound)
-    assert(type(provenance) == "table" and
-        provenance.provenance_version == "mohu-lexical/v1" and
-        provenance.source == "smart" and
-        provenance.lexical_translator == "smart" and
-        provenance.candidate_type == bound.type and
-        provenance.genuine_type == bound.type and
-        provenance.native_score_kind == "unavailable_rime_lexical" and
-        provenance.query_preedit == "ni hao",
-        "smart candidates must retain lexical provenance at the query boundary")
+    bound_count = bound_count + 1
+    assert(type(bound) == "table" and bound.text ~= nil,
+        "smart candidates must survive the query boundary")
 end
+assert(bound_count == 2, "both smart candidates must pass the query boundary")
 
 local fixed_yielded = {}
 local original_yield = yield
@@ -132,15 +124,6 @@ translator.output_fixed_chars_first(
 )
 yield = original_yield
 assert(#fixed_yielded == 1)
-local fixed_provenance = semantic_meta.resolve(fixed_yielded[1])
-assert(type(fixed_provenance) == "table" and
-    fixed_provenance.provenance_version == "mohu-lexical/v1" and
-    fixed_provenance.source == "fixed" and
-    fixed_provenance.lexical_translator == "code_table" and
-    fixed_provenance.candidate_type == "table" and
-    fixed_provenance.native_score_kind == "unavailable_rime_lexical",
-    "fixed candidates must retain lexical provenance at the query boundary")
-
 -- Short-code rows are the authority for both characters and words. Do not
 -- silently promote a character ahead of a word placed first by the maintainer.
 local table_rows = {}
@@ -167,7 +150,7 @@ local marked = translator.secondary_word(abbreviated)
 assert(marked.type == "mohu_secondary_word" and marked:get_genuine() == abbreviated,
     "secondary word marker must survive Rime while retaining the original candidate")
 assert(marked.comment == "`F" and abbreviated.type == "table",
-    "secondary marker must not change fixed-candidate provenance or reordering")
+    "secondary marker must not change fixed-candidate identity or reordering")
 ShadowCandidate = saved_shadow
 
 print("Mohu express IJRQ ordering tests passed")

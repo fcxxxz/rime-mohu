@@ -50,16 +50,6 @@ local config = {
 local engine = { context = context, schema = { config = config } }
 local env = { engine = engine }
 
-package.preload["mohu_tiger_reranker"] = function()
-  return {
-    init = function() end,
-    fini = function() end,
-    clear_cache = function() end,
-    neural_enabled = function() return false end,
-    rerank = function() return nil end,
-  }
-end
-
 Candidate = function(kind, start_pos, end_pos, text, comment)
   return {
     type = kind,

@@ -17,20 +17,6 @@
 
 local mohu = require("mohu")
 
-local semantic_meta = nil
-do
-    local ok, module = pcall(require, "mohu_semantic_meta")
-    if ok and type(module) == "table" and type(module.bind) == "function" then
-        semantic_meta = module
-    end
-end
-
-local function bind_pin_provenance(candidate, meta)
-    if semantic_meta ~= nil then
-        pcall(semantic_meta.bind, candidate, meta)
-    end
-end
-
 local function remove_last_utf8_char(text)
     if text == nil or text == "" then
         return ""
@@ -1152,14 +1138,6 @@ function pin_filter.func(t_input, env)
                 )
                 status.preedit = capture.code
                 status.quality = math.huge
-                bind_pin_provenance(status, {
-                    provenance_version = "mohu-pin-ui/v1",
-                    source = "pin_ui",
-                    candidate_type = "mohu_capture_status",
-                    protected = true,
-                    synthetic = true,
-                    native_score_kind = "unavailable",
-                })
                 yield(status)
                 return
             end
@@ -1179,16 +1157,6 @@ function pin_filter.func(t_input, env)
         for _, unpacked in ipairs(commits) do
             local cand = Candidate("pinned", segment._start, segment._end, unpacked.phrase, env.indicator)
             cand.preedit = input
-            bind_pin_provenance(cand, {
-                provenance_version = "mohu-pin/v1",
-                source = "pin",
-                pin_origin = "pin_filter",
-                candidate_type = "pinned",
-                protected = true,
-                native_score_kind = "unavailable",
-                pin_phrase = unpacked.phrase,
-                pin_commits = unpacked.commits,
-            })
             yield(cand)
         end
     end
@@ -1272,14 +1240,6 @@ function panacea_translator.func(input, seg, env)
         local comment = "开始加词➕" .. env.indicator
         local tip_cand = Candidate("pin_tip", 0, #match, "", comment)
         tip_cand.quality = math.huge
-        bind_pin_provenance(tip_cand, {
-            provenance_version = "mohu-pin-ui/v1",
-            source = "pin_ui",
-            candidate_type = "pin_tip",
-            protected = true,
-            synthetic = true,
-            native_score_kind = "unavailable",
-        })
         yield(tip_cand)
     end
 end

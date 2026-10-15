@@ -22,16 +22,6 @@ local M = {}
 local runtime = require("mohu_runtime")
 local personal_lexicon = require("mohu_personal_lexicon")
 
--- 语义菜单导出尚未接入 schema。这里的绑定只保留 native decode 的同次调用
--- 谱系，供将来的隔离观察器按 genuine 候选读取；加载失败不影响候选生成。
-local semantic_meta = nil
-do
-  local ok, module = pcall(require, "mohu_semantic_meta")
-  if ok and type(module) == "table" and type(module.bind) == "function" then
-    semantic_meta = module
-  end
-end
-
 -- librime-lua builds differ in how they expose logging: most ship a `log`
 -- table, but some Tiger weasel builds register `log` as a plain function.
 -- Indexing a function value raises, so never touch fields before type checks.
@@ -134,11 +124,6 @@ local engine_raw_signature = nil
 local engine_config_error_logged = false
 local word_scorer_ready = nil       -- nil=未知 true=词层可用 false=不可用
 local word_scorer_error_logged = false
-local semantic_handle = nil
-local semantic_model_path = nil
-local semantic_vocab_path = nil
-local semantic_load_failed = false
-local semantic_http_url = nil       -- tiger/semantic_http_url：本机 Qwen 服务优先
 
 -- 读音先验默认权重：码表第 5 列（读音条件简频）归一为 log P(读音|字)
 -- 并入路径分，补偿字符级模型不认读音的盲区（如「万」mò 拼「万虎」）。
@@ -296,8 +281,7 @@ local function ensure_engine(env)
   local raw_signature = table.concat(
     { conf("engine_lib") or "", conf("model") or "", conf("lexicon") or "",
       conf("beam") or "", conf("all_ranks") or "",
-      conf("word_scorer_model") or "", conf("semantic_model") or "",
-      conf("semantic_vocab") or "",
+      conf("word_scorer_model") or "",
       conf("auxiliary_word_edges") or "", conf("auxiliary_context_guard") or "",
       conf("word_edge_weight") or "", conf("word_edge_freq_weight") or "",
       (conf("learning_context_guard") == "false" or
@@ -337,27 +321,8 @@ local function ensure_engine(env)
   local all_ranks_value =
     (all_ranks == nil or all_ranks == "true" or all_ranks == "1") and 1 or 0
   local scorer_override = conf("word_scorer_model")
-  local semantic_model = conf("semantic_model") or "mohu_semantic/mohu_semantic.onnx"
-  local semantic_vocab = conf("semantic_vocab") or "mohu_semantic/vocab.tsv"
-  if semantic_model:sub(1, 1) ~= "/" and not semantic_model:match("^%a:[/\\]") then
-    semantic_model = runtime.user_data_dir() .. "/" .. semantic_model
-  end
-  if semantic_vocab:sub(1, 1) ~= "/" and not semantic_vocab:match("^%a:[/\\]") then
-    semantic_vocab = runtime.user_data_dir() .. "/" .. semantic_vocab
-  end
-  semantic_model_path = semantic_model
-  semantic_vocab_path = semantic_vocab
-  -- 本机 Qwen 语义重排服务（http 后端优先，ONNX 回退）。配置键形如
-  -- tiger/semantic_http_url: http://127.0.0.1:8765；留空 = 只走 ONNX。
-  local http_url = conf("semantic_http_url") or ""
-  if http_url ~= "" and http_url:sub(1, 7) == "http://127.0.0.1" then
-    semantic_http_url = http_url
-  else
-    semantic_http_url = nil
-  end
   local signature = table.concat(
-    { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "",
-      semantic_model, semantic_vocab, semantic_http_url or "" }, "\28")
+    { lib, model, lexicon, beam_value, all_ranks_value, scorer_override or "" }, "\28")
 
   -- The Windows loader does not search the engine DLL's own directory for its
   -- dependencies.  The build's dependency-closure collector emits a
@@ -1197,14 +1162,6 @@ local function release_engine(env)
   engine_config_error_logged = false
   word_scorer_ready = nil
   word_scorer_error_logged = false
-  if semantic_handle ~= nil and tigerengine and
-      type(tigerengine.semantic_free) == "function" then
-    pcall(tigerengine.semantic_free, semantic_handle)
-  end
-  semantic_handle = nil
-  semantic_model_path = nil
-  semantic_vocab_path = nil
-  semantic_load_failed = false
 end
 
 -- 解析 C 输出协议：
@@ -1489,51 +1446,6 @@ local function text_bytes_at_raw_boundary(item, raw_boundary)
   return nil
 end
 
-local function bind_native_decode_provenance(candidate, item, candidate_type,
-    context_input_raw, decoded_raw, segment_start, prefix_raw_boundary, preedit)
-  if semantic_meta == nil or (type(candidate) ~= "table" and
-      type(candidate) ~= "userdata") or type(item) ~= "table" then
-    return
-  end
-  if not finite_number(item.score) or not finite_number(item.confidence) or
-      not finite_number(item.max_rank) or type(item.segmented) ~= "string" or
-      type(preedit) ~= "string" or type(context_input_raw) ~= "string" or
-      type(decoded_raw) ~= "string" then
-    return
-  end
-  local raw_lengths = {}
-  for text_bytes, raw_length in pairs(item.raw_lengths or {}) do
-    local parsed_text_bytes = tonumber(text_bytes)
-    local parsed_raw_length = tonumber(raw_length)
-    if finite_number(parsed_text_bytes) and parsed_text_bytes >= 0 and
-        parsed_text_bytes == math.floor(parsed_text_bytes) and
-        finite_number(parsed_raw_length) and parsed_raw_length >= 0 and
-        parsed_raw_length == math.floor(parsed_raw_length) then
-      raw_lengths[parsed_text_bytes] = parsed_raw_length
-    end
-  end
-  -- Candidate() uses the active segment's original Context.input byte bounds.
-  -- The observer later converts these through the tested ABI map and rejects
-  -- any raw/input normalization mismatch before writing a training record.
-  pcall(semantic_meta.bind, candidate, {
-    provenance_version = "mohu-native-decode/v1",
-    source = "native",
-    candidate_type = candidate_type,
-    native_score = item.score,
-    native_score_kind = "static_or_personalized_v5",
-    native_confidence = item.confidence,
-    native_max_rank = item.max_rank,
-    personal = item.personal == true,
-    segmented = item.segmented,
-    active_preedit = preedit,
-    context_input_raw = context_input_raw,
-    decoded_raw = decoded_raw,
-    segment_start_byte = segment_start,
-    prefix_raw_length = prefix_raw_boundary,
-    raw_lengths = raw_lengths,
-  })
-end
-
 -- ---------------------------------------------------------------- 候选输出
 
 -- tiger/perf_log 开启时按轮次输出 native/Lua 分层耗时，用于长句延迟归因；
@@ -1642,58 +1554,6 @@ function M.acquire_word_scorer(env)
   return tigerengine.context_word_scores, engine_handle
 end
 
--- 魔虎语义 C2 进程内评分。首次请求时按需加载 ONNX；加载失败自动关闭
--- neural_rerank 菜单开关，使“魔虎语义开”本身成为加载成功状态。
-function M.semantic_score(env, history, texts, native_scores)
-  local context = env and env.engine and env.engine.context
-  if not (context and context.get_option and context:get_option("neural_rerank")) then
-    return nil
-  end
-  -- HTTP 后端优先：本机常驻 Qwen 服务（失败自动回退进程内 ONNX 路径）。
-  -- 服务未跑时引擎会异步 kickstart（LaunchAgent），本次请求 fail-open，
-  -- 下一两次按键后服务即就绪。任何失败不关 neural_rerank 开关。
-  if semantic_http_url and tigerengine and
-      type(tigerengine.semantic_http_score) == "function" then
-    local ok, scores = pcall(tigerengine.semantic_http_score,
-      semantic_http_url, history, texts, native_scores)
-    if ok and type(scores) == "table" and #scores == #texts then
-      return scores
-    end
-  end
-  if tigerengine == nil or type(tigerengine.semantic_create) ~= "function" or
-      type(tigerengine.semantic_score) ~= "function" then
-    -- ONNX ABI 不在但 http 配置存在：开关保留（http 已在前面优先处理）。
-    if not semantic_http_url and context.set_option then
-      context:set_option("neural_rerank", false)
-    end
-    return nil
-  end
-  if semantic_handle == nil and not semantic_load_failed then
-    local ok, handle, why = pcall(tigerengine.semantic_create,
-      semantic_model_path or "", semantic_vocab_path or "")
-    if ok and type(handle) == "number" then
-      semantic_handle = handle
-    else
-      semantic_load_failed = true
-      log_error("mohu_tiger_sentence: semantic model load failed: " ..
-        tostring(why or handle))
-      -- ONNX 缺失不连坐 http：开关只在没有任何后端可用时关闭。
-      if not semantic_http_url and context.set_option then
-        context:set_option("neural_rerank", false)
-      end
-      return nil
-    end
-  end
-  if semantic_handle == nil then return nil end
-  local ok, scores = pcall(tigerengine.semantic_score, semantic_handle,
-    history, texts, native_scores)
-  if not ok or type(scores) ~= "table" or #scores ~= #texts then
-    log_error("mohu_tiger_sentence: semantic scoring failed")
-    return nil
-  end
-  return scores
-end
-
 -- 字符续写评分（octagram 同型机制）：字符级主模型即可，不要求词层。
 -- 引擎未装载时返回 nil（与 ensure_decode_context 同触发条件，有 CJK
 -- 历史的组合 translator 已装载引擎）。
@@ -1729,7 +1589,6 @@ function M.native_sentence_evidence(env, native_text, smart_text, start, finish)
   if schema_id ~= record.schema_id then return false end
   if type(tigerengine.context_char_scores) ~= "function" then return false end
   local history = ""
-  if context.get_option and context:get_option("neural_rerank") then return false end
   if context.get_option and context:get_option("contextual_order") and context.commit_history then
     local hist = context.commit_history
     if type(hist.latest_text) == "function" then
@@ -1741,21 +1600,6 @@ function M.native_sentence_evidence(env, native_text, smart_text, start, finish)
     engine_handle, history, { native_text, smart_text })
   return ok and type(scores) == "table" and #scores == 2 and
     finite_number(scores[1]) and finite_number(scores[2]) and scores[1] - scores[2] >= 4.0
-end
-
--- 词证据分歧门：top1 在公共前缀后接不成词拼装而 top2 接词典多字词
--- 时返回 1（引擎 freq_rank 查表，旧 ABI 无该函数时恒 0＝不开门）。
-function M.word_disagreement(env, texts)
-  if tigerengine == nil or type(tigerengine.word_disagreement) ~= "function" then
-    return 0
-  end
-  if type(texts) ~= "table" or #texts < 2 then return 0 end
-  local ok, handle = pcall(ensure_engine, env)
-  if not ok or not handle then return 0 end
-  local ok_call, flag = pcall(tigerengine.word_disagreement, handle,
-    table.concat(texts, "\n"), #texts)
-  if ok_call and type(flag) == "number" then return flag end
-  return 0
 end
 
 -- tiger/decode_context_chars 缓存读取（schema 变更前不会变化）。
@@ -1961,8 +1805,6 @@ function M.translator.func(input, seg, env)
         if item.personal then candidate_type = candidate_type .. "_personal" end
         local cand = Candidate(candidate_type, seg.start, seg._end, text, "")
         cand.preedit = preedit
-        bind_native_decode_provenance(cand, item, candidate_type,
-          context_input_raw, raw, segment_start, prefix_raw_boundary, preedit)
         cand.quality = candidate_quality - yielded * 0.001
         yield(cand)
         yielded = yielded + 1

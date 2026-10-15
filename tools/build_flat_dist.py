@@ -18,9 +18,6 @@ WINDOWS_ENTRY = "libtigerengine.dll"
 WINDOWS_MANIFEST = "runtime-manifest.json"
 WINDOWS_PRELOAD = "runtime-preload.txt"
 MACOS_ENGINE = "libtigerengine.dylib"
-# libtigerengine.dylib 以 @loader_path 解析这些依赖，必须和它放在同一个
-# runtime/ 目录里（见 tiger_sentence_native/README.md「魔虎语义」一节）。
-MACOS_ENGINE_DEPENDENCIES = ("libonnxruntime.1.dylib",)
 
 
 def valid_runtime_name(name: object) -> bool:
@@ -97,40 +94,6 @@ def copy_windows_runtime(source: Path, destination: Path) -> None:
         shutil.copy2(source_file, destination / source_file.name)
 
 
-def copy_macos_engine_dependencies(destination: Path) -> None:
-    """把 native 引擎的 macOS 动态库依赖一并放进 runtime/。
-
-    `libtigerengine.dylib` 用 `-Wl,-rpath,@loader_path` 解析
-    `libonnxruntime.1.dylib`（魔虎语义的进程内 ONNX 推理）。漏拷它时 dlopen
-    直接失败、引擎静默 fail-open，表现为「模型已安装但首选仍走 smart 词典」；
-    任何以 `source_dir` 指向 dist-* 的 mira 运行也会稳定复现。缺文件时显式报错，
-    而不是发出一个装不上的包。
-    """
-    for name in MACOS_ENGINE_DEPENDENCIES:
-        source = ROOT / "tiger_sentence_native" / name
-        if not source.is_file():
-            raise ValueError(
-                f"macOS runtime is missing {name}; {MACOS_ENGINE} resolves it via "
-                f"@loader_path (see tiger_sentence_native/README.md)"
-            )
-        shutil.copy2(source, destination / source.name)
-
-
-def copy_semantic_model(destination: Path) -> None:
-    """语义模型一律不进默认包（体积考虑，全走按需下载）。
-
-    主路径：本机 Qwen HTTP 重排（tiger/semantic_http_url），模型从
-    release `semantic-models-v1` 下载（见 docs/semantic-rerank.md）。
-    轻量回退：进程内 C2 ONNX 同在该 release（mohu-semantic-c2-onnx.zip），
-    解压到用户目录 mohu_semantic/ 即生效。包内两者皆无时「魔虎语义开」
-    自动关闭，不影响其他功能。
-    """
-    print("note: semantic models excluded from package "
-          "(optional download from release semantic-models-v1; "
-          "see docs/semantic-rerank.md)")
-    return
-
-
 def build_flat(
     scheme: str, destination: Path, windows_runtime: Path | None = None
 ) -> None:
@@ -167,10 +130,8 @@ def build_flat(
         runtime_dir = destination / "mohu" / "runtime"
         runtime_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(runtime_source, runtime_dir / runtime_source.name)
-        copy_macos_engine_dependencies(runtime_dir)
     if windows_runtime is not None:
         copy_windows_runtime(windows_runtime, destination / "mohu" / "runtime")
-    copy_semantic_model(destination)
 
 
 def main() -> None:

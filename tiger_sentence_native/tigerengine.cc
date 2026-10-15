@@ -3701,6 +3701,23 @@ struct Engine {
     return cached_result;
   }
 
+  // 词频梯度的生效判定（与 expand_range 内的首道门同式）：仅 ≤10 键且
+  // 该输入无整段词形命中时开启。该策略随输入长度变化：缓存 frontier 的
+  // 分数在旧长度下可能已含梯度加分，输入增长到梯度关闭的长度（如出现
+  // 整段命中）后，沿用旧 frontier 会让组合路径保留不再合法的加分反杀
+  // 整段真词（fjrfxoxmvr 增量打字丢「凡人修仙传」首选：8/9 键前缀让
+  // 「休闲」内部边多拿 ~20 nats）。两态不一致时必须整帧重建。
+  bool freq_gradient_active(const std::string& raw) const {
+    if (word_edge_freq_weight <= 0.0 || raw.size() > 10) return false;
+    const auto wit = lex.codes.find(raw);
+    if (wit != lex.codes.end()) {
+      for (const auto& e : wit->second) {
+        if (e.word_form_share > 0.0) return false;
+      }
+    }
+    return true;
+  }
+
   DecodeResult& decode(const std::string& raw_code, bool include_early) {
     std::string raw = normalize(raw_code);
     if (raw.empty() || raw.find_first_of("abcdefghijklmnopqrstuvwxyz") == std::string::npos) {
@@ -3718,7 +3735,8 @@ struct Engine {
       if (old_n == 1 || length == 1 || ((old_n <= 4) != (length <= 4))) {
         reuse = false;
       } else if (length > old_n && raw.compare(0, old_n, cached_raw) == 0 &&
-                 !has_terminal_phrase_states) {
+                 !has_terminal_phrase_states &&
+                 freq_gradient_active(cached_raw) == freq_gradient_active(raw)) {
         size_t selector_bytes = auxiliary_word_edges
             ? static_cast<size_t>(std::count_if(raw.begin(), raw.end(), [](char c) {
                 return (c >= '0' && c <= '9') || c == ';' || c == '\'';

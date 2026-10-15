@@ -5237,6 +5237,7 @@ columns:
 伧	chjj
 鸧	chjz
 疵	cias
+兹	cihi
 鹚	cihi
 佽	cijw
 莿	cile
@@ -5286,6 +5287,7 @@ columns:
 菪	dhlw
 谠	dhss
 娣	dibh
+氐	dibi
 嫡	dibi
 𬱖	didw
 柢	dieb
@@ -5332,6 +5334,7 @@ columns:
 叇	ddbb
 殆	ddgk
 傣	ddja
+黛	ddjp
 袋	ddjp
 迨	ddkd
 玳	ddnj
@@ -5499,6 +5502,7 @@ columns:
 肺	fwvf
 腓	fwvr
 朏	fwvs
+呷	gads
 咖	gads
 胳	gavs
 轧	gaya
@@ -6120,6 +6124,7 @@ columns:
 炬	jucn
 屦	jucw
 椐	juec
+枸	jueg
 桔	jueg
 榉	juek
 柜	juen
@@ -6212,6 +6217,7 @@ columns:
 晶	jkoo
 鼱	jkpa
 井	jkqj
+迳	jkru
 劲	jkru
 腈	jkva
 肼	jkvq
@@ -6353,6 +6359,7 @@ columns:
 凓	liwv
 鳢	liwy
 厉	lixf
+黧	lixp
 黎	lixp
 历	lixs
 醨	liyz
@@ -6409,6 +6416,7 @@ columns:
 鎏	lqkb
 浏	lqkv
 碌	lqmb
+珋	lqnb
 骝	lqnb
 疁	lqqz
 鹨	lqzj
@@ -6541,6 +6549,7 @@ columns:
 劢	mdfp
 勔	mmbs
 缅	mmib
+澠	mmkd
 渑	mmkd
 沔	mmkf
 眄	mmqf
@@ -6625,6 +6634,7 @@ columns:
 镍	npzo
 苎	nklw
 嚄	oodl
+区	ounb
 鸥	ounb
 筢	paru
 掊	pzui
@@ -6643,6 +6653,7 @@ columns:
 膀	phvi
 鳑	phwi
 痞	piac
+否	picd
 劈	picd
 丕	picf
 蜱	picu
@@ -6665,6 +6676,7 @@ columns:
 裨	pitu
 郫	piut
 叛	pjhu
+般	pjir
 槃	pjir
 泮	pjkh
 畔	pjqh
@@ -6911,6 +6923,7 @@ columns:
 颡	shrr
 漦	siah
 耜	siak
+咝	sidi
 嗣	sidi
 寺	sigk
 鸶	siii
@@ -6923,6 +6936,7 @@ columns:
 饲	siqa
 食	siqs
 㟃	siva
+虒	sixz
 厮	sixz
 锶	sizq
 毵	sjkm
@@ -7124,6 +7138,7 @@ columns:
 蛳	uicp
 尸	uics
 鸤	uicx
+喰	uidq
 嗜	uidq
 嘘	uidz
 栻	uiep
@@ -7133,6 +7148,7 @@ columns:
 螫	uigc
 殖	uign
 埘	uigo
+仕	uijg
 侍	uijg
 什	uijn
 豕	uijs
@@ -7187,6 +7203,7 @@ columns:
 艄	uciy
 苕	uclp
 玿	ucnp
+召	ucpd
 劭	ucpd
 韶	ucxp
 槊	uohs
@@ -7222,6 +7239,7 @@ columns:
 喋	vadl
 吒	vadt
 哳	vadu
+咋	vadw
 咤	vadw
 札	vaea
 榨	vaee
@@ -7238,6 +7256,7 @@ columns:
 啁	vzdm
 胄	vzdv
 纣	vzik
+鸼	vzix
 绉	vzix
 赒	vzom
 繇	vzya
@@ -7541,6 +7560,7 @@ columns:
 烯	xicb
 爔	xicg
 犀	xick
+屃	xico
 螅	xico
 蟋	xict
 屣	xicw
@@ -7815,6 +7835,7 @@ columns:
 癔	yiax
 乂	yibi
 嫕	yibn
+刈	yibp
 彝	yibp
 燚	yicc
 螠	yick
@@ -7937,6 +7958,7 @@ columns:
 爻	ycbb
 肴	ycbn
 姚	ycbp
+乐	ycby
 媱	ycby
 吆	ycdi
 窈	ycei
@@ -7970,6 +7992,7 @@ columns:
 湮	ybkv
 溵	ybkz
 茚	yblb
+龂	yblt
 荫	yblt
 夤	yblw
 骃	ybnr
@@ -8073,6 +8096,7 @@ columns:
 臾	yupj
 舁	yupl
 饫	yuqt
+禺	yuqv
 愚	yuqv
 竽	yurf
 圉	yurg
@@ -11572,6 +11596,7 @@ AVL树	avlu
 搬唇递舌	bidu
 必读	bidu
 比对	bidv
+吡	bidv
 哔	bidv
 不吃东西	bidx
 保持队形	bidx
@@ -11585,6 +11610,7 @@ AVL树	avlu
 避风	bifg
 百川赴海	bifh
 比方	bifh
+敝	bifh
 弊	bifh
 比附	bifu
 不成方圆	bify
@@ -54822,6 +54848,7 @@ JK制服	jkvf
 见微知萌	jwvm
 局外之人	jwvr
 加重	jxvs
+岬	jxvs
 胛	jxvs
 鸡鹜争食	jwvu
 夹住	jxvu
@@ -152328,7 +152355,6 @@ F11	ofyk
 呔	tddm
 呦	yzds
 呦	yods
-呷	gads
 咄	dodm
 咇	bidt
 咔	kadf
@@ -153445,6 +153471,7 @@ F11	ofyk
 渎	dukm
 渑	mmkm
 渑	mmks
+澠	ugkd
 渑	ugkd
 渑	ugkm
 渑	ugks
@@ -155465,6 +155492,7 @@ F11	ofyk
 黎	lixk
 黜	iupm
 黢	quph
+黽	mmdm
 黾	mmdm
 鼋	yrmd
 鼍	todq
@@ -156060,12 +156088,12 @@ F11	ofyk
 # 原版自然碼oa碼
 爾	oaa
 爾	erff
+鬲	oaaa
 亟	oaaa
 亟	jirf
 亟	jirr
 亟	qirf
 亟	qirr
-鬲	oaaa
 奡	oaaa
 甫	oaad
 夷	oaad
@@ -156118,8 +156146,6 @@ F11	ofyk
 奭	oadb
 奭	uimu
 澠	oadm
-澠	mmkd
-澠	ugkd
 纛	oadx
 亓	oae
 鄳	oaem
@@ -156180,7 +156206,6 @@ F11	ofyk
 彧	yupf
 黽	oakg
 黽	mgdm
-黽	mmdm
 黽	mbdm
 鼉	oakm
 鼉	todd
@@ -156334,10 +156359,10 @@ F11	ofyk
 喬	jntm
 喬	qntd
 喬	qntm
+譝	oaym
 黿	oaym
 黿	yrmd
 黿	yrmp
-譝	oaym
 譝	ugsd
 鱦	oaym
 鱦	ugwd
@@ -156414,7 +156439,6 @@ F11	ofyk
 乏	fatr
 乐	leby
 乐	ytby
-乐	ycby
 乒	pktf
 乒	pktt
 乓	phtf
@@ -156498,7 +156522,6 @@ F11	ofyk
 仓	chjz
 仔	zdjh
 仔	zijh
-仕	uijg
 他	taje
 仗	vhjf
 仗	vhjb
@@ -156857,7 +156880,6 @@ F11	ofyk
 其	jizh
 具	juqh
 典	dmih
-兹	cihi
 兹	zihi
 养	yhgi
 养	yhgp
@@ -156952,7 +156974,6 @@ F11	ofyk
 刁	dnaf
 分	ffhp
 切	qprp
-刈	yibp
 刊	kjep
 刍	iuxb
 刑	xkfl
@@ -157087,7 +157108,6 @@ F11	ofyk
 匣	xxns
 匪	fwnr
 匹	pinp
-区	ounb
 区	qunb
 医	yino
 匿	ninl
@@ -157215,7 +157235,6 @@ F11	ofyk
 叩	kzdz
 只	vidh
 叫	jndi
-召	ucpd
 叭	badh
 叮	dkda
 可	kezk
@@ -157269,9 +157288,7 @@ F11	ofyk
 吟	ybdj
 吟	jbda
 吟	ybda
-吡	bidv
 否	fzcd
-否	picd
 吧	badm
 吨	dydf
 吨	dyds
@@ -157351,7 +157368,6 @@ F11	ofyk
 咆	pcdv
 咉	yhdm
 咋	zadw
-咋	vadw
 和	hexd
 和	huxd
 和	hoxd
@@ -157374,7 +157390,6 @@ F11	ofyk
 咚	dsdw
 咛	nkdw
 咛	nkda
-咝	sidi
 咡	erdq
 咣	gldm
 咦	yidm
@@ -157590,7 +157605,6 @@ F11	ofyk
 喤	hldn
 喧	xrdw
 喧	xrdf
-喰	uidq
 喰	cjdq
 喰	qidq
 喰	sydq
@@ -158480,7 +158494,6 @@ F11	ofyk
 尿	nnck
 屁	picv
 层	cgcb
-屃	xico
 居	jucc
 屈	qucs
 屈	qucm
@@ -158539,7 +158552,6 @@ F11	ofyk
 岣	gzvs
 岩	yjvm
 岫	xqvd
-岬	jxvs
 岭	lkvj
 岭	lkvk
 岱	ddjp
@@ -159771,7 +159783,6 @@ F11	ofyk
 敛	lmjk
 敛	lmjf
 敛	lmjh
-敝	bifh
 敢	gjaq
 敢	gjah
 散	sjlv
@@ -160115,7 +160126,6 @@ F11	ofyk
 架	jxse
 枷	jxes
 枷	jxed
-枸	jueg
 枹	bcen
 枹	bcev
 枹	fuev
@@ -160523,7 +160533,6 @@ F11	ofyk
 毽	jmvu
 氅	ihsh
 氍	quqq
-氐	dibi
 民	mbdm
 氓	mhfd
 氓	mgfd
@@ -161424,7 +161433,6 @@ F11	ofyk
 珈	jxnd
 珉	mbnd
 珊	ujni
-珋	lqnb
 珍	vfnj
 珍	vfne
 珏	jtnn
@@ -162207,7 +162215,6 @@ F11	ofyk
 禳	rhft
 禳	rhfd
 禳	rhff
-禺	yuqv
 离	lizb
 离	lizm
 离	lizv
@@ -163258,7 +163265,6 @@ F11	ofyk
 航	hhiz
 航	hhio
 般	bjir
-般	pjir
 舭	biiv
 舰	jmie
 舱	chij
@@ -163737,7 +163743,6 @@ F11	ofyk
 虎	huzh
 虏	luzs
 虐	ntzb
-虒	sixz
 虚	xuzc
 虢	goyk
 虢	goyz
@@ -164776,7 +164781,6 @@ F11	ofyk
 迮	zewu
 迮	zewa
 迮	zewc
-迳	jkru
 迷	mipu
 迸	bghl
 迸	bghu
@@ -166060,7 +166064,6 @@ F11	ofyk
 鸵	toxv
 鸷	viuk
 鸻	hgpx
-鸼	vzix
 鸽	gejd
 鸽	gejx
 鸾	lrzc
@@ -166139,7 +166142,6 @@ F11	ofyk
 黔	qmpj
 黔	qmpa
 默	mopm
-黛	ddjp
 黝	yzpi
 黝	yzps
 黠	xxpg
@@ -166147,7 +166149,6 @@ F11	ofyk
 黡	yjxm
 黥	qkpg
 黥	qkpy
-黧	lixp
 黩	dupn
 黩	dupa
 黩	dupm
@@ -166175,7 +166176,6 @@ F11	ofyk
 齐	qiqq
 齿	iilc
 龀	iflv
-龂	yblt
 龄	lklj
 龄	lklk
 龅	bcln
@@ -166670,8 +166670,8 @@ F11	ofyk
 桔	jved
 橘	jved
 巨额	jvee
-桔	jveg
 枸	jveg
+桔	jveg
 榉	jveh
 橘	jvei
 榉	jvek
@@ -167702,8 +167702,8 @@ F11	ofyk
 饫	yvqt
 余缺	yvqt
 遇	yvqu
-愚	yvqv
 禺	yvqv
+愚	yvqv
 遇	yvqv
 鱼群	yvqy
 圄	yvr

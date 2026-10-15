@@ -56,8 +56,10 @@ deploy:
         assert: eq(cand[1].text, '架') and eq(cand[1].comment, '⚡️') and not eq(cand[2].comment, '⚡️')
       - send: lix
         assert: eq(cand[1].text, '利') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '梨') and eq(cand[2].comment, '⚡️')
+      # 让位规则：黧 无兼容退路与前缀简码（0 类），黎 有兼容打法（1 类）
+      # 让出 lixp 首选（tools/sync_master_yield.py + sync_rootlex_aux.py）
       - send: lixp
-        assert: eq(cand[1].text, '黎') and eq(cand[1].comment, '⚡️') and eq(cand[2].text, '励')
+        assert: eq(cand[1].text, '黧') and eq(cand[2].text, '黎')
       # 暮/幕 交换简频（tools/data/chars.txt）：mulo 归暮，幕 让位到 mulr
       - send: mulo
         assert: eq(cand[1].text, '暮') and eq(cand[1].comment, '⚡️')

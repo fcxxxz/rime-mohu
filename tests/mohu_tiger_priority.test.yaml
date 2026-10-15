@@ -1,5 +1,5 @@
 schema: mohu_zrm
-source_dir: ../dist
+source_dir: ../dist-zrm
 script: |
   function eq(left, right)
     print('Left  = ' .. tostring(left))
@@ -51,5 +51,7 @@ deploy:
         assert: eq(cand[1].text, '昭') and text_index(cand, '照') > 1
       - send: hvwv
         assert: eq(cand[1].text, '徽')
+      # 让全对一切简码生效（含次选）：微是 wz 次选，在全长码 wzwv 上
+      # 让出首位（同 vkop 照让昭）。首位归属另议（w=0 生僻字捡位问题）。
       - send: wzwv
-        assert: eq(cand[1].text, '微')
+        assert: eq(cand[2].text, '微') and text_index(cand, '鲔') ~= nil

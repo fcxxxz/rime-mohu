@@ -1,0 +1,41 @@
+## 让位与兼容打法回归（sync_master_yield + sync_rootlex_aux）
+
+# 规则：
+# - 兼容打法（13/14 位辅码）物化进引擎根词表：sada/sidd 可打；
+# - 多路让单路：无兼容退路且无前缀简码的字（咝）在正常全码位
+#   （sidi）首选，有兼容退路的字（嗣）次选，双拼词殿后；
+# - 兼容码位：真双拼词在前（sada 首选 厮打/四大 类），兼容字其后，
+#   四码简词殿后（sidd 嗣 → 虽迟但到）；
+# - 三码简码位与显式简码声明不受影响（sid 仍是 嘶）。
+
+schema: mohu_zrm
+source_dir: ../dist-zrm
+script: |
+  function eq(left, right)
+    return left == right
+  end
+
+  function first_is(candidates, text)
+    return candidates[1] ~= nil and candidates[1].text == text
+  end
+
+  function pos_of(candidates, text)
+    for i, c in ipairs(candidates) do
+      if c.text == text then return i end
+    end
+    return -1
+  end
+
+deploy:
+  default:
+    tests:
+      - send: sid
+        assert: first_is(cand, '嘶') and eq(pos_of(cand, '嗣'), 2)
+      - send: sidi
+        assert: first_is(cand, '咝') and eq(pos_of(cand, '嗣'), 2)
+      - send: sida
+        assert: pos_of(cand, '嗣') > 1 and pos_of(cand, '嗣') < 6
+      - send: sidd
+        assert: first_is(cand, '嗣') and pos_of(cand, '虽迟但到') > 1
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

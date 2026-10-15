@@ -301,7 +301,12 @@ model-dist:
 	mkdir -p model-dist/mohu/model
 	install -m 0644 "$(TIGER_NGRAM)" model-dist/mohu/model/mohu-sentence-ngram-v5.bin
 
-test: check-code-table dist-zrm dist-flypy mohu_lexicons
+check-rootlex-aux:
+	uv run python tools/sync_rootlex_aux.py --check
+	uv run python tools/sync_master_yield.py | grep -q '^首轮违规: 0$$' || \
+		{ echo "主表存在让位违规：运行 uv run python tools/sync_master_yield.py --apply"; exit 1; }
+
+test: check-code-table check-rootlex-aux dist-zrm dist-flypy mohu_lexicons
 	$(MAKE) tigerengine-safety
 	$(MAKE) tigerengine-lua-safety
 	$(MAKE) tigerengine-learning-context
@@ -376,4 +381,4 @@ test: check-code-table dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all pack dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-word-units tigerengine-aux-words tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check test lint-python
+.PHONY: quick all pack dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-word-units tigerengine-aux-words tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check check-rootlex-aux test lint-python

@@ -747,7 +747,27 @@ end
 -- （preedit，每字一段）确定基码与首辅码，再经 ReverseLookup 反查每个字的
 -- 完整音节码，写入 smart 命名空间；smart 候选则直接归一其 preedit。两条
 -- 路径都通过 adjust_personal 立即更新 native 词边，恢复跨引擎调频一致性。
+-- smart_static 段（达到 tiger/long_input_length 的长输入由无用户词典的
+-- 静态副本负责）的 phrase/sentence 提交 librime 不会记忆——OOV 词（如人名）
+-- 只能用 ≥5 键辅码混合形精确打出，native 又不解混合码形，若无人接管则
+-- 「全码打词、短码出词」的学习链整体断裂；此类候选与 native 同路径反查写入。
 local native_memorize_max_syllables = 10  -- 与 smart/max_word_length 对齐
+
+-- 与 mohu_contextual_translator.get_for_input 相同的长输入判据：段原始
+-- 输入（去空白、小写）达到门槛即由 smart_static 负责。判据不可得时返回
+-- false（宁可漏学，不与 user_dict 版 smart 的 librime Memorize 双写）。
+local function segment_from_static_translator(env, ctx, segment)
+  local threshold = env and env._mohu_personal_long_input_length
+  if type(threshold) ~= "number" then return false end
+  local raw_ok, raw_input = pcall(function() return ctx and ctx.input end)
+  if not raw_ok or type(raw_input) ~= "string" then return false end
+  local start_ok, seg_start = pcall(function() return segment and segment.start end)
+  local end_ok, seg_end = pcall(function() return segment and segment._end end)
+  if not start_ok or not end_ok or type(seg_start) ~= "number" or
+    type(seg_end) ~= "number" then return false end
+  local seg_raw = raw_input:sub(seg_start + 1, seg_end):gsub("[ \t\r\n]", "")
+  return #seg_raw >= threshold
+end
 
 local function native_reverse_lookup(env)
   if env._tiger_reverse ~= nil then return env._tiger_reverse end
@@ -825,7 +845,14 @@ local function memorize_native_candidates(env, ctx)
           local update_ok = true
           local is_native_candidate = cand_type == candidate_type or
             cand_type == candidate_type .. "_personal"
-          if is_native_candidate then
+          -- smart_static 段的 phrase/sentence：script 翻译器无用户词典，
+          -- librime 不会记忆，与 native 候选同路径反查每字完整码写入。
+          -- 短段的 phrase/sentence 由 user_dict 版 smart 的 librime
+          -- Memorize 认领，不在此重复计数。
+          local is_static_lookup_candidate = not is_native_candidate and
+            segment_from_static_translator(env, ctx, segment) and
+            (cand_type == "sentence" or cand_type == "phrase")
+          if is_native_candidate or is_static_lookup_candidate then
             if not memory or type(memory.update_userdict) ~= "function" or
                 type(DictEntry) ~= "function" or not reverse then
               update_ok = false
@@ -1065,6 +1092,23 @@ local function init_personal_lexicon(env)
         "monolithic path (full scan + global sort) instead of the sliced path")
     end
   end
+  -- 长输入门槛（与 mohu_contextual_translator.get_for_input 同口径）：
+  -- 达到该键数的段由 smart_static 负责其 phrase/sentence 的提交学习。
+  env._mohu_personal_long_input_length = nil
+  if cfg then
+    local value
+    if type(cfg.get_int) == "function" then
+      local ok, v = pcall(cfg.get_int, cfg, "tiger/long_input_length")
+      if ok then value = v end
+    end
+    if value == nil and type(cfg.get_string) == "function" then
+      local ok, v = pcall(cfg.get_string, cfg, "tiger/long_input_length")
+      if ok then value = tonumber(v) end
+    end
+    if finite_number(value) and value >= 1 then
+      env._mohu_personal_long_input_length = math.floor(value)
+    end
+  end
   local ok, memory = pcall(Memory, env.engine, env.engine.schema, namespace)
   if not ok or memory == nil then return end
   env._mohu_personal_memory = memory
@@ -1118,6 +1162,7 @@ local function fini_personal_lexicon(env)
   env._mohu_personal_last_payload = nil
   env._mohu_personal_refresh_at = nil
   env._mohu_personal_max_rows = nil
+  env._mohu_personal_long_input_length = nil
 end
 
 local function retain_engine(env)
@@ -1563,8 +1608,12 @@ M.translator = {}
 
 function M.translator.init(env)
   local handle = retain_engine(env)
+  -- 提交学习桥（userdb 写入 + 个人词快照刷新）不依赖 native 引擎：
+  -- smart_static 长输入提交的句子学习在引擎不可用（Lua 版本失配、模型
+  -- 缺失，如 mira 的 5.5 宿主）时也要工作；native 侧的扫描喂入与
+  -- adjust_personal 各自按引擎可用性跳过。
+  init_personal_lexicon(env)
   if handle ~= nil then
-    init_personal_lexicon(env)
     init_user_model(env)
   end
 end

@@ -1,7 +1,5 @@
 ZRM_DESTDIR ?= $(abspath ./dist-zrm)
 FLYPY_DESTDIR ?= $(abspath ./dist-flypy)
-MOBILE_ZRM_DESTDIR ?= $(abspath ./dist-mobile-zrm)
-MOBILE_FLYPY_DESTDIR ?= $(abspath ./dist-mobile-flypy)
 TIGER_NGRAM ?= tiger_sentence_native/mohu-sentence-ngram-v5.bin
 MOHU_LUA_BIN ?= lua
 TIGER_MEMORY_OUTPUT ?= .tmp/native-tests/tigerengine-windows-mapping.json
@@ -125,7 +123,6 @@ clean:
 	rm -f mohu.mdd mohu.mdx
 	rm -rf dist
 	rm -rf dist-zrm dist-flypy
-	rm -rf dist-mobile-zrm dist-mobile-flypy
 	rm -f rime-mohu-mobile-zrm-lite.zip rime-mohu-mobile-flypy-lite.zip
 	rm -rf dist-mohu-llm-zrm dist-mohu-llm-flypy
 	rm -f $(chars_output)
@@ -287,14 +284,6 @@ pack:
 	uv run python tools/pack_desktop.py zrm "$(ZRM_DESTDIR)" rime-mohu-zrm.zip
 	uv run python tools/pack_desktop.py flypy "$(FLYPY_DESTDIR)" rime-mohu-flypy.zip
 
-# 手机精简包（Trime/Hamster）：无模型、无 native 二进制，模型由用户自行
-# 导入 mohu-sentence-ngram-v5.bin。同时产出目录与发行 zip。
-dist-mobile-zrm: quick mohu_lexicons
-	uv run tools/build_mobile_dist.py zrm "$(MOBILE_ZRM_DESTDIR)" --zip rime-mohu-mobile-zrm-lite.zip
-
-dist-mobile-flypy: quick mohu_lexicons
-	uv run tools/build_mobile_dist.py flypy "$(MOBILE_FLYPY_DESTDIR)" --zip rime-mohu-mobile-flypy-lite.zip
-
 model-dist:
 	@test -f "$(TIGER_NGRAM)" || (echo "Error: set TIGER_NGRAM to mohu-sentence-ngram-v5.bin" >&2; exit 1)
 	rm -rf model-dist
@@ -331,7 +320,6 @@ test: check-code-table check-rootlex-aux dist-zrm dist-flypy mohu_lexicons
 	uv run python -m unittest tests.test_reading_coverage -v
 	uv run python -m unittest tests.test_mohu_lexicons -v
 	uv run python -m unittest tests.test_flat_distribution -v
-	uv run python -m unittest tests.test_mobile_distribution -v
 	uv run python -m unittest tests.test_collect_windows_runtime -v
 	uv run python -m unittest tests.test_split_release_workflow -v
 	uv run python -m unittest tests.test_flypy_assets -v
@@ -381,4 +369,4 @@ test: check-code-table check-rootlex-aux dist-zrm dist-flypy mohu_lexicons
 	mira -C /tmp/mira-cache tests/mohu.ijrq.test.yaml
 	rm -rf /tmp/mira-cache
 
-.PHONY: quick all pack dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-word-units tigerengine-aux-words tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy dist-mobile-zrm dist-mobile-flypy flykey-check check-rootlex-aux test lint-python
+.PHONY: quick all pack dict mohu_lexicons tiger_aux chars pinyin_reverse zrmdb chaifen emoji update-compact-dicts sync-essay dazhu opencc mdict model-dist tigerengine-native tigerengine-safety tigerengine-lua-safety tigerengine-learning-context tigerengine-snapshot-io tigerengine-user-model tigerengine-context tigerengine-word-score tigerengine-word-units tigerengine-aux-words tigerengine-bench tigerengine-mapping tigerengine-mobile tigerengine-windows-memory dist-zrm dist-flypy flykey-check check-rootlex-aux test lint-python

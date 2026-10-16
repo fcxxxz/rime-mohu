@@ -101,8 +101,6 @@ make quick               # 更新单字、反查、拆分等资源
 make dist-zrm            # 仅生成自然码目录
 make dist-flypy          # 仅生成小鹤目录
 make test                # 测试
-make dist-mobile-zrm     # 手机自然码精简包
-make dist-mobile-flypy   # 手机小鹤精简包
 ```
 
 </details>

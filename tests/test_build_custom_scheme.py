@@ -8,12 +8,15 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -322,6 +325,22 @@ class TableParsingTest(unittest.TestCase):
         self.assertEqual(name, "zrm")
         self.assertGreaterEqual(ratio, 0.8)
 
+    def test_source_order_is_per_code_and_reading(self) -> None:
+        from tools.custom.build_custom_scheme import _reorder_rows_by_source_order
+        from tools.custom.custom_aux import load_coded_chars
+
+        path = self.dir / "polyphones.tsv"
+        path.write_text(
+            "aaxy\t甲\naazz\t乙\nbbxy\t乙\nbbzz\t甲\n"
+            "bbq\t甲\nbbq\t乙\n", encoding="utf-8")
+        table = load_coded_chars(path)
+        lines = ["甲\tbbxy\n", "乙\tbbxy\n", "乙\taaxy\n", "甲\taaxy\n",
+                 "乙\tbbq\n", "甲\tbbq\n"]
+        self.assertEqual(_reorder_rows_by_source_order(lines, table.order), [
+            "乙\tbbxy\n", "甲\tbbxy\n", "甲\taaxy\n", "乙\taaxy\n",
+            "甲\tbbq\n", "乙\tbbq\n",
+        ])
+
     def test_shortcodes_collected_in_source_order(self) -> None:
         from tools.custom.custom_aux import load_coded_chars
 
@@ -471,7 +490,7 @@ class ReorderBySourceOrderTest(unittest.TestCase):
         # 同 code 行物理上不相邻（继承虎码序分散）：源码表序魔在馍前，
         # 内容置换后魔占据组内最早的行位置。
         lines = ["# 注释\n", "摸\tmo\n", "馍\tmoq\n", "膜\tmob\n", "魔\tmoq\n"]
-        out = self.reorder(lines, {"魔": 3, "馍": 9, "摸": 0})
+        out = self.reorder(lines, {("魔", "mo"): 3, ("馍", "mo"): 9, ("摸", "mo"): 0})
         self.assertEqual(
             out,
             ["# 注释\n", "摸\tmo\n", "魔\tmoq\n", "膜\tmob\n", "馍\tmoq\n"],
@@ -480,24 +499,32 @@ class ReorderBySourceOrderTest(unittest.TestCase):
     def test_duplicate_rows_of_same_char_stay_grouped(self) -> None:
         # 同字的重复行（兼容变体坍缩）order 相同、稳定保持相邻。
         lines = ["瘼\tmoqf\n", "馍\tmoqf\n", "馍\tmoqf\n"]
-        out = self.reorder(lines, {"魔": 1, "馍": 2})
+        out = self.reorder(lines, {("魔", "mo"): 1, ("馍", "mo"): 2})
         self.assertEqual(out, ["馍\tmoqf\n", "馍\tmoqf\n", "瘼\tmoqf\n"])
 
     def test_unknown_chars_stay_at_tail_in_order(self) -> None:
         lines = ["馍\tmoqf\n", "瘼\tmoqf\n", "魔\tmoqf\n"]
-        out = self.reorder(lines, {"魔": 3, "馍": 9})
+        out = self.reorder(lines, {("魔", "mo"): 3, ("馍", "mo"): 9})
         self.assertEqual(out, ["魔\tmoqf\n", "馍\tmoqf\n", "瘼\tmoqf\n"])
 
     def test_word_rows_untouched(self) -> None:
         # 词行不参与分组（单字行才进组），保持原位置。
         lines = ["词语\tmoq\n", "馍\tmoq\n", "膜\tmob\n", "魔\tmoq\n"]
-        out = self.reorder(lines, {"魔": 1, "馍": 2})
+        out = self.reorder(lines, {("魔", "mo"): 1, ("馍", "mo"): 2})
         self.assertEqual(out, ["词语\tmoq\n", "魔\tmoq\n", "膜\tmob\n", "馍\tmoq\n"])
+
+    def test_only_affected_reading_is_reordered(self) -> None:
+        lines = ["甲\tnlda\n", "哪\tnlda\n", "呐\tnada\n", "哪\tnada\n"]
+        rank = {("哪", "nl"): 0, ("甲", "nl"): 1,
+                ("哪", "na"): 0, ("呐", "na"): 1}
+        out = self.reorder(lines, rank, only_groups_with={("哪", "na")})
+        self.assertEqual(out[:2], lines[:2])
+        self.assertEqual(out[2:], ["哪\tnada\n", "呐\tnada\n"])
 
     def test_only_groups_with_restricted(self) -> None:
         # 简码无重频序重排：只动含被推字（吧）的组，无关组保持原序。
         lines = ["叭\tbad\n", "吧\tbad\n", "疤\tbaa\n", "靶\tbaa\n"]
-        out = self.reorder(lines, {"吧": 0, "叭": 1}, only_groups_with={"吧"})
+        out = self.reorder(lines, {("吧", "ba"): 0, ("叭", "ba"): 1}, only_groups_with={("吧", "ba")})
         self.assertEqual(out[0], "吧\tbad\n")     # 吧(高频)升到组首
         self.assertEqual(out[1], "叭\tbad\n")
         self.assertEqual(out[2:], ["疤\tbaa\n", "靶\tbaa\n"])  # 无关组不动
@@ -533,7 +560,8 @@ class UniqueShortcodeTest(unittest.TestCase):
         # 不>b>a>b：吧输 b 降 ba、再输把降 bad、bad 级赢叭——叭退全码 badh。
         rows = ["不\tb\n", "吧\tb\n", "吧\tbadm\n", "把\tba\n", "拔\tba\n",
                 "拔\tbau\n", "叭\tbad\n", "叭\tbadh\n"]
-        rank = {"不": 0, "把": 1, "吧": 2, "拔": 3, "叭": 4}
+        rank = {("不", "b"): 0, ("把", "ba"): 1, ("吧", "ba"): 2,
+                ("拔", "ba"): 3, ("叭", "ba"): 4}
         out, stats = self.run_unique(rows, rank)
         self.assertIn("不\tb\n", out)
         self.assertNotIn("吧\tb\n", out)      # 一级输给「不」
@@ -550,10 +578,207 @@ class UniqueShortcodeTest(unittest.TestCase):
     def test_no_longer_code_kept_as_fallback(self) -> None:
         # 撞位字没有更长码行时保留兜底，否则字会从码表消失。
         rows = ["不\tb\n", "吧\tb\n"]
-        out, stats = self.run_unique(rows, {"不": 0, "吧": 1})
+        out, stats = self.run_unique(rows, {("不", "b"): 0, ("吧", "b"): 1})
         self.assertIn("不\tb\n", out)
         self.assertIn("吧\tb\n", out)
         self.assertEqual(stats.unique_pushed, {})
+
+    def test_polyphone_cascades_use_independent_frequencies(self) -> None:
+        from tools.custom import build_custom_scheme as builder
+        from tiger_aux import AuxiliaryEntry
+
+        weights = {("哪", "na"): "998544", ("哪", "ne"): "1",
+                   ("哪", "nai"): "0", ("哪", "nei"): "0",
+                   ("你", "ni"): "3000000", ("那", "na"): "2000000",
+                   ("呐", "na"): "48065", ("耐", "nai"): "90000",
+                   ("讷", "ne"): "200", ("内", "nei"): "100000"}
+        rows = ["哪\tn\n", "你\tn\n", "你\tni\n", "你\tnijy\n",
+                "那\tna\n", "那\tnadt\n", "呐\tnad\n", "呐\tnadj\n",
+                "耐\tnl\n", "耐\tnlek\n", "讷\tne\n", "讷\tnesn\n",
+                "内\tnz\n", "内\tnzmj\n"]
+        fullcodes = [f"哪\t{reading}{aux}\n" for reading in ("na", "ne", "nl", "nz")
+                     for aux in ("da", "dt", "du")]
+        rows += fullcodes
+        aux = {"哪": AuxiliaryEntry("da", "dt", "du")}
+        with patch.object(builder, "freq_simp_table", weights):
+            rank = builder._reading_freq_rank(lambda code: code)
+            self.assertLess(rank[("呐", "na")], rank[("哪", "ne")])
+            for secondary in ([], ["哪\tnl\n", "哪\tne\n", "哪\tnz\n"]):
+                with self.subTest(explicit_secondary=bool(secondary)):
+                    out = builder._unique_shortcode_pass(rows + secondary, rank,
+                                                         self.stats_cls(), aux)
+                    self.assertIn("哪\tnad\n", out)
+                    self.assertNotIn("哪\tn\n", out)
+                    self.assertNotIn("哪\tna\n", out)
+                    self.assertNotIn("哪\tnl\n", out)
+                    self.assertNotIn("呐\tnad\n", out)
+                    self.assertTrue(set(fullcodes).issubset(out))
+                    for reading in ("nl", "ne", "nz"):
+                        self.assertEqual(f"哪\t{reading}d\n" in out, bool(secondary))
+                    short = [r.split("\t")[1].strip() for r in out
+                             if len(r.split("\t")[1].strip()) <= 3]
+                    self.assertEqual(len(short), len(set(short)))
+
+    def test_normal_aux_path_and_explicit_compat_shortcode(self) -> None:
+        from tiger_aux import AuxiliaryEntry
+
+        rows = ["甲\tba\n", "乙\tba\n", "乙\tbazz\n", "乙\tbaaa\n",
+                "乙\tbaz\n", "丙\tbaz\n", "丙\tbazx\n"]
+        rank = {("甲", "ba"): 0, ("乙", "ba"): 1, ("丙", "ba"): 2}
+        out = self.unique_pass(rows, rank, self.stats_cls(), {"乙": AuxiliaryEntry("aa", "zz")})
+        self.assertIn("乙\tbaa\n", out)
+        self.assertIn("乙\tbaz\n", out)  # explicit compatibility shortcode still competes
+        self.assertNotIn("丙\tbaz\n", out)
+        self.assertTrue(set(rows[2:4]).issubset(out))
+
+    def test_source_order_cannot_choose_secondary_for_one_key(self) -> None:
+        from tools.custom import build_custom_scheme as builder
+        from tiger_aux import AuxiliaryEntry
+
+        rows = ["哪\tn\n", "你\tn\n", "你\tnijy\n", "哪\tnlda\n", "哪\tnada\n"]
+        source_rank = {("哪", "nl"): 0, ("你", "n"): 1, ("哪", "na"): 2}
+        frequency_rank = {("你", "ni"): 0, ("哪", "na"): 1, ("哪", "nl"): 2}
+        out = builder._unique_shortcode_pass(rows, source_rank, self.stats_cls(),
+                                            {"哪": AuxiliaryEntry("da")},
+                                            frequency_rank=frequency_rank)
+        self.assertIn("哪\tna\n", out)
+        self.assertNotIn("哪\tnl\n", out)
+
+    def test_one_key_prefers_fullcode_evidence_over_partial_primary(self) -> None:
+        rank = {("你", "ni"): 0, ("哪", "na"): 1, ("哪", "ne"): 2}
+        for partial in ("na", "nad"):
+            with self.subTest(partial=partial):
+                rows = ["你\tn\n", "你\tnijy\n", "哪\tn\n",
+                        f"哪\t{partial}\n", "哪\tneda\n"]
+                out, _stats = self.run_unique(rows, rank)
+                self.assertIn("哪\tne\n", out)
+                self.assertNotIn("哪\tn\n", out)
+                self.assertIn(f"哪\t{partial}\n", out)
+                self.assertIn("哪\tneda\n", out)
+
+    def test_one_key_without_fullcode_keeps_deterministic_partial_fallback(self) -> None:
+        rows = ["你\tn\n", "你\tnijy\n", "哪\tn\n", "哪\tnad\n", "哪\tned\n"]
+        rank = {("你", "ni"): 0, ("哪", "na"): 1, ("哪", "ne"): 2}
+        out, _stats = self.run_unique(rows, rank)
+        reversed_out, _stats = self.run_unique(list(reversed(rows)), rank)
+        self.assertEqual(set(out), set(reversed_out))
+        self.assertIn("哪\tna\n", out)
+        self.assertNotIn("哪\tne\n", out)
+        self.assertIn("哪\tnad\n", out)
+        self.assertIn("哪\tned\n", out)
+
+    def test_source_order_allocation_is_per_reading(self) -> None:
+        from tools.custom import build_custom_scheme as builder
+        from tools.custom.custom_aux import load_coded_chars
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "table.tsv"
+            path.write_text("甲\taaxy\n乙\taaxy\n乙\tbbxy\n甲\tbbxy\n", encoding="utf-8")
+            coded = load_coded_chars(path)
+        source = ("---\nname: mohu_zrm\n...\n甲\taa\n乙\taa\n甲\tbb\n乙\tbb\n"
+                  "甲\taaxy\n乙\taaxy\n甲\tbbxy\n乙\tbbxy\n")
+        out = builder.convert_master(source, "ordered", lambda code: code,
+                                     coded.aux, coded.aux, self.stats_cls(),
+                                     unique_shortcode=True, char_order=coded.order)
+        self.assertIn("甲\taa\n", out)
+        self.assertNotIn("乙\taa\n", out)
+        self.assertIn("乙\tbb\n", out)
+        self.assertNotIn("甲\tbb\n", out)
+
+    def test_reading_frequencies_follow_target_layout(self) -> None:
+        from tools.custom import build_custom_scheme as builder
+
+        with patch.object(builder, "freq_simp_table", {
+                ("长", "chang"): "100", ("长", "zhang"): "1", ("张", "zhang"): "10"}):
+            rank = builder._reading_freq_rank(builder.make_converter(builder.resolve_layout("flypy")))
+        self.assertLess(rank[("长", "ih")], rank[("张", "vh")])
+        self.assertLess(rank[("张", "vh")], rank[("长", "vh")])
+
+    def test_declared_fly_alias_uses_reading_frequency_and_path(self) -> None:
+        from tools.custom import build_custom_scheme as builder
+        from tiger_aux import AuxiliaryEntry
+
+        # Both alias rows lack their own four-key row. Canonical fullcodes
+        # supply their reachable continuation without changing those rows.
+        source = ("---\nname: mohu_zrm\n...\n微\twk\n位\twk\n"
+                  "微\twzwv\n位\twzjl\n微\tw\n位\tw\n")
+        aux = {"微": AuxiliaryEntry("wv"), "位": AuxiliaryEntry("jl")}
+        weights = {("微", "wei"): "10", ("位", "wei"): "100"}
+        with patch.object(builder, "freq_simp_table", weights):
+            out = builder.convert_master(source, "alias", lambda code: code, aux, aux,
+                                         self.stats_cls(), unique_shortcode=True,
+                                         keep_flykeys=True)
+        self.assertIn("位\twk\n", out)
+        self.assertNotIn("微\twk\n", out)
+        self.assertIn("微\twkw\n", out)
+        self.assertIn("微\twz\n", out)  # ambiguous w chooses canonical wz
+        self.assertIn("微\twzwv\n", out)
+        self.assertIn("位\twzjl\n", out)
+
+    def test_equal_rank_and_missing_normal_are_deterministic(self) -> None:
+        rows = ["乙\tba\n", "甲\tba\n", "甲\tbazz\n", "甲\tbaaa\n",
+                "乙\tbadd\n"]
+        rank = {("甲", "ba"): 0, ("乙", "ba"): 0}
+        out, _stats = self.run_unique(rows, rank)
+        reversed_out, _stats = self.run_unique(list(reversed(rows)), rank)
+        self.assertEqual(set(out), set(reversed_out))
+        # Equal ranks tie by identity, and the loser takes a stable same-reading
+        # longest-code fallback when no normal aux is supplied.
+        self.assertIn("乙\tba\n", out)
+        self.assertIn("甲\tbaa\n", out)
+
+    def test_full_master_is_deterministic_across_hash_seeds(self) -> None:
+        script = '''
+import hashlib
+from collections import Counter
+from tools.custom import build_custom_scheme as b
+from custom_aux import _is_single_han
+aux = b.load_auxiliary_tsv(b.TIGER_AUX_TSV)
+source = (b.ROOT / "mohu_zrm.dict.yaml").read_text()
+result = b.convert_master(source, "seedtest", b.make_converter(b.resolve_layout("zrm")),
+                          aux, aux, b.BuildStats(), unique_shortcode=True, keep_flykeys=True)
+def full(text):
+    return Counter(line for line in text.splitlines()
+                   if "\\t" in line and len(line.split("\\t")[0]) == 1
+                   and len(line.split("\\t")[1]) >= 4 and not line.startswith("#"))
+assert full(source) == full(result)
+rows = [line.split("\\t")[:2] for line in result.splitlines() if "\\t" in line]
+short = [code for ch, code in rows if len(ch) == 1 and _is_single_han(ch)
+         and code.isalpha() and len(code) <= 3]
+assert len(short) == len(set(short))
+assert ["哪", "nad"] in rows and ["哪", "nl"] not in rows
+print(hashlib.sha256(result.encode()).hexdigest())
+'''
+        outputs = []
+        for seed in (1, 2, 42):
+            result = subprocess.run([sys.executable, "-c", script], cwd=ROOT,
+                                    env={**os.environ, "PYTHONHASHSEED": str(seed)},
+                                    text=True, capture_output=True, timeout=120)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            outputs.append(result.stdout)
+        self.assertEqual(len(set(outputs)), 1, outputs)
+
+    def test_keep_shortcodes_competes_once_in_unique_mode(self) -> None:
+        from tools.custom import build_custom_scheme as builder
+        from tools.custom.custom_aux import CodedCharTable
+        from tiger_aux import AuxiliaryEntry
+
+        coded = CodedCharTable(shortcodes=[("吧", "b"), ("不", "b"), ("吧", "b")])
+        aux = {"吧": AuxiliaryEntry("dm"), "不": AuxiliaryEntry("cb")}
+        source = "---\nname: mohu_zrm\n...\n不\tb\n不\tbucb\n吧\tbadm\n"
+        stats = self.stats_cls()
+        out = builder.convert_master(source, "keepunique", lambda code: code,
+                                     aux, aux, stats, unique_shortcode=True,
+                                     explicit_shortcodes=coded.shortcodes)
+        self.assertEqual(out.count("不\tb\n"), 1)
+        self.assertNotIn("吧\tb\n", out)
+        self.assertIn("吧\tba\n", out)
+        phrases = builder.build_custom_phrases("keepunique", SimpleNamespace(
+            keep_shortcodes=True, unique_shortcode=True), coded, stats)
+        self.assertNotIn("吧\tb\t", phrases)
+        ordinary = builder.build_custom_phrases("keepunique", SimpleNamespace(
+            keep_shortcodes=True, unique_shortcode=False), coded, self.stats_cls())
+        self.assertIn("吧\tb\t", ordinary)
 
     def test_default_keeps_native_three_key_special_case(self) -> None:
         rows = ["宾\tbjn\n", "彬\tbjn\n"]

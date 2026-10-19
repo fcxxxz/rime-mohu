@@ -116,7 +116,8 @@ class BuildStats:
     master_unconverted: list[str] = field(default_factory=list)
     master_pushed_back: list[str] = field(default_factory=list)
     unique_pushed: Counter = field(default_factory=Counter)  # 简码无重：按码长计数
-    unique_pushed_chars: set = field(default_factory=set)    # 简码无重被推的字（频序重排标记）
+    unique_pushed_chars: set = field(default_factory=set)    # 简码无重被推的字
+    unique_pushed_readings: set[tuple[str, str]] = field(default_factory=set)
     source_rows: Counter = field(default_factory=Counter)
     source_anomalies: list[str] = field(default_factory=list)
     long_word_rows: int = 0
@@ -292,8 +293,9 @@ def convert_master_code(
 def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stats: BuildStats,
                    character_syllables: dict | None = None,
                    unique_shortcode: bool = False,
-                   char_order: dict[str, int] | None = None,
-                   keep_flykeys: bool = False) -> str:
+                   char_order: dict[tuple[str, str], int] | None = None,
+                   keep_flykeys: bool = False,
+                   explicit_shortcodes: list[tuple[str, str]] | None = None) -> str:
     text = replace_dictionary_name(text, f"mohu_{scheme}")
     lines = []
     in_body = False
@@ -340,14 +342,23 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
         lines.append(raw)
 
     if unique_shortcode:
-        rank = char_order if char_order else _char_freq_rank()
-        lines = _unique_shortcode_pass(lines, rank, stats)
-        if stats.unique_pushed_chars:
-            # 变动码位组按同一 rank 重排候选序（否则按主表行序=虎码
-            # 辅码序，常用字会沉底：吧输叭、儿输贰；且输家的全码组
-            # 里词可能压过字）。
+        # Imported shortcodes must compete here, not bypass the winners through
+        # the higher-priority custom-phrases translator later.
+        if explicit_shortcodes:
+            lines.extend(f"{char}\t{code}\n" for char, code in explicit_shortcodes)
+        frequency_rank = _reading_freq_rank(converter)
+        reading_aliases = {target: source for source, target in FLY_ZRM.items()} if keep_flykeys else {}
+        for (char, reading), value in list(frequency_rank.items()):
+            for alias, canonical in reading_aliases.items():
+                if reading == canonical:
+                    frequency_rank[(char, alias)] = value
+        rank = char_order if char_order else frequency_rank
+        lines = _unique_shortcode_pass(
+            lines, rank, stats, merged_aux, frequency_rank=frequency_rank,
+            reading_aliases=reading_aliases)
+        if stats.unique_pushed_readings:
             lines = _reorder_rows_by_source_order(
-                lines, rank, only_groups_with=stats.unique_pushed_chars)
+                lines, rank, only_groups_with=stats.unique_pushed_readings)
     else:
         if char_order:
             lines = _reorder_rows_by_source_order(lines, char_order)
@@ -356,21 +367,29 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
     return "".join(lines)
 
 
-def _char_freq_rank() -> dict[str, int]:
-    """字频表 → 字的频序名次（高频在前，多音取最大频）。"""
-    best: dict[str, int] = {}
-    for (char, _py), weight in freq_simp_table.items():
+def _reading_freq_rank(converter) -> dict[tuple[str, str], int]:
+    """Rank each (character, target-layout reading), never pool polyphones."""
+    weights: dict[tuple[str, str], int] = {}
+    for (char, py), weight in freq_simp_table.items():
         try:
-            w = int(weight)
-        except (TypeError, ValueError):
+            reading = converter(zrmify.zrmify1(READING_NORMALIZATION.get(py, py)))
+            value = int(weight)
+        except (LayoutError, TypeError, ValueError, IndexError, KeyError):
             continue
-        if w > best.get(char, -1):
-            best[char] = w
-    return {char: rank for rank, char in enumerate(sorted(best, key=lambda c: -best[c]))}
+        key = (char, reading)
+        # Equivalent spellings of one reading may collapse; distinct readings don't.
+        weights[key] = max(weights.get(key, -1), value)
+    ordered = sorted(weights, key=lambda key: (-weights[key], key))
+    return {key: index for index, key in enumerate(ordered)}
+
+
+def _code_rank(rank: dict, char: str, code: str) -> int:
+    """Prefer exact source-code order, then this reading's order/frequency."""
+    return rank.get((char, code), rank.get((char, code[:2]), 1 << 30))
 
 
 def _reorder_rows_by_source_order(
-    lines: list[str], char_order: dict[str, int],
+    lines: list[str], char_order: dict[tuple[str, str], int],
     only_groups_with: set | None = None,
 ) -> list[str]:
     """把同 code 单字行的内容按字序重新分配到原行位置。
@@ -383,8 +402,9 @@ def _reorder_rows_by_source_order(
     分区约定），仅组内内容置换。序表没有的字排组尾（稳定，多个保持
     原相对序）；词行与非数据行不动。
 
-    only_groups_with 给定时只重排「组内含这些字」的组（简码无重的
-    被推字按字频参与排序，其余码位保持人工调序不动）；此时词行也
+    序表按 (字, 精确码) 优先、(字, 读音) 回退；其他读音的位置不参与。
+    only_groups_with 给定时只重排「组内含这些 (字, 读音)」的组（简码无重
+    的被推读音按频率参与排序，其余读音保持人工调序不动）；此时词行也
     纳入组内参与置换（排组尾、保持相对序）——否则简码字会被同码
     词压在候选后面。
     """
@@ -392,7 +412,7 @@ def _reorder_rows_by_source_order(
         fields = raw.rstrip("\n").split("\t")
         if (len(fields) >= 2 and len(fields[0]) == 1
                 and re.fullmatch(r"[a-z;/]+", fields[1])):
-            return fields[0]
+            return fields[0], fields[1]
         return None
 
     groups: dict[str, list[int]] = {}
@@ -410,12 +430,13 @@ def _reorder_rows_by_source_order(
         if len(idxs) < 2:
             continue
         if only_groups_with is not None:
-            chars = {parse(lines[i]) for i in idxs} - {None}
-            if not chars & only_groups_with:
+            readings = {(row[0], row[1][:2]) for i in idxs
+                        if (row := parse(lines[i])) is not None}
+            if not readings & only_groups_with:
                 continue
         contents = sorted(
             (lines[i] for i in idxs),
-            key=lambda raw: char_order.get(parse(raw) or "", 1 << 30),
+            key=lambda raw: _code_rank(char_order, *(parse(raw) or ("", ""))),
         )
         for idx, content in zip(idxs, contents):
             new_lines[idx] = content
@@ -475,61 +496,103 @@ def _dedupe_shortcode_rows(
 
 
 def _unique_shortcode_pass(
-    lines: list[str], rank: dict[str, int], stats: BuildStats,
+    lines: list[str], rank: dict[tuple[str, str], int], stats: BuildStats,
+    aux: dict | None = None,
+    *, frequency_rank: dict[tuple[str, str], int] | None = None,
+    reading_aliases: dict[str, str] | None = None,
 ) -> list[str]:
-    """简码无重的自洽重建：逐级降级竞争。
+    """Allocate 1/2/3-key slots independently for each (char, reading).
 
-    规则：一/二/三级简码位，每个码位只属于一个字。同码位的候选
-    （主表物化行的字 + 从上一级降级来的字）按 rank（源码表序或
-    字频名次，小者优先）竞争，赢家占位；输家降到下一级，用**自己
-    的**码（其最长码的前缀：二键=音节、三键=音节+辅首）再竞争；
-    三级也输的退到全码。全码行永不动；没有更长码的字不参与删除
-    （保底，否则字会从码表消失）。一简不自动派生（人工设计层），
-    只处理原表已有的一简行。
-
-    赢家中没有该码位物化行的（如吧 b→ba 输→bad 赢）生成新行；
-    变动涉及的码位组随后由调用方按同一 rank 重排候选序。
+    Explicit 2/3-key rows identify their reading by their first two keys.
+    A 1-key row belongs to its highest-frequency matching reading with a
+    >=4-key fullcode, regardless of source-table ordering. If none has that
+    evidence, retain the deterministic partial-code fallback. Losers continue
+    along that reading's normal-aux fullcode; compatibility codes remain available
+    but never select the path.
+    If normal aux is absent from the rows, use the lexically first longest code
+    of this reading. All fullcode rows and the legacy no-longer-code fallback
+    are preserved. One-key rows are never invented.
     """
     rows: list[tuple[int, str, str]] = []
-    char_codes: dict[str, set[str]] = {}
+    reading_codes: dict[tuple[str, str], set[str]] = {}
+    char_readings: dict[str, set[str]] = {}
     for idx, raw in enumerate(lines):
         fields = raw.rstrip("\n").split("\t")
         if (len(fields) >= 2 and len(fields[0]) == 1
-                and re.fullmatch(r"[a-z;/]+", fields[1])):
-            rows.append((idx, fields[0], fields[1]))
-            char_codes.setdefault(fields[0], set()).add(fields[1])
-    full_code = {c: max(codes, key=len) for c, codes in char_codes.items()}
+                and re.fullmatch(r"[a-z]+", fields[1])):
+            char, code = fields[:2]
+            rows.append((idx, char, code))
+            if len(code) >= 2:
+                reading_codes.setdefault((char, code[:2]), set()).add(code)
+                char_readings.setdefault(char, set()).add(code[:2])
 
-    winners: dict[str, str] = {}       # 码位 -> 赢家字
-    demoted: dict[str, int] = {}       # 待降级字 -> 已输的级数
+    aliases = reading_aliases or {}
+    full_code: dict[tuple[str, str], str] = {}
+    for key, codes in reading_codes.items():
+        # A declared fly key is another spelling of the same reading. Its
+        # fullcode may exist only under the canonical prefix in the source.
+        canonical = aliases.get(key[1], key[1])
+        codes = codes | {key[1] + code[2:] for code in
+                         reading_codes.get((key[0], canonical), ())}
+        entry = (aux or {}).get(key[0])
+        normal = key[1] + entry.normal if entry else ""
+        full_code[key] = normal if normal in codes else min(codes, key=lambda c: (-len(c), c))
+
+    frequencies = frequency_rank if frequency_rank is not None else rank
+    identities: dict[int, tuple[str, str]] = {}
+    for idx, char, code in rows:
+        reading = code[:2]
+        if len(code) == 1:
+            matching = [r for r in char_readings.get(char, ()) if r.startswith(code)]
+            supported = [r for r in matching if len(full_code[(char, r)]) >= 4]
+            reading = min(supported or matching, key=lambda r: (
+                frequencies.get((char, r), 1 << 30), r in aliases, r), default=code)
+        key = (char, reading)
+        identities[idx] = key
+        full_code.setdefault(key, code)
+
+    def priority(key: tuple[str, str], code: str):
+        # Source order may specify a particular slot. Frequency order only has
+        # reading keys, including the reading assigned to ambiguous 1-key rows.
+        return rank.get((key[0], code), rank.get(key, 1 << 30)), key
+
+    winners: dict[str, tuple[str, str]] = {}
+    demoted: set[tuple[str, str]] = set()
     for level in (1, 2, 3):
-        pool: dict[str, list[str]] = {}
-        for _idx, ch, code in rows:
+        pool: dict[str, set[tuple[str, str]]] = {}
+        for idx, _char, code in rows:
             if len(code) == level:
-                pool.setdefault(code, []).append(ch)
-        for ch, lost_level in list(demoted.items()):
-            if lost_level == level - 1 and len(full_code[ch]) > level:
-                pool.setdefault(full_code[ch][:level], []).append(ch)
-                demoted.pop(ch)
-        for code, chars in pool.items():
-            ordered = sorted(set(chars), key=lambda c: rank.get(c, 1 << 30))
+                pool.setdefault(code, set()).add(identities[idx])
+        for key in demoted:
+            if len(full_code[key]) > level:
+                pool.setdefault(full_code[key][:level], set()).add(key)
+        demoted = set()
+        for code, candidates in pool.items():
+            ordered = sorted(candidates, key=lambda key: priority(key, code))
             winners[code] = ordered[0]
-            for loser in ordered[1:]:
-                demoted[loser] = level
+            demoted.update(ordered[1:])
 
     drop_rows: set[int] = set()
-    for idx, ch, code in rows:
-        if (len(code) <= 3 and winners.get(code) != ch
-                and len(full_code[ch]) > len(code)):
-            drop_rows.add(idx)
-            stats.unique_pushed[len(code)] += 1
-            stats.unique_pushed_chars.add(ch)
-    kept = {(ch, code) for idx, ch, code in rows if idx not in drop_rows}
+    seen_short: set[tuple[str, str]] = set()
+    for idx, char, code in rows:
+        key = identities[idx]
+        if len(code) <= 3:
+            if winners.get(code) != key and len(full_code[key]) > len(code):
+                drop_rows.add(idx)
+                stats.unique_pushed[len(code)] += 1
+                stats.unique_pushed_chars.add(char)
+                stats.unique_pushed_readings.add(key)
+            elif (char, code) in seen_short:
+                drop_rows.add(idx)
+            seen_short.add((char, code))
+    kept = {(char, code) for idx, char, code in rows if idx not in drop_rows}
     generated: list[str] = []
-    for code, ch in sorted(winners.items()):
-        if len(code) <= 3 and (ch, code) not in kept:
-            generated.append(f"{ch}\t{code}\n")
-            stats.unique_pushed_chars.add(ch)
+    for code, key in sorted(winners.items()):
+        char, _reading = key
+        if (char, code) not in kept:
+            generated.append(f"{char}\t{code}\n")
+            stats.unique_pushed_chars.add(char)
+            stats.unique_pushed_readings.add(key)
     return [raw for idx, raw in enumerate(lines) if idx not in drop_rows] + generated
 
 
@@ -769,7 +832,8 @@ def build_custom_phrases(scheme: str, args, coded: CodedCharTable | None,
                          stats: BuildStats) -> str:
     """自定义短语基础内容 + 可选的码表自带简码物化。"""
     text = derive_custom_phrases(scheme)
-    if args.keep_shortcodes and coded is not None and coded.shortcodes:
+    if (args.keep_shortcodes and not args.unique_shortcode
+            and coded is not None and coded.shortcodes):
         text += (
             "\n# 码表自带简码（原方案 1/2/3 键行物化，权重按原表序递减）\n"
             + "".join(
@@ -1087,7 +1151,11 @@ def run(args) -> int:
                                       character_syllables=load_character_syllables(ZRM_CHARS_DICT),
                                       unique_shortcode=args.unique_shortcode,
                                       char_order=coded.order if coded else None,
-                                      keep_flykeys=keep_flykeys)
+                                      keep_flykeys=keep_flykeys,
+                                      explicit_shortcodes=(coded.shortcodes
+                                          if coded and args.keep_shortcodes else None))
+    if coded and args.keep_shortcodes and args.unique_shortcode:
+        stats.shortcode_rows = len(coded.shortcodes)
     master_path = output / f"mohu_{name}.dict.yaml"
     master_path.write_text(master_converted, encoding="utf-8")
 
@@ -1239,6 +1307,8 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
     else:
         word_line = "魔虎全量词库"
     shortcode_line = (
+        f"码表自带（{stats.shortcode_rows} 行参与主码表简码无重分配）"
+        if stats.shortcode_rows and args.unique_shortcode else
         f"码表自带（物化 {stats.shortcode_rows} 行进自定义短语）"
         if stats.shortcode_rows else "魔虎体系推算")
     lines += [

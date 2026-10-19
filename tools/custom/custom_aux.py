@@ -233,7 +233,7 @@ class CodedCharTable:
     aliases: dict[str, list[str]] = field(default_factory=dict)
     stats: CodedCharStats = field(default_factory=CodedCharStats)
     prefixes: set[str] = field(default_factory=set)  # ≥3 键行前 2 键集合（布局识别用）
-    order: dict[str, int] = field(default_factory=dict)  # 字 -> 原表首现行号（同码字序基准）
+    order: dict[tuple[str, str], int] = field(default_factory=dict)  # (字, 码/读音) -> 原表行序
     shortcodes: list[tuple[str, str]] = field(default_factory=list)  # 1/2/3 键行 (字, 码)，原表序
     words: list[str] = field(default_factory=list)  # 码表内多字词条（字词混排表），去重保序
 
@@ -278,9 +278,13 @@ def load_coded_chars(path: Path) -> CodedCharTable:
         stats.rows += 1
     # 第一遍：≥4 键行提取辅码（3 键渐进行按码序通常在前，先提全量才能校验）；
     # 1/2/3 键行同时收集为简码（原表序，供 --keep-shortcodes 物化）
+    # 先记精确码位，再补同读音的回退序；其他读音的首现位置不能抢占本码位。
+    for index, (char, code) in enumerate(rows):
+        table.order.setdefault((char, code), index)
+    for index, (char, code) in enumerate(rows):
+        if len(code) >= 2:
+            table.order.setdefault((char, code[:2]), index)
     for char, code in rows:
-        if char not in table.order:
-            table.order[char] = len(table.order)
         if len(code) <= 2:
             stats.short_rows += 1
             table.shortcodes.append((char, code))

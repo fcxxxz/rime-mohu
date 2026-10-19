@@ -254,9 +254,9 @@ jobs:
       - name: Build unique-shortcode zrm variant
         run: |
           uv run tools/custom/build_custom_scheme.py --sp zrm --unique-shortcode \
-            --name zrmu --display 自然码无重 --zip
+            --name zrmu --display 自然码 --zip
           # 发布包必须自带引擎闭包：从 dist-zrm 拷入 dylib/dll 与运行时清单。
-          cp -R dist-zrm/mohu/runtime custom-dist/mohu_zrmu/mohu/runtime
+          cp -R dist-zrm/mohu/runtime/. custom-dist/mohu_zrmu/mohu/runtime/
           test -f custom-dist/mohu_zrmu/mohu/runtime/libtigerengine.dylib
           test -f custom-dist/mohu_zrmu/mohu/runtime/libtigerengine.dll
           test -f custom-dist/mohu_zrmu/mohu/runtime/runtime-preload.txt
@@ -377,7 +377,7 @@ jobs:
             '' \
             '- 自然码：下载 `rime-mohu-zrm-latest.zip`，解压到 Rime 用户目录后重新部署。' \
             '- 小鹤：下载 `rime-mohu-flypy-latest.zip`，解压到 Rime 用户目录后重新部署。' \
-            '- 自然码·简码无重（试验变体，方案 id mohu_zrmu，可与上面两个共存）：下载 `rime-mohu-zrmu-latest.zip`——一二三简每码位唯一，撞位字按字频逐级降级（打全码或辅码渐进），飞键保留。' \
+            '- 自然码（简码无重规则的另一份包，方案 id mohu_zrmu，选单同名，可与上面共存）：下载 `rime-mohu-zrmu-latest.zip`——一二三简每码位唯一，撞位字按字频逐级降级（打全码或辅码渐进），飞键保留。' \
             '- 模型：下载 `mohu-sentence-ngram-v5.bin`，放入 `Rime/mohu/model/`（运行时固定读取该文件名）。自 2026-09-16 起发布内容为 u8 量化格式 TCSKNM04（389.7MB，较原 f32 版 −32%，质量持平）；需配合本日期后构建的方案包，旧引擎会报 `unknown model format` 并退回普通候选。' \
             '' \
             '桌面方案包不包含模型文件，适用于空的或专门准备的 Rime 用户目录。' \

@@ -1,48 +1,31 @@
-name: 转码表
+name: 转码表（Issue）
 
-# 零门槛自定义方案：用户把「双拼+辅码」单字码表上传到自己 fork 的仓库
-# （根目录或 my-schema/ 目录），在 Actions 页面手动触发本 workflow，
-# 网页上填文件名/方案名即可得到完整方案包。面向不会命令行的小白，
-# 步骤说明见 README「零门槛：用自己的码表生成专属方案」一节。
+# 用户在 Issues 页用「🔄 转码表」表单提交（拖码表附件 + 填方案名），
+# 本 workflow 解析表单、构建派生方案包，并把 Artifacts 下载链接评论
+# 回 Issue。用户无需 fork、无需上传文件到仓库；编辑 Issue 会自动重跑。
 
 on:
-  workflow_dispatch:
-    inputs:
-      table_file:
-        description: "码表文件名：你在第 2 步上传的文件（含扩展名，如 我的码表.txt）"
-        required: true
-        default: ""
-      scheme_name:
-        description: "方案名：小写英文字母开头（如 mycode），装进 Rime 后的方案 ID"
-        required: true
-        default: "mycode"
-      display_name:
-        description: "显示名：输入法选单里显示的名字，可用中文（如 我的码）；留空则用方案名"
-        required: false
-        default: ""
-      layout:
-        description: "双拼布局：留空=自动识别；识别不对时填 zrm（自然码）/ flypy（小鹤）/ jiajia（加加）"
-        required: false
-        default: ""
-      unique_shortcode:
-        description: "简码无重：开启后一/二/三简每个码位只留一个字，撞位字往后推（改用全码打）"
-        required: false
-        default: false
-        type: boolean
+  issues:
+    types: [opened, edited]
 
 permissions:
   contents: read
+  issues: write
+
+concurrency:
+  group: custom-schema-issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    if: contains(github.event.issue.labels.*.name, '转码表')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TABLE_FILE: ${{ inputs.table_file }}
-      SCHEME_NAME: ${{ inputs.scheme_name }}
-      DISPLAY_NAME: ${{ inputs.display_name }}
-      LAYOUT: ${{ inputs.layout }}
-      UNIQUE_SHORTCODE: ${{ inputs.unique_shortcode }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -56,20 +39,17 @@ jobs:
       - name: Sync Python environment
         run: uv sync --locked
 
-      - name: 找到码表文件
+      - name: 解析 Issue 表单
+        id: form
         run: |
-          if [ -z "$TABLE_FILE" ]; then
-            echo "::error::第 1 个框（码表文件名）没有填。回到 Run workflow，填上你上传的文件名（含扩展名）。"
-            exit 1
-          fi
-          if [ -f "$TABLE_FILE" ]; then
-            echo "TABLE_PATH=$TABLE_FILE" >> "$GITHUB_ENV"
-            echo "码表：$TABLE_FILE"
-          elif [ -f "my-schema/$TABLE_FILE" ]; then
-            echo "TABLE_PATH=my-schema/$TABLE_FILE" >> "$GITHUB_ENV"
-            echo "码表：my-schema/$TABLE_FILE"
+          mkdir -p issue-work
+          printf '%s' "$ISSUE_BODY" > issue-work/body.txt
+          if uv run tools/custom/issue_form.py issue-work/body.txt issue-work 2> issue-work/parse.log | tee issue-work/form.env; then
+            cat issue-work/form.env >> "$GITHUB_ENV"
+            grep -E '^(SCHEME_NAME|LAYOUT|UNIQUE_SHORTCODE)=' issue-work/form.env >> "$GITHUB_OUTPUT"
+            echo "表单解析完成。"
           else
-            echo "::error::仓库里找不到「$TABLE_FILE」。请先按 README 第 2 步把码表上传到仓库根目录（或 my-schema/ 文件夹）并 Commit，再重新运行。"
+            gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$(cat issue-work/parse.log)"
             exit 1
           fi
 
@@ -85,28 +65,52 @@ jobs:
           if [ "$UNIQUE_SHORTCODE" = "true" ]; then
             ARGS+=(--unique-shortcode)
           fi
-          uv run tools/custom/build_custom_scheme.py "${ARGS[@]}"
+          set -o pipefail
+          uv run tools/custom/build_custom_scheme.py "${ARGS[@]}" 2>&1 | tee issue-work/build.log
 
       - name: 上传方案包
         uses: actions/upload-artifact@v4
         with:
-          name: rime-mohu-${{ env.SCHEME_NAME }}
+          name: rime-mohu-${{ steps.form.outputs.SCHEME_NAME }}-issue${{ env.ISSUE_NUMBER }}
           path: |
-            custom-dist/rime-mohu-${{ env.SCHEME_NAME }}.zip
-            custom-dist/mohu_${{ env.SCHEME_NAME }}/构建报告.txt
-            custom-dist/mohu_${{ env.SCHEME_NAME }}/推导辅码表.tsv
-            custom-dist/mohu_${{ env.SCHEME_NAME }}/安装说明.md
+            custom-dist/rime-mohu-${{ steps.form.outputs.SCHEME_NAME }}.zip
+            custom-dist/mohu_${{ steps.form.outputs.SCHEME_NAME }}/构建报告.txt
+            custom-dist/mohu_${{ steps.form.outputs.SCHEME_NAME }}/推导辅码表.tsv
+            custom-dist/mohu_${{ steps.form.outputs.SCHEME_NAME }}/安装说明.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
-      - name: 完成指引
+      - name: 回复下载链接并关闭 Issue
+        run: |
+          REPLY="## ✅ 方案包已生成：魔虎·${DISPLAY_NAME:-$SCHEME_NAME}
+
+          1. 在浏览器打开
+          [本次构建的运行页面](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID})，
+          拉到页面底部 **Artifacts** 区域，下载 **rime-mohu-${SCHEME_NAME}-issue${ISSUE_NUMBER}**（需登录 GitHub）；
+          2. 解压下载的 zip——Windows 建议用 [Bandizip](https://www.bandisoft.com/bandizip/)
+             或 7-Zip，系统自带解压对中文文件名可能乱码；
+          3. 按解压出的《安装说明.md》安装（合并复制到 Rime 用户目录、重新部署）；
+             整句模型只需装一次，见
+             [Releases](https://github.com/${GITHUB_REPOSITORY}/releases) 的
+             mohu-sentence-ngram-v5.bin（已装过魔虎可跳过）。
+
+          逐字辅码与统计见同目录《构建报告.txt》《推导辅码表.tsv》。
+          ⚠ 下载链接 **7 天后过期**，过期后开一个新 Issue 重跑即可。"
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$REPLY"
+          gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY"
+        env:
+          RUN_ID: ${{ github.run_id }}
+
+      - name: 构建失败时回复原因
+        if: failure()
         run: |
           {
-            echo "## ✅ 你的方案包已经生成"
+            echo "## ❌ 构建失败"
             echo
-            echo "1. 把本页拉到底部，在 **Artifacts** 区域下载 **rime-mohu-${SCHEME_NAME}**；"
-            echo "2. 解压下载的 zip（Windows 建议用 Bandizip / 7-Zip，系统自带解压对中文文件名可能乱码）；"
-            echo "3. 按解压出来的《安装说明.md》安装；整句模型只需装一次，见仓库 [Releases](https://github.com/${{ github.repository }}/releases) 的 mohu-sentence-ngram-v5.bin（已装过魔虎可跳过）。"
+            echo '```'
+            tail -n 30 issue-work/build.log 2>/dev/null || cat issue-work/parse.log 2>/dev/null || echo "（无日志，请到 Actions 页查看本次运行）"
+            echo '```'
             echo
-            echo "构建统计与逐字辅码明细见同目录的《构建报告.txt》和《推导辅码表.tsv》。"
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "按上面的报错提示**编辑这个 Issue**（改码表附件或参数）后保存，会自动重新构建。"
+          } > issue-work/fail.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file issue-work/fail.md

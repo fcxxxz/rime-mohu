@@ -104,8 +104,10 @@ uv run tools/custom/build_custom_scheme.py --char-table 我的码表.txt --name 
 - 与 `--aux` / `--shape-code` 互斥；想微调提取结果，编辑产物里的
   `推导辅码表.tsv` 后改用 `--aux`。
 - 全是两键行的纯音码表没有辅码信息，这个入口会直接报错。
-- 零命令行的网页做法（fork + Actions 页面点选）见 README
-  「零门槛：用自己的码表生成专属方案」一节。
+- 零命令行的网页做法：在本仓库开一个「🔄 转码表」Issue 拖码表提交，
+  机器人构建后把下载链接评论回 Issue，见 README
+  「零门槛：用自己的码表生成专属方案」一节（实现：
+  `.github/workflows/custom-schema.yml` + `tools/custom/issue_form.py`）。
 
 ## 简快码是自动的，不用配置
 

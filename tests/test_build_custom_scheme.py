@@ -323,6 +323,97 @@ class TableParsingTest(unittest.TestCase):
         self.assertGreaterEqual(ratio, 0.8)
 
 
+class IssueFormTest(unittest.TestCase):
+    """「转码表」Issue 表单解析（粘贴路径；附件下载不在单测里触网）。"""
+
+    BODY = """### 码表文件
+
+{table}
+
+### 方案名
+
+{scheme}
+
+### 显示名
+
+我的码
+
+### 双拼布局
+
+{layout}
+
+### 简码无重
+
+{unique}
+"""
+
+    def setUp(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        sys.path.insert(0, str(ROOT / "tools/custom"))
+        from tools.custom import issue_form
+
+        self.module = issue_form
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def run_form(self, table, scheme="mycode", layout="自动识别", unique="关闭"):
+        body = self.BODY.format(table=table, scheme=scheme, layout=layout, unique=unique)
+        body_path = self.dir / "body.txt"
+        body_path.write_text(body, encoding="utf-8")
+        import subprocess
+
+        return subprocess.run(
+            ["uv", "run", "tools/custom/issue_form.py", str(body_path), str(self.dir / "work")],
+            cwd=ROOT, capture_output=True, text=True, check=False, timeout=120,
+        )
+
+    def test_pasted_table_outputs_env(self) -> None:
+        result = self.run_form("aayk\t阿\nbkdp\t暴\n", unique="开启")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("SCHEME_NAME=mycode", result.stdout)
+        self.assertIn("DISPLAY_NAME=我的码", result.stdout)
+        self.assertIn("LAYOUT=", result.stdout)
+        self.assertIn("UNIQUE_SHORTCODE=true", result.stdout)
+        pasted = self.dir / "work" / "pasted-table.txt"
+        self.assertIn("aayk\t阿", pasted.read_text(encoding="utf-8"))
+
+    def test_layout_option_mapping(self) -> None:
+        result = self.run_form("aayk\t阿\n", layout="flypy（小鹤）")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("LAYOUT=flypy", result.stdout)
+
+    def test_bad_scheme_name_rejected(self) -> None:
+        result = self.run_form("aayk\t阿\n", scheme="MyCode")
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("方案名", result.stderr)
+
+    def test_empty_table_rejected(self) -> None:
+        result = self.run_form("这里没有可识别的码表内容")
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("码表文件", result.stderr)
+
+    def test_unsafe_attachment_url_ignored(self) -> None:
+        # 非 GitHub 域的链接不匹配附件正则，直接被无视（不会发起下载）。
+        result = self.run_form("[x.txt](https://evil.example.com/user-attachments/assets/abc)")
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("没有看到附件", result.stderr)
+
+    def test_safe_url_guard(self) -> None:
+        # github.com 附件 URL 走 assert_safe_url：域名白名单外的直接拒绝。
+        with self.assertRaises(self.module.FormError) as ctx:
+            self.module.assert_safe_url("https://objects.githubusercontent.com.evil.tw/asset")
+        self.assertIn("拒绝下载", str(ctx.exception))
+        with self.assertRaises(self.module.FormError):
+            self.module.assert_safe_url("http://github.com/user-attachments/assets/abc")
+
+    def test_sections_parser(self) -> None:
+        sections = self.module.parse_sections("### 甲\n\n1\n\n### 乙\n\n2\n")
+        self.assertEqual(sections, {"甲": "1", "乙": "2"})
+
+
 class UniqueShortcodeTest(unittest.TestCase):
     """--unique-shortcode 的简码无重整理（纯函数级）。"""
 

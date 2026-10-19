@@ -414,6 +414,44 @@ class IssueFormTest(unittest.TestCase):
         self.assertEqual(sections, {"甲": "1", "乙": "2"})
 
 
+class ReorderBySourceOrderTest(unittest.TestCase):
+    """--char-table 的同码组按原码表字序做位置重分配。"""
+
+    def setUp(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        sys.path.insert(0, str(ROOT / "tools/custom"))
+        from tools.custom.build_custom_scheme import _reorder_rows_by_source_order
+
+        self.reorder = _reorder_rows_by_source_order
+
+    def test_dispersed_same_code_reordered(self) -> None:
+        # 同 code 行物理上不相邻（继承虎码序分散）：源码表序魔在馍前，
+        # 内容置换后魔占据组内最早的行位置。
+        lines = ["# 注释\n", "摸\tmo\n", "馍\tmoq\n", "膜\tmob\n", "魔\tmoq\n"]
+        out = self.reorder(lines, {"魔": 3, "馍": 9, "摸": 0})
+        self.assertEqual(
+            out,
+            ["# 注释\n", "摸\tmo\n", "魔\tmoq\n", "膜\tmob\n", "馍\tmoq\n"],
+        )
+
+    def test_duplicate_rows_of_same_char_stay_grouped(self) -> None:
+        # 同字的重复行（兼容变体坍缩）order 相同、稳定保持相邻。
+        lines = ["瘼\tmoqf\n", "馍\tmoqf\n", "馍\tmoqf\n"]
+        out = self.reorder(lines, {"魔": 1, "馍": 2})
+        self.assertEqual(out, ["馍\tmoqf\n", "馍\tmoqf\n", "瘼\tmoqf\n"])
+
+    def test_unknown_chars_stay_at_tail_in_order(self) -> None:
+        lines = ["馍\tmoqf\n", "瘼\tmoqf\n", "魔\tmoqf\n"]
+        out = self.reorder(lines, {"魔": 3, "馍": 9})
+        self.assertEqual(out, ["魔\tmoqf\n", "馍\tmoqf\n", "瘼\tmoqf\n"])
+
+    def test_word_rows_untouched(self) -> None:
+        # 词行不参与分组（单字行才进组），保持原位置。
+        lines = ["词语\tmoq\n", "馍\tmoq\n", "膜\tmob\n", "魔\tmoq\n"]
+        out = self.reorder(lines, {"魔": 1, "馍": 2})
+        self.assertEqual(out, ["词语\tmoq\n", "魔\tmoq\n", "膜\tmob\n", "馍\tmoq\n"])
+
+
 class UniqueShortcodeTest(unittest.TestCase):
     """--unique-shortcode 的简码无重整理（纯函数级）。"""
 

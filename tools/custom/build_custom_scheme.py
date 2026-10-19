@@ -284,7 +284,8 @@ def convert_master_code(
 
 def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stats: BuildStats,
                    character_syllables: dict | None = None,
-                   unique_shortcode: bool = False) -> str:
+                   unique_shortcode: bool = False,
+                   char_order: dict[str, int] | None = None) -> str:
     text = replace_dictionary_name(text, f"mohu_{scheme}")
     lines = []
     in_body = False
@@ -332,8 +333,48 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
                 raw = "\t".join(fields) + ("\n" if raw.endswith("\n") else "")
         lines.append(raw)
 
+    if char_order:
+        lines = _reorder_rows_by_source_order(lines, char_order)
     return "".join(_dedupe_shortcode_rows(
         lines, remapped_short, stats, unique_shortcode))
+
+
+def _reorder_rows_by_source_order(
+    lines: list[str], char_order: dict[str, int],
+) -> list[str]:
+    """把同 code 单字行的内容按原码表字序重新分配到原行位置。
+
+    主表行序继承自然码源（虎码辅码序），且转换辅码后行的物理位置不动
+    ——同一新 code 的字行会分散在主表各区（三码区、兼容物化区等），
+    同码候选序与三简撞位的保留者因此都是虎码序而非源码表序。此函数
+    收集全文件同 code 的单字行，把行内容（含权重列）按 char_order
+    排序后依次填回该组原有的行位置集合：位置结构零变化（不破坏主表
+    分区约定），仅组内内容置换。源表没有的字排组尾（稳定，多个保持
+    原相对序）；词行与非数据行不动。
+    """
+    def parse(raw: str):
+        fields = raw.rstrip("\n").split("\t")
+        if (len(fields) >= 2 and len(fields[0]) == 1
+                and re.fullmatch(r"[a-z;/]+", fields[1])):
+            return fields[0]
+        return None
+
+    groups: dict[str, list[int]] = {}
+    for idx, raw in enumerate(lines):
+        char = parse(raw)
+        if char is not None:
+            groups.setdefault(lines[idx].rstrip("\n").split("\t")[1], []).append(idx)
+    new_lines = list(lines)
+    for idxs in groups.values():
+        if len(idxs) < 2:
+            continue
+        contents = sorted(
+            (lines[i] for i in idxs),
+            key=lambda raw: char_order.get(parse(raw) or "", 1 << 30),
+        )
+        for idx, content in zip(idxs, contents):
+            new_lines[idx] = content
+    return new_lines
 
 
 def _dedupe_shortcode_rows(
@@ -875,7 +916,8 @@ def run(args) -> int:
     master_text = (ROOT / "mohu_zrm.dict.yaml").read_text(encoding="utf-8")
     master_converted = convert_master(master_text, name, converter, base_aux, merged_aux, stats,
                                       character_syllables=load_character_syllables(ZRM_CHARS_DICT),
-                                      unique_shortcode=args.unique_shortcode)
+                                      unique_shortcode=args.unique_shortcode,
+                                      char_order=coded.order if coded else None)
     master_path = output / f"mohu_{name}.dict.yaml"
     master_path.write_text(master_converted, encoding="utf-8")
 
@@ -1033,6 +1075,10 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             )
         if cs.multi_aux_chars:
             lines.append(f"- 一字多辅码 {cs.multi_aux_chars} 字，取首现、其余见下方别名清单")
+        lines.append(
+            "- 同码候选序与三简撞位保留者已按原码表字序重排"
+            "（源码表没有的字排在该码位组尾）"
+        )
         if coded.stats.unknown_prefixes:
             sample = " ".join(sorted(coded.stats.unknown_prefixes)[:12])
             lines.append(

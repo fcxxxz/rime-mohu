@@ -232,6 +232,7 @@ class CodedCharTable:
     aliases: dict[str, list[str]] = field(default_factory=dict)
     stats: CodedCharStats = field(default_factory=CodedCharStats)
     prefixes: set[str] = field(default_factory=set)  # ≥3 键行前 2 键集合（布局识别用）
+    order: dict[str, int] = field(default_factory=dict)  # 字 -> 原表首现行号（同码字序基准）
 
 
 _TABLE_CODE = re.compile(r"[a-z]{1,8}")
@@ -262,6 +263,8 @@ def load_coded_chars(path: Path) -> CodedCharTable:
         stats.rows += 1
     # 第一遍：≥4 键行提取辅码（3 键渐进行按码序通常在前，先提全量才能校验）
     for char, code in rows:
+        if char not in table.order:
+            table.order[char] = len(table.order)
         if len(code) <= 2:
             stats.short_rows += 1
             continue

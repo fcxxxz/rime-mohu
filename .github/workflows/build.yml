@@ -261,6 +261,16 @@ jobs:
           test -f custom-dist/mohu_zrmu/mohu/runtime/libtigerengine.dll
           test -f custom-dist/mohu_zrmu/mohu/runtime/runtime-preload.txt
 
+      - name: Build unique-shortcode flypy variant
+        run: |
+          uv run tools/custom/build_custom_scheme.py --sp flypy --unique-shortcode \
+            --name flypyu --display 小鹤 --zip
+          # 小鹤是异布局派生，不带飞键；引擎闭包同样必须自带。
+          cp -R dist-flypy/mohu/runtime/. custom-dist/mohu_flypyu/mohu/runtime/
+          test -f custom-dist/mohu_flypyu/mohu/runtime/libtigerengine.dylib
+          test -f custom-dist/mohu_flypyu/mohu/runtime/libtigerengine.dll
+          test -f custom-dist/mohu_flypyu/mohu/runtime/runtime-preload.txt
+
       - name: Upload Natural Code distribution
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
@@ -285,6 +295,15 @@ jobs:
         with:
           name: rime-mohu-flypy-${{ github.run_number }}-${{ github.run_attempt }}
           path: dist-flypy/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload unique-shortcode flypy distribution
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rime-mohu-flypyu-${{ github.run_number }}-${{ github.run_attempt }}
+          path: custom-dist/mohu_flypyu/
           if-no-files-found: error
           retention-days: 14
 
@@ -336,6 +355,12 @@ jobs:
           name: rime-mohu-zrmu-${{ github.run_number }}-${{ github.run_attempt }}
           path: dist-zrmu
 
+      - name: Download unique-shortcode flypy distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: rime-mohu-flypyu-${{ github.run_number }}-${{ github.run_attempt }}
+          path: dist-flypyu
+
       - name: Download V5 model asset
         uses: actions/download-artifact@v4
         with:
@@ -345,17 +370,20 @@ jobs:
       - name: Package flat distributions
         run: |
           # GitHub artifact transfer does not preserve executable bits.
-          find dist-zrm dist-flypy dist-zrmu -type f -name '*.command' -exec chmod +x {} +
+          find dist-zrm dist-flypy dist-zrmu dist-flypyu -type f -name '*.command' -exec chmod +x {} +
           (cd dist-zrm && zip -qr ../rime-mohu-zrm-latest.zip .)
           (cd dist-flypy && zip -qr ../rime-mohu-flypy-latest.zip .)
           (cd dist-zrmu && zip -qr ../rime-mohu-zrmu-latest.zip .)
+          (cd dist-flypyu && zip -qr ../rime-mohu-flypyu-latest.zip .)
           unzip -t rime-mohu-zrm-latest.zip >/dev/null
           unzip -t rime-mohu-flypy-latest.zip >/dev/null
           unzip -t rime-mohu-zrmu-latest.zip >/dev/null
+          unzip -t rime-mohu-flypyu-latest.zip >/dev/null
           for pair in \
             "dist-zrm:rime-mohu-zrm-latest.zip" \
             "dist-flypy:rime-mohu-flypy-latest.zip" \
-            "dist-zrmu:rime-mohu-zrmu-latest.zip"; do
+            "dist-zrmu:rime-mohu-zrmu-latest.zip" \
+            "dist-flypyu:rime-mohu-flypyu-latest.zip"; do
             directory="${pair%%:*}"
             archive="${pair##*:}"
             unzip -Z1 "$archive" | grep -Fx "mohu/config/README.md" >/dev/null
@@ -378,6 +406,7 @@ jobs:
             '- 自然码：下载 `rime-mohu-zrm-latest.zip`，解压到 Rime 用户目录后重新部署。' \
             '- 小鹤：下载 `rime-mohu-flypy-latest.zip`，解压到 Rime 用户目录后重新部署。' \
             '- 自然码（简码无重规则的另一份包，方案 id mohu_zrmu，选单同名，可与上面共存）：下载 `rime-mohu-zrmu-latest.zip`——一二三简每码位唯一，撞位字按字频逐级降级（打全码或辅码渐进），飞键保留。' \
+            '- 小鹤（简码无重规则的另一份包，方案 id mohu_flypyu，选单同名，可与上面共存）：下载 `rime-mohu-flypyu-latest.zip`——规则同自然码无重版，按小鹤双拼。' \
             '- 模型：下载 `mohu-sentence-ngram-v5.bin`，放入 `Rime/mohu/model/`（运行时固定读取该文件名）。自 2026-09-16 起发布内容为 u8 量化格式 TCSKNM04（389.7MB，较原 f32 版 −32%，质量持平）；需配合本日期后构建的方案包，旧引擎会报 `unknown model format` 并退回普通候选。' \
             '' \
             '桌面方案包不包含模型文件，适用于空的或专门准备的 Rime 用户目录。' \
@@ -395,6 +424,7 @@ jobs:
             rime-mohu-zrm-latest.zip \
             rime-mohu-flypy-latest.zip \
             rime-mohu-zrmu-latest.zip \
+            rime-mohu-flypyu-latest.zip \
             model-asset/mohu-sentence-ngram-v5.bin \
             --clobber
           gh release edit latest --title 'Latest build' --notes-file "$notes_file" --latest

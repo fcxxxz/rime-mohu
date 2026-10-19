@@ -120,6 +120,32 @@ def fetch_attachment(url: str, target_dir: Path, index: int) -> Path:
     return target
 
 
+def resolve_file_section(
+    section_text: str, body: str, workdir: Path, name: str, index: int,
+) -> Path:
+    """把表单某一段落解析成本地文件：段内附件优先，其次全文第 index 个
+    附件（拖错框时的宽容），最后尝试粘贴文本。"""
+    section_urls = ATTACHMENT_URL.findall(section_text)
+    if section_urls:
+        return fetch_attachment(section_urls[0], workdir, index)
+    all_urls = ATTACHMENT_URL.findall(body)
+    if len(all_urls) >= index:
+        return fetch_attachment(all_urls[index - 1], workdir, index)
+    pasted = "\n".join(
+        line for line in section_text.splitlines()
+        if not line.startswith("<!--") and not line.startswith("[") and "\t" in line
+    )
+    if not pasted:
+        raise FormError(
+            f"「{name}」框里没有看到附件，也没有可识别的文本。\n"
+            f"请重新编辑这个 Issue：把文件直接拖进该框（会自动变成附件链接）；"
+            f"内容不大时也可以整段粘贴，每行需含 Tab 分隔。"
+        )
+    target = workdir / f"pasted-{index}.txt"
+    target.write_text(pasted + "\n", encoding="utf-8")
+    return target
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print(__doc__, file=sys.stderr)
@@ -133,25 +159,7 @@ def main() -> int:
         return sections.get(label, "").strip() or default
 
     table_section = field("码表文件")
-    urls = ATTACHMENT_URL.findall(table_section) or ATTACHMENT_URL.findall(body)
-    if urls:
-        table_path = fetch_attachment(urls[0], workdir, 1)
-        how = "附件"
-    else:
-        pasted = "\n".join(
-            line for line in table_section.splitlines()
-            if not line.startswith("<!--") and not line.startswith("[") and "\t" in line
-        )
-        if not pasted:
-            raise FormError(
-                "「码表文件」框里没有看到附件，也没有可识别的码表文本。\n"
-                "请重新编辑这个 Issue：把码表 txt/tsv 文件直接拖进该框"
-                "（会自动变成附件链接）；小表也可以整段粘贴，每行需是"
-                "「编码<Tab>字」或「字<Tab>编码」。"
-            )
-        table_path = workdir / "pasted-table.txt"
-        table_path.write_text(pasted + "\n", encoding="utf-8")
-        how = "粘贴文本"
+    table_path = resolve_file_section(table_section, body, workdir, "码表文件", 1)
 
     scheme_name = field("方案名")
     if not re.fullmatch(r"[a-z][a-z0-9]*", scheme_name):
@@ -165,15 +173,29 @@ def main() -> int:
         layout = LAYOUT_OPTIONS[layout_label]
     except KeyError:
         layout = ""
-        how += f"（布局「{layout_label}」不在选项里，按自动识别处理）"
     unique = "true" if field("简码无重", "关闭") == "开启" else "false"
+
+    word_source = field("词库来源", "使用魔虎词库")
+    word_table_path = ""
+    if word_source == "使用码表自带词库":
+        word_section = field("词库文件")
+        if not (word_section or ATTACHMENT_URL.search(body)):
+            raise FormError(
+                "「词库来源」选了「使用码表自带词库」，但「词库文件」框是空的。\n"
+                "请编辑这个 Issue：把词表文件拖进「词库文件」框，"
+                "或把「词库来源」改回「使用魔虎词库」。"
+            )
+        word_table_path = str(resolve_file_section(
+            word_section, body, workdir, "词库文件", 2))
+    keep_shortcodes = "true" if field("简码来源", "魔虎推算") == "码表自带" else "false"
 
     print(f"TABLE_PATH={table_path}")
     print(f"SCHEME_NAME={scheme_name}")
     print(f"DISPLAY_NAME={display_name}")
     print(f"LAYOUT={layout}")
     print(f"UNIQUE_SHORTCODE={unique}")
-    print(f"# 来源：{how}", file=sys.stderr)
+    print(f"WORD_TABLE_PATH={word_table_path}")
+    print(f"KEEP_SHORTCODES={keep_shortcodes}")
     return 0
 
 

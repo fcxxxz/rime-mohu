@@ -71,6 +71,42 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: word-source
+    attributes:
+      label: 词库来源
+      description: 「使用魔虎词库」= 完整魔虎词库与整句能力（默认）；「使用码表自带词库」= 词库只用你词表里的词条（打法按新方案生成）。选自带时记得在下一框上传词表
+      options:
+        - 使用魔虎词库
+        - 使用码表自带词库
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: word-table
+    attributes:
+      label: 词库文件
+      description: >
+        仅当「词库来源」选了「使用码表自带词库」时填写：把原方案的词组表
+        （txt/tsv，每行「编码 词」或「词 编码」）拖进这个框。用魔虎词库时留空。
+      placeholder: |
+        （使用码表自带词库时，把词表文件拖到这里）
+    validations:
+      required: false
+
+  - type: dropdown
+    id: shortcode-source
+    attributes:
+      label: 简码来源
+      description: 「魔虎推算」= 简码由魔虎体系自动派生（默认）；「码表自带」= 保留原方案的一简/二简设计（码表里 1、2 键的打法原样保留）
+      options:
+        - 魔虎推算
+        - 码表自带
+      default: 0
+    validations:
+      required: true
+
   - type: markdown
     attributes:
       value: |

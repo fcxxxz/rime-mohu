@@ -51,10 +51,12 @@ from custom_aux import (  # noqa: E402
     CodedCharTable,
     MergeOutcome,
     ShapeCodeSource,
+    WordTableSource,
     derive_aux_from_shape_codes,
     load_coded_chars,
     load_shape_codes,
     load_user_aux,
+    load_word_table,
     merge_aux,
     synth_root_counts_by_length,
     zrmdb_lines,
@@ -118,6 +120,9 @@ class BuildStats:
     long_word_rows: int = 0
     lexicon_rows: int = 0
     chars_rows: int = 0
+    shortcode_rows: int = 0      # 码表自带简码物化行数
+    user_word_rows: int = 0      # 码表自带词库：生成词行数
+    user_word_skipped: int = 0   # 码表自带词库：跳过的词（含引擎外字）
 
 
 # ---------------------------------------------------------------------------
@@ -624,6 +629,53 @@ def derive_custom_phrases(scheme: str) -> str:
     return text.replace("mohu_zrm", f"mohu_{scheme}")
 
 
+def build_user_word_rows(
+    words: list[str], layout: SpLayout, merged_aux: dict,
+    syllables: dict[str, set[str]], stats: BuildStats,
+) -> list[str]:
+    """码表自带词库 → 词库源行（词\tsp;aux …，打法按本方案生成）。
+
+    每字取主读音（读音集合排序首个）转本布局双拼，辅码用合并后的
+    辅码表；含无读音/无辅码字的词整条跳过并计数。
+    """
+    rows: list[str] = []
+    for word in words:
+        codes = []
+        for ch in word:
+            pys = syllables.get(ch)
+            entry = merged_aux.get(ch)
+            if not pys or entry is None:
+                stats.user_word_skipped += 1
+                codes = None
+                break
+            code2 = layout.zrm_to_code_or_none(sorted(pys)[0])
+            if code2 is None:
+                stats.user_word_skipped += 1
+                codes = None
+                break
+            codes.append(f"{code2};{entry.normal}")
+        if codes is not None:
+            rows.append(f"{word}\t{' '.join(codes)}\n")
+    stats.user_word_rows = len(rows)
+    return rows
+
+
+def build_custom_phrases(scheme: str, args, coded: CodedCharTable | None,
+                         stats: BuildStats) -> str:
+    """自定义短语基础内容 + 可选的码表自带简码物化。"""
+    text = derive_custom_phrases(scheme)
+    if args.keep_shortcodes and coded is not None and coded.shortcodes:
+        text += (
+            "\n# 码表自带简码（原方案 1/2 键行物化，权重按原表序递减）\n"
+            + "".join(
+                f"{ch}\t{code}\t{10000 - i}\n"
+                for i, (ch, code) in enumerate(coded.shortcodes)
+            )
+        )
+        stats.shortcode_rows = len(coded.shortcodes)
+    return text
+
+
 # ---------------------------------------------------------------------------
 # 报告
 # ---------------------------------------------------------------------------
@@ -876,6 +928,11 @@ def run(args) -> int:
                 f"或用了未知双拼。请检查文件，或改造为辅码表/形码全码表后"
                 f"用 --aux / --shape-code 传入。"
             )
+    word_source: WordTableSource | None = None
+    if args.word_table:
+        word_source = load_word_table(Path(args.word_table))
+        print(f"    码表自带词库：{len(word_source.words)} 词条"
+              f"（词库来源=码表自带，打法按本方案生成）")
     sp_value = args.sp
     if sp_value is None:
         sp_value = detected_layout or "zrm"
@@ -961,12 +1018,30 @@ def run(args) -> int:
             source_specs[suffix] = target
 
         print("[5/8] 合并整句词库（含长词补行）…")
-        supplemental, _report = master_long_word_rows(ROOT, source_paths("zrm", ROOT))
-        supplemental = rewrite_supplemental(supplemental, converter, merged_aux)
-        stats.long_word_rows = len(supplemental)
-        sources = [chars_path] + [source_specs[s] for s in ("base", "words", "tencent", "moe", "classics", "wanxiang")]
-        merge_dictionary(f"mohu_{name}.words", sources, output / f"mohu_{name}.words.dict.yaml",
-                         supplemental_rows=supplemental)
+        supplemental = []
+        if word_source is not None:
+            # 码表自带词库：词源只用用户词表（打法按本方案规则生成），
+            # 不掺魔虎词源与长词补行；整句引擎 lexicon 仍为魔虎数据。
+            syllables = load_character_syllables(ZRM_CHARS_DICT)
+            user_rows = build_user_word_rows(
+                word_source.words, layout, merged_aux, syllables, stats)
+            user_words_path = staging / f"mohu_{name}.user_words.dict.yaml"
+            user_words_path.write_text(
+                "# 【码表自带词库｜自动生成，请勿直接编辑】\n"
+                "# 词条来自 --word-table；打法按本方案规则生成。\n"
+                "# Rime dictionary\n# encoding: utf-8\n\n---\n"
+                f"name: mohu_{name}.user_words\n"
+                "version: \"1.0\"\nsort: original\n...\n"
+                + "".join(user_rows), encoding="utf-8")
+            merge_dictionary(f"mohu_{name}.words", [chars_path, user_words_path],
+                             output / f"mohu_{name}.words.dict.yaml")
+        else:
+            supplemental, _report = master_long_word_rows(ROOT, source_paths("zrm", ROOT))
+            supplemental = rewrite_supplemental(supplemental, converter, merged_aux)
+            stats.long_word_rows = len(supplemental)
+            sources = [chars_path] + [source_specs[s] for s in ("base", "words", "tencent", "moe", "classics", "wanxiang")]
+            merge_dictionary(f"mohu_{name}.words", sources, output / f"mohu_{name}.words.dict.yaml",
+                             supplemental_rows=supplemental)
 
         print("[6/8] 派生 schema 与原生引擎词表…")
         (output / f"mohu_{name}_sentence_core.schema.yaml").write_text(
@@ -974,7 +1049,7 @@ def run(args) -> int:
         (output / f"mohu_{name}.schema.yaml").write_text(
             derive_main_schema(name, layout, aux_customized, scheme_display), encoding="utf-8")
         (output / f"mohu_{name}_custom_phrases.txt").write_text(
-            derive_custom_phrases(name), encoding="utf-8")
+            build_custom_phrases(name, args, coded, stats), encoding="utf-8")
 
         reading_frequencies = load_reading_frequencies(chars_path, is_syllable=layout.is_code)
         tiger_rows = load_rows(TIGER_LEXICON, reading_frequencies)
@@ -1046,6 +1121,13 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             f"辅码提取不受影响，双拼打法以本方案布局为准"
         )
     lines += [
+        "",
+        "## 词库与简码来源",
+        f"- 词库：{'码表自带词库（生成 ' + str(stats.user_word_rows) + ' 词条，'
+                  + ('跳过 ' + str(stats.user_word_skipped) + ' 条含引擎外字的词）'
+                  if stats.user_word_rows else '魔虎全量词库')}",
+        f"- 简码：{'码表自带（物化 ' + str(stats.shortcode_rows) + ' 行进自定义短语）'
+                  if stats.shortcode_rows else '魔虎体系推算'}",
         "",
         "## 辅码覆盖",
         f"- 用户覆盖：{outcome.user_chars} 字",
@@ -1172,6 +1254,12 @@ def main() -> int:
     parser.add_argument("--char-table", metavar="PATH",
                         help="单字成品码表：双拼(2键)+辅码 混合表（码在前/字在前均可），"
                              "剥双拼提辅码并自动识别双拼布局")
+    parser.add_argument("--word-table", metavar="PATH",
+                        help="码表配套词表：给定后词库只用这些词条（打法按本方案规则生成），"
+                             "默认用魔虎全量词库")
+    parser.add_argument("--keep-shortcodes", action="store_true",
+                        help="使用码表自带的简码：把码表里的 1/2 键行物化进自定义短语；"
+                             "默认由魔虎体系推算简码")
     parser.add_argument("--tiger-style-prune", action="store_true",
                         help="配合 --shape-code：按码长启用虎码式剪枝（≤3 码丢 13 位）")
     parser.add_argument("--name", help="方案名（默认取布局名；不能是 zrm/flypy）")

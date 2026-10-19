@@ -65,6 +65,12 @@ jobs:
           if [ "$UNIQUE_SHORTCODE" = "true" ]; then
             ARGS+=(--unique-shortcode)
           fi
+          if [ -n "$WORD_TABLE_PATH" ]; then
+            ARGS+=(--word-table "$WORD_TABLE_PATH")
+          fi
+          if [ "$KEEP_SHORTCODES" = "true" ]; then
+            ARGS+=(--keep-shortcodes)
+          fi
           set -o pipefail
           uv run tools/custom/build_custom_scheme.py "${ARGS[@]}" 2>&1 | tee issue-work/build.log
 

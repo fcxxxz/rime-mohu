@@ -233,6 +233,7 @@ class CodedCharTable:
     stats: CodedCharStats = field(default_factory=CodedCharStats)
     prefixes: set[str] = field(default_factory=set)  # ≥3 键行前 2 键集合（布局识别用）
     order: dict[str, int] = field(default_factory=dict)  # 字 -> 原表首现行号（同码字序基准）
+    shortcodes: list[tuple[str, str]] = field(default_factory=list)  # 1/2 键行 (字, 码)，原表序
 
 
 _TABLE_CODE = re.compile(r"[a-z]{1,8}")
@@ -267,6 +268,7 @@ def load_coded_chars(path: Path) -> CodedCharTable:
             table.order[char] = len(table.order)
         if len(code) <= 2:
             stats.short_rows += 1
+            table.shortcodes.append((char, code))
             continue
         stats.prefix_total += 1
         table.prefixes.add(code[:2])
@@ -296,6 +298,44 @@ def load_coded_chars(path: Path) -> CodedCharTable:
             f"换双拼请用 --sp 布局文件，换辅码请提供辅码表或形码全码表。"
         )
     return table
+
+
+@dataclass
+class WordTableSource:
+    """码表配套词表解析结果（--word-table）。"""
+
+    words: list[str] = field(default_factory=list)  # 词形（≥2 字全汉字，去重保序）
+    skipped: int = 0                                  # 没有词列的行（杂行/单字行）
+
+
+def load_word_table(path: Path) -> WordTableSource:
+    """读码表配套词表：每行 码<Tab>词 或 词<Tab>码。
+
+    只取词形（≥2 个连续汉字的列），打法由派生方案按自身规则重新
+    生成——与单字的处理一致（辅码来自码表，打法按本方案）。
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise AuxError(f"找不到词表文件：{path}")
+    source = WordTableSource()
+    seen: set[str] = set()
+    for _, fields in _read_rows(path):
+        candidates = [
+            f for f in fields
+            if len(f) >= 2 and all(_is_single_han(ch) for ch in f)
+        ]
+        if not candidates:
+            source.skipped += 1
+            continue
+        word = candidates[0]
+        if word not in seen:
+            seen.add(word)
+            source.words.append(word)
+    if not source.words:
+        raise AuxError(
+            f"{path.name} 里没有提取到任何词条（每行需要一列 ≥2 个汉字的词）。"
+        )
+    return source
 
 
 def derive_aux_from_shape_codes(

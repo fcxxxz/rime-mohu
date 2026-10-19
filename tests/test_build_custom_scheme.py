@@ -322,6 +322,32 @@ class TableParsingTest(unittest.TestCase):
         self.assertEqual(name, "zrm")
         self.assertGreaterEqual(ratio, 0.8)
 
+    def test_shortcodes_collected_in_source_order(self) -> None:
+        from tools.custom.custom_aux import load_coded_chars
+
+        (self.dir / "ct.tsv").write_text(
+            "b\t不\nbk\t报\nmoq\t魔\nmoqf\t馍\n",
+            encoding="utf-8",
+        )
+        table = load_coded_chars(self.dir / "ct.tsv")
+        self.assertEqual(table.shortcodes, [("不", "b"), ("报", "bk")])
+        self.assertEqual(table.stats.short_rows, 2)
+
+    def test_load_word_table(self) -> None:
+        from tools.custom.custom_aux import AuxError, load_word_table
+
+        (self.dir / "wt.tsv").write_text(
+            "mymh\t魔码\n西虹市\txhda\nmoqf\t馍\n# 注释行\n",
+            encoding="utf-8",
+        )
+        source = load_word_table(self.dir / "wt.tsv")
+        self.assertEqual(source.words, ["魔码", "西虹市"])
+        self.assertEqual(source.skipped, 1)  # 单字行与注释行都不算词
+
+        (self.dir / "empty.tsv").write_text("moqf\t馍\n", encoding="utf-8")
+        with self.assertRaises(AuxError):
+            load_word_table(self.dir / "empty.tsv")
+
 
 class IssueFormTest(unittest.TestCase):
     """「转码表」Issue 表单解析（粘贴路径；附件下载不在单测里触网）。"""
@@ -377,7 +403,7 @@ class IssueFormTest(unittest.TestCase):
         self.assertIn("DISPLAY_NAME=我的码", result.stdout)
         self.assertIn("LAYOUT=", result.stdout)
         self.assertIn("UNIQUE_SHORTCODE=true", result.stdout)
-        pasted = self.dir / "work" / "pasted-table.txt"
+        pasted = self.dir / "work" / "pasted-1.txt"
         self.assertIn("aayk\t阿", pasted.read_text(encoding="utf-8"))
 
     def test_layout_option_mapping(self) -> None:

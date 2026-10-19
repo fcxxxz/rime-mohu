@@ -1,4 +1,3 @@
----
 name: 🔄 转码表（生成我的专属方案）
 description: 上传你的码表文件，自动生成可安装的魔虎派生方案包
 title: "转码表：<你的方案名>"
@@ -55,7 +54,6 @@ body:
         - zrm（自然码）
         - flypy（小鹤）
         - jiajia（加加）
-      default: 0
     validations:
       required: true
 
@@ -67,7 +65,6 @@ body:
       options:
         - "关闭"
         - "开启"
-      default: 0
     validations:
       required: true
 
@@ -79,7 +76,6 @@ body:
       options:
         - 使用魔虎词库
         - 使用码表自带词库
-      default: 0
     validations:
       required: true
 
@@ -105,7 +101,6 @@ body:
       options:
         - 魔虎推算
         - 码表自带
-      default: 0
     validations:
       required: true
 
@@ -115,4 +110,3 @@ body:
         > 💡 提交后请稍等，机器人回复前不要关闭这个 Issue。
         > 如果构建失败，按回复里的提示**编辑这个 Issue** 改好后会自动重新构建。
         > 下载链接 7 天后过期；过期后再开一个新 Issue 重跑即可。
----

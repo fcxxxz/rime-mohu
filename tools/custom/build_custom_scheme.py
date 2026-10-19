@@ -593,13 +593,14 @@ def derive_sentence_core(scheme: str) -> str:
 
 def derive_main_schema(scheme: str, layout: SpLayout, aux_customized: bool, display: str) -> str:
     text = (ROOT / "mohu_zrm.schema.yaml").read_text(encoding="utf-8")
-    # 原生引擎词表路径：目录与文件名都指向本方案（须在通用替换前处理，
-    # 否则目录名里的 zrm 不会跟随方案名）。
+    # 原生引擎词表路径：目录名里的 zrm 不跟随通用替换，须在其后单独修。
+    # 顺序不能反：先单独换会产出含 mohu_zrm 前缀的 mohu_<scheme> 串，
+    # 再做通用替换时被二次替换（zrmu → zrmuu 一类前缀延伸名必踩）。
+    text = text.replace("mohu_zrm", f"mohu_{scheme}")
     text = text.replace(
-        "mohu/data/zrm/mohu_zrm.lexicon.txt",
+        f"mohu/data/zrm/mohu_{scheme}.lexicon.txt",
         f"mohu/data/{scheme}/mohu_{scheme}.lexicon.txt",
     )
-    text = text.replace("mohu_zrm", f"mohu_{scheme}")
     # 自定义方案不带飞键：装配槽移除（user_* 槽保留，用户仍可自定义）。
     text = re.sub(r"(?m)^\s*- mohu:/algebra/fly_zrm\?\n", "", text)
     text = text.replace("魔虎·自然码", f"魔虎·{display}")

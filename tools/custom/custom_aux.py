@@ -220,6 +220,7 @@ class CodedCharStats:
     skipped_non_han: int = 0         # 假名/符号/拉丁等非汉字行
     skipped_multi_code: int = 0      # 同行多码列，无法确认取哪个
     multi_aux_chars: int = 0         # 一字多辅码，取首现、其余进 aliases
+    in_table_words: int = 0          # 码表内多字词条行（字词混排表）
     unknown_prefixes: set[str] = field(default_factory=set)  # ≥3 键行前缀不在识别布局内
     prefix_total: int = 0            # ≥3 键行数（命中率分母）
 
@@ -233,7 +234,8 @@ class CodedCharTable:
     stats: CodedCharStats = field(default_factory=CodedCharStats)
     prefixes: set[str] = field(default_factory=set)  # ≥3 键行前 2 键集合（布局识别用）
     order: dict[str, int] = field(default_factory=dict)  # 字 -> 原表首现行号（同码字序基准）
-    shortcodes: list[tuple[str, str]] = field(default_factory=list)  # 1/2 键行 (字, 码)，原表序
+    shortcodes: list[tuple[str, str]] = field(default_factory=list)  # 1/2/3 键行 (字, 码)，原表序
+    words: list[str] = field(default_factory=list)  # 码表内多字词条（字词混排表），去重保序
 
 
 _TABLE_CODE = re.compile(r"[a-z]{1,8}")
@@ -251,9 +253,21 @@ def load_coded_chars(path: Path) -> CodedCharTable:
     table = CodedCharTable()
     stats = table.stats
     rows = []
+    seen_words: set[str] = set()
     for fields in (fields for _, fields in _read_rows(path)):
         parsed = _split_char_and_codes(fields)
         if parsed is None:
+            # 字词混排表：无单字列但有 ≥2 字的纯汉字列 → 词条行
+            word_cols = [
+                f for f in fields
+                if f and len(f) >= 2 and all(_is_single_han(ch) for ch in f)
+            ]
+            if word_cols:
+                stats.in_table_words += 1
+                if word_cols[0] not in seen_words:
+                    seen_words.add(word_cols[0])
+                    table.words.append(word_cols[0])
+                continue
             stats.skipped_non_han += 1
             continue
         char, codes = parsed
@@ -262,7 +276,8 @@ def load_coded_chars(path: Path) -> CodedCharTable:
             continue
         rows.append((char, codes[0]))
         stats.rows += 1
-    # 第一遍：≥4 键行提取辅码（3 键渐进行按码序通常在前，先提全量才能校验）
+    # 第一遍：≥4 键行提取辅码（3 键渐进行按码序通常在前，先提全量才能校验）；
+    # 1/2/3 键行同时收集为简码（原表序，供 --keep-shortcodes 物化）
     for char, code in rows:
         if char not in table.order:
             table.order[char] = len(table.order)
@@ -273,6 +288,7 @@ def load_coded_chars(path: Path) -> CodedCharTable:
         stats.prefix_total += 1
         table.prefixes.add(code[:2])
         if len(code) == 3:
+            table.shortcodes.append((char, code))
             continue
         if len(code) > 4:
             stats.long_code_rows += 1
@@ -333,7 +349,9 @@ def load_word_table(path: Path) -> WordTableSource:
             source.words.append(word)
     if not source.words:
         raise AuxError(
-            f"{path.name} 里没有提取到任何词条（每行需要一列 ≥2 个汉字的词）。"
+            f"{path.name} 里没有提取到任何多字词条（每行需要一列 ≥2 个汉字的词）。\n"
+            f"若你的码表是纯单字表、词条在单独的词表文件里，请把那个文件传进来；\n"
+            f"或把「词库来源」改回「使用魔虎词库」。"
         )
     return source
 

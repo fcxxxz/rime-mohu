@@ -666,7 +666,7 @@ def build_custom_phrases(scheme: str, args, coded: CodedCharTable | None,
     text = derive_custom_phrases(scheme)
     if args.keep_shortcodes and coded is not None and coded.shortcodes:
         text += (
-            "\n# 码表自带简码（原方案 1/2 键行物化，权重按原表序递减）\n"
+            "\n# 码表自带简码（原方案 1/2/3 键行物化，权重按原表序递减）\n"
             + "".join(
                 f"{ch}\t{code}\t{10000 - i}\n"
                 for i, (ch, code) in enumerate(coded.shortcodes)
@@ -933,6 +933,10 @@ def run(args) -> int:
         word_source = load_word_table(Path(args.word_table))
         print(f"    码表自带词库：{len(word_source.words)} 词条"
               f"（词库来源=码表自带，打法按本方案生成）")
+    elif coded is not None and coded.words:
+        word_source = WordTableSource(words=coded.words)
+        print(f"    码表自带词库：码表内字词混排，提取 {len(coded.words)} 词条"
+              f"（打法按本方案生成）")
     sp_value = args.sp
     if sp_value is None:
         sp_value = detected_layout or "zrm"
@@ -1120,14 +1124,19 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             f"- ⚠ 你指定了 --sp {args.sp}，但码表前 2 键更像 {detected_layout} 布局；"
             f"辅码提取不受影响，双拼打法以本方案布局为准"
         )
+    if stats.user_word_rows:
+        word_line = (f"码表自带词库（生成 {stats.user_word_rows} 词条，"
+                     f"跳过 {stats.user_word_skipped} 条含引擎外字的词）")
+    else:
+        word_line = "魔虎全量词库"
+    shortcode_line = (
+        f"码表自带（物化 {stats.shortcode_rows} 行进自定义短语）"
+        if stats.shortcode_rows else "魔虎体系推算")
     lines += [
         "",
         "## 词库与简码来源",
-        f"- 词库：{'码表自带词库（生成 ' + str(stats.user_word_rows) + ' 词条，'
-                  + ('跳过 ' + str(stats.user_word_skipped) + ' 条含引擎外字的词）'
-                  if stats.user_word_rows else '魔虎全量词库')}",
-        f"- 简码：{'码表自带（物化 ' + str(stats.shortcode_rows) + ' 行进自定义短语）'
-                  if stats.shortcode_rows else '魔虎体系推算'}",
+        f"- 词库：{word_line}",
+        f"- 简码：{shortcode_line}",
         "",
         "## 辅码覆盖",
         f"- 用户覆盖：{outcome.user_chars} 字",
@@ -1145,7 +1154,8 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             f"- 数据行 {cs.rows}（另有 {cs.skipped_non_han} 行假名/符号/拉丁等非汉字行、"
             f"{cs.skipped_multi_code} 行多码列，已跳过）",
             f"- 提取辅码：{len(coded.aux)} 字；≤2 键行（简码/裸音节，不参与）{cs.short_rows} 行；"
-            f"3 键渐进行 {cs.graded_rows} 行",
+            f"3 键渐进行 {cs.graded_rows} 行"
+            + (f"；码表内字词混排词条 {cs.in_table_words} 行" if cs.in_table_words else ""),
             f"- ≥3 键行前 2 键识别为 {detected_layout or '（未识别）'} 双拼",
         ]
         if cs.long_code_rows:

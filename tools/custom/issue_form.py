@@ -179,14 +179,12 @@ def main() -> int:
     word_table_path = ""
     if word_source == "使用码表自带词库":
         word_section = field("词库文件")
-        if not (word_section or ATTACHMENT_URL.search(body)):
-            raise FormError(
-                "「词库来源」选了「使用码表自带词库」，但「词库文件」框是空的。\n"
-                "请编辑这个 Issue：把词表文件拖进「词库文件」框，"
-                "或把「词库来源」改回「使用魔虎词库」。"
-            )
-        word_table_path = str(resolve_file_section(
-            word_section, body, workdir, "词库文件", 2))
+        if ATTACHMENT_URL.search(word_section) or "\t" in word_section:
+            word_table_path = str(resolve_file_section(
+                word_section, body, workdir, "词库文件", 2))
+        else:
+            # 词库文件留空：词条从码表文件本身提取（字词混排的码表）
+            word_table_path = str(table_path)
     keep_shortcodes = "true" if field("简码来源", "魔虎推算") == "码表自带" else "false"
 
     print(f"TABLE_PATH={table_path}")

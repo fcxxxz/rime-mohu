@@ -325,13 +325,30 @@ class TableParsingTest(unittest.TestCase):
     def test_shortcodes_collected_in_source_order(self) -> None:
         from tools.custom.custom_aux import load_coded_chars
 
+        # 1/2/3 键行都进简码物化清单（原表序）；4 键行不进。
         (self.dir / "ct.tsv").write_text(
             "b\t不\nbk\t报\nmoq\t魔\nmoqf\t馍\n",
             encoding="utf-8",
         )
         table = load_coded_chars(self.dir / "ct.tsv")
-        self.assertEqual(table.shortcodes, [("不", "b"), ("报", "bk")])
+        self.assertEqual(
+            table.shortcodes, [("不", "b"), ("报", "bk"), ("魔", "moq")])
         self.assertEqual(table.stats.short_rows, 2)
+        self.assertEqual(table.stats.graded_rows, 1)
+
+    def test_mixed_word_rows_extracted(self) -> None:
+        from tools.custom.custom_aux import load_coded_chars
+
+        # 字词混排：词条行（无单字列、有 ≥2 字汉字列）提取为词库。
+        (self.dir / "ct.tsv").write_text(
+            "b\t不\nmymh\t魔码\nmoqf\t馍\noba\tア\n",
+            encoding="utf-8",
+        )
+        table = load_coded_chars(self.dir / "ct.tsv")
+        self.assertEqual(table.words, ["魔码"])
+        self.assertEqual(table.stats.in_table_words, 1)
+        self.assertEqual(table.stats.skipped_non_han, 1)
+        self.assertEqual(table.aux["馍"].normal, "qf")
 
     def test_load_word_table(self) -> None:
         from tools.custom.custom_aux import AuxError, load_word_table

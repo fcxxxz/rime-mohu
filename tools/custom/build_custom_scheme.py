@@ -339,17 +339,20 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
                 raw = "\t".join(fields) + ("\n" if raw.endswith("\n") else "")
         lines.append(raw)
 
-    if char_order:
-        lines = _reorder_rows_by_source_order(lines, char_order)
-    lines = _dedupe_shortcode_rows(
-        lines, remapped_short, stats, unique_shortcode)
-    if unique_shortcode and stats.unique_pushed_chars:
-        # 被推字（含其补齐行）参与的码位按字序重排：有源码表用原表序，
-        # 否则用字频——否则按主表行序（虎码辅码序）排，常用字会沉底
-        # （吧输给叭、儿输给贰）。
-        order = char_order if char_order else _char_freq_rank()
-        lines = _reorder_rows_by_source_order(
-            lines, order, only_groups_with=stats.unique_pushed_chars)
+    if unique_shortcode:
+        rank = char_order if char_order else _char_freq_rank()
+        lines = _unique_shortcode_pass(lines, rank, stats)
+        if stats.unique_pushed_chars:
+            # 变动码位组按同一 rank 重排候选序（否则按主表行序=虎码
+            # 辅码序，常用字会沉底：吧输叭、儿输贰；且输家的全码组
+            # 里词可能压过字）。
+            lines = _reorder_rows_by_source_order(
+                lines, rank, only_groups_with=stats.unique_pushed_chars)
+    else:
+        if char_order:
+            lines = _reorder_rows_by_source_order(lines, char_order)
+        lines = _dedupe_shortcode_rows(
+            lines, remapped_short, stats, unique_shortcode)
     return "".join(lines)
 
 
@@ -381,7 +384,9 @@ def _reorder_rows_by_source_order(
     原相对序）；词行与非数据行不动。
 
     only_groups_with 给定时只重排「组内含这些字」的组（简码无重的
-    被推字按字频参与排序，其余码位保持人工调序不动）。
+    被推字按字频参与排序，其余码位保持人工调序不动）；此时词行也
+    纳入组内参与置换（排组尾、保持相对序）——否则简码字会被同码
+    词压在候选后面。
     """
     def parse(raw: str):
         fields = raw.rstrip("\n").split("\t")
@@ -392,9 +397,14 @@ def _reorder_rows_by_source_order(
 
     groups: dict[str, list[int]] = {}
     for idx, raw in enumerate(lines):
+        fields = raw.rstrip("\n").split("\t")
         char = parse(raw)
-        if char is not None:
-            groups.setdefault(lines[idx].rstrip("\n").split("\t")[1], []).append(idx)
+        is_data = char is not None or (
+            only_groups_with is not None and len(fields) >= 2
+            and re.fullmatch(r"[a-z;/]+", fields[1])
+        )
+        if is_data:
+            groups.setdefault(fields[1], []).append(idx)
     new_lines = list(lines)
     for idxs in groups.values():
         if len(idxs) < 2:
@@ -426,21 +436,16 @@ def _dedupe_shortcode_rows(
 
     --unique-shortcode（简码无重）：一/二/三简全部去重，原生同码特例
     也推；被推字必须还有更长的码行，否则保留该行兜底（否则字会从
-    码表消失）。被推字同时补齐「下一级到三键」的中间层级行（取其
-    最长码的前缀，已有的不重复补）——否则像只有一简+全码的字（吧：
-    b/badm）被推后，打两键三键时直接断档不可见。
+    码表消失）。
     """
-    # 单字行的码集合与最长码（未删全集上统计），作为删行保底与补行依据
-    char_codes: dict[str, list[str]] = {}
+    # 单字行的最长码（未删全集上统计），作为删行保底依据
     char_max_len: dict[str, int] = {}
     for raw in lines:
         fields = raw.rstrip("\n").split("\t")
         if (len(fields) >= 2 and len(fields[0]) == 1
                 and re.fullmatch(r"[a-z;/]+", fields[1])):
-            char_codes.setdefault(fields[0], []).append(fields[1])
             char_max_len[fields[0]] = max(char_max_len.get(fields[0], 0), len(fields[1]))
     seen_short: dict[str, bool] = {}  # 码位 -> 首占行是否被改写过
-    patched: list[str] = []
     resolved: list[str] = []
     for raw in lines:
         fields = raw.rstrip("\n").split("\t")
@@ -454,13 +459,6 @@ def _dedupe_shortcode_rows(
             if code in seen_short and char_max_len.get(fields[0], 0) > n:
                 stats.unique_pushed[n] += 1
                 stats.unique_pushed_chars.add(fields[0])
-                codes = char_codes[fields[0]]
-                longest = max(codes, key=len)
-                for k in range(n + 1, min(4, len(longest)) + 1):
-                    prefix = longest[:k]
-                    if prefix not in codes:
-                        codes.append(prefix)
-                        patched.append(f"{fields[0]}\t{prefix}\n")
                 continue
             seen_short[code] = True
             resolved.append(raw)
@@ -473,7 +471,66 @@ def _dedupe_shortcode_rows(
                     continue
             seen_short[code] = key in remapped_short
         resolved.append(raw)
-    return resolved + patched
+    return resolved
+
+
+def _unique_shortcode_pass(
+    lines: list[str], rank: dict[str, int], stats: BuildStats,
+) -> list[str]:
+    """简码无重的自洽重建：逐级降级竞争。
+
+    规则：一/二/三级简码位，每个码位只属于一个字。同码位的候选
+    （主表物化行的字 + 从上一级降级来的字）按 rank（源码表序或
+    字频名次，小者优先）竞争，赢家占位；输家降到下一级，用**自己
+    的**码（其最长码的前缀：二键=音节、三键=音节+辅首）再竞争；
+    三级也输的退到全码。全码行永不动；没有更长码的字不参与删除
+    （保底，否则字会从码表消失）。一简不自动派生（人工设计层），
+    只处理原表已有的一简行。
+
+    赢家中没有该码位物化行的（如吧 b→ba 输→bad 赢）生成新行；
+    变动涉及的码位组随后由调用方按同一 rank 重排候选序。
+    """
+    rows: list[tuple[int, str, str]] = []
+    char_codes: dict[str, set[str]] = {}
+    for idx, raw in enumerate(lines):
+        fields = raw.rstrip("\n").split("\t")
+        if (len(fields) >= 2 and len(fields[0]) == 1
+                and re.fullmatch(r"[a-z;/]+", fields[1])):
+            rows.append((idx, fields[0], fields[1]))
+            char_codes.setdefault(fields[0], set()).add(fields[1])
+    full_code = {c: max(codes, key=len) for c, codes in char_codes.items()}
+
+    winners: dict[str, str] = {}       # 码位 -> 赢家字
+    demoted: dict[str, int] = {}       # 待降级字 -> 已输的级数
+    for level in (1, 2, 3):
+        pool: dict[str, list[str]] = {}
+        for _idx, ch, code in rows:
+            if len(code) == level:
+                pool.setdefault(code, []).append(ch)
+        for ch, lost_level in list(demoted.items()):
+            if lost_level == level - 1 and len(full_code[ch]) > level:
+                pool.setdefault(full_code[ch][:level], []).append(ch)
+                demoted.pop(ch)
+        for code, chars in pool.items():
+            ordered = sorted(set(chars), key=lambda c: rank.get(c, 1 << 30))
+            winners[code] = ordered[0]
+            for loser in ordered[1:]:
+                demoted[loser] = level
+
+    drop_rows: set[int] = set()
+    for idx, ch, code in rows:
+        if (len(code) <= 3 and winners.get(code) != ch
+                and len(full_code[ch]) > len(code)):
+            drop_rows.add(idx)
+            stats.unique_pushed[len(code)] += 1
+            stats.unique_pushed_chars.add(ch)
+    kept = {(ch, code) for idx, ch, code in rows if idx not in drop_rows}
+    generated: list[str] = []
+    for code, ch in sorted(winners.items()):
+        if len(code) <= 3 and (ch, code) not in kept:
+            generated.append(f"{ch}\t{code}\n")
+            stats.unique_pushed_chars.add(ch)
+    return [raw for idx, raw in enumerate(lines) if idx not in drop_rows] + generated
 
 
 def rewrite_word_code(word: str, code: str, converter, merged_aux: dict) -> str | None:

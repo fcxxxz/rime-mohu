@@ -504,14 +504,19 @@ class ReorderBySourceOrderTest(unittest.TestCase):
 
 
 class UniqueShortcodeTest(unittest.TestCase):
-    """--unique-shortcode 的简码无重整理（纯函数级）。"""
+    """--unique-shortcode 的逐级降级竞争（纯函数级）。"""
 
     def setUp(self) -> None:
         sys.path.insert(0, str(ROOT / "tools"))
         sys.path.insert(0, str(ROOT / "tools/custom"))
-        from tools.custom.build_custom_scheme import BuildStats, _dedupe_shortcode_rows
+        from tools.custom.build_custom_scheme import (
+            BuildStats,
+            _dedupe_shortcode_rows,
+            _unique_shortcode_pass,
+        )
 
         self.dedupe = _dedupe_shortcode_rows
+        self.unique_pass = _unique_shortcode_pass
         self.stats_cls = BuildStats
 
     def dedup(self, rows, unique, remapped=None):
@@ -519,31 +524,34 @@ class UniqueShortcodeTest(unittest.TestCase):
         out = self.dedupe(list(rows), remapped or set(), stats, unique)
         return [r for r in out if r != "..."], stats
 
-    def test_one_and_two_key_pushed_when_unique(self) -> None:
-        rows = ["不\tb\n", "吧\tb\n", "吧\tbadm\n",
-                "把\tba\n", "拔\tba\n", "拔\tbau\n"]
-        out, stats = self.dedup(rows, unique=True)
-        self.assertNotIn("吧\tb\n", out)      # 一简撞位：吧 推后
-        self.assertIn("不\tb\n", out)
-        self.assertNotIn("拔\tba\n", out)     # 二简撞位：拔 推后（补 bad? 无 4 键行→bax？拔最长 bau(3) → 补 3 键已有不补）
-        self.assertIn("把\tba\n", out)
-        self.assertIn("吧\tbadm\n", out)      # 更长码行不受影响
-        self.assertIn("吧\tba\n", out)        # 吧被推后补齐中间层级行（b→badm 之间）
-        self.assertIn("吧\tbad\n", out)
-        self.assertEqual(stats.unique_pushed, {1: 1, 2: 1})
+    def run_unique(self, rows, rank):
+        stats = self.stats_cls()
+        out = self.unique_pass(list(rows), rank, stats)
+        return out, stats
 
-    def test_native_three_key_collision_pushed_when_unique(self) -> None:
-        # 默认模式下双方皆原生行的同码三简是保留特例；unique 模式也推。
-        rows = ["宾\tbjn\n", "彬\tbjn\n", "彬\tbjnr\n"]
-        out, stats = self.dedup(rows, unique=True)
-        self.assertIn("宾\tbjn\n", out)
-        self.assertNotIn("彬\tbjn\n", out)
-        self.assertEqual(stats.unique_pushed, {3: 1})
+    def test_level_downgrade_competition(self) -> None:
+        # 不>b>a>b：吧输 b 降 ba、再输把降 bad、bad 级赢叭——叭退全码 badh。
+        rows = ["不\tb\n", "吧\tb\n", "吧\tbadm\n", "把\tba\n", "拔\tba\n",
+                "拔\tbau\n", "叭\tbad\n", "叭\tbadh\n"]
+        rank = {"不": 0, "把": 1, "吧": 2, "拔": 3, "叭": 4}
+        out, stats = self.run_unique(rows, rank)
+        self.assertIn("不\tb\n", out)
+        self.assertNotIn("吧\tb\n", out)      # 一级输给「不」
+        self.assertIn("把\tba\n", out)
+        self.assertNotIn("拔\tba\n", out)     # 二级输给「把」
+        self.assertNotIn("吧\tba\n", out)     # 吧二级也输，不生成 ba 行
+        self.assertIn("吧\tbad\n", out)       # 三级赢「叭」：生成行
+        self.assertNotIn("叭\tbad\n", out)    # 叭退全码
+        self.assertIn("叭\tbadh\n", out)      # 全码行永不动
+        self.assertIn("拔\tbau\n", out)       # 拔降到自己的三码 bau 并占位
+        self.assertIn("吧\tbadm\n", out)
+        self.assertEqual(stats.unique_pushed, {1: 1, 2: 1, 3: 1})
 
     def test_no_longer_code_kept_as_fallback(self) -> None:
         # 撞位字没有更长码行时保留兜底，否则字会从码表消失。
         rows = ["不\tb\n", "吧\tb\n"]
-        out, stats = self.dedup(rows, unique=True)
+        out, stats = self.run_unique(rows, {"不": 0, "吧": 1})
+        self.assertIn("不\tb\n", out)
         self.assertIn("吧\tb\n", out)
         self.assertEqual(stats.unique_pushed, {})
 

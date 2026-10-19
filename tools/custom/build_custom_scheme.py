@@ -74,6 +74,7 @@ from sp_layout import (  # noqa: E402
 import zrmify  # noqa: E402
 from build_flypy_assets import replace_dictionary_name  # noqa: E402
 from build_mohu_lexicons import (  # noqa: E402
+    FLY_ZRM,
     build_rows,
     convert_two_char_short_code,
     load_character_syllables,
@@ -291,7 +292,8 @@ def convert_master_code(
 def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stats: BuildStats,
                    character_syllables: dict | None = None,
                    unique_shortcode: bool = False,
-                   char_order: dict[str, int] | None = None) -> str:
+                   char_order: dict[str, int] | None = None,
+                   keep_flykeys: bool = False) -> str:
     text = replace_dictionary_name(text, f"mohu_{scheme}")
     lines = []
     in_body = False
@@ -311,11 +313,9 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
         elif raw.startswith("# 维护后运行：make check-code-table"):
             raw = "# 自然码源文件维护后重新运行本构建。\n"
         if FLY_BLOCK_START.match(raw):
-            fly_drop = True
-            continue
-        if FLY_BLOCK_END.match(raw):
+            fly_drop = not keep_flykeys
+        elif FLY_BLOCK_END.match(raw):
             fly_drop = False
-            continue
         if fly_drop:
             continue
         if raw.strip() == "...":
@@ -684,14 +684,16 @@ def rewrite_supplemental(rows, converter, merged_aux) -> list[tuple[str, str, st
 # 方案文件派生
 # ---------------------------------------------------------------------------
 
-def derive_sentence_core(scheme: str) -> str:
+def derive_sentence_core(scheme: str, keep_flykeys: bool = False) -> str:
     text = (ROOT / "mohu_zrm_sentence_core.schema.yaml").read_text(encoding="utf-8")
     text = text.replace("mohu_zrm", f"mohu_{scheme}")
-    text = re.sub(r"(?m)^    - mohu:/algebra/fly_zrm\?\n", "", text)
+    if not keep_flykeys:
+        text = re.sub(r"(?m)^    - mohu:/algebra/fly_zrm\?\n", "", text)
     return text
 
 
-def derive_main_schema(scheme: str, layout: SpLayout, aux_customized: bool, display: str) -> str:
+def derive_main_schema(scheme: str, layout: SpLayout, aux_customized: bool, display: str,
+                       keep_flykeys: bool = False) -> str:
     text = (ROOT / "mohu_zrm.schema.yaml").read_text(encoding="utf-8")
     # 原生引擎词表路径：目录名里的 zrm 不跟随通用替换，须在其后单独修。
     # 顺序不能反：先单独换会产出含 mohu_zrm 前缀的 mohu_<scheme> 串，
@@ -701,8 +703,10 @@ def derive_main_schema(scheme: str, layout: SpLayout, aux_customized: bool, disp
         f"mohu/data/zrm/mohu_{scheme}.lexicon.txt",
         f"mohu/data/{scheme}/mohu_{scheme}.lexicon.txt",
     )
-    # 自定义方案不带飞键：装配槽移除（user_* 槽保留，用户仍可自定义）。
-    text = re.sub(r"(?m)^\s*- mohu:/algebra/fly_zrm\?\n", "", text)
+    # 布局与自然码恒等的直构派生（zrmu 一类）保留飞键装配；
+    # 其余自定义方案不带飞键：装配槽移除（user_* 槽保留，用户仍可自定义）。
+    if not keep_flykeys:
+        text = re.sub(r"(?m)^\s*- mohu:/algebra/fly_zrm\?\n", "", text)
     text = text.replace("魔虎·自然码", f"魔虎·{display}")
     if display == layout.display:
         text = text.replace("自然码双拼", f"{display}双拼")
@@ -1054,6 +1058,9 @@ def run(args) -> int:
 
     print(f"[1/8] 校验布局 {layout.display}（{layout.source.name}）…")
     converter = make_converter(layout)
+    # 布局与自然码恒等的直构派生（zrmu 一类）保留飞键全套（主表飞键块、
+    # schema 装配槽、lexicon 飞键闭包）；码表派生与异布局方案不带飞键。
+    keep_flykeys = args.char_table is None and layout.name == "zrm"
 
     print("[2/8] 准备辅码表…")
     required_chars = load_engine_charset()
@@ -1079,7 +1086,8 @@ def run(args) -> int:
     master_converted = convert_master(master_text, name, converter, base_aux, merged_aux, stats,
                                       character_syllables=load_character_syllables(ZRM_CHARS_DICT),
                                       unique_shortcode=args.unique_shortcode,
-                                      char_order=coded.order if coded else None)
+                                      char_order=coded.order if coded else None,
+                                      keep_flykeys=keep_flykeys)
     master_path = output / f"mohu_{name}.dict.yaml"
     master_path.write_text(master_converted, encoding="utf-8")
 
@@ -1150,9 +1158,9 @@ def run(args) -> int:
 
         print("[6/8] 派生 schema 与原生引擎词表…")
         (output / f"mohu_{name}_sentence_core.schema.yaml").write_text(
-            derive_sentence_core(name), encoding="utf-8")
+            derive_sentence_core(name, keep_flykeys), encoding="utf-8")
         (output / f"mohu_{name}.schema.yaml").write_text(
-            derive_main_schema(name, layout, aux_customized, scheme_display), encoding="utf-8")
+            derive_main_schema(name, layout, aux_customized, scheme_display, keep_flykeys), encoding="utf-8")
         (output / f"mohu_{name}_custom_phrases.txt").write_text(
             build_custom_phrases(name, args, coded, stats), encoding="utf-8")
 
@@ -1169,7 +1177,7 @@ def run(args) -> int:
             character_syllables=zrm_syllables,
             word_weights=inject_words,
             converter=converter,
-            fly={},
+            fly=FLY_ZRM if keep_flykeys else {},
         )
         stats.lexicon_rows = len(lexicon_rows)
 

@@ -6,10 +6,12 @@
 ```bash
 # 换双拼（辅码保持虎码）
 uv run tools/custom/build_custom_scheme.py --sp 我的布局.yaml
-# 只换辅码（双拼保持自然码）：直接给辅码表
+# 只换辅码（双拼保持自然码）：直接给辅码表（码在前也认）
 uv run tools/custom/build_custom_scheme.py --aux 我的辅码.tsv
-# 只换辅码：扔一张形码全码表（五笔/仓颉/郑码/自编），按魔虎取位规则推导
+# 只换辅码：扔一张形码全码表（五笔/仓颉/郑码/自编），按魔虎取位规则推导（码在前也认）
 uv run tools/custom/build_custom_scheme.py --shape-code 我的形码.tsv
+# 别家的「双拼+辅码」单字成品码表：剥双拼提辅码，双拼自动识别（--char-table）
+uv run tools/custom/build_custom_scheme.py --char-table 我的码表.txt --name myscheme --zip
 # 组合 + 指定方案名 + 打包
 uv run tools/custom/build_custom_scheme.py --sp 我的布局.yaml --shape-code 我的形码.tsv --name myscheme --zip
 ```
@@ -75,11 +77,47 @@ uv run tools/custom/build_custom_scheme.py --aux aux-template.tsv
 
 推导出的辅码表会落盘到产物目录（`推导辅码表.tsv`），可以检查微调后再当 `--aux` 传入。
 
+## 输入文件二c：单字成品码表（`--char-table`）
+
+手里已经有别人做好的「双拼+辅码」方案的单字表？整张扔进来，工具自动
+剥掉前两键双拼、取后两键当辅码。**码在前/字在前都认**，不用预处理：
+
+```
+aayk	阿          ← 双拼 aa + 辅码 yk
+bkdp	暴          ← 双拼 bk + 辅码 dp
+bk	报                ← 两键（音节），自动跳过
+aay	阿             ← 三键（辅码首键渐进），只做校验
+oba	ア               ← 假名/符号行，自动忽略
+```
+
+```bash
+uv run tools/custom/build_custom_scheme.py --char-table 我的码表.txt --name myscheme --zip
+```
+
+行为细节：
+
+- **双拼自动识别**：对内置三布局（zrm/flypy/jiajia）算前缀命中率，
+  `--sp` 未指定时直接采用识别结果；识别不出（<60%）会报错，可用
+  `--sp` 手动指定。显式指定的布局与识别结果不同时，报告里会提示。
+- 一字多辅码取首现，其余进报告别名清单；超过 4 键的行截断取第 3–4 键；
+  提取不受前缀合法性影响（识别错了也不破坏数据）。
+- 与 `--aux` / `--shape-code` 互斥；想微调提取结果，编辑产物里的
+  `推导辅码表.tsv` 后改用 `--aux`。
+- 全是两键行的纯音码表没有辅码信息，这个入口会直接报错。
+- 零命令行的网页做法（fork + Actions 页面点选）见 README
+  「零门槛：用自己的码表生成专属方案」一节。
+
 ## 简快码是自动的，不用配置
 
 - 三码（双拼+首辅）、全码（双拼+双辅）、全码后缀 `o`/`/`、词末辅码接续——部署时由拼写运算从烘入的辅码自动派生；
 - 13/14 位兼容打法——自动以低权重注入；
 - 一简/二简等声母简码——从自然码主码表转换带入（声母与拼音同形，各双拼通用）。
+
+默认沿用魔虎的简码设计：一简允许同码多字（如 `b` 位的不/吧）、三简撞位时
+被改写的行往后推、原生同码特例保留。想要「短键必唯一」的手感，加
+`--unique-shortcode`：一/二/三简每个码位只留首个字，撞位字删去简码行、
+改由全码或辅码渐进打出（没有更长码的字会保留兜底，不会从码表消失），
+构建报告会按简码档位列出推后统计。
 
 ## 构建报告怎么读
 

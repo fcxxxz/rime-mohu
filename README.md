@@ -53,6 +53,44 @@ V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema �
 
 运行时固定读取 `mohu-sentence-ngram-v5.bin`；没有模型文件时会记录一次错误并回退到普通候选。模型资源由发布/部署步骤单独校验，不在输入热路径扫描目录。
 
+## 零门槛：用自己的码表生成专属方案
+
+手里有别的输入方案的单字码表，就能把它变成一个**带整句引擎、可与魔虎共存**的专属方案——不需要装任何软件，不用命令行，全程在 GitHub 网页上点几下。
+
+**适合的码表长这样**：一张 txt/tsv 文本文件，每行「编码<Tab>字」或「字<Tab>编码」，其中 4 键行 = 前两键双拼 + 后两键辅助码，例如：
+
+```
+aayk	阿
+aatn	吖
+bkdp	暴
+bk	报
+```
+
+（两键行是音节、三键行是渐进，都会被自动跳过；码在前还是在后都认；日文假名、符号行会自动忽略。）
+
+### 操作步骤
+
+1. **建立你自己的副本**：点本页面右上角 **Fork** → **Create fork**。之后的操作都在你的副本里进行。
+2. **上传码表**：在你的仓库页面点 **Add file** → **Upload files**，把码表文件拖进上传区，拉到页面底部点 **Commit changes**。放在仓库根目录就行（放进 `my-schema/` 文件夹也可以）。
+3. **运行转码表**：点顶部的 **Actions** 标签 → 左侧选 **转码表** → 右侧点 **Run workflow**，填这几个框：
+   - **码表文件名**：你刚上传的文件名，含扩展名（如 `我的码表.txt`）；
+   - **方案名**：小写英文字母（如 `mycode`），是装进 Rime 后的方案 ID；
+   - **显示名**：输入法选单里显示的名字，可以用中文（如 `我的码`），留空则同方案名；
+   - **双拼布局**：留空会**自动识别**；识别不对时再填 `zrm`（自然码）/ `flypy`（小鹤）/ `jiajia`（加加）；
+   - **简码无重**（可选开关）：开启后一简、二简、三简的每个码位只留一个字，撞位的字往后推、改用完整编码打——喜欢「短键必唯一」手感的人开，不确定就保持关闭。
+
+   填好点绿色 **Run workflow** 按钮，等 2–5 分钟变成绿勾。期间如果看到其他构建也在跑，不用管，只看「转码表」这一条。
+4. **下载方案包**：点进刚完成的运行，把页面拉到底部 **Artifacts** 区域，下载 `rime-mohu-方案名` 附件并解压。Windows 用户建议用 [Bandizip](https://www.bandisoft.com/bandizip/) 或 7-Zip 解压，系统自带解压对包内中文文件名可能乱码。
+5. **安装**：按解压出的《安装说明.md》操作——合并复制到 Rime 用户目录、重新部署、在方案列表选「魔虎·你的显示名」。整句模型只需装一次：从 [Releases](https://github.com/fcxxxz/rime-mohu/releases) 下载 `mohu-sentence-ngram-v5.bin` 放到 `mohu/model/`（已装过魔虎的用户通常已有）。
+
+### 常见问题
+
+- **报「没有提取到任何辅码」**：这张表里全是两键的纯音码，不含辅码信息，转不了；它只能用来换双拼（那是命令行玩法，见[进阶文档](docs/custom-scheme.md)）。
+- **报「命中率」相关错误**：双拼自动识别失败。回到第 3 步，在「双拼布局」框里手动填 `zrm` / `flypy` / `jiajia` 再跑一次。
+- **某几个音节的打法变了**：极少数方案在 ü 上用 v 形（如把「居」打成 `jv`），转换后这几个音节按魔虎布局的打法走（`ju`），辅码不受影响。构建报告会列出这些前缀。
+- **生僻字、繁体字的辅助码还是虎码**：码表没覆盖的字自动回退虎码辅码，日常简体输入不受影响。
+- **想微调个别字的辅码**：下载的包里有《推导辅码表.tsv》，改完按[进阶文档](docs/custom-scheme.md)用 `--aux` 重新构建。
+
 # 文件入口：码表、词库与配置
 
 第一次维护时，先看这张入口表：
@@ -71,7 +109,7 @@ V5 的跨候选上下文重排由运行时引擎、Lua filter/桥接和 schema �
 | 虎码反查与拼音反查 | `tiger.dict.yaml`、`mohu_pinyin.dict.yaml` | `mohu_pinyin.dict.yaml` 自动生成 |
 | 换双拼布局/辅助码自建方案 | `tools/custom/`（布局 YAML + 辅码/形码 TSV） | 是，一条命令构建派生方案 |
 
-最常见的两个入口是：**改编码去 `mohu_zrm.dict.yaml`，加人工整句词去 `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml`**。改完后运行 `make check-code-table` 和 `make dict`；不要直接改 `mohu_*.words.dict.yaml`，因为下一次构建会重新生成它。想用自己的双拼或辅助码构建一个可共存的魔虎派生方案（含原生整句引擎），见 [自定义双拼/辅助码](docs/custom-scheme.md)：`uv run tools/custom/build_custom_scheme.py --sp 布局.yaml --shape-code 形码.tsv`。
+最常见的两个入口是：**改编码去 `mohu_zrm.dict.yaml`，加人工整句词去 `tools/data/lexicon_sources/zrm/mohu_zrm.words.dict.yaml`**。改完后运行 `make check-code-table` 和 `make dict`；不要直接改 `mohu_*.words.dict.yaml`，因为下一次构建会重新生成它。想用自己的双拼或辅助码构建一个可共存的魔虎派生方案（含原生整句引擎），零命令行的网页做法见上面的「零门槛」一节；命令行玩法见 [自定义双拼/辅助码](docs/custom-scheme.md)：`uv run tools/custom/build_custom_scheme.py --sp 布局.yaml --shape-code 形码.tsv`。
 
 `tools/data/lexicon_sources/flypy/` 和根目录的 `mohu_flypy.words.dict.yaml` 都是小鹤派生/合并结果，通常不直接维护。发布包通过白名单选择运行文件，构建中间文件不会全部进入 Git。
 

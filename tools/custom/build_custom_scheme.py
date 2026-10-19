@@ -5,10 +5,13 @@ r"""build_custom_scheme.py —— 一条命令构建自定义双拼/辅助码的
 
     # 换双拼（辅码保持虎码）
     uv run tools/custom/build_custom_scheme.py --sp 我的布局.yaml
-    # 只换辅码（双拼保持自然码）：直接给辅码表
+    # 只换辅码（双拼保持自然码）：直接给辅码表（码在前也认）
     uv run tools/custom/build_custom_scheme.py --aux 我的辅码.tsv
-    # 只换辅码：扔一张形码全码表，按魔虎取位规则推导（12 正常 + 13/14 兼容）
+    # 只换辅码：扔一张形码全码表，按魔虎取位规则推导（12 正常 + 13/14 兼容；码在前也认）
     uv run tools/custom/build_custom_scheme.py --shape-code 我的形码.tsv
+    # 别家的「双拼+辅码」单字成品码表（码在前/字在前均可）：剥双拼提辅码，
+    # 双拼布局自动识别（未识别出时可用 --sp 指定）
+    uv run tools/custom/build_custom_scheme.py --char-table 我的码表.txt
 
     # 组合 + 方案名 + 顺手打 zip
     uv run tools/custom/build_custom_scheme.py --sp 我的布局.yaml \
@@ -45,9 +48,11 @@ for path in (str(TOOLS_ROOT), str(CUSTOM_DIR)):
 
 from custom_aux import (  # noqa: E402
     AuxError,
+    CodedCharTable,
     MergeOutcome,
     ShapeCodeSource,
     derive_aux_from_shape_codes,
+    load_coded_chars,
     load_shape_codes,
     load_user_aux,
     merge_aux,
@@ -59,6 +64,7 @@ from sp_layout import (  # noqa: E402
     RESERVED_NAMES,
     READING_NORMALIZATION,
     SpLayout,
+    all_pinyins,
     load_layout,
     load_layout_by_name,
 )
@@ -106,6 +112,7 @@ class BuildStats:
     master_rows: int = 0
     master_unconverted: list[str] = field(default_factory=list)
     master_pushed_back: list[str] = field(default_factory=list)
+    unique_pushed: Counter = field(default_factory=Counter)  # 简码无重：按码长计数
     source_rows: Counter = field(default_factory=Counter)
     source_anomalies: list[str] = field(default_factory=list)
     long_word_rows: int = 0
@@ -128,6 +135,28 @@ def resolve_layout(value: str) -> SpLayout:
         return load_layout_by_name(value)
     except LayoutError as exc:
         raise BuildError(str(exc)) from None
+
+
+LAYOUT_PRESETS = ("zrm", "flypy", "jiajia")
+
+
+def detect_layout_for_table(table: CodedCharTable) -> tuple[str, float]:
+    """对 ≥3 键行的前 2 键算各内置布局的音节命中率，取最高。
+
+    只用于剥前缀的归属判断与报告；辅码提取本身不依赖前缀合法性
+    （一律取第 3–4 键），识别错了也不破坏数据，只影响提示。
+    """
+    best_name, best_ratio = "", 0.0
+    if not table.prefixes:
+        return best_name, best_ratio
+    for preset in LAYOUT_PRESETS:
+        layout = load_layout_by_name(preset)
+        syllables = {layout.to_code(py) for py in all_pinyins()}
+        hits = sum(1 for prefix in table.prefixes if prefix in syllables)
+        ratio = hits / len(table.prefixes)
+        if ratio > best_ratio:
+            best_name, best_ratio = preset, ratio
+    return best_name, best_ratio
 
 
 def load_engine_charset() -> list[str]:
@@ -254,7 +283,8 @@ def convert_master_code(
 
 
 def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stats: BuildStats,
-                   character_syllables: dict | None = None) -> str:
+                   character_syllables: dict | None = None,
+                   unique_shortcode: bool = False) -> str:
     text = replace_dictionary_name(text, f"mohu_{scheme}")
     lines = []
     in_body = False
@@ -302,25 +332,59 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
                 raw = "\t".join(fields) + ("\n" if raw.endswith("\n") else "")
         lines.append(raw)
 
-    # 三简位整理：简码设计是「一个三码码位只有一个简码字，撞位的字
-    # 往后推」（只剩全码与派生三码）。换辅码后重映射可能把多个三简
-    # 行推到同一码位；按主表行序保留最前的行，其余删除并计入报告。
-    # 例外：撞码双方都是未被改写的原生行（zrm 既有的同码特例，如
-    # bjn/lix）时保持原状不动。
+    return "".join(_dedupe_shortcode_rows(
+        lines, remapped_short, stats, unique_shortcode))
+
+
+def _dedupe_shortcode_rows(
+    lines: list[str], remapped_short: set[tuple[str, str]],
+    stats: BuildStats, unique_shortcode: bool,
+) -> list[str]:
+    """简码位整理：处理主表行列表里的单字短码行。
+
+    默认（三码设计不变量）：一个三码码位只有一个简码字，撞位的字往
+    后推（删行，字仍可由全码/辅码渐进打出）。换辅码后重映射可能把
+    多个三简行推到同一码位；按主表行序保留最前的行，其余删除并计
+    入报告。例外：撞码双方都是未被改写的原生行（zrm 既有的同码特
+    例，如 bjn/lix）时保持原状不动。
+
+    --unique-shortcode（简码无重）：一/二/三简全部去重，原生同码特例
+    也推；被推字必须还有更长的码行，否则保留该行兜底（否则字会从
+    码表消失）。
+    """
+    # 单字行的最长码（未删全集上统计），作为删行保底依据
+    char_max_len: dict[str, int] = {}
+    for raw in lines:
+        fields = raw.rstrip("\n").split("\t")
+        if (len(fields) >= 2 and len(fields[0]) == 1
+                and re.fullmatch(r"[a-z;/]+", fields[1])):
+            char_max_len[fields[0]] = max(char_max_len.get(fields[0], 0), len(fields[1]))
     seen_short: dict[str, bool] = {}  # 码位 -> 首占行是否被改写过
     resolved: list[str] = []
     for raw in lines:
         fields = raw.rstrip("\n").split("\t")
-        if (len(fields) >= 2 and len(fields[0]) == 1
-                and re.fullmatch(r"[a-z;/]+", fields[1]) and len(fields[1]) == 3):
-            key = (fields[0], fields[1])
-            if fields[1] in seen_short:
-                if key in remapped_short or seen_short[fields[1]]:
-                    stats.master_pushed_back.append(fields[0] + "\t" + fields[1])
+        if not (len(fields) >= 2 and len(fields[0]) == 1
+                and re.fullmatch(r"[a-z;/]+", fields[1])):
+            resolved.append(raw)
+            continue
+        code = fields[1]
+        n = len(code)
+        if unique_shortcode and n <= 3:
+            if code in seen_short and char_max_len.get(fields[0], 0) > n:
+                stats.unique_pushed[n] += 1
+                continue
+            seen_short[code] = True
+            resolved.append(raw)
+            continue
+        if n == 3:
+            key = (fields[0], code)
+            if code in seen_short:
+                if key in remapped_short or seen_short[code]:
+                    stats.master_pushed_back.append(fields[0] + "\t" + code)
                     continue
-            seen_short[fields[1]] = key in remapped_short
+            seen_short[code] = key in remapped_short
         resolved.append(raw)
-    return "".join(resolved)
+    return resolved
 
 
 def rewrite_word_code(word: str, code: str, converter, merged_aux: dict) -> str | None:
@@ -709,7 +773,8 @@ def ensure_zrm_chars() -> None:
     ZRM_CHARS_DICT.write_text(buffer.getvalue(), encoding="utf-8")
 
 
-def build_aux(args, required_chars: list[str]):
+def build_aux(args, required_chars: list[str], coded: CodedCharTable | None = None,
+              detected_layout: str = ""):
     base = load_auxiliary_tsv(TIGER_AUX_TSV)
     user: dict[str, AuxiliaryEntry] = {}
     aliases: dict[str, list[str]] = {}
@@ -722,6 +787,15 @@ def build_aux(args, required_chars: list[str]):
         user.update(derive_aux_from_shape_codes(source))
         aliases = source.aliases
         aux_source = f"形码推导（{Path(args.shape_code).name}，12 正常 + 13/14 兼容）"
+        derived_tsv = "\n".join(
+            f"{char}\t{entry.normal}\t{entry.compat14}\t{entry.compat13}"
+            for char, entry in sorted(user.items())
+        ) + "\n"
+    if args.char_table and coded is not None:
+        user.update(coded.aux)
+        aliases = coded.aliases
+        detected_note = f"，识别双拼：{detected_layout}" if detected_layout else ""
+        aux_source = f"单字码表提取（{Path(args.char_table).name}{detected_note}）+ 虎码回退"
         derived_tsv = "\n".join(
             f"{char}\t{entry.normal}\t{entry.compat14}\t{entry.compat13}"
             for char, entry in sorted(user.items())
@@ -742,8 +816,30 @@ def build_aux(args, required_chars: list[str]):
 def run(args) -> int:
     if args.aux and args.shape_code:
         raise BuildError("--aux 与 --shape-code 只能二选一（形码推导已产出辅码表）")
+    if args.char_table and (args.aux or args.shape_code):
+        raise BuildError(
+            "--char-table 与 --aux/--shape-code 只能二选一。"
+            "想微调提取结果：先用 --char-table 构建，编辑产物里的 推导辅码表.tsv，"
+            "再改用 --aux 传入。"
+        )
+    coded: CodedCharTable | None = None
+    detected_layout = ""
+    if args.char_table:
+        print("[1/8] 读取单字码表并识别双拼布局…")
+        coded = load_coded_chars(Path(args.char_table))
+        detected_layout, ratio = detect_layout_for_table(coded)
+        if ratio < 0.6:
+            raise BuildError(
+                f"--char-table 的前 2 键与内置布局（{'/'.join(LAYOUT_PRESETS)}）"
+                f"最高命中率仅 {ratio:.0%}——这张表可能不是「双拼+辅码」的混合表，"
+                f"或用了未知双拼。请检查文件，或改造为辅码表/形码全码表后"
+                f"用 --aux / --shape-code 传入。"
+            )
+    sp_value = args.sp
+    if sp_value is None:
+        sp_value = detected_layout or "zrm"
     try:
-        layout = resolve_layout(args.sp)
+        layout = resolve_layout(sp_value)
     except BuildError:
         raise
     name = args.name or layout.name
@@ -758,9 +854,15 @@ def run(args) -> int:
 
     print("[2/8] 准备辅码表…")
     required_chars = load_engine_charset()
-    outcome, base_aux, aliases, aux_source, derived_tsv = build_aux(args, required_chars)
+    outcome, base_aux, aliases, aux_source, derived_tsv = build_aux(
+        args, required_chars, coded=coded, detected_layout=detected_layout)
     merged_aux = outcome.table
-    aux_customized = bool(args.aux or args.shape_code)
+    aux_customized = bool(args.aux or args.shape_code or args.char_table)
+    if coded is not None:
+        syllables = {layout.to_code(py) for py in all_pinyins()}
+        coded.stats.unknown_prefixes = {
+            prefix for prefix in coded.prefixes if prefix not in syllables
+        }
 
     output = Path(args.output) if args.output else ROOT / "custom-dist" / f"mohu_{name}"
     print(f"[3/8] 输出目录 {output.relative_to(ROOT)}…")
@@ -772,7 +874,8 @@ def run(args) -> int:
     ensure_zrm_chars()
     master_text = (ROOT / "mohu_zrm.dict.yaml").read_text(encoding="utf-8")
     master_converted = convert_master(master_text, name, converter, base_aux, merged_aux, stats,
-                                      character_syllables=load_character_syllables(ZRM_CHARS_DICT))
+                                      character_syllables=load_character_syllables(ZRM_CHARS_DICT),
+                                      unique_shortcode=args.unique_shortcode)
     master_path = output / f"mohu_{name}.dict.yaml"
     master_path.write_text(master_converted, encoding="utf-8")
 
@@ -862,7 +965,7 @@ def run(args) -> int:
     print("[8/8] 自检与构建报告…")
     problems = self_check(name, output, stats)
     report = build_report(name, layout, aux_source, scheme_display, outcome, stats, aliases, supplemental,
-                          args, problems, output)
+                          args, problems, output, coded=coded, detected_layout=detected_layout)
     (output / "构建报告.txt").write_text("\n".join(report) + "\n", encoding="utf-8")
 
     if args.zip:
@@ -884,7 +987,8 @@ def run(args) -> int:
     return 0
 
 
-def build_report(name, layout, aux_source, scheme_display, outcome, stats, aliases, supplemental, args, problems, output) -> list[str]:
+def build_report(name, layout, aux_source, scheme_display, outcome, stats, aliases, supplemental, args, problems, output,
+                 coded: CodedCharTable | None = None, detected_layout: str = "") -> list[str]:
     lines = [
         f"魔虎自定义方案构建报告：mohu_{name}",
         f"构建日期：{date.today():%Y-%m-%d}",
@@ -893,6 +997,13 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
         f"- 双拼布局：{layout.display}（{layout.source.name}）；选单显示：魔虎·{scheme_display}",
         f"- 辅助码来源：{aux_source}",
         f"- 引擎字集：{len(load_engine_charset())} 字",
+    ]
+    if coded is not None and detected_layout and args.sp is not None and args.sp != detected_layout:
+        lines.append(
+            f"- ⚠ 你指定了 --sp {args.sp}，但码表前 2 键更像 {detected_layout} 布局；"
+            f"辅码提取不受影响，双拼打法以本方案布局为准"
+        )
+    lines += [
         "",
         "## 辅码覆盖",
         f"- 用户覆盖：{outcome.user_chars} 字",
@@ -902,14 +1013,49 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
     if outcome.missing:
         lines.append(f"- ⚠ 无任何辅码：{len(outcome.missing)} 字：{''.join(outcome.missing[:20])}")
     lines += collision_report(layout, outcome.table)
+    if coded is not None:
+        cs = coded.stats
+        lines += [
+            "",
+            "## 单字码表提取",
+            f"- 数据行 {cs.rows}（另有 {cs.skipped_non_han} 行假名/符号/拉丁等非汉字行、"
+            f"{cs.skipped_multi_code} 行多码列，已跳过）",
+            f"- 提取辅码：{len(coded.aux)} 字；≤2 键行（简码/裸音节，不参与）{cs.short_rows} 行；"
+            f"3 键渐进行 {cs.graded_rows} 行",
+            f"- ≥3 键行前 2 键识别为 {detected_layout or '（未识别）'} 双拼",
+        ]
+        if cs.long_code_rows:
+            lines.append(f"- {cs.long_code_rows} 行辅码超出 2 键，已截断取前 2 键")
+        if cs.graded_mismatch:
+            lines.append(
+                f"- ⚠ {cs.graded_mismatch} 行 3 键渐进与提取辅码首键不一致"
+                f"（一字多辅码或表内口径混杂，可忽略）"
+            )
+        if cs.multi_aux_chars:
+            lines.append(f"- 一字多辅码 {cs.multi_aux_chars} 字，取首现、其余见下方别名清单")
+        if coded.stats.unknown_prefixes:
+            sample = " ".join(sorted(coded.stats.unknown_prefixes)[:12])
+            lines.append(
+                f"- 前缀不在本方案音节集内 {len(coded.stats.unknown_prefixes)} 个"
+                f"（如 {sample}）：辅码提取不受影响，这些音节按本方案布局的打法输入"
+            )
     if aliases:
         sample = "; ".join(f"{char}←{','.join(codes)}" for char, codes in list(aliases.items())[:8])
-        lines += ["", "## 形码表多码字（非主码，可考虑做成别名打法）", "", f"共 {len(aliases)} 字。样例：{sample}"]
+        source_label = "单字码表一字多辅码" if coded is not None else "形码表多码字"
+        lines += ["", f"## {source_label}（未采用，可考虑做成别名打法）", "", f"共 {len(aliases)} 字。样例：{sample}"]
     lines += [
         "",
         "## 主码表转换",
         f"- 转换 {stats.master_rows} 行；未识别形态（原样保留）{len(stats.master_unconverted)} 行",
     ]
+    if stats.unique_pushed:
+        pushed_desc = "、".join(
+            f"{n} 简 {count} 字" for n, count in sorted(stats.unique_pushed.items())
+        )
+        lines.append(
+            f"- 简码无重已启用：撞位往后推共 {sum(stats.unique_pushed.values())} 字"
+            f"（{pushed_desc}；这些字改由全码/辅码渐进打出）"
+        )
     if stats.master_unconverted:
         lines.extend(f"  {row}" for row in stats.master_unconverted[:10])
     if stats.master_pushed_back:
@@ -952,6 +1098,7 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
         "## 重新构建",
         f"uv run tools/custom/build_custom_scheme.py --sp {layout.source.name}"
         + (f" --shape-code {args.shape_code}" if args.shape_code else "")
+        + (f" --char-table {args.char_table}" if args.char_table else "")
         + (f" --aux {args.aux}" if args.aux else "")
         + f" --name {name}",
     ]
@@ -971,16 +1118,23 @@ def emit_aux_template(args) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--sp", default="zrm",
-                        help="双拼布局：预设名（zrm/flypy/微软…）或布局 YAML 路径；默认 zrm")
-    parser.add_argument("--aux", help="辅码表 TSV：字<Tab>辅码[<Tab>14位<Tab>13位]，缺字回退虎码")
-    parser.add_argument("--shape-code", help="形码全码表 TSV：字<Tab>完整编码[<Tab>根数]，按魔虎取位规则推导辅码")
+    parser.add_argument("--sp", default=None,
+                        help="双拼布局：预设名（zrm/flypy/jiajia）或布局 YAML 路径；"
+                             "默认 zrm；配 --char-table 时未指定则自动识别码表的双拼")
+    parser.add_argument("--aux", help="辅码表 TSV：字<Tab>辅码[<Tab>14位<Tab>13位]，缺字回退虎码；码在前也认")
+    parser.add_argument("--shape-code", help="形码全码表 TSV：字<Tab>完整编码[<Tab>根数]，按魔虎取位规则推导辅码；码在前也认")
+    parser.add_argument("--char-table", metavar="PATH",
+                        help="单字成品码表：双拼(2键)+辅码 混合表（码在前/字在前均可），"
+                             "剥双拼提辅码并自动识别双拼布局")
     parser.add_argument("--tiger-style-prune", action="store_true",
                         help="配合 --shape-code：按码长启用虎码式剪枝（≤3 码丢 13 位）")
     parser.add_argument("--name", help="方案名（默认取布局名；不能是 zrm/flypy）")
     parser.add_argument("--display", help="选单显示名（默认取布局 display；如「华南虎」→ 魔虎·华南虎）")
     parser.add_argument("--output", help="输出目录（默认 custom-dist/mohu_<name>）")
     parser.add_argument("--strict", action="store_true", help="辅码表必须覆盖引擎字集，缺字报错")
+    parser.add_argument("--unique-shortcode", action="store_true",
+                        help="简码无重：一/二/三简每个码位只留首个字，撞位字往后推（改由全码/"
+                             "辅码渐进打出）；默认只整理三简且保留原生同码特例")
     parser.add_argument("--emit-aux-template", nargs="?", const="aux-template.tsv", metavar="PATH",
                         help="导出虎码辅码全量模板到 PATH（默认 ./aux-template.tsv）后退出")
     parser.add_argument("--force", action="store_true", help="允许覆盖 emit-aux-template 的已有文件")

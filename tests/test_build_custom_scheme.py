@@ -243,5 +243,185 @@ class BuildCustomSchemeErrorPathTest(unittest.TestCase):
             self.assertIn("只能二选一", result.stderr)
 
 
+class TableParsingTest(unittest.TestCase):
+    """三种输入的列序兼容（码在前/字在前）与单字码表提取。"""
+
+    def setUp(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        sys.path.insert(0, str(ROOT / "tools/custom"))
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def test_aux_table_code_first(self) -> None:
+        from tools.custom.custom_aux import load_user_aux
+
+        (self.dir / "aux.tsv").write_text("bm\t腌\ndr\tui\t的\n", encoding="utf-8")
+        table = load_user_aux(self.dir / "aux.tsv")
+        self.assertEqual(table["腌"].normal, "bm")
+        self.assertEqual(table["的"].normal, "dr")
+        self.assertEqual(table["的"].compat14, "ui")
+
+    def test_shape_table_code_first(self) -> None:
+        from tools.custom.custom_aux import load_shape_codes
+
+        (self.dir / "sc.tsv").write_text("ggll\t王\nssss\t木\t4\n", encoding="utf-8")
+        source = load_shape_codes(self.dir / "sc.tsv")
+        self.assertEqual(source.codes, {"王": ["ggll"], "木": ["ssss"]})
+        self.assertEqual(source.root_counts, {"木": 4})
+
+    def test_coded_char_table_extraction(self) -> None:
+        from tools.custom.custom_aux import load_coded_chars
+
+        # 夜桜式结构：3 键渐进行排在 4 键行前；假名/符号行混入。
+        (self.dir / "ct.tsv").write_text(
+            "a\t啊\naa\t阿\naay\t阿\naayk\t阿\naat\t吖\naatn\t吖\n"
+            "bk\t报\nbkdp\t暴\nbkdp\t曝\nbkdw\t暴\n"
+            "bkexx\t爆\noba\tア\ntk\t£\n«\tno\n",
+            encoding="utf-8",
+        )
+        table = load_coded_chars(self.dir / "ct.tsv")
+        self.assertEqual(table.aux["阿"].normal, "yk")
+        self.assertEqual(table.aux["吖"].normal, "tn")
+        self.assertEqual(table.aux["曝"].normal, "dp")
+        # 暴 出现两个辅码：取首现 dp，dw 进别名。
+        self.assertEqual(table.aux["暴"].normal, "dp")
+        self.assertEqual(table.aliases.get("暴"), ["dw"])
+        # 爆 的 5 键行截断取前 2 键。
+        self.assertEqual(table.aux["爆"].normal, "ex")
+        self.assertEqual(table.stats.graded_rows, 2)
+        self.assertEqual(table.stats.graded_mismatch, 0)
+        self.assertEqual(table.stats.long_code_rows, 1)
+        self.assertEqual(table.stats.skipped_non_han, 3)
+        # 字在前的混合表同样可解析。
+        (self.dir / "ct2.tsv").write_text("阿\taayk\n吖\taatn\n", encoding="utf-8")
+        table2 = load_coded_chars(self.dir / "ct2.tsv")
+        self.assertEqual(table2.aux["阿"].normal, "yk")
+
+    def test_coded_char_table_requires_aux_rows(self) -> None:
+        from tools.custom.custom_aux import AuxError, load_coded_chars
+
+        (self.dir / "pure.tsv").write_text("a\t啊\nbk\t报\n", encoding="utf-8")
+        with self.assertRaises(AuxError) as ctx:
+            load_coded_chars(self.dir / "pure.tsv")
+        self.assertIn("纯音码表", str(ctx.exception))
+
+    def test_detect_layout_prefers_zrm(self) -> None:
+        from tools.custom.build_custom_scheme import detect_layout_for_table
+        from tools.custom.custom_aux import load_coded_chars
+
+        # 自然码特征前缀：bk=bao bl=bai bj=ban bh=bang bg=beng。
+        (self.dir / "ct.tsv").write_text(
+            "bkdp\t金\nbldd\t木\nbjee\t水\nbhpp\t火\nbgkk\t土\n",
+            encoding="utf-8",
+        )
+        table = load_coded_chars(self.dir / "ct.tsv")
+        name, ratio = detect_layout_for_table(table)
+        self.assertEqual(name, "zrm")
+        self.assertGreaterEqual(ratio, 0.8)
+
+
+class UniqueShortcodeTest(unittest.TestCase):
+    """--unique-shortcode 的简码无重整理（纯函数级）。"""
+
+    def setUp(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        sys.path.insert(0, str(ROOT / "tools/custom"))
+        from tools.custom.build_custom_scheme import BuildStats, _dedupe_shortcode_rows
+
+        self.dedupe = _dedupe_shortcode_rows
+        self.stats_cls = BuildStats
+
+    def dedup(self, rows, unique, remapped=None):
+        stats = self.stats_cls()
+        out = self.dedupe(list(rows), remapped or set(), stats, unique)
+        return [r for r in out if r != "..."], stats
+
+    def test_one_and_two_key_pushed_when_unique(self) -> None:
+        rows = ["不\tb\n", "吧\tb\n", "吧\tbadm\n",
+                "把\tba\n", "拔\tba\n", "拔\tbau\n"]
+        out, stats = self.dedup(rows, unique=True)
+        self.assertNotIn("吧\tb\n", out)      # 一简撞位：吧 推后
+        self.assertIn("不\tb\n", out)
+        self.assertNotIn("拔\tba\n", out)     # 二简撞位：拔 推后
+        self.assertIn("把\tba\n", out)
+        self.assertIn("吧\tbadm\n", out)      # 更长码行不受影响
+        self.assertEqual(stats.unique_pushed, {1: 1, 2: 1})
+
+    def test_native_three_key_collision_pushed_when_unique(self) -> None:
+        # 默认模式下双方皆原生行的同码三简是保留特例；unique 模式也推。
+        rows = ["宾\tbjn\n", "彬\tbjn\n", "彬\tbjnr\n"]
+        out, stats = self.dedup(rows, unique=True)
+        self.assertIn("宾\tbjn\n", out)
+        self.assertNotIn("彬\tbjn\n", out)
+        self.assertEqual(stats.unique_pushed, {3: 1})
+
+    def test_no_longer_code_kept_as_fallback(self) -> None:
+        # 撞位字没有更长码行时保留兜底，否则字会从码表消失。
+        rows = ["不\tb\n", "吧\tb\n"]
+        out, stats = self.dedup(rows, unique=True)
+        self.assertIn("吧\tb\n", out)
+        self.assertEqual(stats.unique_pushed, {})
+
+    def test_default_keeps_native_three_key_special_case(self) -> None:
+        rows = ["宾\tbjn\n", "彬\tbjn\n"]
+        out, stats = self.dedup(rows, unique=False)
+        self.assertIn("宾\tbjn\n", out)
+        self.assertIn("彬\tbjn\n", out)       # 原生同码特例不动
+        self.assertEqual(stats.master_pushed_back, [])
+
+    def test_default_pushes_remapped_three_key(self) -> None:
+        rows = ["宾\tbjn\n", "彬\tbjn\n"]
+        out, stats = self.dedup(rows, unique=False, remapped={("彬", "bjn")})
+        self.assertIn("宾\tbjn\n", out)
+        self.assertNotIn("彬\tbjn\n", out)
+        self.assertTrue(stats.master_pushed_back)
+
+
+class CharTableCliTest(unittest.TestCase):
+    """--char-table 的错误路径（重活开始前即失败）。"""
+
+    def test_pure_phonetic_table_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pure = Path(tmp) / "pure.txt"
+            pure.write_text("a\t啊\nbk\t报\n", encoding="utf-8")
+            result = subprocess.run(
+                ["uv", "run", "tools/custom/build_custom_scheme.py",
+                 "--char-table", str(pure), "--name", "puretest"],
+                cwd=ROOT, capture_output=True, text=True, check=False, timeout=120,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("纯音码表", result.stderr)
+
+    def test_unknown_layout_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            weird = Path(tmp) / "weird.txt"
+            # ab 不是任何内置布局的合法音节；辅码行存在但识别不出双拼。
+            weird.write_text("abdp\t金\nabdd\t木\n", encoding="utf-8")
+            result = subprocess.run(
+                ["uv", "run", "tools/custom/build_custom_scheme.py",
+                 "--char-table", str(weird), "--name", "weirdtest"],
+                cwd=ROOT, capture_output=True, text=True, check=False, timeout=120,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("命中率", result.stderr)
+
+    def test_char_table_exclusive_with_aux(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            aux = Path(tmp) / "aux.tsv"
+            aux.write_text("的\tdr\n", encoding="utf-8")
+            pure = Path(tmp) / "t.txt"
+            pure.write_text("aayk\t阿\n", encoding="utf-8")
+            result = subprocess.run(
+                ["uv", "run", "tools/custom/build_custom_scheme.py",
+                 "--char-table", str(pure), "--aux", str(aux), "--name", "excl"],
+                cwd=ROOT, capture_output=True, text=True, check=False, timeout=120,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("只能二选一", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

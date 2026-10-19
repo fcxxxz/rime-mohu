@@ -115,6 +115,7 @@ class BuildStats:
     master_unconverted: list[str] = field(default_factory=list)
     master_pushed_back: list[str] = field(default_factory=list)
     unique_pushed: Counter = field(default_factory=Counter)  # 简码无重：按码长计数
+    unique_pushed_chars: set = field(default_factory=set)    # 简码无重被推的字（频序重排标记）
     source_rows: Counter = field(default_factory=Counter)
     source_anomalies: list[str] = field(default_factory=list)
     long_word_rows: int = 0
@@ -340,22 +341,47 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
 
     if char_order:
         lines = _reorder_rows_by_source_order(lines, char_order)
-    return "".join(_dedupe_shortcode_rows(
-        lines, remapped_short, stats, unique_shortcode))
+    lines = _dedupe_shortcode_rows(
+        lines, remapped_short, stats, unique_shortcode)
+    if unique_shortcode and stats.unique_pushed_chars:
+        # 被推字（含其补齐行）参与的码位按字序重排：有源码表用原表序，
+        # 否则用字频——否则按主表行序（虎码辅码序）排，常用字会沉底
+        # （吧输给叭、儿输给贰）。
+        order = char_order if char_order else _char_freq_rank()
+        lines = _reorder_rows_by_source_order(
+            lines, order, only_groups_with=stats.unique_pushed_chars)
+    return "".join(lines)
+
+
+def _char_freq_rank() -> dict[str, int]:
+    """字频表 → 字的频序名次（高频在前，多音取最大频）。"""
+    best: dict[str, int] = {}
+    for (char, _py), weight in freq_simp_table.items():
+        try:
+            w = int(weight)
+        except (TypeError, ValueError):
+            continue
+        if w > best.get(char, -1):
+            best[char] = w
+    return {char: rank for rank, char in enumerate(sorted(best, key=lambda c: -best[c]))}
 
 
 def _reorder_rows_by_source_order(
     lines: list[str], char_order: dict[str, int],
+    only_groups_with: set | None = None,
 ) -> list[str]:
-    """把同 code 单字行的内容按原码表字序重新分配到原行位置。
+    """把同 code 单字行的内容按字序重新分配到原行位置。
 
     主表行序继承自然码源（虎码辅码序），且转换辅码后行的物理位置不动
     ——同一新 code 的字行会分散在主表各区（三码区、兼容物化区等），
     同码候选序与三简撞位的保留者因此都是虎码序而非源码表序。此函数
     收集全文件同 code 的单字行，把行内容（含权重列）按 char_order
     排序后依次填回该组原有的行位置集合：位置结构零变化（不破坏主表
-    分区约定），仅组内内容置换。源表没有的字排组尾（稳定，多个保持
+    分区约定），仅组内内容置换。序表没有的字排组尾（稳定，多个保持
     原相对序）；词行与非数据行不动。
+
+    only_groups_with 给定时只重排「组内含这些字」的组（简码无重的
+    被推字按字频参与排序，其余码位保持人工调序不动）。
     """
     def parse(raw: str):
         fields = raw.rstrip("\n").split("\t")
@@ -373,6 +399,10 @@ def _reorder_rows_by_source_order(
     for idxs in groups.values():
         if len(idxs) < 2:
             continue
+        if only_groups_with is not None:
+            chars = {parse(lines[i]) for i in idxs} - {None}
+            if not chars & only_groups_with:
+                continue
         contents = sorted(
             (lines[i] for i in idxs),
             key=lambda raw: char_order.get(parse(raw) or "", 1 << 30),
@@ -396,16 +426,21 @@ def _dedupe_shortcode_rows(
 
     --unique-shortcode（简码无重）：一/二/三简全部去重，原生同码特例
     也推；被推字必须还有更长的码行，否则保留该行兜底（否则字会从
-    码表消失）。
+    码表消失）。被推字同时补齐「下一级到三键」的中间层级行（取其
+    最长码的前缀，已有的不重复补）——否则像只有一简+全码的字（吧：
+    b/badm）被推后，打两键三键时直接断档不可见。
     """
-    # 单字行的最长码（未删全集上统计），作为删行保底依据
+    # 单字行的码集合与最长码（未删全集上统计），作为删行保底与补行依据
+    char_codes: dict[str, list[str]] = {}
     char_max_len: dict[str, int] = {}
     for raw in lines:
         fields = raw.rstrip("\n").split("\t")
         if (len(fields) >= 2 and len(fields[0]) == 1
                 and re.fullmatch(r"[a-z;/]+", fields[1])):
+            char_codes.setdefault(fields[0], []).append(fields[1])
             char_max_len[fields[0]] = max(char_max_len.get(fields[0], 0), len(fields[1]))
     seen_short: dict[str, bool] = {}  # 码位 -> 首占行是否被改写过
+    patched: list[str] = []
     resolved: list[str] = []
     for raw in lines:
         fields = raw.rstrip("\n").split("\t")
@@ -418,6 +453,14 @@ def _dedupe_shortcode_rows(
         if unique_shortcode and n <= 3:
             if code in seen_short and char_max_len.get(fields[0], 0) > n:
                 stats.unique_pushed[n] += 1
+                stats.unique_pushed_chars.add(fields[0])
+                codes = char_codes[fields[0]]
+                longest = max(codes, key=len)
+                for k in range(n + 1, min(4, len(longest)) + 1):
+                    prefix = longest[:k]
+                    if prefix not in codes:
+                        codes.append(prefix)
+                        patched.append(f"{fields[0]}\t{prefix}\n")
                 continue
             seen_short[code] = True
             resolved.append(raw)
@@ -430,7 +473,7 @@ def _dedupe_shortcode_rows(
                     continue
             seen_short[code] = key in remapped_short
         resolved.append(raw)
-    return resolved
+    return resolved + patched
 
 
 def rewrite_word_code(word: str, code: str, converter, merged_aux: dict) -> str | None:
@@ -1195,6 +1238,10 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             f"- 简码无重已启用：撞位往后推共 {sum(stats.unique_pushed.values())} 字"
             f"（{pushed_desc}；这些字改由全码/辅码渐进打出）"
         )
+        if not coded:
+            lines.append(
+                "- 被推字参与的码位已按字频重排（否则按虎码辅码序，常用字会沉底）"
+            )
     if stats.master_unconverted:
         lines.extend(f"  {row}" for row in stats.master_unconverted[:10])
     if stats.master_pushed_back:

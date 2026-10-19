@@ -494,6 +494,14 @@ class ReorderBySourceOrderTest(unittest.TestCase):
         out = self.reorder(lines, {"魔": 1, "馍": 2})
         self.assertEqual(out, ["词语\tmoq\n", "魔\tmoq\n", "膜\tmob\n", "馍\tmoq\n"])
 
+    def test_only_groups_with_restricted(self) -> None:
+        # 简码无重频序重排：只动含被推字（吧）的组，无关组保持原序。
+        lines = ["叭\tbad\n", "吧\tbad\n", "疤\tbaa\n", "靶\tbaa\n"]
+        out = self.reorder(lines, {"吧": 0, "叭": 1}, only_groups_with={"吧"})
+        self.assertEqual(out[0], "吧\tbad\n")     # 吧(高频)升到组首
+        self.assertEqual(out[1], "叭\tbad\n")
+        self.assertEqual(out[2:], ["疤\tbaa\n", "靶\tbaa\n"])  # 无关组不动
+
 
 class UniqueShortcodeTest(unittest.TestCase):
     """--unique-shortcode 的简码无重整理（纯函数级）。"""
@@ -517,9 +525,11 @@ class UniqueShortcodeTest(unittest.TestCase):
         out, stats = self.dedup(rows, unique=True)
         self.assertNotIn("吧\tb\n", out)      # 一简撞位：吧 推后
         self.assertIn("不\tb\n", out)
-        self.assertNotIn("拔\tba\n", out)     # 二简撞位：拔 推后
+        self.assertNotIn("拔\tba\n", out)     # 二简撞位：拔 推后（补 bad? 无 4 键行→bax？拔最长 bau(3) → 补 3 键已有不补）
         self.assertIn("把\tba\n", out)
         self.assertIn("吧\tbadm\n", out)      # 更长码行不受影响
+        self.assertIn("吧\tba\n", out)        # 吧被推后补齐中间层级行（b→badm 之间）
+        self.assertIn("吧\tbad\n", out)
         self.assertEqual(stats.unique_pushed, {1: 1, 2: 1})
 
     def test_native_three_key_collision_pushed_when_unique(self) -> None:

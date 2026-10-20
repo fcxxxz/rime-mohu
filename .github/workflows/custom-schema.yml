@@ -46,7 +46,7 @@ jobs:
           printf '%s' "$ISSUE_BODY" > issue-work/body.txt
           if uv run tools/custom/issue_form.py issue-work/body.txt issue-work 2> issue-work/parse.log | tee issue-work/form.env; then
             cat issue-work/form.env >> "$GITHUB_ENV"
-            grep -E '^(SCHEME_NAME|LAYOUT|UNIQUE_SHORTCODE)=' issue-work/form.env >> "$GITHUB_OUTPUT"
+            grep -E '^(SCHEME_NAME|LAYOUT)=' issue-work/form.env >> "$GITHUB_OUTPUT"
             echo "表单解析完成。"
           else
             gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$(cat issue-work/parse.log)"
@@ -61,9 +61,6 @@ jobs:
           fi
           if [ -n "$LAYOUT" ]; then
             ARGS+=(--sp "$LAYOUT")
-          fi
-          if [ "$UNIQUE_SHORTCODE" = "true" ]; then
-            ARGS+=(--unique-shortcode)
           fi
           if [ -n "$WORD_TABLE_PATH" ]; then
             ARGS+=(--word-table "$WORD_TABLE_PATH")

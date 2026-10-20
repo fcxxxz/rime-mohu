@@ -403,10 +403,6 @@ class IssueFormTest(unittest.TestCase):
 ### 双拼布局
 
 {layout}
-
-### 简码无重
-
-{unique}
 """
 
     def setUp(self) -> None:
@@ -421,8 +417,8 @@ class IssueFormTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
-    def run_form(self, table, scheme="mycode", layout="自动识别", unique="关闭"):
-        body = self.BODY.format(table=table, scheme=scheme, layout=layout, unique=unique)
+    def run_form(self, table, scheme="mycode", layout="自动识别"):
+        body = self.BODY.format(table=table, scheme=scheme, layout=layout)
         body_path = self.dir / "body.txt"
         body_path.write_text(body, encoding="utf-8")
         import subprocess
@@ -433,12 +429,11 @@ class IssueFormTest(unittest.TestCase):
         )
 
     def test_pasted_table_outputs_env(self) -> None:
-        result = self.run_form("aayk\t阿\nbkdp\t暴\n", unique="开启")
+        result = self.run_form("aayk\t阿\nbkdp\t暴\n")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("SCHEME_NAME=mycode", result.stdout)
         self.assertIn("DISPLAY_NAME=我的码", result.stdout)
         self.assertIn("LAYOUT=", result.stdout)
-        self.assertIn("UNIQUE_SHORTCODE=true", result.stdout)
         pasted = self.dir / "work" / "pasted-1.txt"
         self.assertIn("aayk\t阿", pasted.read_text(encoding="utf-8"))
 
@@ -474,6 +469,16 @@ class IssueFormTest(unittest.TestCase):
     def test_sections_parser(self) -> None:
         sections = self.module.parse_sections("### 甲\n\n1\n\n### 乙\n\n2\n")
         self.assertEqual(sections, {"甲": "1", "乙": "2"})
+
+    def test_files_channel_attachment_url_recognized(self) -> None:
+        # Issue 拖拽文件的新通道：files/<id>/<文件名>；必须能被识别且过安全校验。
+        url = "https://github.com/user-attachments/files/33667628/1.0_._.txt"
+        body = f"[表.txt]({url})"
+        self.assertEqual(self.module.ATTACHMENT_URL.findall(body), [url])
+        self.module.assert_safe_url(url)
+        # assets 旧通道不受影响。
+        old = "https://github.com/user-attachments/assets/abc-DEF123"
+        self.assertEqual(self.module.ATTACHMENT_URL.findall(f"[a]({old})"), [old])
 
 
 class ReorderBySourceOrderTest(unittest.TestCase):
@@ -531,25 +536,18 @@ class ReorderBySourceOrderTest(unittest.TestCase):
 
 
 class UniqueShortcodeTest(unittest.TestCase):
-    """--unique-shortcode 的逐级降级竞争（纯函数级）。"""
+    """简码无重（唯一行为）的逐级降级竞争（纯函数级）。"""
 
     def setUp(self) -> None:
         sys.path.insert(0, str(ROOT / "tools"))
         sys.path.insert(0, str(ROOT / "tools/custom"))
         from tools.custom.build_custom_scheme import (
             BuildStats,
-            _dedupe_shortcode_rows,
             _unique_shortcode_pass,
         )
 
-        self.dedupe = _dedupe_shortcode_rows
         self.unique_pass = _unique_shortcode_pass
         self.stats_cls = BuildStats
-
-    def dedup(self, rows, unique, remapped=None):
-        stats = self.stats_cls()
-        out = self.dedupe(list(rows), remapped or set(), stats, unique)
-        return [r for r in out if r != "..."], stats
 
     def run_unique(self, rows, rank):
         stats = self.stats_cls()
@@ -679,7 +677,7 @@ class UniqueShortcodeTest(unittest.TestCase):
                   "甲\taaxy\n乙\taaxy\n甲\tbbxy\n乙\tbbxy\n")
         out = builder.convert_master(source, "ordered", lambda code: code,
                                      coded.aux, coded.aux, self.stats_cls(),
-                                     unique_shortcode=True, char_order=coded.order)
+                                     char_order=coded.order)
         self.assertIn("甲\taa\n", out)
         self.assertNotIn("乙\taa\n", out)
         self.assertIn("乙\tbb\n", out)
@@ -706,8 +704,7 @@ class UniqueShortcodeTest(unittest.TestCase):
         weights = {("微", "wei"): "10", ("位", "wei"): "100"}
         with patch.object(builder, "freq_simp_table", weights):
             out = builder.convert_master(source, "alias", lambda code: code, aux, aux,
-                                         self.stats_cls(), unique_shortcode=True,
-                                         keep_flykeys=True)
+                                         self.stats_cls(), keep_flykeys=True)
         self.assertIn("位\twk\n", out)
         self.assertNotIn("微\twk\n", out)
         self.assertIn("微\twkw\n", out)
@@ -736,7 +733,7 @@ from custom_aux import _is_single_han
 aux = b.load_auxiliary_tsv(b.TIGER_AUX_TSV)
 source = (b.ROOT / "mohu_zrm.dict.yaml").read_text()
 result = b.convert_master(source, "seedtest", b.make_converter(b.resolve_layout("zrm")),
-                          aux, aux, b.BuildStats(), unique_shortcode=True, keep_flykeys=True)
+                          aux, aux, b.BuildStats(), keep_flykeys=True)
 def full(text):
     return Counter(line for line in text.splitlines()
                    if "\\t" in line and len(line.split("\\t")[0]) == 1
@@ -746,7 +743,7 @@ rows = [line.split("\\t")[:2] for line in result.splitlines() if "\\t" in line]
 short = [code for ch, code in rows if len(ch) == 1 and _is_single_han(ch)
          and code.isalpha() and len(code) <= 3]
 assert len(short) == len(set(short))
-assert ["哪", "nad"] in rows and ["哪", "nl"] not in rows
+assert ["哪", "nada"] in rows and ["哪", "nl"] not in rows
 print(hashlib.sha256(result.encode()).hexdigest())
 '''
         outputs = []
@@ -768,31 +765,14 @@ print(hashlib.sha256(result.encode()).hexdigest())
         source = "---\nname: mohu_zrm\n...\n不\tb\n不\tbucb\n吧\tbadm\n"
         stats = self.stats_cls()
         out = builder.convert_master(source, "keepunique", lambda code: code,
-                                     aux, aux, stats, unique_shortcode=True,
+                                     aux, aux, stats,
                                      explicit_shortcodes=coded.shortcodes)
         self.assertEqual(out.count("不\tb\n"), 1)
         self.assertNotIn("吧\tb\n", out)
         self.assertIn("吧\tba\n", out)
         phrases = builder.build_custom_phrases("keepunique", SimpleNamespace(
-            keep_shortcodes=True, unique_shortcode=True), coded, stats)
+            keep_shortcodes=True), coded, stats)
         self.assertNotIn("吧\tb\t", phrases)
-        ordinary = builder.build_custom_phrases("keepunique", SimpleNamespace(
-            keep_shortcodes=True, unique_shortcode=False), coded, self.stats_cls())
-        self.assertIn("吧\tb\t", ordinary)
-
-    def test_default_keeps_native_three_key_special_case(self) -> None:
-        rows = ["宾\tbjn\n", "彬\tbjn\n"]
-        out, stats = self.dedup(rows, unique=False)
-        self.assertIn("宾\tbjn\n", out)
-        self.assertIn("彬\tbjn\n", out)       # 原生同码特例不动
-        self.assertEqual(stats.master_pushed_back, [])
-
-    def test_default_pushes_remapped_three_key(self) -> None:
-        rows = ["宾\tbjn\n", "彬\tbjn\n"]
-        out, stats = self.dedup(rows, unique=False, remapped={("彬", "bjn")})
-        self.assertIn("宾\tbjn\n", out)
-        self.assertNotIn("彬\tbjn\n", out)
-        self.assertTrue(stats.master_pushed_back)
 
 
 class CharTableCliTest(unittest.TestCase):

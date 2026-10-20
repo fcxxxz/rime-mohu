@@ -4,12 +4,13 @@ r"""issue_form.py —— 解析「转码表」Issue 表单，供 GitHub Actions 
 Issue 表单（.github/ISSUE_TEMPLATE/custom-schema.md）提交后，正文是
 「### 标题 + 内容」分段。本工具：
 
-1. 按标题解析出 方案名/显示名/双拼布局/简码无重；
+1. 按标题解析出 方案名/显示名/双拼布局；
 2. 在「码表文件」段找 GitHub 附件链接（拖进表单的文件），经 host 白名单
    + DNS 解析后 IP 非内网校验 + 重定向逐跳同校验下载到本地；没有附件时
    把该段粘贴的正文写成码表文件（要求行内含 Tab 的 码<Tab>字 结构）；
 3. 把 TABLE_PATH / SCHEME_NAME / DISPLAY_NAME / LAYOUT /
-   UNIQUE_SHORTCODE 输出为 shell 赋值行（调用方 >> $GITHUB_ENV）。
+   WORD_TABLE_PATH / KEEP_SHORTCODES 输出为 shell 赋值行（调用方
+   >> $GITHUB_ENV）。
 
 用法：
     uv run tools/custom/issue_form.py <body.txt> <工作目录>
@@ -25,13 +26,19 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-# 附件初始链接在 github.com，302 跳转到 objects.githubusercontent.com，
-# 两者都只允许 https 且限定附件路径前缀。
+# 附件初始链接在 github.com，302 跳转到 objects.githubusercontent.com。
+# github.com 限定附件路径前缀；objects 是签名 CDN，重定向路径不保证
+# 带 /user-attachments/ 前缀（files 通道会跳 github-production-* 路径），
+# 故只按 host 白名单放行，IP 校验仍在。
 ALLOWED_HOSTS = {
     "github.com": "/user-attachments/",
-    "objects.githubusercontent.com": "/user-attachments/",
+    "objects.githubusercontent.com": "",
 }
-ATTACHMENT_URL = re.compile(r"https://github\.com/user-attachments/assets/[A-Za-z0-9_-]+")
+# Issue 拖拽文件有两种链接形态：assets/<id>（旧）与 files/<id>/<文件名>（新）。
+ATTACHMENT_URL = re.compile(
+    r"https://github\.com/user-attachments/"
+    r"(?:assets/[A-Za-z0-9_-]+|files/\d+/[^)\s]+)"
+)
 
 LAYOUT_OPTIONS = {
     "自动识别": "",
@@ -173,7 +180,6 @@ def main() -> int:
         layout = LAYOUT_OPTIONS[layout_label]
     except KeyError:
         layout = ""
-    unique = "true" if field("简码无重", "关闭") == "开启" else "false"
 
     word_source = field("词库来源", "使用魔虎词库")
     word_table_path = ""
@@ -191,7 +197,6 @@ def main() -> int:
     print(f"SCHEME_NAME={scheme_name}")
     print(f"DISPLAY_NAME={display_name}")
     print(f"LAYOUT={layout}")
-    print(f"UNIQUE_SHORTCODE={unique}")
     print(f"WORD_TABLE_PATH={word_table_path}")
     print(f"KEEP_SHORTCODES={keep_shortcodes}")
     return 0

@@ -52,6 +52,7 @@ from custom_aux import (  # noqa: E402
     MergeOutcome,
     ShapeCodeSource,
     WordTableSource,
+    _is_single_han,
     derive_aux_from_shape_codes,
     load_coded_chars,
     load_shape_codes,
@@ -114,7 +115,6 @@ class BuildError(ValueError):
 class BuildStats:
     master_rows: int = 0
     master_unconverted: list[str] = field(default_factory=list)
-    master_pushed_back: list[str] = field(default_factory=list)
     unique_pushed: Counter = field(default_factory=Counter)  # 简码无重：按码长计数
     unique_pushed_chars: set = field(default_factory=set)    # 简码无重被推的字
     unique_pushed_readings: set[tuple[str, str]] = field(default_factory=set)
@@ -292,7 +292,6 @@ def convert_master_code(
 
 def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stats: BuildStats,
                    character_syllables: dict | None = None,
-                   unique_shortcode: bool = False,
                    char_order: dict[tuple[str, str], int] | None = None,
                    keep_flykeys: bool = False,
                    explicit_shortcodes: list[tuple[str, str]] | None = None) -> str:
@@ -305,7 +304,6 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
                        f"# 来源：mohu_zrm.dict.yaml；构建：uv run tools/custom/build_custom_scheme.py。\n"
                        f"# 编码由自然码主码表按布局 {scheme} 转换；同码顺序保持。\n",
     }
-    remapped_short: set[tuple[str, str]] = set()
     for raw in text.splitlines(keepends=True):
         for prefix, replacement in header_rewrite.items():
             if raw.startswith(prefix):
@@ -336,34 +334,26 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
                 fields[1] = new_code
                 if not converted:
                     stats.master_unconverted.append(fields[0] + "\t" + new_code)
-                if len(fields[0]) == 1 and len(new_code) == 3 and new_code != original:
-                    remapped_short.add((fields[0], new_code))
                 raw = "\t".join(fields) + ("\n" if raw.endswith("\n") else "")
         lines.append(raw)
 
-    if unique_shortcode:
-        # Imported shortcodes must compete here, not bypass the winners through
-        # the higher-priority custom-phrases translator later.
-        if explicit_shortcodes:
-            lines.extend(f"{char}\t{code}\n" for char, code in explicit_shortcodes)
-        frequency_rank = _reading_freq_rank(converter)
-        reading_aliases = {target: source for source, target in FLY_ZRM.items()} if keep_flykeys else {}
-        for (char, reading), value in list(frequency_rank.items()):
-            for alias, canonical in reading_aliases.items():
-                if reading == canonical:
-                    frequency_rank[(char, alias)] = value
-        rank = char_order if char_order else frequency_rank
-        lines = _unique_shortcode_pass(
-            lines, rank, stats, merged_aux, frequency_rank=frequency_rank,
-            reading_aliases=reading_aliases)
-        if stats.unique_pushed_readings:
-            lines = _reorder_rows_by_source_order(
-                lines, rank, only_groups_with=stats.unique_pushed_readings)
-    else:
-        if char_order:
-            lines = _reorder_rows_by_source_order(lines, char_order)
-        lines = _dedupe_shortcode_rows(
-            lines, remapped_short, stats, unique_shortcode)
+    # 简码无重是唯一行为：导入的简码必须在这里参与竞争，不允许事后经
+    # 更高优先级的自定义短语翻译器绕过胜出者。
+    if explicit_shortcodes:
+        lines.extend(f"{char}\t{code}\n" for char, code in explicit_shortcodes)
+    frequency_rank = _reading_freq_rank(converter)
+    reading_aliases = {target: source for source, target in FLY_ZRM.items()} if keep_flykeys else {}
+    for (char, reading), value in list(frequency_rank.items()):
+        for alias, canonical in reading_aliases.items():
+            if reading == canonical:
+                frequency_rank[(char, alias)] = value
+    rank = char_order if char_order else frequency_rank
+    lines = _unique_shortcode_pass(
+        lines, rank, stats, merged_aux, frequency_rank=frequency_rank,
+        reading_aliases=reading_aliases)
+    if stats.unique_pushed_readings:
+        lines = _reorder_rows_by_source_order(
+            lines, rank, only_groups_with=stats.unique_pushed_readings)
     return "".join(lines)
 
 
@@ -443,58 +433,6 @@ def _reorder_rows_by_source_order(
     return new_lines
 
 
-def _dedupe_shortcode_rows(
-    lines: list[str], remapped_short: set[tuple[str, str]],
-    stats: BuildStats, unique_shortcode: bool,
-) -> list[str]:
-    """简码位整理：处理主表行列表里的单字短码行。
-
-    默认（三码设计不变量）：一个三码码位只有一个简码字，撞位的字往
-    后推（删行，字仍可由全码/辅码渐进打出）。换辅码后重映射可能把
-    多个三简行推到同一码位；按主表行序保留最前的行，其余删除并计
-    入报告。例外：撞码双方都是未被改写的原生行（zrm 既有的同码特
-    例，如 bjn/lix）时保持原状不动。
-
-    --unique-shortcode（简码无重）：一/二/三简全部去重，原生同码特例
-    也推；被推字必须还有更长的码行，否则保留该行兜底（否则字会从
-    码表消失）。
-    """
-    # 单字行的最长码（未删全集上统计），作为删行保底依据
-    char_max_len: dict[str, int] = {}
-    for raw in lines:
-        fields = raw.rstrip("\n").split("\t")
-        if (len(fields) >= 2 and len(fields[0]) == 1
-                and re.fullmatch(r"[a-z;/]+", fields[1])):
-            char_max_len[fields[0]] = max(char_max_len.get(fields[0], 0), len(fields[1]))
-    seen_short: dict[str, bool] = {}  # 码位 -> 首占行是否被改写过
-    resolved: list[str] = []
-    for raw in lines:
-        fields = raw.rstrip("\n").split("\t")
-        if not (len(fields) >= 2 and len(fields[0]) == 1
-                and re.fullmatch(r"[a-z;/]+", fields[1])):
-            resolved.append(raw)
-            continue
-        code = fields[1]
-        n = len(code)
-        if unique_shortcode and n <= 3:
-            if code in seen_short and char_max_len.get(fields[0], 0) > n:
-                stats.unique_pushed[n] += 1
-                stats.unique_pushed_chars.add(fields[0])
-                continue
-            seen_short[code] = True
-            resolved.append(raw)
-            continue
-        if n == 3:
-            key = (fields[0], code)
-            if code in seen_short:
-                if key in remapped_short or seen_short[code]:
-                    stats.master_pushed_back.append(fields[0] + "\t" + code)
-                    continue
-            seen_short[code] = key in remapped_short
-        resolved.append(raw)
-    return resolved
-
-
 def _unique_shortcode_pass(
     lines: list[str], rank: dict[tuple[str, str], int], stats: BuildStats,
     aux: dict | None = None,
@@ -518,7 +456,10 @@ def _unique_shortcode_pass(
     char_readings: dict[str, set[str]] = {}
     for idx, raw in enumerate(lines):
         fields = raw.rstrip("\n").split("\t")
+        # 简码无重只作用于汉字单字；o 区符号行（制表符、圈号、全角符号等）
+        # 的共享码位是符号层设计，不参与竞争、原样保留。
         if (len(fields) >= 2 and len(fields[0]) == 1
+                and _is_single_han(fields[0])
                 and re.fullmatch(r"[a-z]+", fields[1])):
             char, code = fields[:2]
             rows.append((idx, char, code))
@@ -830,19 +771,8 @@ def build_user_word_rows(
 
 def build_custom_phrases(scheme: str, args, coded: CodedCharTable | None,
                          stats: BuildStats) -> str:
-    """自定义短语基础内容 + 可选的码表自带简码物化。"""
-    text = derive_custom_phrases(scheme)
-    if (args.keep_shortcodes and not args.unique_shortcode
-            and coded is not None and coded.shortcodes):
-        text += (
-            "\n# 码表自带简码（原方案 1/2/3 键行物化，权重按原表序递减）\n"
-            + "".join(
-                f"{ch}\t{code}\t{10000 - i}\n"
-                for i, (ch, code) in enumerate(coded.shortcodes)
-            )
-        )
-        stats.shortcode_rows = len(coded.shortcodes)
-    return text
+    """自定义短语基础内容（简码统一走主码表的无重分配，不在此物化）。"""
+    return derive_custom_phrases(scheme)
 
 
 # ---------------------------------------------------------------------------
@@ -1102,10 +1032,11 @@ def run(args) -> int:
         word_source = load_word_table(Path(args.word_table))
         print(f"    码表自带词库：{len(word_source.words)} 词条"
               f"（词库来源=码表自带，打法按本方案生成）")
-    elif coded is not None and coded.words:
-        word_source = WordTableSource(words=coded.words)
-        print(f"    码表自带词库：码表内字词混排，提取 {len(coded.words)} 词条"
-              f"（打法按本方案生成）")
+    # 注意：不要在这里对「码表内字词混排」做自动回退——词库来源是用户的
+    # 显式选择（Issue 表单「使用码表自带词库」+词库文件留空时，表单侧
+    # 已把码表本身作为 --word-table 传入）。此前这里的 elif 会在用户选了
+    # 「使用魔虎词库」时仍用码表内词条悄悄替掉全量词库，产出缺引擎外又
+    # 缺词库的小残包。
     sp_value = args.sp
     if sp_value is None:
         sp_value = detected_layout or "zrm"
@@ -1149,12 +1080,11 @@ def run(args) -> int:
     master_text = (ROOT / "mohu_zrm.dict.yaml").read_text(encoding="utf-8")
     master_converted = convert_master(master_text, name, converter, base_aux, merged_aux, stats,
                                       character_syllables=load_character_syllables(ZRM_CHARS_DICT),
-                                      unique_shortcode=args.unique_shortcode,
                                       char_order=coded.order if coded else None,
                                       keep_flykeys=keep_flykeys,
                                       explicit_shortcodes=(coded.shortcodes
                                           if coded and args.keep_shortcodes else None))
-    if coded and args.keep_shortcodes and args.unique_shortcode:
+    if coded and args.keep_shortcodes:
         stats.shortcode_rows = len(coded.shortcodes)
     master_path = output / f"mohu_{name}.dict.yaml"
     master_path.write_text(master_converted, encoding="utf-8")
@@ -1308,8 +1238,6 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
         word_line = "魔虎全量词库"
     shortcode_line = (
         f"码表自带（{stats.shortcode_rows} 行参与主码表简码无重分配）"
-        if stats.shortcode_rows and args.unique_shortcode else
-        f"码表自带（物化 {stats.shortcode_rows} 行进自定义短语）"
         if stats.shortcode_rows else "魔虎体系推算")
     lines += [
         "",
@@ -1379,13 +1307,6 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             )
     if stats.master_unconverted:
         lines.extend(f"  {row}" for row in stats.master_unconverted[:10])
-    if stats.master_pushed_back:
-        lines += [
-            f"- 三简位撞码（一码一字，行序后者往后推，删三简行留全码）：{len(stats.master_pushed_back)} 字",
-        ]
-        lines.extend(f"  {row}" for row in stats.master_pushed_back[:15])
-        if len(stats.master_pushed_back) > 15:
-            lines.append(f"  … 共 {len(stats.master_pushed_back)} 字")
     lines += [
         "",
         "## 词库源转换",
@@ -1451,17 +1372,14 @@ def main() -> int:
                         help="码表配套词表：给定后词库只用这些词条（打法按本方案规则生成），"
                              "默认用魔虎全量词库")
     parser.add_argument("--keep-shortcodes", action="store_true",
-                        help="使用码表自带的简码：把码表里的 1/2 键行物化进自定义短语；"
-                             "默认由魔虎体系推算简码")
+                        help="使用码表自带的简码：码表里的 1/2/3 键行参与主码表的"
+                             "简码无重分配；默认由魔虎体系推算简码")
     parser.add_argument("--tiger-style-prune", action="store_true",
                         help="配合 --shape-code：按码长启用虎码式剪枝（≤3 码丢 13 位）")
     parser.add_argument("--name", help="方案名（默认取布局名；不能是 zrm/flypy）")
     parser.add_argument("--display", help="选单显示名（默认取布局 display；如「华南虎」→ 魔虎·华南虎）")
     parser.add_argument("--output", help="输出目录（默认 custom-dist/mohu_<name>）")
     parser.add_argument("--strict", action="store_true", help="辅码表必须覆盖引擎字集，缺字报错")
-    parser.add_argument("--unique-shortcode", action="store_true",
-                        help="简码无重：一/二/三简每个码位只留首个字，撞位字往后推（改由全码/"
-                             "辅码渐进打出）；默认只整理三简且保留原生同码特例")
     parser.add_argument("--emit-aux-template", nargs="?", const="aux-template.tsv", metavar="PATH",
                         help="导出虎码辅码全量模板到 PATH（默认 ./aux-template.tsv）后退出")
     parser.add_argument("--force", action="store_true", help="允许覆盖 emit-aux-template 的已有文件")

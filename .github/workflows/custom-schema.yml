@@ -70,6 +70,20 @@ jobs:
           fi
           set -o pipefail
           uv run tools/custom/build_custom_scheme.py "${ARGS[@]}" 2>&1 | tee issue-work/build.log
+          # Issue 构建在干净检出上没有本地编译的引擎：构建器会静默跳过
+          # dylib，包就缺原生整句（~12M 的残包就是这么来的）。从 latest
+          # Release 的官方包注入引擎闭包——引擎与方案无关，词表才按方案。
+          gh release download latest --repo "$GITHUB_REPOSITORY" \
+            --pattern rime-mohu-zrm-latest.zip --dir runtime-src
+          unzip -o -q runtime-src/rime-mohu-zrm-latest.zip 'mohu/runtime/*' -d runtime-src
+          mkdir -p "custom-dist/mohu_${SCHEME_NAME}/mohu/runtime"
+          cp -R runtime-src/mohu/runtime/. "custom-dist/mohu_${SCHEME_NAME}/mohu/runtime/"
+          rm -f "custom-dist/rime-mohu-${SCHEME_NAME}.zip"
+          (cd custom-dist && zip -qr "rime-mohu-${SCHEME_NAME}.zip" "mohu_${SCHEME_NAME}")
+          test -f "custom-dist/mohu_${SCHEME_NAME}/mohu/runtime/libtigerengine.dylib"
+          test -f "custom-dist/mohu_${SCHEME_NAME}/mohu/runtime/libtigerengine.dll"
+          test -f "custom-dist/mohu_${SCHEME_NAME}/mohu/runtime/runtime-preload.txt"
+          unzip -Z1 "custom-dist/rime-mohu-${SCHEME_NAME}.zip" | grep -F "mohu/runtime/libtigerengine.dylib" >/dev/null
 
       - name: 上传方案包
         uses: actions/upload-artifact@v4

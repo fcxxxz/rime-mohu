@@ -340,7 +340,10 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
     # 简码无重是唯一行为：导入的简码必须在这里参与竞争，不允许事后经
     # 更高优先级的自定义短语翻译器绕过胜出者。
     if explicit_shortcodes:
-        lines.extend(f"{char}\t{code}\n" for char, code in explicit_shortcodes)
+        insert_at = _char_section_tail(lines)
+        lines[insert_at:insert_at] = sorted(
+            (f"{char}\t{code}\n" for char, code in explicit_shortcodes),
+            key=lambda row: row.split("\t")[1])
     frequency_rank = _reading_freq_rank(converter)
     reading_aliases = {target: source for source, target in FLY_ZRM.items()} if keep_flykeys else {}
     for (char, reading), value in list(frequency_rank.items()):
@@ -431,6 +434,38 @@ def _reorder_rows_by_source_order(
         for idx, content in zip(idxs, contents):
             new_lines[idx] = content
     return new_lines
+
+
+def _char_section_tail(lines: list[str]) -> int:
+    """单字区末尾的插入点：首个词行之前、其前最后一个单字行之后。
+
+    主表 sort: original，同码初始顺序即行序，且形制是单字区在前、词库区
+    在后（文件头的置顶词是刻意置顶，不算词库区起点）。导入的简码行与
+    竞争生成行若追加到文件尾，会排在同码的一码词/二码词/三字词之后
+    （「己 ji」落在「经常 ji」后面，首选变成词）；落在单字区末尾才与主表
+    自带简码同一地位。没有词行时（纯单字表）退化为追加到文件尾。
+    """
+    seen_char = False
+    for idx, raw in enumerate(lines):
+        if raw.startswith("#"):
+            continue
+        fields = raw.rstrip("\n").split("\t")
+        if len(fields) < 2:
+            continue
+        text = fields[0]
+        if _is_single_han(text):
+            seen_char = True
+        elif seen_char and len(text) >= 2 and all(_is_single_han(c) for c in text):
+            back = idx
+            while back > 0:
+                prev = lines[back - 1]
+                prev_fields = prev.rstrip("\n").split("\t")
+                if (not prev.startswith("#") and len(prev_fields) >= 2
+                        and _is_single_han(prev_fields[0])):
+                    return back
+                back -= 1
+            return idx
+    return len(lines)
 
 
 def _unique_shortcode_pass(
@@ -534,7 +569,10 @@ def _unique_shortcode_pass(
             generated.append(f"{char}\t{code}\n")
             stats.unique_pushed_chars.add(char)
             stats.unique_pushed_readings.add(key)
-    return [raw for idx, raw in enumerate(lines) if idx not in drop_rows] + generated
+    kept_lines = [raw for idx, raw in enumerate(lines) if idx not in drop_rows]
+    insert_at = _char_section_tail(kept_lines)
+    kept_lines[insert_at:insert_at] = generated
+    return kept_lines
 
 
 def rewrite_word_code(word: str, code: str, converter, merged_aux: dict) -> str | None:

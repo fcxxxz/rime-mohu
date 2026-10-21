@@ -774,6 +774,41 @@ print(hashlib.sha256(result.encode()).hexdigest())
             keep_shortcodes=True), coded, stats)
         self.assertNotIn("吧\tb\t", phrases)
 
+    def test_keep_shortcodes_rank_before_same_code_words(self) -> None:
+        # Issue 27：夜桜「己 ji」追加到文件尾，落在主表二码词「经常 ji」之后，
+        # sort: original 下首选成了经常。导入简码必须落在单字区末尾。
+        from tools.custom import build_custom_scheme as builder
+        from tools.custom.custom_aux import CodedCharTable
+        from tiger_aux import AuxiliaryEntry
+
+        coded = CodedCharTable(shortcodes=[("己", "ji")])
+        aux = {"己": AuxiliaryEntry("v"), "极": AuxiliaryEntry("s"),
+               "及": AuxiliaryEntry("i")}
+        source = ("---\nname: mohu_zrm\n...\n"
+                  "极\tji\n及\tji\n极\tjixs\n及\tjixi\n己\tjiv\n"
+                  "#----------词库----------#\n"
+                  "经常\tji\n经常\tjyih\n")
+        stats = self.stats_cls()
+        out = builder.convert_master(source, "order", lambda code: code,
+                                     aux, aux, stats,
+                                     char_order={("己", "ji"): 0},
+                                     explicit_shortcodes=coded.shortcodes)
+        self.assertNotIn("极\tji\n", out)
+        self.assertNotIn("及\tji\n", out)
+        self.assertLess(out.index("己\tji\n"), out.index("#----------词库"))
+        self.assertLess(out.index("己\tji\n"), out.index("经常\tji\n"))
+
+    def test_generated_rows_land_before_same_code_words(self) -> None:
+        # 竞争生成的简码行同样不能追加到词行之后。
+        rows = ["不\tb\n", "吧\tb\n", "吧\tbadm\n", "把\tba\n", "拔\tba\n",
+                "拔\tbau\n", "叭\tbad\n", "叭\tbadh\n", "白的\tbad\n"]
+        rank = {("不", "b"): 0, ("把", "ba"): 1, ("吧", "ba"): 2,
+                ("拔", "ba"): 3, ("叭", "ba"): 4}
+        out, _stats = self.run_unique(rows, rank)
+        self.assertIn("吧\tbad\n", out)
+        self.assertLess(out.index("吧\tbad\n"), out.index("白的\tbad\n"))
+        self.assertEqual(out[-1], "白的\tbad\n")
+
 
 class CharTableCliTest(unittest.TestCase):
     """--char-table 的错误路径（重活开始前即失败）。"""

@@ -3,7 +3,8 @@ set -euo pipefail
 
 . /etc/os-release
 case "${ID:-}:${VERSION_CODENAME:-}" in
-  ubuntu:noble) ;;
+  ubuntu:noble|ubuntu:resolute) ;;
+  # GitHub 2026-10 起 ubuntu-latest 26.04=resolute；apt 源按 codename 参数化，新镜像放行即可
   *)
     echo "unsupported GitHub runner image: ${ID:-unknown} ${VERSION_CODENAME:-unknown}" >&2
     exit 2

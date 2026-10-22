@@ -108,7 +108,8 @@ def _assert_public_host(host: str) -> None:
             raise ValueError(f"refusing non-public address for {host}: {address}")
 
 
-def fetch(url: str, *, expected_host: str, allowed_prefix: str | None = None) -> bytes:
+def fetch(url: str, *, expected_host: str, allowed_prefix: str | None = None,
+          not_found_ok: bool = False) -> bytes | None:
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.hostname != expected_host or parsed.port:
         raise ValueError(f"refusing unexpected URL: {url}")
@@ -131,7 +132,14 @@ def fetch(url: str, *, expected_host: str, allowed_prefix: str | None = None) ->
             if content_length and int(content_length) > MAX_RESPONSE_BYTES:
                 raise ValueError(f"response is too large: {url}")
             data = response.read(MAX_RESPONSE_BYTES + 1)
-    except (HTTPError, URLError) as exc:
+    except HTTPError as exc:
+        # 上游会整段删除/改名源文件（2026-10-19~21 连续“词库调整”砍掉 9 个
+        # dict）。404 是可识别的“文件没了”，交给调用方决定钉回还是失败；
+        # 其余 HTTP 错误仍按下载失败处理。
+        if not_found_ok and exc.code == 404:
+            return None
+        raise RuntimeError(f"failed to download {url}: {exc}") from exc
+    except URLError as exc:
         raise RuntimeError(f"failed to download {url}: {exc}") from exc
     if len(data) > MAX_RESPONSE_BYTES:
         raise ValueError(f"response is too large: {url}")
@@ -391,7 +399,15 @@ def build() -> dict[str, int]:
     cuoyin = sorted({entry.text for entry in entries if entry.source == "cuoyin"})
     CUOYIN_WORDS.write_text(
         "".join(f"{word}\n" for word in cuoyin), encoding="utf-8")
-    revision = load_manifest()["revision"]
+    manifest = load_manifest()
+    revision = manifest["revision"]
+    pinned_sources = ", ".join(sorted(
+        f"{source}@{config['pinned_revision'][:12]}"
+        for source, config in source_configs(manifest)
+        if config.get("pinned_revision")
+    ))
+    if pinned_sources:
+        stats["pinned_sources"] = pinned_sources
     OUTPUT.write_text(
         render_dictionary(entries, revision[:12], load_auxiliary(), seed_rows),
         encoding="utf-8")
@@ -400,29 +416,33 @@ def build() -> dict[str, int]:
 
 
 def render_report(stats: dict[str, int], revision: str) -> str:
-    return "\n".join(
-        [
-            "# 万象同步报告",
-            "",
-            f"- upstream revision: `{revision}`",
-            f"- selected entries: {stats['selected']}",
-            f"- added: {stats['added']}",
-            f"- removed: {stats['removed']}",
-            f"- pronunciation changed: {stats['pronunciation_changed']}",
-            f"- duplicate existing words: {stats['duplicate_existing']}",
-            f"- skipped because already in moran seed: {stats.get('duplicate_seed', 0)}",
-            f"- pronunciation conflicts: {stats['pronunciation_conflicts']}",
-            f"- dropped below min upstream weight (<{MIN_UPSTREAM_WEIGHT}): {stats.get('below_min_weight', 0)}",
-            f"- rejected source rows: {stats['source_rows_rejected']}",
-            f"- dropped for missing auxiliary: {stats.get('missing_auxiliary', 0)}",
-            f"- moran seed total / merged: {stats.get('seed_total', 0)} / {stats.get('seed_merged', 0)}",
-            "",
-            "Dictionary weights are the real upstream weights (min "
-            f"{MIN_UPSTREAM_WEIGHT} since 2026-09-21). Moran simplified-dist "
-            "seed is merged first; Wanxiang only fills gaps.",
-            "",
-        ]
-    )
+    lines = [
+        "# 万象同步报告",
+        "",
+        f"- upstream revision: `{revision}`",
+        f"- selected entries: {stats['selected']}",
+        f"- added: {stats['added']}",
+        f"- removed: {stats['removed']}",
+        f"- pronunciation changed: {stats['pronunciation_changed']}",
+        f"- duplicate existing words: {stats['duplicate_existing']}",
+        f"- skipped because already in moran seed: {stats.get('duplicate_seed', 0)}",
+        f"- pronunciation conflicts: {stats['pronunciation_conflicts']}",
+        f"- dropped below min upstream weight (<{MIN_UPSTREAM_WEIGHT}): {stats.get('below_min_weight', 0)}",
+        f"- rejected source rows: {stats['source_rows_rejected']}",
+        f"- dropped for missing auxiliary: {stats.get('missing_auxiliary', 0)}",
+        f"- moran seed total / merged: {stats.get('seed_total', 0)} / {stats.get('seed_merged', 0)}",
+    ]
+    if stats.get("pinned_sources"):
+        lines.append(
+            f"- sources pinned (removed upstream, kept at last revision): {stats['pinned_sources']}")
+    lines.extend([
+        "",
+        "Dictionary weights are the real upstream weights (min "
+        f"{MIN_UPSTREAM_WEIGHT} since 2026-09-21). Moran simplified-dist "
+        "seed is merged first; Wanxiang only fills gaps.",
+        "",
+    ])
+    return "\n".join(lines)
 
 
 def verify_snapshots(manifest: dict) -> None:
@@ -455,8 +475,16 @@ def check() -> dict[str, int]:
     return stats
 
 
-def fetch_json(url: str, *, allowed_prefix: str) -> dict:
-    payload = fetch(url, expected_host="api.github.com", allowed_prefix=allowed_prefix)
+class SourceVanished(RuntimeError):
+    """上游在目标 revision 删除了该源文件（HTTP 404）。"""
+
+
+def fetch_json(url: str, *, allowed_prefix: str,
+               not_found_ok: bool = False) -> dict | None:
+    payload = fetch(url, expected_host="api.github.com", allowed_prefix=allowed_prefix,
+                    not_found_ok=not_found_ok)
+    if payload is None:
+        return None
     try:
         value = json.loads(payload)
     except json.JSONDecodeError as exc:
@@ -472,7 +500,11 @@ def download_source(
     metadata = fetch_json(
         CONTENTS_URL.format(path=config["path"], revision=revision),
         allowed_prefix="/repos/amzxyz/rime-wanxiang/contents/dicts/",
+        not_found_ok=True,
     )
+    if metadata is None:
+        raise SourceVanished(
+            f"upstream removed {config['path']} at {revision[:12]}")
     blob_sha = metadata.get("sha")
     size = metadata.get("size")
     if not isinstance(blob_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", blob_sha):
@@ -513,13 +545,42 @@ def download_source(
     return data, digest
 
 
-def download_revision(manifest: dict, revision: str, *, check_manifest: bool = True) -> None:
+def download_revision(manifest: dict, revision: str, *, check_manifest: bool = True,
+                      fallback_revision: str | None = None) -> tuple[list[str], list[str]]:
+    """下载全部源文件；返回（本次钉住的源, 解除钉住的源）。
+
+    每个源先试目标 revision——上游恢复文件即自动解除钉住；404 则钉回
+    最后一个存在的 revision（哈希必须仍吻合，内容原样保留）。没有可退
+    的 revision（未提供 fallback 且源从未钉住）时 404 仍是硬错误。
+    """
     downloads: list[tuple[dict, bytes, str]] = []
+    pinned: list[str] = []
+    unpinned: list[str] = []
     for source, config in source_configs(manifest):
+        pin = config.get("pinned_revision")
         expected = config.get("sha256") if check_manifest else None
         if not (isinstance(expected, str) and expected):
             expected = None
-        data, digest = download_source(config, revision, expected_sha256=expected)
+        try:
+            data, digest = download_source(config, revision, expected_sha256=expected)
+            if pin:
+                del config["pinned_revision"]
+                unpinned.append(source)
+        except SourceVanished:
+            pin_target = pin or fallback_revision
+            if not (isinstance(pin_target, str) and COMMIT_RE.fullmatch(pin_target)):
+                raise
+            manifest_sha = config.get("sha256")
+            data, digest = download_source(
+                config, pin_target,
+                expected_sha256=manifest_sha
+                if isinstance(manifest_sha, str) and SHA_RE.fullmatch(manifest_sha) else None,
+            )
+            config["pinned_revision"] = pin_target
+            pinned.append(source)
+            downloads.append((config, data, digest))
+            print(f"pinned {source} at {pin_target[:12]} (removed upstream at {revision[:12]})")
+            continue
         downloads.append((config, data, digest))
     for config, data, digest in downloads:
         config["sha256"] = digest
@@ -529,6 +590,9 @@ def download_revision(manifest: dict, revision: str, *, check_manifest: bool = T
             handle.write(data)
             temporary = Path(handle.name)
         temporary.replace(path)
+    for source in unpinned:
+        print(f"unpinned {source} (back upstream at {revision[:12]})")
+    return pinned, unpinned
 
 
 def sync() -> None:
@@ -552,16 +616,19 @@ def restore() -> None:
 
 def update() -> bool:
     manifest = load_manifest()
+    previous_revision = manifest.get("revision")
     payload = json.loads(fetch(API_URL, expected_host="api.github.com", allowed_prefix="/repos/amzxyz/rime-wanxiang/commits/"))
     revision = payload.get("sha")
     if not isinstance(revision, str) or not COMMIT_RE.fullmatch(revision):
         raise ValueError("GitHub API returned an invalid revision")
-    if revision == manifest.get("revision"):
+    if revision == previous_revision:
         return False
     manifest["revision"] = revision
     # 新 revision 的内容哈希尚未记录进 manifest，跳过旧哈希校验；
     # 完整性仍由 blob SHA 寻址、size 检查和 base64 严格解码保证，新哈希随后写回。
-    download_revision(manifest, revision, check_manifest=False)
+    # 上游删除的源钉回 previous_revision（文件在那里仍存在且哈希吻合）。
+    download_revision(manifest, revision, check_manifest=False,
+                      fallback_revision=previous_revision)
     save_manifest(manifest)
     build()
     return True

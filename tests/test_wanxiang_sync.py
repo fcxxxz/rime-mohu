@@ -479,6 +479,73 @@ class DownloadRevisionTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     sync_wanxiang.download_revision(self.manifest, REVISION)
 
+    def test_source_removed_upstream_pins_fallback(self) -> None:
+        # 上游 404：钉回 fallback（旧 manifest revision），哈希必须吻合。
+        digest = hashlib.sha256(self.payload).hexdigest()
+        self.manifest["files"]["one"]["sha256"] = digest
+        metadata = {"sha": "b" * 40, "size": len(self.payload)}
+        blob = {"encoding": "base64", "content": base64.b64encode(self.payload).decode()}
+        responses = [None, metadata, blob]
+        with WanxiangEnvironment() as root:
+            raw = root / "tools/data/wanxiang/raw/one.dict.yaml"
+            with mock.patch.object(
+                sync_wanxiang, "fetch_json",
+                side_effect=lambda *a, **k: responses.pop(0),
+            ):
+                pinned, unpinned = sync_wanxiang.download_revision(
+                    self.manifest, "d" * 40, check_manifest=False,
+                    fallback_revision=REVISION,
+                )
+            self.assertEqual(pinned, ["one"])
+            self.assertEqual(unpinned, [])
+            self.assertEqual(self.manifest["files"]["one"]["pinned_revision"], REVISION)
+            self.assertEqual(self.manifest["files"]["one"]["sha256"], digest)
+            self.assertEqual(raw.read_bytes(), self.payload)
+
+    def test_source_vanished_without_fallback_is_hard_error(self) -> None:
+        responses = [None]
+        with WanxiangEnvironment():
+            with mock.patch.object(
+                sync_wanxiang, "fetch_json",
+                side_effect=lambda *a, **k: responses.pop(0),
+            ):
+                with self.assertRaises(RuntimeError):
+                    sync_wanxiang.download_revision(
+                        self.manifest, "d" * 40, check_manifest=False)
+
+    def test_recovered_source_unpins(self) -> None:
+        # 钉住的源先试最新 revision；上游恢复文件即解除钉住。
+        self.manifest["files"]["one"]["pinned_revision"] = REVISION
+        with WanxiangEnvironment() as root:
+            raw = root / "tools/data/wanxiang/raw/one.dict.yaml"
+            with self.fake_api():
+                pinned, unpinned = sync_wanxiang.download_revision(
+                    self.manifest, "d" * 40, check_manifest=False)
+            self.assertEqual(pinned, [])
+            self.assertEqual(unpinned, ["one"])
+            self.assertNotIn("pinned_revision", self.manifest["files"]["one"])
+            self.assertEqual(raw.read_bytes(), self.payload)
+
+    def test_pinned_source_survives_replay(self) -> None:
+        # sync/restore 重放：全局 revision 下源仍 404，钉住的源退回钉点且哈希核对。
+        digest = hashlib.sha256(self.payload).hexdigest()
+        self.manifest["revision"] = "d" * 40
+        self.manifest["files"]["one"]["sha256"] = digest
+        self.manifest["files"]["one"]["pinned_revision"] = REVISION
+        metadata = {"sha": "b" * 40, "size": len(self.payload)}
+        blob = {"encoding": "base64", "content": base64.b64encode(self.payload).decode()}
+        responses = [None, metadata, blob]
+        with WanxiangEnvironment() as root:
+            raw = root / "tools/data/wanxiang/raw/one.dict.yaml"
+            with mock.patch.object(
+                sync_wanxiang, "fetch_json",
+                side_effect=lambda *a, **k: responses.pop(0),
+            ):
+                pinned, _unpinned = sync_wanxiang.download_revision(
+                    self.manifest, "d" * 40)
+            self.assertEqual(pinned, ["one"])
+            self.assertEqual(raw.read_bytes(), self.payload)
+
 
 class VerifySnapshotsTest(unittest.TestCase):
     def test_checks_hashes_and_files(self) -> None:
@@ -552,7 +619,8 @@ class UpdateTest(unittest.TestCase):
             args, kwargs = download.call_args
             self.assertEqual(args[0]["revision"], new_revision)
             self.assertEqual(args[1], new_revision)
-            self.assertEqual(kwargs, {"check_manifest": False})
+            self.assertEqual(
+                kwargs, {"check_manifest": False, "fallback_revision": REVISION})
             build.assert_called_once_with()
             saved = json.loads((data / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["revision"], new_revision)

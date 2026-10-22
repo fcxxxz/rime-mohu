@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "a355ffec2f05dd698451b709a5c242be76395a25",
+  "revision": "429bca38cec288ca9f6c322333908ce17adb0885",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,77 +9,86 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "491a80628719f6eeabf7d1eb040a86c872175736a6a6c63f702f6f87e32230a8"
+      "sha256": "c8b175d9913704afcd95e6fe84bd9a3a5ffbd88b8a4edd40d2350024f3171f94"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
       "raw_path": "raw/lianxiang.dict.yaml",
-      "sha256": "0bce7738bf1f209601055a00c8f69c4d435d6b2a3a0c457da7be45d96821e482"
+      "sha256": "0bce7738bf1f209601055a00c8f69c4d435d6b2a3a0c457da7be45d96821e482",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "cuoyin": {
       "path": "dicts/cuoyin.dict.yaml",
       "raw_path": "raw/cuoyin.dict.yaml",
-      "sha256": "05b423d95163e3e94a4acfd6ef83e22f85fe6212aabd8678298b896147187bea"
+      "sha256": "d699a3a620ca1ad8203747e525e4f366f8f15df0185dd1acaa4c1480cfd5b75a"
     },
     "duoyin": {
       "path": "dicts/duoyin.dict.yaml",
       "raw_path": "raw/duoyin.dict.yaml",
-      "sha256": "b31bec6c64cc78bd1eec9fab0d978a6c040957e9dc83bc8bacdcc5ddf82d15b7"
+      "sha256": "ba63fbb95ba10f5a147645ae33faeff74ee87b76068006c14244708e741693ea"
     },
     "shici": {
       "path": "dicts/shici.dict.yaml",
       "raw_path": "raw/shici.dict.yaml",
-      "sha256": "3b42b0f4064c81d5d1d8cffd12c36fda1323dafb0ee3bae6dc33a8bb11c508cf"
+      "sha256": "3b42b0f4064c81d5d1d8cffd12c36fda1323dafb0ee3bae6dc33a8bb11c508cf",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "diming": {
       "path": "dicts/diming.dict.yaml",
       "raw_path": "raw/diming.dict.yaml",
-      "sha256": "c025c8874cc943e35a00e4e0908796059662e3b628206d3ff0c6fe1065ab600f"
+      "sha256": "217f145d086928a079e082f168cfb410c3c5b2265dd1aa9c5cfa4587dcde736c"
     },
     "yixue": {
       "path": "dicts/yixue.dict.yaml",
       "raw_path": "raw/yixue.dict.yaml",
-      "sha256": "7d46de7062b18530a30f7b53dac231213b988bf15d97d331130ebff506a3c0fc"
+      "sha256": "7d46de7062b18530a30f7b53dac231213b988bf15d97d331130ebff506a3c0fc",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "huaxue": {
       "path": "dicts/huaxue.dict.yaml",
       "raw_path": "raw/huaxue.dict.yaml",
-      "sha256": "d886b18c68541a94fb0c189bb0c5e00f77fef99f9d2e14c80bf3d6cd477e9070"
+      "sha256": "d886b18c68541a94fb0c189bb0c5e00f77fef99f9d2e14c80bf3d6cd477e9070",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "yaopin": {
       "path": "dicts/yaopin.dict.yaml",
       "raw_path": "raw/yaopin.dict.yaml",
-      "sha256": "f7d43d5a0528000117dafea8359c44aba7960d5528edcb199b545dc96475ff30"
+      "sha256": "f7d43d5a0528000117dafea8359c44aba7960d5528edcb199b545dc96475ff30",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "mingren": {
       "path": "dicts/mingren.dict.yaml",
       "raw_path": "raw/mingren.dict.yaml",
-      "sha256": "512cae2a789f2f0cb4aa8d7bf1253f8165e32b3a2383a18e8be10725c0385cf7"
+      "sha256": "ea46a11de1a0ae214067fdb03aeb8e8d40bac93460184aacf2706550dde1bc4b"
     },
     "yiren": {
       "path": "dicts/yiren.dict.yaml",
       "raw_path": "raw/yiren.dict.yaml",
-      "sha256": "f3b6aadda7bddb1357db8da08484cdbab19fe55dc209e5127caf37bb7eb0c957"
+      "sha256": "9caf54d6607647b5dffecbf6d870e9df04df998467785b900eb1b945abc8fe35"
     },
     "wuzhong": {
       "path": "dicts/wuzhong.dict.yaml",
       "raw_path": "raw/wuzhong.dict.yaml",
-      "sha256": "290ee37fda206b69918ca0531f2b25cfa1521c3601af6a4dee86f69af955a99f"
+      "sha256": "290ee37fda206b69918ca0531f2b25cfa1521c3601af6a4dee86f69af955a99f",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "renming": {
       "path": "dicts/renming.dict.yaml",
       "raw_path": "raw/renming.dict.yaml",
-      "sha256": "dc41fc13db49754f59eaa6aa062e7defae2d0e1dadca5a1d14f59a7cac505f78"
+      "sha256": "dc41fc13db49754f59eaa6aa062e7defae2d0e1dadca5a1d14f59a7cac505f78",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "taifeng": {
       "path": "dicts/taifeng.dict.yaml",
       "raw_path": "raw/taifeng.dict.yaml",
-      "sha256": "da4e7a67f7c399bc27ee7227f669dc023eea722f1f369637100c2f57087ddf10"
+      "sha256": "da4e7a67f7c399bc27ee7227f669dc023eea722f1f369637100c2f57087ddf10",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     },
     "fangyan": {
       "path": "dicts/fangyan.dict.yaml",
       "raw_path": "raw/fangyan.dict.yaml",
-      "sha256": "5d9b1b05e4c84c47a8a7c234429aaa0b793b5a711ed4d2a5b4cd5581485e7dac"
+      "sha256": "5d9b1b05e4c84c47a8a7c234429aaa0b793b5a711ed4d2a5b4cd5581485e7dac",
+      "pinned_revision": "a355ffec2f05dd698451b709a5c242be76395a25"
     }
   },
   "policy": {

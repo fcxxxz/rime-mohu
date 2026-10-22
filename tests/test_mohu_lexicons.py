@@ -184,6 +184,22 @@ wz\t为\t2\t3
         self.assertNotIn("低频四字", words)        # 4 字 9 <门槛
         self.assertNotIn("低频九字", words)        # 9 字 5 <门槛
 
+    def test_three_code_single_char_slash_twin(self):
+        """三码筛单字 YYX/ 镜像：同 rank/词频/读音，飞键头行带闭包变体。"""
+        rows = [
+            ("idj", "创", "1", "1028", "270394", ""),
+            ("xqf", "修", "2", "9", "", ""),   # xq→xo 飞键头
+            ("ba", "爸", "1", "12", "", ""),    # 二码行不派生
+        ]
+        zrm = self.tool.build_rows(rows, scheme="zrm")
+        self.assertIn(("idj/", "创", "1", "1028", "270394", ""), zrm)
+        # 飞键头变体行携带第 6 列规范头（emit 的既有规则）
+        self.assertIn(("xof/", "修", "2", "9", "", "xq"), zrm)
+        self.assertNotIn("ba/", {r[0] for r in zrm})
+        flypy = self.tool.build_rows(rows, scheme="flypy")
+        self.assertTrue(any(
+            r[0].endswith("/") and r[1] == "创" for r in flypy))
+
     def test_checked_in_artifacts_have_equal_text_coverage_and_fly_closure(self):
         paths = {
             scheme: ROOT / "tiger_sentence_native" / "data" / scheme

@@ -393,6 +393,15 @@ def build_rows(rows: list[ROW_KEY], scheme: str,
         output.add(emit(base_code, text, rank, freq, reading))
         for variant in _fly_closure(base_code, text, fly):
             output.add(emit(variant, text, rank, freq, reading))
+        if len(text) == 1 and len(base_code) == 3 and not base_code.endswith("/"):
+            # 三码筛单字 YYX/：algebra 的实验性派生（moran/mohu.yaml
+            # generate_code 第三条），prism 有而源表只有全码 YYXX//YYXXo
+            # 家族行——native 整段覆盖因此拒绝句中三码筛字输入，合法打法
+            # （如 sjjiz/tsidj 的 jiz/）整句退 smart_static 断学习链
+            # （2026-10-19 判例）。同 rank/词频/读音镜像并走同一飞键闭包。
+            output.add(emit(base_code + "/", text, rank, freq, reading))
+            for variant in _fly_closure(base_code + "/", text, fly):
+                output.add(emit(variant, text, rank, freq, reading))
     # 注入 base 词典多字词（源表没有的）：裸码词条、rank 99（不与源表
     # 简码档位竞争、不作句中内部边）、第 4 列=词典权重。与源行同规则生成
     # 飞键闭包变体（不变量：每个全音节行的飞键变体必须存在）。配合引擎

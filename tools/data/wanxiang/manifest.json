@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "429bca38cec288ca9f6c322333908ce17adb0885",
+  "revision": "56632d0a561304d71fd5c1b660095a840cef3099",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,7 +9,7 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "c8b175d9913704afcd95e6fe84bd9a3a5ffbd88b8a4edd40d2350024f3171f94"
+      "sha256": "942e2ea99102ac8cd75519ea49fafb2123f1143508715d9c0c2052555800085a"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
@@ -25,7 +25,7 @@
     "duoyin": {
       "path": "dicts/duoyin.dict.yaml",
       "raw_path": "raw/duoyin.dict.yaml",
-      "sha256": "ba63fbb95ba10f5a147645ae33faeff74ee87b76068006c14244708e741693ea"
+      "sha256": "0e46e6455b127cb8815d55f48ba93a8e2b82aa52129c3f5851b98643ac8b10ca"
     },
     "shici": {
       "path": "dicts/shici.dict.yaml",
@@ -36,7 +36,7 @@
     "diming": {
       "path": "dicts/diming.dict.yaml",
       "raw_path": "raw/diming.dict.yaml",
-      "sha256": "217f145d086928a079e082f168cfb410c3c5b2265dd1aa9c5cfa4587dcde736c"
+      "sha256": "a6e043b7fdd2ce7c07e03951382825e9ba76e05ffdc529dccabcd50909cb0f91"
     },
     "yixue": {
       "path": "dicts/yixue.dict.yaml",
@@ -59,12 +59,12 @@
     "mingren": {
       "path": "dicts/mingren.dict.yaml",
       "raw_path": "raw/mingren.dict.yaml",
-      "sha256": "ea46a11de1a0ae214067fdb03aeb8e8d40bac93460184aacf2706550dde1bc4b"
+      "sha256": "53e73979f78d95cd9dd743cd0c3ceaff1ae260045971e518b7393036a959db67"
     },
     "yiren": {
       "path": "dicts/yiren.dict.yaml",
       "raw_path": "raw/yiren.dict.yaml",
-      "sha256": "9caf54d6607647b5dffecbf6d870e9df04df998467785b900eb1b945abc8fe35"
+      "sha256": "11cffb9e712bed1c6f922eebdbb2d5e8218ca1ae58eef5d1815ded3c0b82679e"
     },
     "wuzhong": {
       "path": "dicts/wuzhong.dict.yaml",

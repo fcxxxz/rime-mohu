@@ -77,7 +77,7 @@ bk	报
 ### 三步操作
 
 1. **开表单**：点直达链接 [**开一个转码表 Issue**](https://github.com/fcxxxz/rime-mohu/issues/new?template=custom-schema.yml)（或者手动走：**Issues** 标签 → **New issue** → 选 **🔄 转码表（生成我的专属方案）**）。
-2. **填表提交**：把码表 txt/tsv **直接拖进「码表文件」框**（会自动变成附件）；填方案名（小写英文，如 `mycode`）；显示名可用中文（如 `我的码`）；双拼布局默认自动识别；「简码无重」默认关闭——开启后一/二/三简每个码位只留一个字、撞位字改用完整编码打，喜欢这种手感再开。
+2. **填表提交**：把码表 txt/tsv **直接拖进「码表文件」框**（会自动变成附件）；填方案名（小写英文，如 `mycode`）；显示名可用中文（如 `我的码`）；双拼布局默认自动识别。简码无重是固定规则：一/二/三简每个码位只留一个字，撞位字按读音降级到更长编码。
 3. **等机器人回复**：几分钟后这个 Issue 里会出现方案包的下载链接（需登录 GitHub 下载，7 天内有效）。如果构建失败，按回复里的报错提示**编辑同一个 Issue**、改好保存，会自动重新构建。
 
 下载的 zip 建议用 [Bandizip](https://www.bandisoft.com/bandizip/) 或 7-Zip 解压（Windows 自带解压对包内中文文件名可能乱码），按包内《安装说明.md》安装；整句模型从 [Releases](https://github.com/fcxxxz/rime-mohu/releases) 下载 `mohu-sentence-ngram-v5.bin` 放到 `mohu/model/`，装一次即可（已装过魔虎的用户通常已有）。

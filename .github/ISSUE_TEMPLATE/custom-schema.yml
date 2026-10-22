@@ -58,17 +58,6 @@ body:
       required: true
 
   - type: dropdown
-    id: unique-shortcode
-    attributes:
-      label: 简码无重
-      description: 开启后一简/二简/三简每个码位只留一个字，撞位的字改用完整编码打（喜欢「短键必唯一」手感的人开；不确定就关闭）
-      options:
-        - "关闭"
-        - "开启"
-    validations:
-      required: true
-
-  - type: dropdown
     id: word-source
     attributes:
       label: 词库来源

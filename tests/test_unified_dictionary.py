@@ -28,11 +28,13 @@ class UnifiedDictionaryTest(unittest.TestCase):
         self.assertIn(('哪里', 'nal'), pairs)
         self.assertIn(('方式', 'fhui'), pairs)
         self.assertIn(('？', ';w'), pairs)
-        self.assertIn(('试', 'u'), pairs)
+        self.assertIn(('是', 'u'), pairs)
+        self.assertNotIn(('试', 'u'), pairs)   # 简码无重：u 位只留「是」
         self.assertIn(('试', 'uisp'), pairs)
         self.assertIn(('师', 'uipf'), pairs)
         self.assertEqual([r[0] for r in rows if r[1] == 'we'][:2], ['未', '万恶'])
-        self.assertEqual([r[0] for r in rows if r[1] == 'wf'][:2], ['问', '文'])
+        self.assertEqual([r[0] for r in rows if r[1] == 'wf'][:1], ['问'])
+        self.assertNotIn(('文', 'wf'), pairs)  # 简码无重：wf 位只留「问」
         self.assertTrue(all(len(r) == 2 for r in rows))
         self.assertIs(meta["use_preset_vocabulary"], False)
 

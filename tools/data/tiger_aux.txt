@@ -489,7 +489,7 @@
 㘙	dd	dh
 㘚	da	dh
 㘛	dj	dt	dd
-㘜	us	ud	uu
+㘜	su	sd
 㘝	rr
 㘞	rs
 㘟	rl
@@ -728,7 +728,7 @@
 㜉	bo	bm	bd
 㜊	bc	bt	bl
 㜋	bk		ba
-㜌	gw	gr	gf
+㜌	gw	gb	gf
 㜍	bx	bd	bb
 㜎	by	bm	bi
 㜏	bd		bo
@@ -764,7 +764,7 @@
 㜭	bs		bq
 㜮	bq	ba	br
 㜯	bq	bc	bv
-㜰	bu	be	bi
+㜰	bi	be	bu
 㜱	bt	bo
 㜲	bf	bi	bd
 㜳	bt	bk	by
@@ -785,7 +785,7 @@
 㝂	hu		ht
 㝃	hw		hp
 㝄	gh	gs	gf
-㝅	gw	gr	gf
+㝅	gw	gh	gf
 㝆	hh		hd
 㝇	gh		gg
 㝈	si	sh
@@ -1211,7 +1211,7 @@
 㣯	wc	wv	wy
 㣰	wt	wh	wp
 㣱	wa		wo
-㣲	wv	wh	wf
+㣲	wv	wd	wf
 㣳	we	wc	wl
 㣴	wn
 㣵	wg	wu
@@ -1378,14 +1378,14 @@
 㦖	ha		hh
 㦗	he	hf
 㦘	ul	uh
-㦚	nh	nx	nn
+㦚	hn	hx
 㦛	pf	ph	pa
 㦜	hl	hr	hu
 㦝	mu	mh	mp
 㦞	ga	gh	gu
 㦟	md		mh
 㦠	hc	hk	hg
-㦡	hu	he	hi
+㦡	hi	he	hu
 㦢	hr	hz	hi
 㦣	pg		ph
 㦤	gw	gh	gz
@@ -1526,7 +1526,7 @@
 㨫	up	ua	ur
 㨬	ug	ut	ud
 㨭	um		ud
-㨮	uu	up	ub
+㨮	ub	up	uu
 㨯	ug	ut	uh
 㨰	ut	uk	uh
 㨱	uv		us
@@ -1774,7 +1774,7 @@
 㬨	og	oc
 㬩	oa	oh
 㬪	oo	ob
-㬫	ld	lo	la
+㬫	la	lo	ld
 㬬	oq	ou
 㬭	oy	ok
 㬮	ol	ou	od
@@ -2009,7 +2009,7 @@
 㰘	eb	el	ep
 㰙	el	eu	ed
 㰚	ez	eu	eb
-㰛	el	ee	eu
+㰛	el	ee	ei
 㰜	en	ew	eq
 㰝	ve
 㰞	ve
@@ -2119,7 +2119,7 @@
 㲆	gc	gk	gr
 㲇	gc	gw	gr
 㲈	gc	gd	gr
-㲉	gw	gr	gf
+㲉	gw	gb	gf
 㲊	gh	gr	gq
 㲋	wv
 㲌	vv
@@ -2354,7 +2354,7 @@
 㵴	kn		kq
 㵵	kq	kk	kr
 㵶	kn	ku	kp
-㵷	nk	nx	nn
+㵷	kn	kx
 㵸	kj	kd
 㵹	kv	km	kl
 㵺	kr	kn	ku
@@ -2460,7 +2460,7 @@
 㷡	qn	qc
 㷢	gu		gc
 㷣	cg		cq
-㷤	gw	gr	gf
+㷤	gw	gc	gf
 㷥	cc	cf	ca
 㷦	qc
 㷧	cx	cy	cu
@@ -2484,7 +2484,7 @@
 㷹	cl	cn	cy
 㷺	xp	xc	xh
 㷻	ce	cc	cl
-㷼	ld	lc	la
+㷼	la	lc	ld
 㷽	cg	cd	ch
 㷾	cz		cj
 㷿	cj		cd
@@ -2524,7 +2524,7 @@
 㸡	at		aa
 㸢	al	at
 㸣	ac	ah	ag
-㸤	na	nx	nn
+㸤	an	ax
 㸥	aw		av
 㸦	ly
 㸧	li
@@ -2623,7 +2623,7 @@
 㺆	ms	mo	mm
 㺇	mq		mm
 㺈	ms	mc	mf
-㺉	gw	gr	gf
+㺉	gw	gm	gf
 㺊	mg		mh
 㺋	mh	mz	mk
 㺌	mh	mc	mb
@@ -3120,7 +3120,7 @@
 䁸	qy		qf
 䁹	qc	qn	qd
 䁺	qy	qg
-䁻	qu	qe	qi
+䁻	qi	qe	qu
 䁼	qp		qg
 䁽	qo		qp
 䁾	ql	qi	qy
@@ -3837,7 +3837,7 @@
 䍊	aa		ab
 䍋	al	ag
 䍌	ai		ad
-䍍	gw	gr	gf
+䍍	gw	ga	gf
 䍎	al	ac	ax
 䍏	ys
 䍐	ye
@@ -4087,7 +4087,7 @@
 䑅	vl		vy
 䑆	vg	vi
 䑇	vt	vo
-䑈	vu	ve	vi
+䑈	vi	ve	vu
 䑉	vf	vi	vd
 䑊	vc	vu	vo
 䑋	vt	vf	vd
@@ -4405,7 +4405,7 @@
 䖄	ll	lc	ld
 䖅	lt	lj	ld
 䖆	ly	lf	lt
-䖇	le		la
+䖇	la	le
 䖈	zv
 䖉	zf		zn
 䖊	bz
@@ -4822,7 +4822,7 @@
 䜦	sl	so	sn
 䜧	sp	ss	si
 䜨	sd	sh
-䜩	sl	sc	sd
+䜩	sl	sc	sa
 䜪	hk
 䜫	hu
 䜬	hd
@@ -4881,7 +4881,7 @@
 䝢	mo	mr	my
 䝣	mk	me	mn
 䝤	mm	my	mh
-䝥	mo	mn	mw
+䝥	mo	mn	mk
 䝦	mt	mk	ma
 䝧	on		ow
 䝨	pr		po
@@ -4987,7 +4987,7 @@
 䟌	pn	pu	pp
 䟍	po	pl	pe
 䟎	ph	po
-䟏	pu	pe	pi
+䟏	pi	pe	pu
 䟐	px	ps
 䟑	pj	pd
 䟒	pl	pu	pd
@@ -5309,7 +5309,7 @@
 䤒	yi
 䤓	yl	yj	yw
 䤔	ky		kt
-䤕	yu	ye	yi
+䤕	yi	ye	yu
 䤖	yo	yk	yl
 䤗	xn	xy	xh
 䤘	yj	yf
@@ -6324,7 +6324,7 @@
 䴌	xl	xj	xw
 䴍	oo		ox
 䴎	qq	qx
-䴏	ld	lx	la
+䴏	la	lx	ld
 䴐	wn	wx	wa
 䴑	qq	qx
 䴒	td	tx
@@ -6514,12 +6514,12 @@
 下	fy
 丌	lc
 不	cb
-与	fa		ff
+与	fa
 丏	fg	fa
 丐	fy		fa
 丑	ag
 丒	pi		pf
-专	ma		mi
+专	ma
 且	fq
 丕	cf
 世	la
@@ -6558,7 +6558,7 @@
 丷	hb
 丸	ki
 丹	mz
-为	is		ii
+为	is
 主	in
 丼	qi	qj	qd
 丽	fv
@@ -6602,7 +6602,7 @@
 乣	ia
 乤	fy		fa
 乥	th		ta
-书	aa	ai	ag
+书	aa
 乧	ja
 乨	kd		ka
 乩	yd		ya
@@ -6639,7 +6639,7 @@
 予	iv
 争	xb
 亊	fh		fb
-事	fd		fb
+事	fd
 二	me
 亍	wc
 于	fn
@@ -6647,7 +6647,7 @@
 亐	ma
 云	by
 互	fb
-亓	mp
+亓	fl
 五	wu
 井	qj
 亖	mm
@@ -6751,7 +6751,7 @@
 仸	jt		jm
 仹	ja
 仺	jb
-任	jt		jg
+任	jt
 仼	jn
 份	jh		jp
 仾	jf		jb
@@ -6788,7 +6788,7 @@
 伝	jb
 伞	jh		jn
 伟	jg
-传	jm	ji	ja
+传	jm
 伡	jy
 伢	jl
 伣	je
@@ -6826,7 +6826,7 @@
 佃	jq
 佄	jz
 佅	ja
-但	jo		jf
+但	jo
 佇	jw		ja
 佈	jn		jr
 佉	jg		jk
@@ -6852,7 +6852,7 @@
 佝	jg
 佞	jm		jb
 佟	jh		jw
-你	jx		jy
+你	jx
 佡	jj		jv
 佢	jn
 佣	jt
@@ -6861,7 +6861,7 @@
 佦	jm
 佧	jy		jf
 佨	jn		jv
-佩	jo	jr	jf
+佩	jo		jf
 佪	jr		jd
 佫	js
 佬	jq
@@ -6883,7 +6883,7 @@
 佼	ja		jb
 佽	jw		je
 佾	jh		jv
-使	jf	jb	jd
+使	jf
 侀	jf	jp	jl
 侁	jq		jp
 侂	jx	jr	jt
@@ -6937,7 +6937,7 @@
 侲	jf
 侳	jj	jg
 侴	ja	jp	jg
-侵	jb	jr	jw
+侵	jb		jw
 侶	jd		jt
 侷	jc	jd	ja
 侸	jz
@@ -6947,7 +6947,7 @@
 侼	jn	jh	jw
 侽	jq		js
 侾	jq		jh
-便	jf	jb	jo
+便	jf		jo
 俀	jy		jb
 俁	jd	jm	ja
 係	jt		ji
@@ -6958,7 +6958,7 @@
 俇	jm		jn
 俈	jq		jd
 俉	jw		jd
-俊	jk	jh
+俊	jk		jh
 俋	jd		jm
 俌	jn
 俍	ji
@@ -6994,7 +6994,7 @@
 俫	ja		jh
 俬	jx		jk
 俭	jj	jf	jk
-修	jg	je	jh
+修	jg		jh
 俯	jx	jk	jj
 俰	jx		jd
 俱	jq		jh
@@ -7030,14 +7030,14 @@
 倏	jg	jm	jh
 倐	jg	jc	jh
 們	ja
-倒	jy		jp
+倒	jy
 倓	jc
 倔	jc	jm	js
 倕	jl	jg
 倖	jg
 倗	jv
 倘	js
-候	jg	jo	jn
+候	jg		jn
 倚	jm		jz
 倛	jz		jh
 倜	jm	jd	jg
@@ -7072,7 +7072,7 @@
 倹	jj		jd
 债	ja		jo
 倻	jq		jt
-值	jn	jf	jq
+值	jn		jq
 倽	jj		ja
 倾	jv		jw
 倿	ji		jb
@@ -7083,7 +7083,7 @@
 偄	jl		jm
 偅	jl		jd
 偆	ja	jo	ji
-假	jc	jr	jm
+假	jc		jm
 偈	jo	jf	jn
 偉	jg
 偊	jt	jv	jd
@@ -7102,7 +7102,7 @@
 偗	jy	jq	jt
 偘	jd
 偙	ji	jr	jw
-做	jc		jh
+做	jc
 偛	jl		jp
 停	jg		ja
 偝	ja	jv
@@ -7131,7 +7131,7 @@
 側	jo		jp
 偵	jy		jo
 偶	jq		jv
-偷	jj	jp	jv
+偷	jj		jv
 偸	jj	jo	jv
 偹	jg	jq	jh
 偺	jh	jo	jy
@@ -7360,11 +7360,11 @@
 兙	cp		cn
 党	sp
 兛	cp		cl
-兜	ub	up	un
+兜	bu	bp	bn
 兝	cp		ch
 兞	cp		cv
 兟	qp		qq
-兠	ua	up	uv
+兠	au	ap	av
 兡	cp	cu	cf
 兢	cp		cc
 兣	cp	cd	cx
@@ -7391,7 +7391,7 @@
 典	ih
 兹	hi
 兺	hp	hv	hd
-养	gi		gp
+养	gi
 兼	hb		hc
 兽	hq	hd	hf
 兾	hq	hh	hl
@@ -7421,7 +7421,7 @@
 冖	wg
 冗	wo
 冘	wp
-写	wf		wa
+写	wf
 冚	wv
 军	wy
 农	wt
@@ -7449,7 +7449,7 @@
 冲	wd		wg
 决	wn		wj
 冴	wl
-况	wd		wp
+况	wd
 冶	wk		wd
 冷	wj		wk
 冸	wh		wu
@@ -7469,13 +7469,13 @@
 准	wu
 凇	we	wk	wh
 凈	wy		wb
-凉	wg		wy
+凉	wg
 凊	wa		wv
 凋	wm	wd	wg
-凌	wg	wh
+凌	wg		wh
 凍	we		wo
 凎	wz
-减	wn	wd	wf
+减	wn		wf
 凐	wv		wg
 凑	wa	wm	wi
 凒	wv		wz
@@ -7489,7 +7489,7 @@
 凚	we	wf
 凛	wz	wf	wr
 凜	wz	wx	wr
-凝	wv	wt	wo
+凝	wv		wo
 凞	wt	wc	wq
 凟	wg	wo	wy
 几	oj
@@ -7505,7 +7505,7 @@
 凪	os
 凫	xo	xn	xj
 凬	of		oo
-凭	jt	jo	jg
+凭	jt		jg
 凮	of		ou
 凯	vv		vo
 凰	ou		on
@@ -7567,7 +7567,7 @@
 刨	nv		np
 利	xp
 刪	ip
-别	ds		dp
+别	ds
 刬	fp
 刭	ru		rp
 刮	ap
@@ -7601,11 +7601,11 @@
 削	yv		yp
 剋	cp
 剌	xp
-前	hv		hp
+前	hv
 剎	be	bp	bi
 剏	hl	hi	hp
 剐	dm	dp	dj
-剑	jk	jp	jf
+剑	jk		jf
 剒	lo		lp
 剓	xp
 剔	on	op	oe
@@ -7629,13 +7629,13 @@
 剦	mo	mp	ma
 剧	cc		cp
 剨	am		ap
-剩	xa	xp	xv
+剩	xa
 剪	hv	hp
 剫	xl	xp	xr
 剬	vl		vp
 剭	cy		cp
 剮	fd		fp
-副	fd	fp	fq
+副	fd		fq
 剰	xl		xp
 剱	jd	ji	jj
 割	wa	wp	wd
@@ -7694,7 +7694,7 @@
 劧	us
 动	bs
 助	fs
-努	br		bs
+努	br
 劫	gk		gs
 劬	gs
 劭	pd		ps
@@ -7752,7 +7752,7 @@
 勡	vf		vs
 勢	gh	gs	gg
 勣	ao		as
-勤	ld	ls	la
+勤	ld		la
 勥	bd	bs	bc
 勦	oq	os	oe
 勧	ef	es	eu
@@ -7865,8 +7865,8 @@
 卒	zj	zn
 卓	yo		yn
 協	ns
-单	hq		hn
-卖	na	nm	nw
+单	hq
+卖	na		nw
 南	nm		ng
 単	kq		kn
 卙	zh	zn	za
@@ -7893,13 +7893,13 @@
 卮	xf		xz
 卯	bm
 印	bf		bz
-危	xx		xz
+危	xx
 卲	pd		pz
 即	iz
 却	gk		gz
 卵	bl
 卶	ll		lz
-卷	hh		hz
+卷	hh
 卸	az
 卹	ta		tz
 卺	ak	az	af
@@ -7939,7 +7939,7 @@
 厜	xl	xg
 厝	xl		xo
 厞	xr
-原	xu		xy
+原	xu
 厠	xo		xp
 厡	xu		xk
 厢	xe		xq
@@ -7989,14 +7989,14 @@
 収	ir
 叏	vr
 叐	tn		tr
-发	sr		si
+发	sr
 叒	rr
 叓	nd		nr
 叔	yf	yr	yy
 叕	rr
 取	qr
 受	yw		yr
-变	zc		zr
+变	zc
 叙	jx		jr
 叚	cm	cr	cn
 叛	hu	hr	hx
@@ -8027,7 +8027,7 @@
 叴	kd
 叵	nd
 叶	dn
-号	df		da
+号	df
 司	af		ad
 叹	dr
 叺	dj
@@ -8039,7 +8039,7 @@
 吀	dl
 吁	df		dn
 吂	fd
-吃	de		da
+吃	de
 各	sg
 吅	dd
 吆	di
@@ -8048,12 +8048,12 @@
 吉	gd
 吊	dr
 吋	dk
-同	mf		md
+同	mf
 名	ld
-后	xf		xd
+后	xf
 吏	fd		fb
 吐	dg
-向	tm		td
+向	tm
 吒	dt		dr
 吓	df		dy
 吔	de
@@ -8160,7 +8160,7 @@
 呹	dt		dh
 呺	dd	da	df
 呻	do		dg
-呼	dt	dn	dh
+呼	dt		dh
 命	jd		jz
 呾	do		df
 呿	dg		dk
@@ -8236,12 +8236,12 @@
 哅	dn	dm	db
 哆	dl
 哇	dg
-哈	dj		dd
+哈	dj
 哉	np		nd
 哊	dn		dv
 哋	dg		de
 哌	dx		dt
-响	dt	dd	dm
+响	dt		dm
 哎	dl		db
 哏	di
 哐	dn
@@ -8270,7 +8270,7 @@
 哧	dg		dc
 哨	dy		dv
 哩	dd
-哪	da	dt	du
+哪	da		du
 哫	dp
 哬	dj		dz
 哭	dd		dm
@@ -8328,7 +8328,7 @@
 唡	dm
 唢	dy		do
 唣	du		dr
-唤	dx	dm
+唤	dx
 唥	dw	dk	dj
 唦	dk	dt	dy
 唧	di		dz
@@ -8362,11 +8362,11 @@
 啃	ds		dv
 啄	dj		di
 啅	dy	dn	do
-商	im	id	ih
+商	im
 啇	im		ic
 啈	dg
 啉	de
-啊	dt		dz
+啊	dt
 啋	dy		de
 啌	de		du
 啍	dg		dh
@@ -8449,7 +8449,7 @@
 喚	dx	dm
 喛	dy	dr	df
 喜	hd
-喝	do	df	dn
+喝	do		dn
 喞	du	dz	dv
 喟	dq		dv
 喠	dl		dd
@@ -8484,7 +8484,7 @@
 喽	dp		db
 喾	kw	kd	kq
 喿	dd	de
-嗀	gw	gr	gf
+嗀	gw	gd	gf
 嗁	dx		dz
 嗂	dy		da
 嗃	dg
@@ -8600,10 +8600,10 @@
 嘱	dc	dv	dt
 嘲	dn	dv	do
 嘳	dc		do
-嘴	ds	dt	dv
+嘴	ds		dv
 嘵	dg	dp
 嘶	dz	dt	dh
-嘷	do	dn	dw
+嘷	do	dn	dk
 嘸	de	dc	dl
 嘹	dm	dy	dh
 嘺	dt	dd	dm
@@ -8629,7 +8629,7 @@
 噎	dg	dz	dw
 噏	dj	dz	dd
 噐	dd		du
-噑	du	dn	dw
+噑	du	dn	dk
 噒	dp	dv	dl
 噓	dz		dc
 噔	dh		dz
@@ -8652,7 +8652,7 @@
 噥	dy		df
 噦	ds		dn
 噧	dl	dv	dq
-器	dd		dm
+器	dd
 噩	nd
 噪	dd	de
 噫	dx		dh
@@ -8703,7 +8703,7 @@
 嚘	dw	dh
 嚙	dl
 嚚	dd		dq
-嚛	du	de	di
+嚛	di	de	du
 嚜	dp		dg
 嚝	dx		dn
 嚞	gd		gg
@@ -8713,7 +8713,7 @@
 嚢	nd	nt	nw
 嚣	dd		dw
 嚤	dz		du
-嚥	dl	dc	dd
+嚥	dl	dc	da
 嚦	dx	ds
 嚧	dz	da	dq
 嚨	dt
@@ -8801,7 +8801,7 @@
 固	rc
 囻	rd
 囼	rk		rd
-国	rn		ri
+国	rn
 图	rh		rw
 囿	rn		rv
 圀	rh		rl
@@ -8812,7 +8812,7 @@
 圅	kr		kg
 圆	rd		ro
 圇	rj
-圈	rh	rz
+圈	rh
 圉	rg
 圊	ra		rv
 國	rp	rf	rd
@@ -8862,7 +8862,7 @@
 圷	gf		gy
 圸	gv
 圹	gx
-场	ga		ge
+场	ga
 圻	gt
 圼	og
 圽	gn		ge
@@ -8891,7 +8891,7 @@
 坔	kg
 坕	yg
 坖	mp		mg
-块	gn		gj
+块	gn
 坘	gf		gb
 坙	fo		fg
 坚	pr		pg
@@ -9027,7 +9027,7 @@
 埜	ee		eg
 埝	gj	gh	ga
 埞	gw		gt
-域	gp	gf	gd
+域	gp		gd
 埠	gt	gn	gk
 埡	gf		gc
 埢	gh	gz
@@ -9144,7 +9144,7 @@
 塑	hs	hg	hv
 塒	go	gk	gg
 塓	gw	ga	go
-塔	gl	gd	gj
+塔	gl		gj
 塕	gh	gz	gk
 塖	gx	gv	ga
 塗	kj	kg	kx
@@ -9191,7 +9191,7 @@
 墀	gc	gq	gk
 墁	go	gr	gy
 墂	gv		gf
-境	gx		gp
+境	gx
 墄	gn	gy
 墅	di		dg
 墆	gl	gr	gw
@@ -9213,12 +9213,12 @@
 墖	gj	gq	gd
 増	gh	go	gq
 墘	gn	ga	go
-墙	gg	gd	gh
+墙	gg		gh
 墚	gk	ge	gp
 墛	gc	gk	gf
 墜	th	tg	tj
 墝	gg	gp
-增	gh	go	gr
+增	gh		gr
 墟	gz		gc
 墠	gd	gn
 墡	gg	gd	gh
@@ -9878,9 +9878,9 @@
 嬯	bg	by	bd
 嬰	oo		ob
 嬱	ky	kb	kt
-嬲	qs		qb
+嬲	bq	bs
 嬳	bl	br	bu
-嬴	fd	fi	fv
+嬴	fd	fb	fv
 嬵	bi	br	bu
 嬶	bo	bl	bq
 嬷	bz	bk	bt
@@ -9891,7 +9891,7 @@
 嬼	bb	bp	bz
 嬽	by	bm	bg
 嬾	bx	bo
-嬿	bl	bc	bd
+嬿	bl	bc	ba
 孀	bt	bq	be
 孁	td	tb
 孂	br	ba	bi
@@ -9930,7 +9930,7 @@
 季	xh
 孤	hy
 孥	br		bh
-学	kw		kh
+学	kw
 孧	is		ih
 孨	hh
 孩	hk
@@ -9986,7 +9986,7 @@
 宛	wl		wz
 宜	wf
 宝	wn		wi
-实	ww		wm
+实	ww
 実	wa		wi
 宠	wt
 审	wo		wg
@@ -10017,28 +10017,28 @@
 宺	wd	wo	wf
 宻	wr	wv	wh
 宼	wm	wb	wp
-宽	wl		we
+宽	wl
 宾	wt		wh
-宿	wj	wu	wf
+宿	wj		wf
 寀	wy		we
 寁	wf	ws	wb
 寂	wy	wr	wf
 寃	ww
 寄	wm		wz
 寅	wf	wh	wd
-密	wh	wv	wt
+密	wh		wt
 寇	wm	wh	wp
 寈	wa		wv
 寉	wu
 寊	wy		wo
 寋	wq	wz	wh
-富	wf	wq	wd
+富	wf		wd
 寍	wh		wa
 寎	wa	wj	wf
 寏	wx	wm
 寐	wa
 寑	wj	wr	wb
-寒	wq	ww	wh
+寒	wq
 寓	wq		wv
 寔	wo		wt
 寕	wf	wa	wt
@@ -10133,7 +10133,7 @@
 尮	ov		oe
 尯	ox	oz
 尰	ol		od
-就	gy		go
+就	gy
 尲	oh	oc	ob
 尳	of
 尴	op	oa	or
@@ -10169,7 +10169,7 @@
 屒	cf
 屓	co
 屔	tf	tv	tc
-展	cl		ct
+展	cl
 屖	cn
 屗	cv		ck
 屘	cv		ch
@@ -10178,7 +10178,7 @@
 屛	ct	ce
 屜	cw	ca	cl
 屝	cr
-属	ct	cv	cd
+属	ct
 屟	cl	ce	ca
 屠	cq		co
 屡	cp		cb
@@ -10604,7 +10604,7 @@
 帅	pr
 帆	ro		ri
 帇	br
-师	pf		pr
+师	pf
 帉	rh		rp
 帊	rm
 帋	br
@@ -10634,7 +10634,7 @@
 帣	hh		hr
 帤	bd		br
 帥	tk		tr
-带	lw		lr
+带	lw
 帧	ry		ro
 帨	rh	rp	rd
 帩	ry		rv
@@ -10642,7 +10642,7 @@
 師	tk	tr	tf
 帬	bt	br	bd
 席	xl		xr
-帮	at		ar
+帮	at
 帯	lw		lr
 帰	pb	pr	pw
 帱	ra		rk
@@ -10665,7 +10665,7 @@
 幂	wo	wr	wm
 幃	rg
 幄	rc		ry
-幅	rf	rq	rd
+幅	rf		rd
 幆	ro	rf	rn
 幇	gg	gr	gk
 幈	rc	rl	rh
@@ -10744,7 +10744,7 @@
 庑	xd
 庒	xg		xi
 库	xy
-应	xk		xf
+应	xk
 底	xb		xi
 庖	xn		xv
 店	xy		xd
@@ -10755,7 +10755,7 @@
 府	xj		xk
 庝	xh		xw
 庞	xt
-废	xs	xi	xr
+废	xs		xr
 庠	xg
 庡	xt
 庢	xy
@@ -10763,13 +10763,13 @@
 庤	xg		xk
 庥	xj		xe
 度	xl		xr
-座	xj	xg
+座	xj
 庨	xq		xh
 庩	xj		xx
 庪	xu		xc
 庫	xy
 庬	xo		xe
-庭	xt	xu	xg
+庭	xt		xg
 庮	xy
 庯	xn
 庰	xh		xl
@@ -10901,7 +10901,7 @@
 弮	hh		hb
 弯	zc		zb
 弰	by		bv
-弱	bw		bb
+弱	bw
 弲	bd		bv
 弳	bf	bu	bo
 弴	bg		bh
@@ -10909,14 +10909,14 @@
 弶	bg		by
 強	bk		bc
 弸	bv
-弹	bh	bn	bq
+弹	bh		bq
 强	bd		bc
 弻	bf	bb	br
 弼	bf	bb	bu
 弽	bl	be	ba
 弾	bk	bn	bq
 弿	wq	wb	wh
-彀	gw	gr	gf
+彀	gw	gb	gf
 彁	bz
 彂	cb		co
 彃	bq	bu	bl
@@ -10940,7 +10940,7 @@
 录	bk
 彖	bj
 彗	aa		ab
-彘	bv		bo
+彘	bo	bv
 彙	bw	be	bq
 彚	bw	be	bq
 彛	bp	bl	bh
@@ -10965,7 +10965,7 @@
 彮	wh		we
 彯	vf		ve
 彰	xn		xe
-影	og	oe	oy
+影	og
 彲	fv	fe	ff
 彳	wc
 彴	wn		wi
@@ -10975,7 +10975,7 @@
 彸	wh		wk
 役	wr
 彺	wn
-彻	wr		wp
+彻	wr
 彼	wr
 彽	wb		wi
 彾	wj		wk
@@ -11003,7 +11003,7 @@
 徔	wl		wr
 徕	wa		wh
 徖	ww		wf
-得	wo	wk	wf
+得	wo
 徘	wr
 徙	ws
 徚	wx		wh
@@ -11026,7 +11026,7 @@
 徫	wg
 徬	wi	wl	ww
 徭	wy		wa
-微	wv	wh	wf
+微	wv		wf
 徯	wy	wm	wi
 徰	wf	ws
 徱	wv		wf
@@ -11035,7 +11035,7 @@
 徴	wv	wh	wn
 徵	wv	wh	wf
 徶	wf		wh
-德	wn	wh	wy
+德	wn
 徸	wi		wd
 徹	wb	wh	wv
 徺	wg	wp
@@ -11087,7 +11087,7 @@
 忨	hm		hp
 忩	hk		hh
 忪	hh		hk
-快	hn		hj
+快	hn
 忬	hi
 忭	hz		hy
 忮	hc	hx	hi
@@ -11167,7 +11167,7 @@
 怸	ei		eh
 怹	je		jh
 怺	hi		hk
-总	hd		hh
+总	hd
 怼	rk		rh
 怽	ha
 怾	hd		hh
@@ -11220,7 +11220,7 @@
 恭	lh
 恮	hj		hn
 息	oh
-恰	hj		hd
+恰	hj
 恱	hh	hp	hk
 恲	hh		hl
 恳	ih
@@ -11276,7 +11276,7 @@
 悥	sh
 悦	hh	hp	hd
 悧	hx		hp
-您	jx	jh	jy
+您	jx		jy
 悩	hk	hm	hb
 悪	fc		fh
 悫	gw	gh	go
@@ -11305,7 +11305,7 @@
 惂	hx		hp
 惃	ho	hv
 惄	yf	yh	yy
-情	ha		hv
+情	ha
 惆	hm	hd	hg
 惇	hg		hh
 惈	hq		he
@@ -11332,7 +11332,7 @@
 惝	hs
 惞	ht		he
 惟	hu
-惠	nq	nh	nk
+惠	nq		nk
 惡	fc		fh
 惢	hh
 惣	qn	qh	qe
@@ -11395,7 +11395,7 @@
 愜	hn	hj	hm
 愝	hn	hb	ho
 愞	hl		hm
-感	nf	nh	nd
+感	nf
 愠	ho		ha
 愡	hn	hh	he
 愢	hq		hh
@@ -11427,7 +11427,7 @@
 愼	hv	hh	hq
 愽	hn		hk
 愾	hv		hp
-愿	xu	xh	xy
+愿	xu		xy
 慀	hy	hm	hi
 慁	rj		rh
 慂	kk	kh	kt
@@ -11467,7 +11467,7 @@
 慤	gw	gh	go
 慥	hq	hu	hd
 慦	fk	fh	fi
-慧	aa	ah	ab
+慧	aa		ab
 慨	hi		hd
 慩	hy		hu
 慪	hn	hd
@@ -11558,7 +11558,7 @@
 憿	hu	hh	hl
 懀	hj	ho	hr
 懁	hy	ht	hf
-懂	hl	hd
+懂	hl
 懃	ld	lh	la
 懄	hl	hs	hd
 懅	hz		hj
@@ -11637,7 +11637,7 @@
 戎	pn
 戏	rp
 成	na
-我	tu		tp
+我	tu
 戒	pl
 戓	pd
 戔	pp
@@ -11672,7 +11672,7 @@
 戱	zc		zp
 戲	zz		zp
 戳	zu		zp
-戴	np	nh	nq
+戴	np		nq
 戵	qq	qp	qu
 戶	mh
 户	mh
@@ -11747,7 +11747,7 @@
 扼	ux		uz
 扽	uf		us
 找	up
-承	ak		at
+承	ak
 技	uc
 抁	uk		up
 抂	un
@@ -11785,7 +11785,7 @@
 抢	uj		uz
 抣	un		uw
 护	um
-报	uz		ur
+报	uz
 抦	uf	uj	um
 抧	ud		uh
 抨	ue		uh
@@ -11832,7 +11832,7 @@
 拑	uz
 拒	un
 拓	um
-拔	un	ui	ur
+拔	un		ur
 拕	uw		uv
 拖	ue
 拗	ui		us
@@ -11874,7 +11874,7 @@
 拻	un		uc
 拼	uh		ul
 拽	uo	ut	ua
-拾	uj		ud
+拾	uj
 拿	jd		ju
 挀	ux		ut
 持	ug		uk
@@ -11883,7 +11883,7 @@
 挄	um
 挅	uv		ue
 挆	uo		ue
-指	uv		uo
+指	uv
 挈	ap		au
 按	uw		ub
 挊	uy		uf
@@ -11893,7 +11893,7 @@
 挎	um	ua
 挏	um	ud	uf
 挐	bd		bu
-挑	up	uw
+挑	up		uw
 挒	ug		up
 挓	uw	ur	ut
 挔	ut
@@ -11934,7 +11934,7 @@
 挷	ua		ut
 挸	ue
 挹	ud		um
-挺	ut	uu	ug
+挺	ut		ug
 挻	ut	uu	us
 挼	uy		ub
 挽	uw		up
@@ -11974,7 +11974,7 @@
 损	ud		uo
 捠	ut		uh
 捡	uj	uf	uk
-换	ux	um
+换	ux
 捣	ux		uv
 捤	uc		uv
 捥	uw	uz	ul
@@ -12012,8 +12012,8 @@
 掅	ua		uv
 掆	um	uv	uh
 掇	ur
-授	uy	ur	uw
-掉	uy	un	uo
+授	uy		uw
+掉	uy
 掊	ui		ud
 掋	ux	ui	ub
 掌	su
@@ -12038,21 +12038,21 @@
 掟	uw		ut
 掠	ug		uy
 採	uy		ue
-探	uw	ue	uh
+探	uw		uh
 掣	qr	qu	qp
 掤	uv
 接	ui		ub
 掦	uo	ue	un
 控	ue		uu
 推	uu
-掩	um	ua	uo
+掩	um		uo
 措	ul		uo
 掫	uq		ur
 掬	un		up
 掭	uf	uh	um
 掮	um		uv
 掯	us		uv
-掰	uh	uu	up
+掰	hp	hu
 掱	uu
 掲	uo	uv	un
 掳	uz		us
@@ -12084,7 +12084,7 @@
 揍	ua	um	ui
 揎	uw	uf
 描	ul		uq
-提	uo		ut
+提	uo
 揑	up		uu
 插	ul		up
 揓	ul	ue
@@ -12177,7 +12177,7 @@
 搪	ux	ud	ub
 搫	ir		iu
 搬	ui		ur
-搭	ul	ud	uj
+搭	ul		uj
 搮	uv		ue
 搯	uy		up
 搰	uf
@@ -12195,14 +12195,14 @@
 搼	uh	uu
 搽	ul	ue	uj
 搾	ue		uw
-搿	uj	uu	ud
+搿	jd	ju
 摀	ux
 摁	ur	uh	um
 摂	uq	uw
 摃	uu		uo
 摄	uq	ur
 摅	uz		uh
-摆	uy	uk	ug
+摆	uy		ug
 摇	uy		ua
 摈	uw	uh	ut
 摉	ue	ul	uj
@@ -12252,7 +12252,7 @@
 摵	un	uy
 摶	un	uk	uq
 摷	uo	ue	uq
-摸	ul	um	uo
+摸	ul
 摹	lo	lu	lm
 摺	uz		uu
 摻	uk	ue
@@ -12305,7 +12305,7 @@
 撪	uk	uy	um
 撫	ue	uc	ul
 撬	uv
-播	ut	uq	up
+播	ut		up
 撮	uo	ur	uq
 撯	ug		uq
 撰	uv	uh
@@ -12337,12 +12337,12 @@
 擊	ym	yu	yr
 擋	us		uq
 擌	ur	uj	um
-操	ud	ue
+操	ud
 擎	lg	lu	lh
 擏	ul	uh	ug
 擐	uy	ut	uf
 擑	ud	up	uq
-擒	uj	uv	uz
+擒	uj	ub	uz
 擓	un	uu	uk
 擔	ux	us
 擕	uu		um
@@ -12385,10 +12385,10 @@
 擺	uy	uv	uk
 擻	uk	uh	uo
 擼	uw		uo
-擽	uu	ue	ui
+擽	ui	ue	uu
 擾	uw	uh
 擿	ui	uu	um
-攀	eb	eu
+攀	bb	bu	be
 攁	ug	ui
 攂	uq
 攃	ul	uf	uh
@@ -12469,7 +12469,7 @@
 敎	bn	bh
 敏	ek		eh
 敐	fh
-救	fk	fh	fi
+救	fk		fi
 敒	jo	jh	jg
 敓	hd	hh	hp
 敔	wd		wh
@@ -12487,7 +12487,7 @@
 敠	rr	rh
 敡	on	oh	oe
 敢	aq		ah
-散	lv		lh
+散	lv
 敤	qe		qh
 敥	cc		ch
 敦	gh
@@ -12500,11 +12500,11 @@
 敭	of	oh	on
 敮	lp		lh
 敯	do		dh
-数	pb		ph
+数	pb
 敱	vz		vh
 敲	gh
 敳	vz		vh
-整	xh	xs	xf
+整	xh		xf
 敵	im	ih	ic
 敶	te	th	to
 敷	nl		nh
@@ -12564,7 +12564,7 @@
 断	pa		pt
 斮	lo		lt
 斯	zh		zt
-新	ie		it
+新	ie
 斱	qo		qt
 斲	ct
 斳	ld	lt	la
@@ -12603,7 +12603,7 @@
 旔	lb		lu
 旕	lj	lv	lw
 旖	le	lz	lm
-旗	le	lh	lz
+旗	le		lz
 旘	lx		lp
 旙	lt	lq	lp
 旚	le	lf	lv
@@ -12817,14 +12817,14 @@
 暪	ol		om
 暫	yt		yo
 暬	gh	go	gg
-暭	ou	on	ow
+暭	ou	on	ok
 暮	lo		lm
 暯	ol	om	oo
 暰	ow	os	oj
 暱	on	od	ol
 暲	ox		on
 暳	oa	ob
-暴	ol	ok	oh
+暴	ol		oh
 暵	ol	oh	od
 暶	ol	ot	oe
 暷	on	ok	oq
@@ -12849,7 +12849,7 @@
 曊	ot		oo
 曋	ov	on	oo
 曌	ov	ou	oe
-曍	oo	on	ow
+曍	oo	on	ok
 曎	oy	og
 曏	oi	ot
 曐	oo	ol
@@ -12871,7 +12871,7 @@
 曠	ox		on
 曡	oo	of
 曢	ow	oy	om
-曣	ol	oc	od
+曣	ol	oc	oa
 曤	ot		ou
 曥	oz	oa	oq
 曦	og	op	ox
@@ -12888,7 +12888,7 @@
 曱	sj
 曲	yq
 曳	oa		ot
-更	fo		fb
+更	fo
 曵	oa	oi	ot
 曶	ne		no
 曷	on		of
@@ -12898,9 +12898,9 @@
 曻	ol		ov
 曼	oy		or
 曽	hq		ho
-曾	hr	ho	hy
+曾	hr
 替	hh		ho
-最	oq		or
+最	oq
 朁	dd		do
 朂	oq		os
 會	jr	jo	jy
@@ -12913,7 +12913,7 @@
 朊	vm		vp
 朋	vv
 朌	vh		vp
-服	vz		vr
+服	vz
 朎	vj		vk
 朏	vs		vm
 朐	vg
@@ -12927,9 +12927,9 @@
 朘	vk	vh
 朙	rh	rv	rm
 朚	fo		fv
-望	fv		fn
+望	fv
 朜	vg		vh
-朝	no	nv	nn
+朝	no
 朞	zh		zv
 期	zh		zv
 朠	vl	vm
@@ -13004,7 +13004,7 @@
 来	ah
 杦	ex		ei
 杧	ef
-杨	ea		ee
+杨	ea
 杩	en
 杪	ey		et
 杫	es
@@ -13257,7 +13257,7 @@
 桢	ey		eo
 档	ey		eb
 桤	ev
-桥	et	ep	em
+桥	et		em
 桦	ej	en	ev
 桧	ej		eb
 桨	al		ae
@@ -13285,7 +13285,7 @@
 桾	eb	ed	et
 桿	eo		ee
 梀	ex
-梁	kp	ke	kh
+梁	kp		kh
 梂	ef	ei	ek
 梃	et	eu	eg
 梄	ey
@@ -13348,7 +13348,7 @@
 梽	eg		eh
 梾	ea		eh
 梿	ey		eu
-检	ej	ef	ek
+检	ej		ek
 棁	eh	ep	ed
 棂	eb		ec
 棃	xp		xe
@@ -13385,7 +13385,7 @@
 棢	em	ef	eh
 棣	eb		ek
 棤	el		eo
-棥	eb	ee
+棥	bb	be
 棦	ex		eb
 棧	ep
 棨	mh		me
@@ -13536,7 +13536,7 @@
 楹	ev	ea	er
 楺	ei	ee	et
 楻	eu		en
-楼	ep		eb
+楼	ep
 楽	uw	ue
 楾	eu		ek
 楿	ex		eo
@@ -13562,7 +13562,7 @@
 榓	eh	ea	et
 榔	ei	et
 榕	ew		eh
-榖	gw	gr	gf
+榖	gw	ge	gf
 榗	ef	eo	ec
 榘	on	oe
 榙	el	ed	ej
@@ -13661,7 +13661,7 @@
 槶	er	ef	ep
 槷	gh	ge	gg
 槸	eg	ei	eh
-槹	eu	en	ew
+槹	eu	en	ek
 槺	ex	ek	eb
 槻	eh		ee
 槼	he
@@ -13670,7 +13670,7 @@
 槿	el	ea	ed
 樀	ei	ec	em
 樁	ea	ep	ei
-樂	ui	ue
+樂	iu	ie	ii
 樃	ei	ev
 樄	et	eo	ee
 樅	ew	es	ej
@@ -13678,7 +13678,7 @@
 樇	ej	ev	eg
 樈	ex		ep
 樉	em	eb
-樊	eb	em
+樊	bb	bm	be
 樋	ek	eu	et
 樌	ek		eo
 樍	ea		eo
@@ -13701,7 +13701,7 @@
 樞	en	ed
 樟	ex		en
 樠	el		em
-模	el	em	eo
+模	el		eo
 樢	ex
 樣	eg	ek	ei
 樤	ej	ee	eg
@@ -13780,14 +13780,14 @@
 橭	ec		en
 橮	eb		eo
 橯	ec	es
-橰	eo	en	ew
+橰	eo	en	ek
 橱	ex	ek	ez
 橲	eh		ed
 橳	ev	es	eh
 橴	es	ei	ev
 橵	el	eh	ev
 橶	en	ep	eo
-橷	eu	ep	ea
+橷	ea	ep	eu
 橸	eo
 橹	ew		eo
 橺	ea		eo
@@ -13891,7 +13891,7 @@
 櫜	nd	ne	nw
 櫝	eg	eo	ey
 櫞	ei	ej	eb
-櫟	eu	ee	ei
+櫟	ei	ee	eu
 櫠	ex	er	eh
 櫡	er	eo	eq
 櫢	ek	eh	eo
@@ -13986,7 +13986,7 @@
 欻	cc		ce
 欼	rr	re
 欽	ze
-款	gf		ge
+款	gf
 欿	xp		xe
 歀	ef		ee
 歁	zh	ze	za
@@ -14105,14 +14105,14 @@
 殲	gj	gf
 殳	rs
 殴	nb		nr
-段	uf		ur
+段	uf
 殶	in		ir
 殷	zr
 殸	gc		gr
 殹	no		nr
 殺	be		br
 殻	gw	gr	go
-殼	gw	gr	gf
+殼	gw	go	gf
 殽	bn	br	bv
 殾	qo		qr
 殿	cl	cr	ch
@@ -14246,7 +14246,7 @@
 氿	kk
 汀	ka
 汁	kn
-求	fk		fi
+求	fk
 汃	kh
 汄	kj
 汅	kf		ka
@@ -14367,7 +14367,7 @@
 沸	kt
 油	kd
 沺	kq
-治	kk		kd
+治	kk
 沼	kp		kd
 沽	kc
 沾	ky		kd
@@ -14393,7 +14393,7 @@
 泒	ky
 泓	kb		kk
 泔	kz
-法	kg		kk
+法	kg
 泖	kb
 泗	ky
 泘	kt	kn	kh
@@ -14412,7 +14412,7 @@
 泥	kc		kv
 泦	kc		kk
 泧	kn
-注	ki		kn
+注	ki
 泩	kl
 泪	kq
 泫	kz		ki
@@ -14466,7 +14466,7 @@
 洛	ks
 洜	sk
 洝	kw		kb
-洞	km	kd	kf
+洞	km		kf
 洟	km		kb
 洠	kk		kq
 洡	ka
@@ -14498,10 +14498,10 @@
 活	ka
 洼	kg
 洽	kj		kd
-派	kx		kt
+派	kx
 洿	km	ka
 浀	ky
-流	kb		ko
+流	kb
 浂	kh		km
 浃	kh
 浄	kx		kb
@@ -14511,7 +14511,7 @@
 浈	ky		ko
 浉	kp	kr	kf
 浊	kc
-测	ko		kp
+测	ko
 浌	kj		kp
 浍	kj		kb
 济	kq
@@ -14677,13 +14677,13 @@
 淮	ku
 淯	kb		kv
 淰	kj	kh	ka
-深	kw	ke	kh
+深	kw		kh
 淲	kz
 淳	kg		kh
 淴	kn	kh	ke
 淵	ka	kf
 淶	ke	kj
-混	ko	kv
+混	ko		kv
 淸	ka		kv
 淹	km	ka	ko
 淺	kp
@@ -14748,7 +14748,7 @@
 渵	kl		kq
 渶	kl	km
 渷	ka	kp	kd
-游	kl	kh	ke
+游	kl		ke
 渹	kn		ks
 渺	kq	kt	ky
 渻	ky	kq	kt
@@ -14836,7 +14836,7 @@
 溍	kf	ko	kc
 溎	ke	kg
 溏	kx	kd	kb
-源	kx	ky	ku
+源	kx		ku
 溑	ky		ko
 溒	kg	kt	kd
 溓	kh	kc	kb
@@ -14910,14 +14910,14 @@
 滗	kr		kv
 滘	kw	kd	kh
 滙	kn		ku
-滚	kt	kk	kh
+滚	kt		kh
 滛	ky		ka
 滜	ku	kn	km
 滝	kt
 滞	kl	kr	kw
 滟	ka	km	kx
 滠	kq	kr
-满	kl		km
+满	kl
 滢	kl	ki	kw
 滣	kf		kd
 滤	kz		kh
@@ -14991,7 +14991,7 @@
 漨	kh	ku	ka
 漩	kl	kt	ke
 漪	km	kz
-漫	ko	kr	ky
+漫	ko		ky
 漬	ka		ko
 漭	kl		km
 漮	kx	kk	kb
@@ -15040,7 +15040,7 @@
 潙	ky	kc	kt
 潚	kb	ka
 潛	kd	ko
-潜	kh	ko
+潜	kh
 潝	kj	kz	kd
 潞	kp		ks
 潟	kp	kc	kn
@@ -15058,7 +15058,7 @@
 潫	kh	ki
 潬	kd	kn
 潭	kv	kn	ko
-潮	kn	kv	ko
+潮	kn		ko
 潯	kb	kk	ku
 潰	kc		ko
 潱	kg	kz	kw
@@ -15140,7 +15140,7 @@
 澽	kz		kj
 澾	kg	ku
 澿	ke	kf
-激	ku	kh	kl
+激	ku		kl
 濁	ky	kc	kn
 濂	kx	kc	kh
 濃	ky		kf
@@ -15200,7 +15200,7 @@
 濹	kp		kg
 濺	ko	kp
 濻	kt	ko	kc
-濼	ku	ke	ki
+濼	ki	ke	ku
 濽	kh	ko
 濾	kz	kh	kq
 濿	kx	kv	kl
@@ -15310,7 +15310,7 @@
 灧	kv	km	ka
 灨	kx	ko	kn
 灩	kv	ka
-灪	ke		ka
+灪	ka	ke
 火	ch
 灬	ch
 灭	fc
@@ -15389,7 +15389,7 @@
 炶	cy		cd
 炷	ci		cn
 炸	cw
-点	yd		yc
+点	yd
 為	it	ic	ia
 炻	cm
 炼	cr		cy
@@ -15427,7 +15427,7 @@
 烜	cf		co
 烝	ak	ac	af
 烞	ce		cy
-烟	cr		cm
+烟	cr
 烠	cn		cv
 烡	cl		ch
 烢	cw	cr	ct
@@ -15441,7 +15441,7 @@
 烪	ch		cm
 烫	ka	kc	ke
 烬	cc	cw	ci
-热	uk	uc	ui
+热	uk
 烮	gp		gc
 烯	cb	cr	cn
 烰	cy		ch
@@ -15514,7 +15514,7 @@
 焳	cu
 焴	cb		cv
 焵	cm	cv	ch
-然	vm		vc
+然	vm
 焷	cu	cn	ct
 焸	oo		oc
 焹	cm	cf	ch
@@ -15563,7 +15563,7 @@
 煤	cz		ce
 煥	cx	cm
 煦	og		oc
-照	op	oc	od
+照	op		od
 煨	cq	ct	cf
 煩	cw
 煪	ch		cy
@@ -15619,7 +15619,7 @@
 熜	ct	ch	cr
 熝	cx
 熞	cq	cg	cr
-熟	gh	gc	gk
+熟	gh		gk
 熠	cz		cu
 熡	ck	cb	co
 熢	ch	cu	ca
@@ -15698,7 +15698,7 @@
 燫	cx	cc	ch
 燬	cp	cr	cu
 燭	cy	cc	cn
-燮	sc	sr
+燮	cs	cr	cc
 燯	ct	ck	cj
 燰	cy	ch	cw
 燱	cx		ch
@@ -15729,7 +15729,7 @@
 爊	cx		cc
 爋	cl	cs	cp
 爌	cx		cn
-爍	cu	ce	ci
+爍	ci	ce	cu
 爎	cw	cy	cm
 爏	cx	cs
 爐	cz	ca	cq
@@ -15757,7 +15757,7 @@
 爦	cq	ce	cr
 爧	ct	cj	cd
 爨	pm	pc	pf
-爩	ce		ca
+爩	ca	ce
 爪	ya
 爫	ya
 爬	ym
@@ -15765,7 +15765,7 @@
 爮	yn		yv
 爯	ym		yg
 爰	yf	yr	yn
-爱	yw	yr	yn
+爱	yw
 爲	yt	yc	ya
 爳	yt	yr	ya
 爴	rp	ry	rd
@@ -15788,11 +15788,11 @@
 牅	ax	at	ab
 牆	ag	ad	aj
 片	ap
-版	ax		ar
+版	ax
 牉	ah		au
 牊	ap		ad
 牋	ap
-牌	au	an	at
+牌	au		at
 牍	an	am	aa
 牎	an	ah	ae
 牏	aj	ap	av
@@ -15837,7 +15837,7 @@
 牶	hh		hq
 牷	qj		qn
 牸	qw		qh
-特	qg		qk
+特	qg
 牺	qv
 牻	qo		qe
 牼	qf	qu	qo
@@ -15887,7 +15887,7 @@
 犨	uu		uq
 犩	xb	xq	xa
 犪	qh		qo
-犫	us	uq	uu
+犫	su	sq
 犬	mq
 犭	mq
 犮	nr		ni
@@ -16047,7 +16047,7 @@
 獈	mk		ma
 獉	ma	mx	mi
 獊	mj	md	mm
-獋	mo	mn	mw
+獋	mo	mn	mk
 獌	mo	mr	my
 獍	mx		mp
 獎	av	am	ak
@@ -16056,7 +16056,7 @@
 獑	my		mt
 獒	ap	am	ah
 獓	ma	mh	mp
-獔	mu	mn	mw
+獔	mu	mn	mk
 獕	mv		mu
 獖	mn	mo	ml
 獗	mx	me	mh
@@ -16107,7 +16107,7 @@
 玄	zi
 玅	zi	zt	zy
 玆	zi		zz
-率	zi	zn	zw
+率	zi
 玈	zi	zt	ze
 玉	ni
 玊	ni	nw	nd
@@ -16209,7 +16209,7 @@
 珪	ng
 珫	nb		np
 珬	nn		nf
-班	pn	pw
+班	np
 珮	no	nr	nf
 珯	nq
 珰	ny		nb
@@ -16231,7 +16231,7 @@
 琀	nj	nd	na
 琁	ne		nt
 琂	ns
-球	nf	ni	nk
+球	nf		nk
 琄	nd		nv
 琅	ni
 理	nd
@@ -16280,7 +16280,7 @@
 琱	nm	nd	ng
 琲	nr	nw	nf
 琳	ne
-琴	nn	na	nj
+琴	nn		nj
 琵	nn	nv
 琶	nn		nm
 琷	ng		na
@@ -16344,7 +16344,7 @@
 瑱	nn	nh	nq
 瑲	nj	nd	nm
 瑳	ng		nu
-瑴	gw	gr	gf
+瑴	gw	gn	gf
 瑵	nr	nc	ni
 瑶	ny		na
 瑷	ny	nr	nw
@@ -16425,7 +16425,7 @@
 瓂	nl	na	ng
 瓃	nq
 瓄	ng	no	ny
-瓅	nu	ne	ni
+瓅	ni	ne	nu
 瓆	nt	no
 瓇	nw	nh
 瓈	nx	nk	np
@@ -16629,7 +16629,7 @@
 疎	tx
 疏	tb		to
 疐	nw	nt	nq
-疑	vo	vt	vk
+疑	vo
 疒	ab
 疓	av
 疔	aa
@@ -16681,7 +16681,7 @@
 痂	as		ad
 痃	az		ai
 痄	aw
-病	af	aj	am
+病	af		am
 痆	ac		av
 症	af		as
 痈	at
@@ -16872,7 +16872,7 @@
 皁	un
 皂	ur
 皃	up
-的	un		ui
+的	ue
 皅	um
 皆	vv		vu
 皇	un
@@ -16884,7 +16884,7 @@
 皍	uv		uz
 皎	ua		ub
 皏	uh		ul
-皐	uw	un
+皐	uk	us	un
 皑	uv
 皒	ut	up	uu
 皓	uq		ud
@@ -16901,16 +16901,16 @@
 皞	uu	un	um
 皟	ua		uo
 皠	uv		uu
-皡	uu	un	uw
+皡	uu	un	uk
 皢	ug	up
 皣	ul	uu	uf
 皤	ut	uq	up
-皥	uo	un	uw
+皥	uo	un	uk
 皦	uu	uh	ul
 皧	uy	uh	uw
 皨	uu	ug
 皩	un	um	uo
-皪	uu	ue	ui
+皪	ui	ue	uu
 皫	ux		uc
 皬	ut		uu
 皭	uy	uk
@@ -17027,7 +17027,7 @@
 眜	qf		qe
 眝	qw		qa
 眞	vq	vh	va
-真	nq		nh
+真	nq
 眠	qd
 眡	qb		qi
 眢	lz		lq
@@ -17087,13 +17087,13 @@
 睘	yf	yt	yd
 睙	qm
 睚	qx	qg
-睛	qa		qv
+睛	qa
 睜	qy		qb
 睝	xp		xq
 睞	qe	qj
 睟	qz	qn	qj
 睠	qh	qz
-睡	ql	qg
+睡	ql
 睢	qu
 督	yf	yq	yy
 睤	qq		ql
@@ -17133,7 +17133,7 @@
 瞆	qc		qo
 瞇	qp		qu
 瞈	qh	qz	qk
-瞉	gw	gr	gf
+瞉	gw	gq	gf
 瞊	qx	qd	qb
 瞋	qn	qh	qq
 瞌	qg	qa	qk
@@ -17360,9 +17360,9 @@
 硩	ut		um
 硪	mt	mp	mu
 硫	mb		mo
-硬	mf	mb	mo
+硬	mf		mo
 硭	ml		mf
-确	mx		mt
+确	mx
 硯	me
 硰	ky	km	kt
 硱	mr		me
@@ -17394,7 +17394,7 @@
 碋	mv		mz
 碌	mb		mk
 碍	mo	mk	mf
-碎	mz	mn	mj
+碎	mz		mj
 碏	ml		mo
 碐	mg	mh
 碑	mu	mn	mt
@@ -17551,8 +17551,8 @@
 礨	qq	qm
 礩	mt	mo
 礪	mx	mv	ml
-礫	mu	me	mi
-礬	eb	em
+礫	mi	me	mu
+礬	bb	bm	be
 礭	mt		mu
 礮	mn	mb	ma
 礯	mc	mi
@@ -17651,7 +17651,7 @@
 禌	fh	fi
 禍	ff		fd
 禎	fy		fo
-福	ff	fq	fd
+福	ff
 禐	fy	fr	ff
 禑	fq		fv
 禒	fb		fj
@@ -17695,7 +17695,7 @@
 禸	vr
 禹	td		tv
 禺	qv
-离	zb	zv	zm
+离	zb
 禼	yr	yv	yb
 禽	jz	jv	jb
 禾	xh
@@ -17815,7 +17815,7 @@
 稰	xt		xv
 稱	xy	xg	xm
 稲	xy	xo	xg
-稳	xx	xh	xb
+稳	xx		xb
 稴	xh	xc	xb
 稵	xh	xi
 稶	xp	xe	xd
@@ -17915,7 +17915,7 @@
 窔	ea		eb
 窕	ep	ew
 窖	eq		ed
-窗	et	eh	er
+窗	et
 窘	eb	ed	et
 窙	eq		eh
 窚	en		ea
@@ -18093,7 +18093,7 @@
 筆	rb
 筇	ru		rt
 筈	ra
-等	rg		rk
+等	rg
 筊	ra		rb
 筋	rv		rs
 筌	rj		rn
@@ -18101,7 +18101,7 @@
 筎	rb		rd
 筏	rj		rp
 筐	rn
-筑	ru	ri	ro
+筑	ru		ro
 筒	rm	rd	rf
 筓	re
 答	rj		rd
@@ -18148,7 +18148,7 @@
 筽	rd	rm	rf
 签	rj	rf	rk
 筿	rh		re
-简	ra		ro
+简	ra
 箁	ri		rd
 箂	re	rj
 箃	rq		rr
@@ -18272,7 +18272,7 @@
 篹	rq	rz	rm
 篺	ru	rn
 篻	rv		rf
-篼	ru	rp	rb
+篼	rb	rp	ru
 篽	rw	rz	ra
 篾	ry	ri	rn
 篿	rn	rk	rq
@@ -18466,7 +18466,7 @@
 粻	pp
 粼	pl	po	pv
 粽	pw		pf
-精	pa		pv
+精	pa
 粿	pq		pe
 糀	pl	pv	pj
 糁	pk	pe	pm
@@ -18487,7 +18487,7 @@
 糐	pn		pk
 糑	pb	pw
 糒	pl	pt
-糓	gw	gr	gf
+糓	gw	gp	gf
 糔	pr	pc	pi
 糕	pg		pc
 糖	px	pd	pb
@@ -18571,7 +18571,7 @@
 紤	it
 紥	ua		ui
 紦	im
-紧	pr		pi
+紧	pr
 紨	ij		ik
 紩	it		ih
 紪	is		iv
@@ -18820,7 +18820,7 @@
 縝	in	ih	iq
 縞	ig
 縟	if		ik
-縠	gw	gr	gf
+縠	gw	gi	gf
 縡	iw		in
 縢	vh	vi
 縣	qf	qi	qy
@@ -18921,7 +18921,7 @@
 纂	rq	ri	rm
 纃	iq
 纄	il	iu	ih
-纅	iu	ie	ii
+纅	ii	ie	iu
 纆	ip		ig
 纇	pi		pw
 纈	ig	iw	id
@@ -18995,7 +18995,7 @@
 绌	is		im
 绍	ip		id
 绎	ir		iu
-经	ir		iu
+经	ir
 绐	ik		id
 绑	ia		it
 绒	ip		in
@@ -19005,7 +19005,7 @@
 绖	iy
 绗	ip
 绘	ij		ib
-给	ij		id
+给	ij
 绚	in		io
 绛	ih		iv
 络	is
@@ -19019,13 +19019,13 @@
 绤	ih
 绥	iy		ib
 绦	ih		ie
-继	ip		ia
+继	ip
 绨	ih		it
 绩	ia		io
 绪	iq		io
 绫	ig	ih
 绬	il	im
-续	in	im	ia
+续	in		ia
 绮	im		iz
 绯	ir
 绰	iy	in	io
@@ -19063,7 +19063,7 @@
 缐	iu		ik
 缑	ij	io	in
 缒	it	iu	ik
-缓	iy	ir	if
+缓	iy		if
 缔	ii	ir	iw
 缕	ip		ib
 编	im		ii
@@ -19085,7 +19085,7 @@
 缦	io	ir	iy
 缧	iq		ii
 缨	io	ib
-缩	iw	iu	ij
+缩	iw		ij
 缪	iz	ie	ij
 缫	io	ie	iq
 缬	ig	iw	id
@@ -19102,7 +19102,7 @@
 缷	az
 缸	au
 缹	ac
-缺	an		aj
+缺	an
 缻	ar
 缼	ae
 缽	ae		af
@@ -19154,7 +19154,7 @@
 罫	yg	yy
 罬	yr
 罭	yp	yf	yd
-置	yn	yf	yq
+置	yn
 罯	yx
 罰	ys		yp
 罱	yn	yg	ym
@@ -19208,7 +19208,7 @@
 羡	gw		ge
 羢	gp		gn
 羣	bt	bg	bd
-群	bt	bg	bd
+群	bt
 羥	gf	gu	go
 羦	gw	gp	gm
 羧	gk	gh
@@ -19228,7 +19228,7 @@
 羵	gn	go	gl
 羶	gz	gf	gr
 羷	gj		gd
-羸	fd	fi	fv
+羸	fd	fg	fv
 羹	gc	gm	gg
 羺	gt		gl
 羻	gx	gh	ga
@@ -19290,12 +19290,12 @@
 翳	no	nz	nr
 翴	zy		zu
 翵	zx
-翶	uw	uz
+翶	uk	uz	un
 翷	pl	pz	pv
 翸	nl	nz	no
 翹	gg	gz
-翺	ow	oz
-翻	tp	tz	tq
+翺	ok	oz	on
+翻	tp
 翼	zq	zh	zl
 翽	sn	sz	sf
 翾	yf	yz	yd
@@ -19303,7 +19303,7 @@
 耀	mz		mu
 老	ql
 耂	ql
-考	qf		qa
+考	qf
 耄	qv	ql	qm
 者	qo
 耆	qo
@@ -19390,7 +19390,7 @@
 聗	qm	qj
 聘	qd	qa	qf
 聙	qa		qv
-聚	qr	qk	qt
+聚	qr		qt
 聛	qu	qn	qt
 聜	qe		qu
 聝	qp	qf	qd
@@ -19548,7 +19548,7 @@
 胵	vy
 胶	va		vb
 胷	nb	nv	nm
-胸	vn	vm	vb
+胸	vn		vb
 胹	vl
 胺	vw		vb
 胻	vp
@@ -19573,7 +19573,7 @@
 脎	vb		ve
 脏	vx		vg
 脐	vq
-脑	vz	vm	vb
+脑	vz		vb
 脒	vp	vy	vm
 脓	vw		vt
 脔	zc	zj	zm
@@ -19582,7 +19582,7 @@
 脗	vn	vd	ve
 脘	vw	vp	vm
 脙	vf	vi	vk
-脚	vg	vz	vk
+脚	vg
 脛	vf	vu	vo
 脜	vf		vo
 脝	vg		vr
@@ -19605,14 +19605,14 @@
 脮	vy		vb
 脯	vn
 脰	vz
-脱	vh	vp	vd
+脱	vh		vd
 脲	vc		vk
 脳	vk	vm	vb
 脴	vc		vd
 脵	vd	vm	vf
 脶	vd	vj	vm
 脷	vx		vp
-脸	vj	vf	vk
+脸	vj		vk
 脹	vp
 脺	vz	vn	vj
 脻	vf	vs	vb
@@ -19682,7 +19682,7 @@
 腻	vp	vo	vm
 腼	vb
 腽	vo		va
-腾	vh	vn
+腾	vh
 腿	vi		vu
 膀	vi	vl	vw
 膁	vh	vc	vb
@@ -19773,7 +19773,7 @@
 臖	pm	pv	pf
 臗	vw	vi	vl
 臘	vo		vp
-臙	vl	vc	vd
+臙	vl	vc	va
 臚	vz	va	vq
 臛	vt		vu
 臜	vq	vo	vp
@@ -19795,7 +19795,7 @@
 臬	oe
 臭	om
 臮	oj
-臯	ow	on
+臯	ok	os	on
 臰	og		ov
 臱	oe		ol
 臲	oe	oz	ox
@@ -19932,7 +19932,7 @@
 艵	hl	hm	hx
 艶	yz	ym	yx
 艷	va	vm
-艸	lc
+艸	ss
 艹	lc
 艺	la
 艻	ls
@@ -19989,7 +19989,7 @@
 芮	lm		lj
 芯	lh
 芰	lc
-花	lj		lv
+花	lj
 芲	lj
 芳	ll
 芴	ln		le
@@ -20141,7 +20141,7 @@
 荆	lf	lp	ll
 荇	lp
 荈	ll		lv
-草	lo		ln
+草	lo
 荊	lf	lp	ll
 荋	ll
 荌	lw		lb
@@ -20165,7 +20165,7 @@
 荞	lt	lp	lm
 荟	lj		lb
 荠	lq
-荡	lk	le	la
+荡	lk		la
 荢	lw	ln	lf
 荣	lw		le
 荤	lw		ly
@@ -20179,7 +20179,7 @@
 荬	la	lm	lw
 荭	li		lu
 荮	li		lk
-药	li		ln
+药	li
 荰	le		lg
 荱	lc		lv
 荲	ld
@@ -20361,10 +20361,10 @@
 萢	lk	lv	ln
 萣	lw		lt
 萤	lw		lc
-营	lw	ld
+营	lw		ld
 萦	lw		li
 萧	lb	lh	lp
-萨	lt	lx	li
+萨	lt
 萩	lx		lc
 萪	lx		lj
 萫	lx		lo
@@ -20385,7 +20385,7 @@
 萺	lo		lq
 萻	lx
 萼	ld	la
-落	lk		ls
+落	lk
 萾	lv	la	lr
 萿	lk		la
 葀	lu		la
@@ -20477,7 +20477,7 @@
 蒖	ln	lh	lq
 蒗	lk	li
 蒘	lb	lu	ld
-蒙	lw	lj	lf
+蒙	lw		lf
 蒚	ln
 蒛	la	lj	ln
 蒜	lf
@@ -20545,7 +20545,7 @@
 蓚	lj	le	lg
 蓛	le	lh	lm
 蓜	ly		lv
-蓝	lp	la	lr
+蓝	lp
 蓞	ly		lp
 蓟	lw		lp
 蓠	lz	lv	lb
@@ -20636,7 +20636,7 @@
 蔵	ln		lq
 蔶	la		lo
 蔷	lg	ld	lh
-蔸	lu	lp	lb
+蔸	lb	lp	lu
 蔹	lj	lh	lk
 蔺	la		lu
 蔻	lw	lh	lm
@@ -20809,7 +20809,7 @@
 藢	lw	lh	lv
 藣	ly	lv	lk
 藤	lv	lk	lh
-藥	lu	le	li
+藥	li	le	lu
 藦	lz		lu
 藧	li	lr	ly
 藨	lx		lc
@@ -21351,7 +21351,7 @@
 蠀	cw	co	ce
 蠁	ii	ic
 蠂	cl	ce
-蠃	fd	fi	fv
+蠃	fd	fc	fv
 蠄	cj	cv	cz
 蠅	cd
 蠆	lq	lc	lv
@@ -21578,7 +21578,7 @@
 裣	tj	tf	tk
 裤	tx		ty
 裥	ta		to
-裦	tu	tt	ti
+裦	tb	tt	tf
 裧	tc
 裨	tu	tn	tt
 裩	to	tv
@@ -21618,8 +21618,8 @@
 褋	tl	te	ta
 褌	tw		ty
 褍	tv		tl
-褎	tu	th	tx
-褏	tu	ty	td
+褎	tb	tx	tf
+褏	tb	td	tf
 褐	to	tf	tn
 褑	ty	tr	tf
 褒	tj	te	td
@@ -21671,7 +21671,7 @@
 襀	ta		to
 襁	tb	tc	td
 襂	tk	te
-襃	tu	te	td
+襃	tb	td	tf
 襄	td	tf
 襅	tq	tu	tl
 襆	tc	ti	tg
@@ -21727,7 +21727,7 @@
 襸	tq	to	tp
 襹	tf	tx	tv
 襺	tl	tc	tr
-襻	te	tu	tb
+襻	tb	tu
 襼	tl	tb	tg
 襽	tl	th	ta
 襾	vx
@@ -21738,7 +21738,7 @@
 覃	vo		vn
 覄	vj		vm
 覅	vb	ve	vn
-覆	vw	vh	ve
+覆	vw		ve
 覇	vt		vv
 覈	vu	vh	vl
 覉	vt	vz	vm
@@ -21831,7 +21831,7 @@
 觠	hh	ht	hx
 觡	xt		xs
 觢	ap	at	ax
-解	xt	xq	xp
+解	xt
 觤	xt	xz	xx
 觥	xt		xm
 触	xt		xc
@@ -21855,7 +21855,7 @@
 觸	xt	xc	xy
 觹	xt	xm	xu
 觺	vo	vt	vk
-觻	xt	xe	xu
+觻	xt	xe	xi
 觼	xt	xh	xx
 觽	xt	xm	xv
 觾	xt	xc	xl
@@ -22218,7 +22218,7 @@
 譣	sj		sd
 譤	su	sh	sl
 譥	ul	us	uh
-警	lg	ls	lh
+警	lg
 譧	sx	sc	sh
 譨	sy		sf
 譩	sx		sh
@@ -22256,9 +22256,9 @@
 讉	sc	su	so
 變	si	sh
 讋	ts
-讌	sl	sc	sd
+讌	sl	sc	sa
 讍	sn	sd
-讎	us	ui	uu
+讎	su	si
 讏	pv	ps	pd
 讐	uu		us
 讑	sj	sd
@@ -22275,7 +22275,7 @@
 讜	ss		sp
 讝	sd	sh
 讞	sz	sm	sn
-讟	sg	ss	sy
+讟	gy	gs	go
 讠	sy
 计	sn
 订	sa
@@ -22300,7 +22300,7 @@
 讵	sn
 讶	sl
 讷	sm		sj
-许	se		sn
+许	se
 讹	sj		sv
 论	sj
 讻	sb		sm
@@ -22309,7 +22309,7 @@
 设	sr
 访	sl
 诀	sn		sj
-证	sf		ss
+证	sf
 诂	sc
 诃	sz
 评	se		sh
@@ -22317,11 +22317,11 @@
 识	sd		sh
 诇	sm		sd
 诈	sw
-诉	st		si
+诉	st
 诊	sj		se
 诋	sb		si
 诌	sx		sb
-词	sa	sd	sf
+词	sa		sf
 诎	ss		sm
 诏	sp		sd
 诐	sr
@@ -22329,7 +22329,7 @@
 诒	sk		sd
 诓	sn
 诔	sa
-试	sp		su
+试	sp
 诖	sg
 诗	sg		sk
 诘	sg		sd
@@ -22353,20 +22353,20 @@
 诪	sa		sk
 诫	sp		sl
 诬	su	sj
-语	sw		sd
+语	sw
 诮	sy		sv
-误	sd	sm	sf
+误	sd		sf
 诰	sq		sd
 诱	sx		sv
 诲	se		sk
 诳	sm		sn
-说	sh	sp	sd
+说	sh
 诵	sk		st
 诶	sk		so
 请	sa		sv
 诸	sq		so
 诹	sq		sr
-诺	sl	sd	sn
+诺	sl		sn
 读	sn	sm	sa
 诼	sj		si
 诽	sr
@@ -22375,7 +22375,7 @@
 谀	sp		sj
 谁	su
 谂	sj	sh	sa
-调	sm	sd	sg
+调	sm		sg
 谄	sx		sp
 谅	sg		sy
 谆	sg		sh
@@ -22406,7 +22406,7 @@
 谟	sl	sm	so
 谠	ss		sp
 谡	sq	sh
-谢	sz		sk
+谢	sz
 谣	sy		sa
 谤	si	sl	sw
 谥	sk		sa
@@ -22484,7 +22484,7 @@
 豭	jc	jr	jm
 豮	jn	jo	jl
 豯	jy	jm	ji
-豰	gw	gr	gf
+豰	gw	gj	gf
 豱	jo		ja
 豲	jx	jy	ju
 豳	vj
@@ -22719,10 +22719,10 @@
 赘	ap	ao	ah
 赙	on		ok
 赚	oh	oc	ob
-赛	wq	wo	wh
+赛	wq		wh
 赜	qa		qo
 赝	xj	xo	xu
-赞	qp	qo	qq
+赞	qp		qq
 赟	vf	vo	vp
 赠	oh	oo	or
 赡	ox	os
@@ -22791,7 +22791,7 @@
 趠	py	pn	po
 趡	pu
 趢	pb		pk
-趣	pq		pr
+趣	pq
 趤	pw		pm
 趥	ph		py
 趦	pw	pd	pe
@@ -22823,7 +22823,7 @@
 跀	pv
 跁	pm
 跂	pc
-跃	pt		pm
+跃	pt
 跄	pj		pz
 跅	pt		pi
 跆	pk		pd
@@ -22860,7 +22860,7 @@
 跥	pv		pe
 跦	pt		pa
 跧	pj		pn
-跨	pm	pa
+跨	pm
 跩	po	pt	pa
 跪	px	pz
 跫	uo	up	ui
@@ -22871,7 +22871,7 @@
 跰	ph		pl
 跱	pg		pk
 跲	pj		pd
-跳	pp	pw
+跳	pp		pw
 跴	pv
 践	pf		pp
 跶	pm		pu
@@ -23030,7 +23030,7 @@
 躏	pl	pu	pa
 躐	po		pp
 躑	ph	pt	py
-躒	pu	pe	pi
+躒	pi	pe	pu
 躓	pt	po
 躔	px	pg	pd
 躕	px	pk	ph
@@ -23238,7 +23238,7 @@
 轟	yy
 轠	yq
 轡	iy	id	ii
-轢	yu	ye	yi
+轢	yi	ye	yu
 轣	yx	ys
 轤	yz	ya	yq
 轥	yl	yu	ya
@@ -23248,7 +23248,7 @@
 轩	ye
 轪	ym	yc	yd
 轫	yp		yi
-转	ym	yi	ya
+转	ym
 轭	yx		yz
 轮	yj
 软	ye
@@ -23263,7 +23263,7 @@
 轸	yj		ye
 轹	yb		yy
 轺	yp		yd
-轻	yr		yu
+轻	yr
 轼	yp		yu
 载	np		ny
 轾	yy
@@ -23287,7 +23287,7 @@
 辐	yf	yq	yd
 辑	yd		yq
 辒	yo		ya
-输	yj	yp	yv
+输	yj		yv
 辔	iy	id	ii
 辕	yg	yt	yd
 辖	yw	yd	ya
@@ -23311,10 +23311,10 @@
 辨	np	nx	nn
 辩	ns	nx	nn
 辪	st	sn	sk
-辫	ni	nx	nn
+辫	in	ix
 辬	nv	nx	nn
 辭	yk	yn	ym
-辮	ni	nx	nn
+辮	in	ix
 辯	ns	nx	nn
 辰	fc
 辱	fk
@@ -23346,7 +23346,7 @@
 迋	nu
 迌	vu
 迍	fs		fu
-迎	bz		bu
+迎	bz
 迏	mi		mu
 运	bu
 近	tu
@@ -23360,7 +23360,7 @@
 这	vu
 迚	dg		du
 进	qu
-远	mp		mu
+远	mp
 违	gu
 连	yu
 迟	ci		cu
@@ -23397,9 +23397,9 @@
 迾	gp		gu
 迿	no		nu
 退	iu
-送	hm		hu
+送	hm
 适	au
-逃	pw	pu
+逃	pw
 逄	hv		hu
 逅	xf	xu	xd
 逆	hs		hu
@@ -23422,7 +23422,7 @@
 逗	zu
 逘	ko		ku
 這	su
-通	kt		ku
+通	kt
 逛	mn		mu
 逜	wd		wu
 逝	ut		uu
@@ -23467,7 +23467,7 @@
 遄	vl		vu
 遅	cg		cu
 遆	iw	iu	ir
-遇	qv		qu
+遇	qv
 遈	ot		ou
 遉	yo		yu
 遊	le	lu	lh
@@ -23479,7 +23479,7 @@
 遐	cm	cu	cn
 遑	un		uu
 遒	hy		hu
-道	ho		hu
+道	ho
 達	gg		gu
 違	gu
 遖	nm	nu	ng
@@ -23559,7 +23559,7 @@
 邠	hp		ht
 邡	lt	lf	le
 邢	fl		ft
-那	au		at
+那	au
 邤	tt
 邥	wp		wt
 邦	at
@@ -23628,7 +23628,7 @@
 郥	ot
 郦	fv	ft
 郧	do		dt
-部	id		it
+部	id
 郩	bn	bt	bv
 郪	fb	ft
 郫	ut		un
@@ -23649,7 +23649,7 @@
 郺	ll	lm	lo
 郻	qa	qt	qo
 郼	gt
-都	qo		qt
+都	qo
 郾	no	nt	nb
 郿	cq		ct
 鄀	ln	lt	ld
@@ -23716,7 +23716,7 @@
 鄽	xd	xt	xh
 鄾	wh	wt
 鄿	ld	lt
-酀	ld	lt	la
+酀	la	lt	ld
 酁	wv	wt
 酂	qp	qt	qq
 酃	td	tt
@@ -23789,7 +23789,7 @@
 醆	yp
 醇	yg		yh
 醈	yc
-醉	yz	yn	yj
+醉	yz
 醊	yr
 醋	yl		yo
 醌	yo	yv
@@ -23798,7 +23798,7 @@
 醏	yq		yo
 醐	yc		yv
 醑	yt		yv
-醒	yo		yl
+醒	yo
 醓	yw	ya	yp
 醔	xc		xy
 醕	yg		yo
@@ -23840,7 +23840,7 @@
 醹	yt		yl
 醺	yl		yp
 醻	yg	yk	ya
-醼	yl	yc	yd
+醼	yl	yc	ya
 醽	yt	yd
 醾	yz		yp
 醿	yz		yi
@@ -23854,7 +23854,7 @@
 采	ye
 釈	tp	ti	tc
 釉	tp		td
-释	tp	tu	tr
+释	tp		tr
 釋	tp	tg	ty
 里	dl
 重	ld
@@ -24516,7 +24516,7 @@
 鑝	zl	zu	zh
 鑞	zo		zp
 鑟	zg	zo	zy
-鑠	zu	ze	zi
+鑠	zi	ze	zu
 鑡	zl
 鑢	zz	zh	zq
 鑣	zx		zc
@@ -24597,7 +24597,7 @@
 钮	za		zg
 钯	zm	zj	zb
 钰	zn		zi
-钱	zf		zp
+钱	zf
 钲	zf		zs
 钳	zz
 钴	zc
@@ -24613,7 +24613,7 @@
 钾	zs
 钿	zq	zj	zt
 铀	zd
-铁	zt		zh
+铁	zt
 铂	zu
 铃	zj		zk
 铄	zb		zy
@@ -24701,7 +24701,7 @@
 锖	za		zv
 锗	zq		zo
 锘	zl	zd	zn
-错	zl		zo
+错	zl
 锚	zl		zq
 锛	zm	zl	zn
 锜	zm		zz
@@ -24747,7 +24747,7 @@
 镄	zt		zo
 镅	zc		zq
 镆	zl	zm	zo
-镇	zn	zh	zq
+镇	zn		zq
 镈	zn		zk
 镉	zn
 镊	zq	zr
@@ -24925,7 +24925,7 @@
 闶	az		ao
 闷	ah
 闸	as
-闹	az		ar
+闹	az
 闺	ag
 闻	aq
 闼	am		au
@@ -25030,7 +25030,7 @@
 陟	ts
 陠	tn
 陡	tp
-院	tw	tp	tm
+院	tw
 陣	ty
 除	tj		tx
 陥	tx	to	tg
@@ -25066,7 +25066,7 @@
 隃	tj	tp	tv
 隄	to		tt
 隅	tq		tv
-隆	th	tl	tf
+隆	th		tf
 隇	tn	tb	tf
 隈	tq	tt	tf
 隉	tp		tu
@@ -25075,8 +25075,8 @@
 隌	tx
 隍	tu		tn
 階	tv	tu
-随	tn	tu	tv
-隐	tx	th	tb
+随	tn
+隐	tx
 隑	tv		tz
 隒	th	tc	tb
 隓	tn	tu
@@ -25128,7 +25128,7 @@
 雁	xj		xu
 雂	ja		ju
 雃	fl		fu
-雄	nk		nu
+雄	nk
 雅	lu
 集	ue
 雇	mu
@@ -25156,7 +25156,7 @@
 雝	od	ou	om
 雞	yi	yu	ym
 雟	su	sd	sm
-雠	us	ui	uu
+雠	su	si
 雡	zj	zu	ze
 離	zb	zu	zm
 難	ld	lu	lh
@@ -25277,7 +25277,7 @@
 靖	ia		iv
 靗	av		am
 靘	av	am	ax
-静	av	ab	ax
+静	av		ax
 靚	av		ae
 靛	av	at	aw
 靜	av	ab	ay
@@ -25421,7 +25421,7 @@
 韦	gw
 韧	gp		gi
 韨	gn	gi	gr
-韩	no	ng	nn
+韩	no		nn
 韪	ot		og
 韫	go		ga
 韬	gy		gp
@@ -25570,7 +25570,7 @@
 须	ew
 顼	nw
 顽	mp		mw
-顾	xz		xw
+顾	xz
 顿	fs		fw
 颀	tw
 颁	hp		hw
@@ -25600,7 +25600,7 @@
 颙	qv		qw
 颚	dd	dw	dm
 颛	vl		vw
-颜	ix	iw	ie
+颜	ix
 额	ws		ww
 颞	qr	qw
 颟	lm		lw
@@ -25660,7 +25660,7 @@
 飕	ob	or	op
 飖	ya	yb	yo
 飗	ob	oq
-飘	vf	vb	vo
+飘	vf		vo
 飙	mm	mb
 飚	ob	oc
 飛	cf
@@ -25716,7 +25716,7 @@
 餍	xm		xq
 餎	qs
 餏	qt
-餐	gr		gq
+餐	gr
 餑	qn	qh	qw
 餒	qy		qb
 餓	qt	qp	qu
@@ -25809,7 +25809,7 @@
 饪	qt		qg
 饫	qt		qm
 饬	qe		qs
-饭	qx		qr
+饭	qx
 饮	qe
 饯	qf		qp
 饰	qe		qr
@@ -26052,7 +26052,7 @@
 驝	ng	ne	nw
 驞	nw	no	nf
 驟	nq	nk	nr
-驠	nl	nc	nd
+驠	nl	nc	na
 驡	tn
 驢	nz	na	nq
 驣	nh	nn
@@ -26096,7 +26096,7 @@
 骉	nn
 骊	nf	nv
 骋	nd	na	nf
-验	nj	nf	nk
+验	nj
 骍	nn
 骎	nb	nr	nw
 骏	nk	nh
@@ -26261,7 +26261,7 @@
 鬮	jw
 鬯	pm		pv
 鬰	eb	ee
-鬱	ea	ee
+鬱	ae
 鬲	ng
 鬳	zn
 鬴	nn
@@ -26583,7 +26583,7 @@
 鱰	wy	wo	wq
 鱱	wx	wv	wl
 鱲	wo		wp
-鱳	wu	we	wi
+鱳	wi	we	wu
 鱴	wl	wi	wy
 鱵	wr	wd	wn
 鱶	wg	wi
@@ -26965,7 +26965,7 @@
 鷮	tm	tx	td
 鷯	mh	mx	mo
 鷰	ld	lx	la
-鷱	ow	ox
+鷱	ok	ox	on
 鷲	gy	gx	go
 鷳	av		ax
 鷴	ae		ax
@@ -27460,7 +27460,7 @@
 鿺	ah		ax
 鿻	pn		pr
 鿼	ps		pd
-鿽	ew
+鿽	de
 鿾	gi	gt
 鿿	nj		nk
 郎	ii		it
@@ -27468,7 +27468,7 @@
 秊	xl
 裏	td
 隣	tp	tv	tl
-嗀	gw	gr	gf
+嗀	gw	gd	gf
 﨎	vu		vr
 﨏	gh
 﨑	vi		vz
@@ -28513,7 +28513,7 @@
 𠒱	cd	cp	cn
 𠒲	cp
 𠒳	fh	fp	fk
-𠒴	ui	up
+𠒴	iu	ip	ii
 𠒵	mx		mh
 𠒶	gp		gg
 𠒸	oh		om
@@ -28828,7 +28828,7 @@
 𠘖	wt	wo
 𠘗	ow		oq
 𠘘	wz	wm	wq
-𠘙	wu	we	wi
+𠘙	ki	ke	ku
 𠘚	wz		wu
 𠘛	wx		wn
 𠘜	wx		wh
@@ -28902,13 +28902,13 @@
 𠙦	cc	ci	cw
 𠙧	uu	uo	un
 𠙨	ll	lo	la
-𠙩	fu	fi	fa
+𠙩	af	ai	au
 𠙪	tm	to	td
 𠙫	yz		yo
 𠙬	oi	oc
 𠙭	of	oo	ob
 𠙮	cd	ci	cn
-𠙯	lu	lo	la
+𠙯	la	lo	lu
 𠙰	zi		zu
 𠙱	cd	ci	cn
 𠙲	oo	ok	oa
@@ -29687,7 +29687,7 @@
 𠧋	no	np	nl
 𠧎	yd	yn	yt
 𠧏	yd	yn
-𠧐	us	un	uu
+𠧐	su	sn
 𠧑	pc	pn	ph
 𠧒	ya
 𠧓	yp		yi
@@ -31950,7 +31950,7 @@
 𡑡	gy	gt	gf
 𡑢	gl	ge
 𡑣	ge	gm	gc
-𡑤	fd	fi	fv
+𡑤	fd	fg	fv
 𡑥	gc	gm	gv
 𡑦	go	gl	gy
 𡑧	yw	yg	yo
@@ -32183,7 +32183,7 @@
 𡕴	wn	wh	wd
 𡕶	av	ah	aw
 𡕷	xy	xh	xq
-𡕸	hu	hh	ha
+𡕸	ha	hh	hu
 𡕹	wq	wh
 𡕺	oh		or
 𡕻	pf	ph	po
@@ -32193,7 +32193,7 @@
 𡕿	fo	fh
 𡖀	yc	yh	yo
 𡖁	tn	th	tp
-𡖂	lw	lh	ls
+𡖂	ls	lh	lw
 𡖃	fo	fh
 𡖅	lv
 𡖆	ol
@@ -32784,7 +32784,7 @@
 𡠓	ju		jb
 𡠔	bs	bp	bv
 𡠕	bo	bt	ba
-𡠖	bo	bn	bw
+𡠖	bo	bn	bk
 𡠗	gg	gb	gk
 𡠘	bl	bk	bg
 𡠙	bk	bu	bt
@@ -32899,7 +32899,7 @@
 𡢑	yr	yb
 𡢒	br		bz
 𡢓	bn		bv
-𡢔	fd	fi	fv
+𡢔	fd	fb	fv
 𡢕	pg	pb	pr
 𡢖	ym	yb	yr
 𡢗	pt	pb	pr
@@ -32999,7 +32999,7 @@
 𡤅	bi	be
 𡤆	by	bb	bv
 𡤇	bv	bh	bw
-𡤈	ld	lb	la
+𡤈	la	lb	lc
 𡤉	bs	bw
 𡤋	bg	bf	br
 𡤌	bx	bs
@@ -33020,7 +33020,7 @@
 𡤡	ba	bl	bi
 𡤢	by	bu	bi
 𡤣	bi		bs
-𡤤	bl	be	bu
+𡤤	bl	be	bi
 𡤥	bj	bp	bg
 𡤦	bl	bb	bg
 𡤨	is	ib	ii
@@ -34381,7 +34381,7 @@
 𡼔	vu		vw
 𡼕	vu		vm
 𡼖	gh	gv
-𡼗	vo	vu	vw
+𡼗	vo	vn	vk
 𡼘	vv	va
 𡼙	vg	va	vj
 𡼚	dd		dv
@@ -34494,7 +34494,7 @@
 𡾏	vm
 𡾐	vl
 𡾑	vj	vu
-𡾒	vu	ve	vi
+𡾒	vi	ve	vu
 𡾓	vc	vo	vh
 𡾔	qq	qv
 𡾕	vv	ve	vk
@@ -34570,7 +34570,7 @@
 𡿢	vt	vp	vk
 𡿣	vs	vw
 𡿤	lh	ld	lo
-𡿥	ve		va
+𡿥	va	ve
 𡿦	oc
 𡿧	of
 𡿩	ov
@@ -36519,7 +36519,7 @@
 𢡈	sm	sh	sf
 𢡉	hp	hs	hi
 𢡊	hf	hh	hm
-𢡋	ho	hu	hw
+𢡋	ho	hn	hk
 𢡌	hk	hb	hd
 𢡍	hn
 𢡎	hq	hu	hv
@@ -37870,7 +37870,7 @@
 𢺄	ua	ul	ui
 𢺅	ur	uj
 𢺆	uf	ui	ud
-𢺇	ul	ue	uu
+𢺇	ul	ue	ui
 𢺈	us	ui
 𢺉	ul	uc	uq
 𢺊	ul	uf	uj
@@ -37905,7 +37905,7 @@
 𢺱	uq	uc
 𢺲	us	ub	ui
 𢺳	us	uc	ui
-𢺴	ue		ua
+𢺴	ua	ue
 𢺵	vc
 𢺶	cr
 𢺷	fr		fc
@@ -38184,7 +38184,7 @@
 𢿋	em	es	eh
 𢿌	xm	xh
 𢿍	ah		ax
-𢿎	uw	uh
+𢿎	uk	uh	un
 𢿏	vf		vh
 𢿐	ig	ih
 𢿑	yr	yh	yb
@@ -38260,7 +38260,7 @@
 𣀚	ho	hh	hw
 𣀛	lh		lv
 𣀜	qq	qh
-𣀝	ui	uh
+𣀝	iu	ih	ii
 𣀞	zq	zh
 𣀟	mk	mh	mo
 𣀠	lh		lv
@@ -38883,7 +38883,7 @@
 𣋲	oo		op
 𣋳	ox		oc
 𣋴	xc		xv
-𣋵	ou	oe	oi
+𣋵	oi	oe	ou
 𣋶	oe	ob	oz
 𣋷	ox		on
 𣋸	ol	oe	od
@@ -39504,7 +39504,7 @@
 𣘘	el		en
 𣘙	ei	et	ed
 𣘚	ez	en	ei
-𣘛	eu	ep	eb
+𣘛	eb	ep	eu
 𣘜	er	ed	ek
 𣘝	ev	ez	em
 𣘞	ej	ey	ea
@@ -39676,7 +39676,7 @@
 𣜁	es	eu	ev
 𣜂	ef		em
 𣜃	eh	ec	ey
-𣜄	fd	fi	fv
+𣜄	fd	fe	fv
 𣜅	vl	ve	vu
 𣜆	eg		es
 𣜇	ee	eo	em
@@ -39845,7 +39845,7 @@
 𣟘	nd	ne
 𣟙	ev	eu
 𣟚	ei	ec	ex
-𣟛	el	ec	ed
+𣟛	el	ec	ea
 𣟜	ee	ek	ex
 𣟝	el	ep	ey
 𣟠	eq	ei	ea
@@ -39944,7 +39944,7 @@
 𣡞	ea	es	ex
 𣡟	eq	ef
 𣡠	eq	er
-𣡡	ea	ek	ee
+𣡡	ae	ak
 𣡣	ey	eg	er
 𣡦	cr	ce	cd
 𣡧	eq	ea
@@ -39959,12 +39959,12 @@
 𣡰	jq	je
 𣡱	el	ek	ee
 𣡲	eo	ew	ei
-𣡳	ui	ud
+𣡳	iu	id	ii
 𣡴	en	ey
 𣡵	es	ee	ei
 𣡶	eq	ea	ee
 𣡷	vy	ve	vr
-𣡸	ea	ek	ee
+𣡸	ae	ak
 𣡺	qq		qe
 𣡻	el	eu	ed
 𣡼	yr	ye	yj
@@ -40139,7 +40139,7 @@
 𣤬	lf	le	lj
 𣤭	nf	ne	nd
 𣤯	gy	ge	go
-𣤰	ui	ue
+𣤰	iu	ie	ii
 𣤱	wv	we
 𣤲	nd	ne
 𣤳	nq	ne	nf
@@ -40481,7 +40481,7 @@
 𣪤	gc	gs	gr
 𣪥	gw	gd	gf
 𣪧	ul		ur
-𣪨	gw	gr	gf
+𣪨	gw	gm	gf
 𣪩	bb	br	be
 𣪪	af	ar	ad
 𣪫	ch	cr
@@ -40492,7 +40492,7 @@
 𣪰	lz	lr	la
 𣪱	vz		vr
 𣪲	cg		cr
-𣪳	gw	gr	gf
+𣪳	gw	ge	gf
 𣪴	bw	br	bj
 𣪵	cl	cr	ct
 𣪶	od	or	om
@@ -40524,8 +40524,8 @@
 𣫐	ga	gr	gu
 𣫑	rq	rr	rl
 𣫒	gc	gu	gr
-𣫓	gw	gr	gf
-𣫔	gw	gr	gf
+𣫓	gw	ge	gf
+𣫔	gw	gj	gf
 𣫖	nj		nr
 𣫗	gw	gr	gd
 𣫘	gc	gb	gr
@@ -41272,7 +41272,7 @@
 𣹩	ks	kv
 𣹪	kl	kv	ke
 𣹫	kx		ky
-𣹬	gw	gr	gf
+𣹬	gw	gk	gf
 𣹭	kb	kk	ko
 𣹮	kt	kv	kr
 𣹯	kn	ka	ko
@@ -41439,7 +41439,7 @@
 𣽋	kq	kd
 𣽌	kx	ke	kp
 𣽍	ko	kk	kt
-𣽎	ko	ku	kw
+𣽎	ko	kn	kk
 𣽏	kf	kh	kc
 𣽐	kn
 𣽑	km	ku	kn
@@ -41617,7 +41617,7 @@
 𤀯	kw		kk
 𤀰	ko		kg
 𤀱	km	ku	kg
-𤀲	nk	nx	nn
+𤀲	kn	kx
 𤀳	ka		kq
 𤀴	kx		kj
 𤀵	ka		kp
@@ -41728,7 +41728,7 @@
 𤃄	px	pk	pc
 𤃅	ko	kb	kt
 𤃆	kw	kt	ky
-𤃇	kl	kc	kd
+𤃇	kl	kc	ka
 𤃈	kn	kt	kd
 𤃉	kx	kh
 𤃊	kc	kn	kg
@@ -41806,7 +41806,7 @@
 𤄳	qp	qk	qq
 𤄴	kh	ko	kr
 𤄵	kh	kn
-𤄶	kl	ke	ku
+𤄶	kl	ke	ki
 𤄷	ky	ku	ki
 𤄸	kb	kc
 𤄹	kp	kw	km
@@ -42431,7 +42431,7 @@
 𤒄	ci	cc	cx
 𤒅	cw
 𤒆	gd	gc	gg
-𤒈	cl	cc	cd
+𤒈	cl	cc	ca
 𤒉	pd	pc	pf
 𤒋	cg	cc
 𤒍	yc		yy
@@ -42481,7 +42481,7 @@
 𤓃	cr	co	ca
 𤓄	ce	cr	cw
 𤓅	pc	po	pf
-𤓈	cl	ce	cu
+𤓈	cl	ce	ci
 𤓉	ld	lc	lh
 𤓊	co	cs
 𤓋	co	cu	ce
@@ -42508,12 +42508,12 @@
 𤓤	zh	zc	zo
 𤓥	zq	zc
 𤓦	cl	cp	co
-𤓨	ld	lb	la
+𤓨	la	lb	ld
 𤓪	uu	uc
 𤓫	tk	tc	th
 𤓬	uu	uc
 𤓭	ce	ck	cb
-𤓮	ea	ec	ee
+𤓮	ae	ac
 𤓯	fy
 𤓱	ya
 𤓲	yz
@@ -43354,7 +43354,7 @@
 𤢮	mg	mm
 𤢯	mc	mv
 𤢳	mo	ml	mq
-𤢴	mu	me	mi
+𤢴	mi	me	mu
 𤢵	mx	mv	ml
 𤢶	me	mb	mz
 𤢷	mn	mf	mp
@@ -43533,7 +43533,7 @@
 𤦣	nz		nj
 𤦤	np
 𤦥	np	nt	na
-𤦦	nh	nn	np
+𤦦	hp	hn
 𤦨	uq	ui	un
 𤦩	nf		nc
 𤦪	ne		no
@@ -43666,7 +43666,7 @@
 𤩟	nn		na
 𤩠	nh		nd
 𤩡	ng		nh
-𤩢	no	nn	nw
+𤩢	ko	kn	kk
 𤩣	nj	nq
 𤩦	na	ni	np
 𤩧	nd	nn
@@ -44559,7 +44559,7 @@
 𤹿	aw
 𤺀	ai		at
 𤺁	ao	aa	an
-𤺃	ao	an	aw
+𤺃	ao	an	ak
 𤺄	ai		ad
 𤺅	as	ar	am
 𤺆	aq	ah	al
@@ -44650,7 +44650,7 @@
 𤻯	ap	aa	an
 𤻰	al	ak	ag
 𤻱	az	ah	aq
-𤻲	au	ae	ai
+𤻲	ai	ae	au
 𤻳	am
 𤻴	av	ak	ah
 𤻵	ay	ap	au
@@ -44818,7 +44818,7 @@
 𤾻	ut	ud
 𤾼	ul	ua	uj
 𤾽	uy	uz
-𤾾	ur	ue	uu
+𤾾	ur	ue	ui
 𤾿	lr	lw	lf
 𤿀	uq	uo	up
 𤿁	uy		uu
@@ -45571,7 +45571,7 @@
 𥌿	qe	qk	qf
 𥍀	qj	qf
 𥍁	tk	tq	ts
-𥍂	ql	qc	qd
+𥍂	ql	qc	qa
 𥍃	qd	qu	qc
 𥍄	qm	qq	qw
 𥍅	jl	je	jj
@@ -45584,7 +45584,7 @@
 𥍌	qp	qc	qt
 𥍎	qq	qw	qv
 𥍏	qs	qc
-𥍐	ql	qe	qu
+𥍐	ql	qe	qi
 𥍓	qd	qh
 𥍔	qq	qi
 𥍕	qm	qv	qt
@@ -45987,7 +45987,7 @@
 𥔰	mm	mi	mn
 𥔱	mm		mz
 𥔲	md	ma
-𥔳	gw	gr	gf
+𥔳	gw	gm	gf
 𥔴	ml		mm
 𥔵	ml	mi
 𥔶	mg	mk	mp
@@ -46148,7 +46148,7 @@
 𥗿	mv	mu	my
 𥘁	ml	mu	my
 𥘃	mt	mj	md
-𥘄	me		ma
+𥘄	ma	me
 𥘅	fs
 𥘆	fa
 𥘇	fv
@@ -46697,7 +46697,7 @@
 𥢍	xc		xn
 𥢎	xh	xk	xy
 𥢏	xv	xn	xo
-𥢐	xo	xn	xw
+𥢐	xo	xn	xk
 𥢑	xo	xd	xh
 𥢒	xc	xs
 𥢓	xh	xc	xo
@@ -47806,7 +47806,7 @@
 𥶽	rp		rg
 𥶾	rg	rk	rf
 𥶿	ra	rp	rx
-𥷀	rl	rc	rd
+𥷀	rl	rc	ra
 𥷁	rn		rs
 𥷂	ru	rl	rj
 𥷃	ra	re	rv
@@ -48118,7 +48118,7 @@
 𥽑	pr		pp
 𥽒	pl	pe
 𥽓	pz	pk	pt
-𥽗	pu	pe	pi
+𥽗	pi	pe	pu
 𥽘	pl	pi	py
 𥽙	pq	pm	po
 𥽚	lq	lp	ln
@@ -48460,7 +48460,7 @@
 𦄐	xi
 𦄑	ia	ib
 𦄒	in	ii	im
-𦄓	iu	ip	ib
+𦄓	ib	io	iu
 𦄔	ie		iy
 𦄕	ir		ig
 𦄖	iv	iw	im
@@ -48729,13 +48729,13 @@
 𦉖	at	ag	aj
 𦉘	as		al
 𦉙	ax	ac	af
-𦉚	ea	ed	ee
+𦉚	ae	ad
 𦉛	az	aa	ay
 𦉜	ax	as
 𦉝	pm	pa	pf
 𦉞	qr	qa
 𦉟	al
-𦉠	ea	ed	ee
+𦉠	ae	ad
 𦉡	ao	ab	at
 𦉢	at	ad
 𦉣	td	ta
@@ -49047,7 +49047,7 @@
 𦎬	go		gl
 𦎭	ge	gh	go
 𦎮	gc	gr	gm
-𦎯	gw	gr	gf
+𦎯	gw	gg	gf
 𦎰	gf
 𦎱	gw	gd	ga
 𦎲	go		gz
@@ -49560,7 +49560,7 @@
 𦘄	qn		qj
 𦘅	qx		qn
 𦘇	qw	qh	qv
-𦘈	qu	qe	qi
+𦘈	qi	qe	qu
 𦘉	zb	zq	zd
 𦘊	qx	qs
 𦘋	qp	qo	qj
@@ -49958,7 +49958,7 @@
 𦟛	vx	vt	vb
 𦟜	va		vo
 𦟝	jj	jv
-𦟞	vo	vn	vw
+𦟞	vo	vn	vk
 𦟟	vz
 𦟠	vn	vy
 𦟡	uv	uj	ud
@@ -51357,7 +51357,7 @@
 𦺂	lu	lc	lf
 𦺃	ly	lv	lm
 𦺅	lq	lf	lr
-𦺆	lo	lu	lw
+𦺆	lo	ln	lk
 𦺇	lk		la
 𦺈	lv	lh
 𦺉	lj	lk	ln
@@ -51671,7 +51671,7 @@
 𦿱	ln	lf	lr
 𦿲	lm		lx
 𦿴	lm	ly
-𦿵	lu	lv	la
+𦿵	la	lv	lu
 𦿶	lb	lp	lh
 𦿹	lo	lk	lm
 𦿺	lx	lp
@@ -52518,7 +52518,7 @@
 𧏗	cw	co	ce
 𧏘	ci		cr
 𧏙	cg	ck	ca
-𧏚	gw	gr	gf
+𧏚	gw	gc	gf
 𧏜	cg	cm	cd
 𧏝	kk	kc
 𧏡	cf	ch	co
@@ -52800,7 +52800,7 @@
 𧔣	cx	co	cp
 𧔤	qf	qc	qy
 𧔥	cc	cu	co
-𧔦	cl	cc	cd
+𧔦	cl	cc	ca
 𧔧	hv	hc	hu
 𧔨	bg	bc
 𧔩	lb	lc	lg
@@ -53570,7 +53570,7 @@
 𧢆	ai	ae	ap
 𧢉	yu		ye
 𧢋	zj	ze
-𧢌	ow	oe
+𧢌	ok	oe	on
 𧢍	fh		fe
 𧢎	eb	ee
 𧢏	sx	se	sg
@@ -54143,7 +54143,7 @@
 𧫾	sg	so	sy
 𧫿	sb	sk	su
 𧬀	sk	si
-𧬁	so	sn	sw
+𧬁	so	sn	sk
 𧬂	ss	so	sd
 𧬃	ss
 𧬄	sz		so
@@ -54232,7 +54232,7 @@
 𧭢	ss		so
 𧭣	sy	sz	sk
 𧭤	so	sk	sl
-𧭥	su	se	si
+𧭥	si	se	su
 𧭦	sx	sh	sm
 𧭧	sx	su	sl
 𧭨	jj	js
@@ -54330,7 +54330,7 @@
 𧯉	wh
 𧯊	hy		ht
 𧯋	ha		hl
-𧯌	ho	hu	hw
+𧯌	ho	hn	hk
 𧯍	hc	hs
 𧯎	ha		hv
 𧯏	xx	xh
@@ -54926,7 +54926,7 @@
 𧹭	gc	gq	gf
 𧹮	gc	gr	gu
 𧹯	gc	gh	gx
-𧹲	gw	gr	gf
+𧹲	gw	gg	gf
 𧹳	no	nc	nn
 𧹴	gc	gq	gz
 𧹵	gc	gp	gv
@@ -55625,7 +55625,7 @@
 𨇚	pp	po	pj
 𨇝	pa	pp	px
 𨇞	pm	pk	pj
-𨇟	pl	pc	pd
+𨇟	pl	pc	pa
 𨇠	px	pg	pp
 𨇡	pa	po
 𨇢	pz		pm
@@ -55657,7 +55657,7 @@
 𨈅	pl	pd	pj
 𨈆	pl	ph	pa
 𨈈	pq	pf
-𨈉	pl	ph	pf
+𨈉	ph		ps
 𨈊	ps	pb	pi
 𨈋	pr	pd	pj
 𨈌	ps	ph	pi
@@ -56019,7 +56019,7 @@
 𨎢	yk	yh	yt
 𨎤	yh		yz
 𨎥	yn	yh	yq
-𨎦	yo	yu	yw
+𨎦	yo	yn	yk
 𨎧	yh		ye
 𨎨	yc		yo
 𨎩	yn
@@ -56146,12 +56146,12 @@
 𨐫	cs		cn
 𨐬	cd	ci	cn
 𨐯	cd	cp	cn
-𨐰	nh	nn	np
+𨐰	hp	hn
 𨐱	nv	nx	nn
 𨐲	yk	yn	yi
 𨐳	md	mn	mh
 𨐴	cd	cs	cn
-𨐵	nh	nn	nt
+𨐵	ht	hn
 𨐶	nb	nf	nq
 𨐹	kd	kc	kn
 𨐻	ie	ij	it
@@ -56884,7 +56884,7 @@
 𨝯	id		it
 𨝰	tm	tt	td
 𨝱	uc		ut
-𨝲	ow	ot
+𨝲	ok	ot	on
 𨝳	sv	st	so
 𨝴	nt
 𨝵	ee	ev	el
@@ -57834,7 +57834,7 @@
 𨰡	zf	zi
 𨰢	lr		lz
 𨰣	zf	zx	zv
-𨰤	zl	ze	zu
+𨰤	zl	ze	zi
 𨰥	zp	zw	zm
 𨰦	zw	zo	zn
 𨰨	zp	zc	zm
@@ -58486,7 +58486,7 @@
 𨼊	te	tc	tl
 𨼋	tz		tc
 𨼌	tz		te
-𨼍	to	tu	tw
+𨼍	to	tn	tk
 𨼎	ti	tm	tp
 𨼏	tl
 𨼐	td	to
@@ -58551,7 +58551,7 @@
 𨽙	tj		tv
 𨽛	th	tt	tj
 𨽝	tk		tl
-𨽞	tl	tc	td
+𨽞	tl	tc	ta
 𨽟	tc	tu	to
 𨽠	tp	to	tj
 𨽡	tk		th
@@ -58764,7 +58764,7 @@
 𩀶	tn	tu
 𩀷	tp	tu	tq
 𩀸	gg	gu
-𩀹	ow	ou
+𩀹	ok	ou	on
 𩀺	yo		yu
 𩀻	gy	gu	go
 𩀼	ee	eh	eu
@@ -58793,7 +58793,7 @@
 𩁔	wh	wu	wa
 𩁕	pf	pu	pa
 𩁖	ff		fu
-𩁗	us	ui	uu
+𩁗	su	si
 𩁘	ld	lu	lj
 𩁚	ld	lu	lf
 𩁛	gd	gu	gg
@@ -59603,7 +59603,7 @@
 𩏡	gc		go
 𩏢	gu		gc
 𩏣	zc		zg
-𩏤	go	gu	gw
+𩏤	go	gn	gk
 𩏥	gd	gn
 𩏦	gh	gc	gq
 𩏧	lf	lg	ll
@@ -59618,7 +59618,7 @@
 𩏰	go	gc	gi
 𩏱	gn	go	gc
 𩏲	ga	gh
-𩏴	ea	eg	ee
+𩏴	ae	ag
 𩏵	gl	gk
 𩏶	pg	pc	pu
 𩏷	pg	pc	pu
@@ -59951,7 +59951,7 @@
 𩕊	gh	gw	gd
 𩕋	wh	ww	wt
 𩕌	ee	ew
-𩕍	ow
+𩕍	ok	ow	on
 𩕎	ip		iw
 𩕏	tp	tw	tq
 𩕐	mh	mw	mo
@@ -60559,7 +60559,7 @@
 𩟤	qn	qa	qu
 𩟥	qv	qm	qu
 𩟦	qy	qp	qu
-𩟧	qu	qe	qi
+𩟧	qi	qe	qu
 𩟨	mg	mq	md
 𩟩	qw	qy	qm
 𩟪	qh	qo
@@ -60692,7 +60692,7 @@
 𩢃	nr
 𩢄	nm		np
 𩢅	np
-𩢆	nm	na	ng
+𩢆	nr	na	nf
 𩢇	nj		nr
 𩢈	nv		nn
 𩢉	mn
@@ -60985,7 +60985,7 @@
 𩦿	nw	no	nc
 𩧀	nm	ng	np
 𩧁	nq	nj	nr
-𩧂	nu	ne	ni
+𩧂	ni	ne	nu
 𩧃	nx	nv	nl
 𩧄	nt	no
 𩧅	ne	nm	nb
@@ -61438,7 +61438,7 @@
 𩮴	pe	pu	pv
 𩮵	no	ne	nr
 𩮶	pe		px
-𩮷	pe	pp	pu
+𩮷	pe	pp	pb
 𩮸	pe	ph	px
 𩮹	pe	pi	pq
 𩮺	pe	ps	po
@@ -62221,7 +62221,7 @@
 𩽎	wc	wu	wo
 𩽏	wx	ws
 𩽐	wg	wq	wr
-𩽒	wl	wc	wd
+𩽒	wl	wc	wa
 𩽓	xp	xw	xo
 𩽔	wa	wk	wf
 𩽕	wr		wu
@@ -62814,7 +62814,7 @@
 𪇮	xd	xx	xh
 𪇯	zj	zx	ze
 𪇰	ol	ox	oh
-𪇱	ui	ux
+𪇱	iu	ie	ii
 𪇲	yu	yx	yp
 𪇳	xr	xd	xn
 𪇴	ly	lx	ln
@@ -62843,7 +62843,7 @@
 𪈌	my	mx	mn
 𪈍	jc	jx	jd
 𪈎	xp	xx	xo
-𪈏	ld	lx	la
+𪈏	la	lx	ld
 𪈐	xp	xx	xo
 𪈑	to	tx	tn
 𪈒	xz	xa	xq
@@ -63268,7 +63268,7 @@
 𪏖	nv		nl
 𪏗	nm		ni
 𪏘	nl		nd
-𪏙	gw	gr	gf
+𪏙	gw	gn	gf
 𪏚	nd		no
 𪏛	nk	nv
 𪏜	in
@@ -63496,7 +63496,7 @@
 𪓅	pl	pq	pn
 𪓆	pq	pm
 𪓉	pe	pk	pb
-𪓊	pe		pa
+𪓊	pa	pe
 𪓋	cf		cp
 𪓌	cf	cn	cz
 𪓍	dh	df	dc
@@ -63664,7 +63664,7 @@
 𪕵	po	pk	pg
 𪕶	pk		pa
 𪕷	gw	gp	gf
-𪕸	gw	gr	gf
+𪕸	gw	gp	gf
 𪕹	px	pd	pb
 𪕺	pm	pi	pn
 𪕻	xz		xp
@@ -67227,7 +67227,7 @@
 𫡿	zr	zp	zd
 𫢀	zr	zc	zd
 𫢁	gd	gy	gg
-𫢃	fd	fi	fv
+𫢃	fd		fv
 𫢅	jf
 𫢈	jp
 𫢉	je
@@ -68445,7 +68445,7 @@
 𫿯	vi
 𫿰	wh		wv
 𫿱	ee		ev
-𫿲	vl	vc	vd
+𫿲	vl	vc	va
 𫿳	zc		zj
 𫿶	xq	xj	xp
 𫿷	pj		pv
@@ -68648,11 +68648,11 @@
 𬅆	ec	er	eg
 𬅈	eh	et	ey
 𬅉	el	eh	ea
-𬅍	ea	eu	ee
+𬅍	ae	au
 𬅏	eb	ek	ee
 𬅐	ee	et	ev
 𬅑	el	ep
-𬅔	ea	ez	ee
+𬅔	ae	az
 𬅕	el	ek	ee
 𬅖	eb	ez
 𬅘	eb	ek	ee
@@ -70575,7 +70575,7 @@
 𬰵	go	gf	gn
 𬰶	gn	gh	gq
 𬰷	gx	gs
-𬰸	ea	eg	ee
+𬰸	ae	ag
 𬰺	xc
 𬰻	xx
 𬰼	xp		xo
@@ -71223,7 +71223,7 @@
 𭀁	jn	jf	jp
 𭀂	jg	jw	jd
 𭀄	jw	jc	jp
-𭀅	ju	je	ji
+𭀅	ji	je	ju
 𭀆	jz		jw
 𭀇	jg	jn	jd
 𭀉	jh		jp
@@ -72017,7 +72017,7 @@
 𭗧	vx	vp	ve
 𭗩	vz	va	vt
 𭗪	vx		va
-𭗬	vl	vc	vd
+𭗬	vl	vc	va
 𭗭	vd	vh
 𭗰	vw	vt	vv
 𭗲	vz	vp
@@ -72428,7 +72428,7 @@
 𭣁	us		uo
 𭣃	uc	uo	uh
 𭣄	uq	ue	ur
-𭣅	ul	uc	ud
+𭣅	ul	uc	ua
 𭣆	gg	gu	gc
 𭣇	un	uw	uq
 𭣈	dy	du	dm
@@ -73234,9 +73234,9 @@
 𭹖	od		on
 𭹗	nk		nq
 𭹘	nw		np
-𭹚	ng	nw	nn
+𭹚	gn	gw
 𭹜	ny		nl
-𭹞	nh	nw	nn
+𭹞	hn	hw
 𭹟	nn		na
 𭹠	ny	ng	nt
 𭹢	nk		nr
@@ -73470,7 +73470,7 @@
 𭿓	ty	tg
 𭿙	qo	qe	qx
 𭿜	qw	qh	qq
-𭿟	qo	qn	qw
+𭿟	qo	qn	qk
 𭿡	uq	ut	um
 𭿢	qh		qc
 𭿤	qm	qk	qj
@@ -73537,11 +73537,11 @@
 𮁌	ml	ma	mm
 𮁍	mk	mn	mu
 𮁎	me		mu
-𮁏	mu	mn	mi
+𮁏	mi	mn	mu
 𮁒	ml	mg	mo
 𮁘	mn	mr
 𮁙	ml	mu	md
-𮁚	ml	me	mu
+𮁚	ml	me	mi
 𮁝	kf
 𮁟	fn		fk
 𮁠	fv
@@ -73908,7 +73908,7 @@
 𮊰	gc	ge	gw
 𮊱	gc		gg
 𮊲	gc		gg
-𮊳	go	gn	gw
+𮊳	go	gn	gk
 𮊴	gb		gv
 𮊵	fy	fi	fv
 𮊶	sg	si
@@ -74999,7 +74999,7 @@
 𮨡	kb		kw
 𮨢	gy	gw	go
 𮨣	rm	rw	ri
-𮨤	ld	lw	la
+𮨤	la	lw	ld
 𮨧	ot	on	oc
 𮨨	jk	jc	jo
 𮨩	ot	oc
@@ -75029,7 +75029,7 @@
 𮩓	qf		qq
 𮩔	qu	qm	qq
 𮩕	xj	xq	xu
-𮩘	ql	qc	qd
+𮩘	ql	qc	qa
 𮩙	ql	qc	qr
 𮩚	bf	bq
 𮩛	qv	qn
@@ -75299,7 +75299,7 @@
 𮰈	wl	wh	wg
 𮰉	wn		wo
 𮰊	gc		go
-𮰋	ui	uo
+𮰋	iu	io	ii
 𮰌	nv		np
 𮰍	as
 𮰎	sz
@@ -75319,7 +75319,7 @@
 𮰥	gx	gm
 𮰦	ga	gm	gi
 𮰧	go		gi
-𮰪	gu	gp	gb
+𮰪	gb	gp	gu
 𮰫	gx	ga	gm
 𮰬	go		gj
 𮰮	gy		gf
@@ -76646,7 +76646,7 @@
 𰘼	mc	me	mh
 𰘽	eo	ec	ei
 𰘾	mm	me
-𰙂	ui	up
+𰙂	iu	ip	ii
 𰙄	el	ee	ef
 𰙆	ee	ef	er
 𰙇	xc	xx	xp
@@ -77041,7 +77041,7 @@
 𰡽	na		nk
 𰡿	ni	nr	no
 𰢀	nl		nn
-𰢁	nj	nn
+𰢁	jj	jn
 𰢂	nm		np
 𰢃	sn		si
 𰢄	nb	nh	np
@@ -77963,7 +77963,7 @@
 𰶂	st	sh	sr
 𰶃	sz		su
 𰶄	sm	so	sq
-𰶅	so	sn	sw
+𰶅	so	sn	sk
 𰶆	sa	sh	sq
 𰶇	st	sv	sn
 𰶈	sc	sq	sk
@@ -78125,7 +78125,7 @@
 𰹦	yb		yo
 𰹨	yv	yu	yl
 𰹪	yx	yc	yh
-𰹫	iy	iv	ii
+𰹫	gj	gz	gb
 𰹭	yr	yh	yg
 𰹮	yl	yc	ya
 𰹯	ya
@@ -78753,7 +78753,7 @@
 𱅩	nz		nu
 𱅪	nv	nn	no
 𱅫	ni	nd	nt
-𱅬	nl	nc	nd
+𱅬	nl	nc	na
 𱅭	fl
 𱅮	fp		ff
 𱅰	fm	fa	fo
@@ -79044,7 +79044,7 @@
 𱊱	zu		zx
 𱊲	ol	ox	oh
 𱊳	qq	qx
-𱊴	ld	lx	la
+𱊴	la	lx	ld
 𱊵	jd	jx
 𱊶	yr	yn	yp
 𱊸	yr	ya	yp
@@ -79249,7 +79249,7 @@
 𱏧	uw
 𱏩	mj	mn	mv
 𱏪	zh	zp	zb
-𱏫	ua	up	uv
+𱏫	au	ap	av
 𱏬	iv	ip	id
 𱏭	of	om	on
 𱏱	ja
@@ -80036,7 +80036,7 @@
 𱨑	ky		kg
 𱨒	kr	kv	kk
 𱨓	kl	km	kq
-𱨔	ky	kn	kw
+𱨔	ky	kn	kk
 𱨕	kj	kc	kg
 𱨖	kx	kc	ky
 𱨗	kl	kq	kv
@@ -81969,7 +81969,7 @@
 𲜜	wm	wx
 𲜠	yk		yc
 𲜡	wm	wk	wp
-𲜢	nd	nk	nf
+𲜢	gd	gk
 𲜣	ho	hc	hk
 𲜤	yz	yc	yk
 𲜥	wm	wk	wp
@@ -82425,7 +82425,7 @@
 𲨭	vg	vi
 𲨮	vw	vy	vg
 𲨯	vy	vu	vi
-𲨱	pk		ps
+𲨱	gk		gs
 𲨵	kt		ks
 𲨶	kf	ki	kb
 𲨸	kn	ke	kp
@@ -83146,7 +83146,7 @@
 𲼳	ll	lo	la
 𲼴	la	lh	lq
 𲼵	le	lr	ly
-𲼷	lr	lj
+𲼷	lo	lj
 𲼹	lm	lq	ll
 𲼺	lp	lh	ll
 𲼻	lk	lh	lx

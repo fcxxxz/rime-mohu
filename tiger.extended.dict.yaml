@@ -1,0 +1,33 @@
+# Rime dictionary: tiger.extended
+# encoding: utf-8
+#
+# 【虎码单字入口词典】自 fcxxxz/rime-tiger 移植。
+# 常用字与全字集已合并进 tiger 主码表（常用字带简码与字频权重，生僻字只挂
+# 四码全码），本入口不再区分字集；tiger.user 为用户自定层，由
+# tiger_user_words 在运行时读写（加词/删词/调序与 ; 快符都在该层维护）。
+
+---
+name: tiger.extended
+version: "2026.10.15"
+sort: by_weight
+use_preset_vocabulary: false
+import_tables:
+  - tiger
+  - tiger.user
+
+columns:
+  - text
+  - code
+  - weight
+  - stem
+encoder:
+  rules:
+    - length_equal: 2
+      formula: "AaAbBaBb"
+    - length_equal: 3
+      formula: "AaBaCaCb"
+    - length_in_range: [4, 99]
+      formula: "AaBaCaZa"
+...
+
+# User entries are stored in the imported tiger.user dictionary.

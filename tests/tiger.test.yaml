@@ -7,13 +7,50 @@ script: |
     end
     return false
   end
+  function has_not_text(candidates, text)
+    return not has_text(candidates, text)
+  end
 
 deploy:
+  # 默认（常用字）：常用字简码正常，生僻字隐藏
   default:
     tests:
       - send: fi
         assert: has_text(cand, '一')
       - send: '`huo'
         assert: has_text(cand, '火')
+      # 码表合并（rime-tiger 移植版）：一简出常用字；tiger.user 层 ; 快符可用；
+      # 生僻字在常用字模式下隐藏。
+      - send: u
+        assert: has_text(cand, '的')
+      # 覆盖表带简词：sort: original 保持行内次序（来/那个、的/工作）
+      - send: a
+        assert: cand[1].text == '来' and cand[2].text == '那个'
+      - send: u
+        assert: cand[1].text == '的' and cand[2].text == '工作'
+      - send: ';'
+        assert: has_text(cand, '：')
+      # 2026-10-21 用户码表覆盖后 𩢆 码位 nmga -> nrfa
+      - send: nrfa
+        assert: has_not_text(cand, '𩢆')
+  # 全字集（extended_charset 置 1）：生僻字四码全码可达
+  full_charset:
+    patch:
+      "switches/@4/reset": 1
+    tests:
+      - send: nrfa
+        assert: has_text(cand, '𩢆')
+
+  # 调序与魔虎同键位：Ctrl+减号上移、Ctrl+等号下移，落 tiger.user 层
+  reorder_ctrl_minus_equal:
+    tests:
+      - send: u
+        assert: cand[1].text == '的' and cand[2].text == '工作'
+      - send: 'u{Down}{Control+minus}'
+        assert: cand[1].text == '工作' and cand[2].text == '的'
+      - send: u
+        assert: cand[1].text == '工作' and cand[2].text == '的'
+      - send: 'u{Control+equal}'
+        assert: cand[1].text == '的' and cand[2].text == '工作'
 
 # yaml-language-server: $schema=https://raw.githubusercontent.com/rimeinn/mira/refs/heads/master/spec/mira.schema.json

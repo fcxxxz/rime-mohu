@@ -86,7 +86,8 @@ class SplitDistributionTest(unittest.TestCase):
                 ):
                     self.assertTrue((output / relative).is_file(), relative)
                 expected_dicts = {f"mohu_{scheme}.dict.yaml", f"mohu_{scheme}.words.dict.yaml",
-                                  "mohu_charset.dict.yaml", "mohu_pinyin.dict.yaml", "tiger.dict.yaml"}
+                                  "mohu_charset.dict.yaml", "mohu_pinyin.dict.yaml", "tiger.dict.yaml",
+                                  "tiger.extended.dict.yaml", "tiger.user.dict.yaml"}
                 self.assertEqual({p.name for p in output.glob("*.dict.yaml")}, expected_dicts)
                 word_header = (output / f"mohu_{scheme}.words.dict.yaml").read_text().split("\n...\n", 1)[0]
                 self.assertNotIn("import_tables", yaml.safe_load(word_header))

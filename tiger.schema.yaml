@@ -1,14 +1,33 @@
+# Rime schema: tiger
+# encoding: utf-8
+#
+# 【虎码单字】自 fcxxxz/rime-tiger 移植（https://github.com/fcxxxz/rime-tiger）。
+# 与上游的差异：码表数据层合并——常用字/全字集不再拆成 common/extended 两层
+# 词典文件，本就合并在 tiger 主码表里（与魔虎主表同口径）：常用字带一/二/三
+# 简与字频权重，生僻字只挂四码全码；编码补全关闭，不打满编码不出现。
+# 字集切换沿用魔虎的 extended_charset 开关（菜单或 Ctrl+X）：常用字模式隐藏
+# mohu_charset 之外的生僻字，全字集放开；不移植上游的 core2022_filter。
+# 用户层沿用上游 tiger_user_words 全套（\ 引导加词、Shift+Delete 删词、
+# Ctrl+方向键调序），写入 tiger.user 词典层。
+# 敲 ` 键进入全拼反查。
+
 schema:
   author:
-    - {}
-  description: |
-    虎码官方单字
-    按 ` 键进入全拼反查
-  name: "虎码官方单字"
-  schema_id: tiger
-  version: 0.9
+    - fcxxxz <https://github.com/fcxxxz/rime-tiger>
+    - 荒 <space_proc3 / symbol_proc>
   dependencies:
     - mohu_pinyin
+    - mohu_charset
+  description: |
+    虎码官方单字（全字集合并版）
+    常用字与全字集合并为一张码表：常用字带简码与字频权重，
+    生僻字挂四码全码；不打满编码不出现。
+    Ctrl+X 切换 常用字/全字集。
+    敲 ` 键进入全拼反查；\g 打开候选管理。
+  name: "虎码单字"
+  schema_id: tiger
+  # 显式版本号须高于小狼毫自带副本（0.9），否则部署时用户副本会被清进 trash/。
+  version: "1.0"
 
 switches:
   - name: ascii_mode
@@ -18,14 +37,24 @@ switches:
     states: [ 半角, 全角 ]
   - name: ascii_punct
     states: [ 。，, ．， ]
-  # - options: [ gbk+emoji, utf8 ]
-  #   states: [ GBK, UTF-8 ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
+  - name: extended_charset
+    states: [ 常用字, 全字集 ]
+  - name: chaifen
+    states: [ 拆隐, 拆显 ]
+  - name: pinyinhint
+    states: [ 拼隐, 拼显 ]
 
 engine:
   processors:
+    - lua_processor@*tiger_user_words_manager*processor  # 候选管理入口
+    - lua_processor@*tiger_user_words*processor          # 用户加词、删除、调序
     - ascii_composer
     - recognizer
-    - lua_processor@*option_sync
+    - lua_processor@*option_sync                         # 跨窗口同步功能开关
+    - lua_processor@*space_proc3                         # 标顶空码不上屏
+    - lua_processor@*symbol_proc                         # 候选唯一时符号顶字
     - key_binder
     - speller
     - punctuator
@@ -40,50 +69,100 @@ engine:
     - fallback_segmentor
   translators:
     - punct_translator
+    - lua_translator@*tiger_user_words_manager*translator  # 候选管理菜单
     - reverse_lookup_translator
     - table_translator
   filters:
-    # - charset_filter@gbk+emoji
-    # - charset_filter@utf8
+    - lua_filter@*mohu_charset_filter                    # 常用字/全字集（extended_charset 开关，与魔虎同机制）
+    - lua_filter@*tiger_user_words*filter                # 用户加词、删除、调序
+    - simplifier@chaifen                                 # 虎码拆分注释
+    - simplifier@pinyinhint                              # 拼音注释
+    - simplifier@emoji                                   # emoji 联想
+    - lua_filter@*candidate_shadow_filter                # 多滤镜候选压成单层，保留满码顶屏
     - uniquifier
 
 speller:
+  # 达到最长码时后码顶上清屏；候选唯一自动上屏。
   auto_clear: max_length
   auto_select: true
   max_code_length: 4
-
+  alphabet: ";'zyxwvutsrqponmlkjihgfedcba"
+  # 分号引导的快符（;q ：“ 等，住在 tiger.user 层）自动上屏。
+  auto_select_pattern: ^;\w+
 
 translator:
-  dictionary: tiger
+  dictionary: tiger.extended
   enable_charset_filter: false
-  enable_encoder: true
+  enable_encoder: false
   enable_sentence: false
-  encode_commit_history: true
-  max_phrase_length: 4
+  encode_commit_history: false
   enable_user_dict: false
+  # 编码补全关闭：短码只出简码，生僻字只挂四码全码——全字集与常用字
+  # 合并的关键开关，打开会被全字集前缀补全淹没。
   enable_completion: false
+  comment_format:
+    - "xform/~/ /"
 
+# 全拼反查
 reverse_lookup:
   dictionary: mohu_pinyin
   prefix: "`"
   suffix: "'"
   tips: "〔全拼反查〕"
 
-punctuator:
-  import_preset: symbols
+smart_candidate_selection:
+  enabled: true  # 次选键跳过符号联想
 
 key_binder:
-#  import_preset: default
   bindings:
-    - {accept: semicolon, send: 2, when: has_menu}
+    - { accept: space, send: space, when: has_menu }    # 有候选时空格上屏首选
+    - { accept: semicolon, send: 2, when: has_menu }    # 分号次选
+    - { when: has_menu, accept: apostrophe, send: 3 }   # 引号三选
+    - { when: composing, accept: Tab, send: Escape }    # tab 清屏
+    - { when: has_menu, accept: minus, send: Page_Up }  # - 向后翻页
+    - { when: has_menu, accept: equal, send: Page_Down } # = 向前翻页
+    - { when: composing, accept: "Control+x", toggle: extended_charset }  # 常用字/全字集切换（与魔虎同键）
+    - { accept: "Control+j", toggle: chaifen, when: composing }
+    - { accept: "Control+p", toggle: pinyinhint, when: composing }
+    - { accept: "Control+i", toggle: emoji, when: composing }
+    - { when: always, accept: "Control+period", toggle: ascii_punct }
+    - { when: always, accept: "Shift+space", toggle: full_shape }
 
 recognizer:
   import_preset: default
   patterns:
+    # 上游写作 "^\\gl[hou]?[a-z;']*$"（YAML 展开成 ^\g...），boost regex 把
+    # \g 当非法反向引用、模式编译失败，\g 管理菜单因此打不开；这里转义为
+    # 字面反斜杠（regex ^\\gl...）修正。
+    user_words_manager: "^\\\\gl[hou]?[a-z;']*$"
     punct: '^/([0-9]0?|[A-Za-z]*)$'
-
     reverse_lookup: "^`[a-z]*'?$"
 
+punctuator:
+  import_preset: symbols
 
-#menu:
-#  page_size: 3
+# 虎码拆分注释（复用魔虎的 tiger 拆分数据）
+chaifen:
+  option_name: chaifen
+  opencc_config: mohu_chaifen.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    - "xform/-/ /"
+    - "xform/〕〔/｜/"
+
+# 拼音注释
+pinyinhint:
+  option_name: pinyinhint
+  opencc_config: mohu_pinyinhint.json
+  tips: char
+  show_in_comment: true
+  comment_format:
+    - "xform/-/ /"
+    - "xform/〕〔/｜/"
+
+# emoji 联想
+emoji:
+  opencc_config: mohu_emoji.json
+  option_name: emoji
+  tips: none

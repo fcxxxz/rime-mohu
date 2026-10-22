@@ -28,6 +28,8 @@ COMMON_ROOT_PATHS = (
     "recipes",
     "squirrel.yaml",
     "tiger.dict.yaml",
+    "tiger.extended.dict.yaml",
+    "tiger.user.dict.yaml",
     "tiger.schema.yaml",
     "Rime同步助手",
 )

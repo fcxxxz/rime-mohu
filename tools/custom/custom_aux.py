@@ -123,13 +123,21 @@ def load_user_aux(path: Path) -> dict[str, AuxiliaryEntry]:
     result: dict[str, AuxiliaryEntry] = {}
     try:
         for line_no, fields in _read_rows(path):
-            parsed = _split_char_and_codes(fields)
-            if parsed is None or not parsed[1]:
+            han_idx = [i for i, field in enumerate(fields) if _is_single_han(field)]
+            if len(han_idx) != 1 or len(fields) < 2:
                 raise ValueError(
                     f"第 {line_no} 行：{'/'.join(fields)} ——"
                     f"需要恰好一列单个汉字 + 一列辅码"
                 )
-            char, codes = parsed
+            idx = han_idx[0]
+            char = fields[idx]
+            if idx == 0:
+                # 字在前：normal/14位/13位 按列位次映射，空列占位
+                # （如 `一	fi		ys` 第 3 列为空，ys 是 13 位）。
+                codes = fields[1:]
+            else:
+                # 码在前：紧凑列，忽略空列
+                codes = [f for i, f in enumerate(fields) if i != idx and f]
             if len(codes) > 3:
                 raise ValueError(f"第 {line_no} 行：列数超过 4（{len(codes) + 1}）")
             normal, compat14, compat13 = (codes + ["", "", ""])[:3]

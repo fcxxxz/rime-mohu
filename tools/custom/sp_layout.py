@@ -308,7 +308,11 @@ def load_layout(path: Path) -> SpLayout:
         raise LayoutError(f"{path.name}: 存在非「双字母小写」编码：{sample}")
     # 反查映射：同码多音节时标准音节优先于边缘音节（与 zrmify/
     # flypyify 的 unzrmify 消歧一致，如 lo←{luo,lo} 反查为 luo）；
-    # 两个标准音节撞码才是真歧义，无法安全反查，报错。
+    # 两个标准音节撞码才是真歧义，无法安全反查，报错——除非布局
+    # 声明 allow_collision（如落云 ia/ü 同在 r 键：lia,lv 共享 lr，
+    # 二键层同码由辅码区分，属方案设计而非笔误）。构建管线只走
+    # 正向映射，此时反查取枚举中的首个标准音节，仅供参考。
+    allow_collision = bool(data.get("allow_collision"))
     standard = set(zrmify.ALL_PINYIN)
     reverse: dict[str, str] = {}
     ambiguous: dict[str, set[str]] = {}
@@ -323,12 +327,13 @@ def load_layout(path: Path) -> SpLayout:
         elif pinyin in standard and incumbent in standard:
             group = ambiguous.setdefault(code, {incumbent})
             group.add(pinyin)
-    if ambiguous:
+    if ambiguous and not allow_collision:
         sample = "; ".join(
             f"{code}←{','.join(sorted(pys))}" for code, pys in sorted(ambiguous.items())[:5]
         )
         raise LayoutError(
-            f"{path.name}: 布局存在同码异音节碰撞（无法反查）：{sample}"
+            f"{path.name}: 布局存在同码异音节碰撞（无法反查）：{sample}；"
+            f"若属方案设计（二键层共享、辅码区分），可在布局里声明 allow_collision: true"
         )
     return SpLayout(name=name, display=display, source=path,
                     forward=forward, reverse=reverse,

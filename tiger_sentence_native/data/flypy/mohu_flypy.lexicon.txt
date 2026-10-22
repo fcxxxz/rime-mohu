@@ -671265,8 +671265,8 @@ ykwopn	硬卧票	99	3
 ykwr	以苦为荣	1	0
 ykws	云开雾散	1	28
 ykwu	云开雾释	1	0
+ykwu	鹦鹉	1	1490
 ykwu	哑口无声	2	0
-ykwu	鹦鹉	4	1490
 ykwu	应物	99	31
 ykwu	硬物	99	271
 ykwu	英武	99	369
@@ -694570,10 +694570,10 @@ yywt	有眼无瞳	1	0
 yywt	郓	1	4757	1795
 yywt	一眼望不到头	2	0
 yywt	一眼望不到尽头	3	0
-yywu	云雨巫山	1	0
 yywu	云雾	1	838
-yywu	以誉为赏	2	0
-yywu	因缘为市	3	0
+yywu	云雨巫山	2	0
+yywu	以誉为赏	3	0
+yywu	因缘为市	4	0
 yywu	医药卫生	5	158
 yywu	有烟无伤	6	0
 yywu	有要务在身	7	0

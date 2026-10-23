@@ -56,9 +56,9 @@ def load_corpus_freq() -> tuple[dict[tuple[str, str], int], dict[str, int]]:
     return exact, by_text
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args()
+    parser.parse_args(argv)
     exact, by_text = load_corpus_freq()
     lines = LEXICON.read_text(encoding="utf-8").split("\n")
     groups: dict[str, list[int]] = defaultdict(list)

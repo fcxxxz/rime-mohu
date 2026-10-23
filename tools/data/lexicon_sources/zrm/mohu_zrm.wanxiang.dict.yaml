@@ -7,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "56632d0a5613"
+version: "7ae0b85d1a27"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -10570,7 +10570,7 @@ columns:
 不爱去	bu;cb ai;yw qu;gk	716
 不爱吃辣	bu;cb ai;yw ii;de la;nx	720
 不爱吧	bu;cb ai;yw ba;dm	392
-不爱吱声	bu;cb ai;yw zi;dc ug;gc	153
+不爱吱声	bu;cb ai;yw vi;dc ug;gc	153
 不爱啊	bu;cb ai;yw aa;dt	558
 不爱嘛	bu;cb ai;yw ma;dz	495
 不爱在	bu;cb ai;yw zl;ng	585
@@ -16651,6 +16651,7 @@ columns:
 中练习	vs;dg lm;ir xi;zx	778
 中细碎	vs;dg xi;iq sv;mz	274
 中经络	vs;dg jy;ir lo;is	310
+中继模式	vs;dg ji;ip mo;el ui;pu	151
 中继电缆	vs;dg ji;ip dm;oa lj;ip	162
 中继线路	vs;dg ji;ip xm;if lu;ps	234
 中继阀	vs;dg ji;ip fa;aj	162
@@ -87264,13 +87265,13 @@ columns:
 僖负羁	xi;jh fu;xo ji;yt	229
 僧一行	sg;jh yi;fi hh;px	518
 僧人遗体	sg;jh rf;jr yi;co ti;je	162
-僧伽婆罗	sg;jh jw;js po;kr lo;yl	320
-僧伽提婆	sg;jh jw;js ti;uo po;kr	364
-僧伽梨	sg;jh jw;js li;xp	220
-僧伽罗刹	sg;jh jw;js lo;yl ia;be	230
-僧伽蜜多	sg;jh jw;js mi;wh do;ll	261
-僧伽跋摩	sg;jh jw;js ba;pn mo;zu	387
-僧伽跋澄	sg;jh jw;js ba;pn ig;kh	270
+僧伽婆罗	sg;jh qx;js po;kr lo;yl	320
+僧伽提婆	sg;jh qx;js ti;uo po;kr	364
+僧伽梨	sg;jh qx;js li;xp	220
+僧伽罗刹	sg;jh qx;js lo;yl ia;be	230
+僧伽蜜多	sg;jh qx;js mi;wh do;ll	261
+僧伽跋摩	sg;jh qx;js ba;pn mo;zu	387
+僧伽跋澄	sg;jh qx;js ba;pn ig;kh	270
 僧侣们	sg;jh lv;jd mf;ja	608
 僧兵	sg;jh by;th	608
 僧团	sg;jh tr;rn	810
@@ -102497,7 +102498,7 @@ columns:
 前翻了	qm;hv fj;tp le;rl	616
 前老家	qm;hv lk;ql jw;wj	472
 前者吧	qm;hv ve;qo ba;dm	436
-前者是	qm;hv ve;qo ui;ot	756
+前者是	qm;hv ve;qo ui;ot	1192
 前者的	qm;hv ve;qo de;ue	1134
 前耻	qm;hv ii;qs	206
 前耻骨	qm;hv ii;qs gu;fg	243
@@ -103024,7 +103025,7 @@ columns:
 副现象	fu;fd xm;ne xd;wx	392
 副现象论	fu;fd xm;ne xd;wx lp;sj	238
 副生殖器	fu;fd ug;ls vi;gn qi;dd	117
-副百日咳	fu;fd bl;fu ri;or hl;dk	130
+副百日咳	fu;fd bl;fu ri;or ke;dk	130
 副盟长	fu;fd mg;ov vh;pc	495
 副矿物	fu;fd kd;mx wu;qn	270
 副神经核	fu;fd uf;fo jy;ir he;ek	117
@@ -114752,7 +114753,7 @@ columns:
 参议府	cj;km yi;si fu;xj	392
 参证	cj;km vg;sf	399
 参评的	cj;km py;se de;ue	558
-参试品种	uf;km ui;sp pn;dd vs;xd	130
+参试品种	cj;km ui;sp pn;dd vs;xd	130
 参谋吧	cj;km mb;sz ba;dm	252
 参谋天下	cj;km mb;sz tm;fm xw;fy	110
 参谋学院	cj;km mb;sz xt;kw yr;tw	590
@@ -119901,7 +119902,7 @@ columns:
 可加了	ke;zk jw;sd le;rl	324
 可动离子	ke;zk ds;bs li;zb zi;hi	117
 可劲儿造	ke;zk jn;ru er;pe zk;qd	396
-可劲吹	ke;zk jy;ru iv;de	234
+可劲吹	ke;zk jn;ru iv;de	234
 可包邮	ke;zk bk;nv yb;dt	396
 可千万	ke;zk qm;lq wj;fp	1188
 可升	ke;zk ug;tl	246
@@ -125552,7 +125553,7 @@ columns:
 吭一些	kg;dz yi;fi xx;sv	252
 吭吭吃吃	kg;dz kg;dz ii;de ii;de	179
 吭呲瘪肚	kg;dz ci;ds bx;ao du;vg	130
-吭哧地	hh;dz ii;dg de;ge	500
+吭哧地	kg;dz ii;dg de;ge	500
 吭声了	kg;dz ug;gc le;rl	742
 吮了吮	up;dk le;rl up;dk	252
 启世录	qi;md ui;la lu;bk	374
@@ -125652,7 +125653,7 @@ columns:
 吱吱悠悠	vi;dc vi;dc yb;jg yb;jg	207
 吱吱扭扭	vi;dc vi;dc nq;ua nq;ua	324
 吱吱歪歪	vi;dc vi;dc wl;cf wl;cf	270
-吱声了	zi;dc ug;gc le;rl	734
+吱声了	vi;dc ug;gc le;rl	734
 吲哒帕胺	yn;db da;dm pa;ru an;vw	224
 吲哚丁酸	yn;db do;do dy;ad sr;yk	306
 吲哚丙酸	yn;db do;do by;fm sr;yk	171
@@ -192122,7 +192123,7 @@ columns:
 弯成弓形	wj;zc ig;na gs;bg xy;fl	266
 弯手指	wj;zc ub;us vi;uv	243
 弯扭	wj;zc nq;ua	446
-弯折点	wj;zc ue;ut dm;yd	225
+弯折点	wj;zc ve;ut dm;yd	225
 弯拉强度	wj;zc la;ui qd;bd du;xl	171
 弯曲中心	wj;zc qu;yq vs;dg xn;hx	162
 弯曲了	wj;zc qu;yq le;rl	170
@@ -218677,7 +218678,7 @@ columns:
 我没发	wo;tu mz;kr fa;sr	770
 我没叫	wo;tu mz;kr jc;di	540
 我没吃	wo;tu mz;kr ii;de	1170
-我没吱声	wo;tu mz;kr zi;dc ug;gc	320
+我没吱声	wo;tu mz;kr vi;dc ug;gc	320
 我没和	wo;tu mz;kr he;xd	752
 我没啥子	wo;tu mz;kr ua;dj zi;hi	189
 我没喊	wo;tu mz;kr hj;dn	261
@@ -221217,6 +221218,7 @@ columns:
 我编剧	wo;tu bm;im ju;cc	396
 我编程	wo;tu bm;im ig;xd	418
 我编织	wo;tu bm;im vi;id	342
+我编译	wo;tu bm;im yi;sr	131
 我编辑了	wo;tu bm;im ji;yd le;rl	414
 我编造	wo;tu bm;im zk;qd	396
 我缘分	wo;tu yr;ib ff;hp	297
@@ -284382,7 +284384,7 @@ columns:
 没人可以	mz;kr rf;jr ke;zk yi;vj	842
 没人吧	mz;kr rf;jr ba;dm	706
 没人吭声	mz;kr rf;jr kg;dz ug;gc	374
-没人吱声	mz;kr rf;jr zi;dc ug;gc	306
+没人吱声	mz;kr rf;jr vi;dc ug;gc	306
 没人告我	mz;kr rf;jr gk;qd wo;tu	117
 没人呢	mz;kr rf;jr ne;dc	504
 没人和	mz;kr rf;jr he;xd	770
@@ -295216,7 +295218,6 @@ columns:
 清凉吧	qy;ka ld;wg ba;dm	328
 清凉啊	qy;ka ld;wg aa;dt	364
 清凉国师	qy;ka ld;wg go;rn ui;pf	212
-清凉地	qy;ka ld;wg de;ge	396
 清凉境界	qy;ka ld;wg jy;gx jx;qj	162
 清凉夏季	qy;ka ld;wg xw;fo ji;xh	315
 清凉店	qy;ka ld;wg dm;xy	162
@@ -302061,6 +302062,7 @@ columns:
 然后把她	rj;vm hb;xf ba;um ta;be	581
 然后把菜	rj;vm hb;xf ba;um cl;ly	382
 然后捏	rj;vm hb;xf nx;uo	590
+然后换成	rj;vm hb;xf hr;ux ig;na	112
 然后接	rj;vm hb;xf jx;ui	1040
 然后是	rj;vm hb;xf ui;ot	1534
 然后来	rj;vm hb;xf ll;ah	1206
@@ -311605,7 +311607,7 @@ columns:
 甲基鸟苷	jw;sj ji;zh nc;xn gj;lz	160
 甲基黄	jw;sj ji;zh hd;nh	414
 甲壳纲	jw;sj qc;gw gh;im	436
-甲壳质	qw;sj qc;gw vi;xn	428
+甲壳质	jw;sj qc;gw vi;xn	428
 甲壳龙	jw;sj qc;gw ls;tl	162
 甲奴郡	jw;sj nu;br jp;bt	288
 甲子塘	jw;sj zi;hi th;gx	189
@@ -316537,7 +316539,7 @@ columns:
 皮色	pi;rp se;xm	882
 皮艺	pi;rp yi;la	464
 皮芯纤维	pi;rp xn;lh xm;il wz;iu	117
-皮茄克	pi;rp qx;ls ke;cp	310
+皮茄克	pi;rp jw;ls ke;cp	310
 皮草公司	pi;rp ck;lo gs;hk si;af	248
 皮草吧	pi;rp ck;lo ba;dm	180
 皮草城	pi;rp ck;lo ig;gn	342
@@ -320818,6 +320820,7 @@ columns:
 睾酮测定	gk;ty ts;ym ce;ko dy;wt	117
 睿信投资	rv;gh xn;js tb;ur zi;we	153
 睿力物流	rv;gh li;sl wu;qn lq;kb	130
+睿励	rv;gh li;xf	182
 睿博	rv;gh bo;nn	773
 睿宗刘钧	rv;gh zs;wf lq;vp jp;zn	252
 睿帝杨溥	rv;gh di;iw yh;ea pu;kn	270
@@ -332399,7 +332402,7 @@ columns:
 类猕猴桃	lz;pm mi;mb hb;mj tk;ep	270
 类球体	lz;pm qq;nf ti;je	189
 类癌	lz;pm ai;ad	648
-类百日咳	lz;pm bl;fu ri;or hl;dk	144
+类百日咳	lz;pm bl;fu ri;or ke;dk	144
 类的了	lz;pm de;ue le;rl	850
 类矿物	lz;pm kd;mx wu;qn	630
 类碘	lz;pm dm;mi	150
@@ -340077,7 +340080,7 @@ columns:
 罗福	lo;yl fu;ff	102
 罗福助	lo;yl fu;ff vu;fs	418
 罗秀镇	lo;yl xq;xv vf;zn	145
-罗科	lo;yl ke;xj	1147
+罗科	lo;yl ke;xj	413
 罗窑村	lo;yl yk;ea cp;ek	163
 罗立言	lo;yl li;il yj;sy	248
 罗米	lo;yl mi;pm	1152
@@ -355522,7 +355525,7 @@ columns:
 落实及	lo;lk ui;ww ji;cj	495
 落实吧	lo;lk ui;ww ba;dm	225
 落实时	lo;lk ui;ww ui;ok	459
-落客	lo;lk ke;ws	1210
+落客	lo;lk ke;ws	910
 落家里	la;lk jw;wj li;dl	436
 落家里了	la;lk jw;wj li;dl le;rl	342
 落寞了	lo;lk mo;wl le;rl	634
@@ -359008,7 +359011,7 @@ columns:
 螺丝转	lo;cq si;ii vr;ym	518
 螺口	lo;cq kb;dk	598
 螺口灯头	lo;cq kb;dk dg;ca tb;wm	270
-螺壳	lo;cq ke;gw	1057
+螺壳	lo;cq ke;gw	105
 螺头	lo;cq tb;wm	549
 螺峰街	lo;cq fg;vh jx;pg	248
 螺旋丝	lo;cq xr;le si;ii	252
@@ -359050,7 +359053,6 @@ columns:
 螺洲	lo;cq vb;ko	883
 螺洲陈氏	lo;cq vb;ko if;tr ui;bs	162
 螺片	lo;cq pm;ap	868
-螺科	lo;cq ke;xj	866
 螺类	lo;cq lz;pm	180
 螺纹内径	lo;cq wf;iv nz;mj jy;wr	117
 螺纹牙型	lo;cq wf;iv ya;ly xy;fl	202
@@ -380196,7 +380198,7 @@ columns:
 躯体依赖	qu;zn ti;je yi;jt ll;xx	315
 躯体的	qu;zn ti;je de;ue	698
 躯体虐待	qu;zn ti;je nt;zb dl;wg	130
-躯壳虽隳	qu;zn ke;gw sv;dc hv;tn	117
+躯壳虽隳	qu;zn qc;gw sv;dc hv;tn	117
 躯干烧伤	qu;zn gj;eg uk;cp uh;je	243
 躲入了	do;zo ru;ju le;rl	285
 躲出去	do;zo iu;sm qu;gk	927
@@ -381522,6 +381524,7 @@ columns:
 轻载运行	qy;yr zl;np yp;bu xy;px	117
 轻透倍护	qy;yr tb;xv bz;ji hu;um	230
 轻酒吧	qy;yr jq;ky ba;dm	171
+轻量的	qy;yr ld;of de;ue	496
 轻钢盔	qy;yr gh;zm kv;nc	234
 轻铁	qy;yr tx;zt	212
 轻铁先锋	qy;yr tx;zt xm;qp fg;zh	130
@@ -399618,8 +399621,9 @@ columns:
 钱运录	qm;zf yp;bu lu;bk	369
 钱还了	qm;zf hr;cu le;rl	498
 钱还有	qm;zf hl;cu yb;nv	1008
+钱这事	qm;zf ve;vu ui;fd	156
 钱这时	qm;zf ve;vu ui;ok	312
-钱这是	qm;zf ve;vu ui;ot	1192
+钱这是	qm;zf vz;vu ui;ot	410
 钱进了	qm;zf jn;qu le;rl	355
 钱退了	qm;zf tv;iu le;rl	526
 钱送了	qm;zf ss;hm le;rl	477

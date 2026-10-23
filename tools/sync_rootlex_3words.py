@@ -6,8 +6,13 @@
 import_jdhe_3words.py 改了主表后，必须把受影响码组的词行重写为新词序，
 否则引擎词表/排序特征仍用旧行序。
 
-同步规则（每组）：
-- 组 = 主表该码全部行（按主表文件序：字在前、三字块词在后）+ 根词表独有行殿后；
+同步规则（每组，2026-10-23 起三码位字先词后）：
+- 组内行序 = 主表字行（主表文件序，owner 字在前）→ 根词表独有字行
+  （按字频名次升序，20001 占位殿后）→ 主表词行（主表文件序，即竞速序）
+  → 根词表独有词行（原顺序殿后）；
+- 字先词后与四码位「被顶字保次选」（bdc5dcc）同向：三码位是字的辅码
+  消歧位，未占三简位的高频字不得沉到声母简词之后（判例：bad 吧、
+  ciw 次，见 tools/fix_lexicon_3key_char_first.py）；
 - 字与根词表独有行保留原 freq/reading/canonical 列，新词 freq 用 20001 占位
   （构建期由 build_mohu_lexicons 按整句词频富化）；
 - rank 全组重排 1..N。
@@ -91,7 +96,7 @@ def main() -> None:
                                   for i, w in enumerate(new_seq)]
             rebuilt_groups += 1
             continue
-        # 重建组：主表行(文件序) + 根词表独有行(原顺序)
+        # 重建组：字先词后——主表字 + 独有字(字频序) + 主表词 + 独有词
         old_rows = {lines[i].split("\t")[1]: lines[i] for i in g}
         old_set = set(head_master.get(code, []))
         new_set = set(new_seq)
@@ -99,14 +104,28 @@ def main() -> None:
         kept = [lines[i] for i in g
                 if lines[i].split("\t")[1] not in old_set
                 and lines[i].split("\t")[1] not in new_set]
-        body = []
-        for w in new_seq:
-            if w in old_rows:
-                parts = old_rows[w].split("\t")
-                body.append("\t".join([code, w, "0", *parts[3:]]))
-            else:
-                body.append(f"{code}\t{w}\t0\t20001")
-        body += kept
+
+        def is_char_row(line: str) -> bool:
+            return len(line.split("\t")[1]) == 1
+
+        def kept_char_key(line: str):
+            fields = line.split("\t")
+            try:
+                freq = int(fields[3]) if len(fields) > 3 and fields[3] else 20001
+            except ValueError:
+                freq = 20001
+            return (freq if 0 < freq < 20001 else 10**9, int(fields[2] or 1))
+
+        def row_for(word: str) -> str:
+            if word in old_rows:
+                parts = old_rows[word].split("\t")
+                return "\t".join([code, word, "0", *parts[3:]])
+            return f"{code}\t{word}\t0\t20001"
+
+        body = ([row_for(w) for w in new_seq if is_char_row(row_for(w))]
+                + sorted((k for k in kept if is_char_row(k)), key=kept_char_key)
+                + [row_for(w) for w in new_seq if not is_char_row(row_for(w))]
+                + [k for k in kept if not is_char_row(k)])
         body = ["\t".join([*row.split("\t")[:2], str(r + 1), *row.split("\t")[3:]])
                 for r, row in enumerate(body)]
         change_bodies[code] = body

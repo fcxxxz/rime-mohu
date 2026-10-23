@@ -11,18 +11,19 @@ alignment debt recorded with the 0.17.0 note ("词库权重与词秩策展源不
 属数据对齐问题").
 
 Rule applied here, and only here: within each four-code group of
-tiger_sentence_native/mohu_tiger.lexicon.txt, word rows (len>=2, rank != 99)
-are permuted among their own line slots sorted by corpus frequency descending
-(ties keep current order), and their rank values are reassigned to the same
-sorted slot set — so line order, rank order and frequency order agree.
-Single-char rows never move (出简让全/字序 own them), rank-99 injected rows
-never move, the freq column is untouched (it does not enter decode scores),
-and the master table is untouched (the express layer owns runtime word order
-there). Frequency comes from the generated
-tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt (the corpus freq the
-engine build writes); this file's own word freq column is a 20001 sentinel.
-Idempotent; ``make mohu_lexicons`` regenerates both derived lexicons after
-running.
+tiger_sentence_native/mohu_tiger.lexicon.txt, two-char rows — whose code is
+by construction the word's full double-pinyin spelling — are promoted to the
+top of the word tier sorted by corpus frequency descending (yywu: 鹦鹉 1490
+above the abbreviation rows, aadb: 阿斗 above 嗷嗷待哺). Rows longer than two
+characters are 声母简词 (their full spellings are 8+ keys; the four-code row
+is the f47aeb7 quick-abbreviation feature, 成语优先) and **keep their
+inherited relative order** — 云雨巫山 stays ahead of 医药卫生, 安堵乐业 ahead
+of 澳大利亚. Single-char rows never move (出简让全/字序 own them), rank-99
+injected rows never move, the freq column is untouched, and the master table
+is untouched. Frequency comes from the generated
+tiger_sentence_native/data/zrm/mohu_zrm.lexicon.txt; this file's own word
+freq column is a 20001 sentinel. Idempotent; ``make mohu_lexicons``
+regenerates both derived lexicons after running.
 """
 from __future__ import annotations
 
@@ -76,12 +77,19 @@ def main() -> int:
                  and lines[index].split("\t")[2] != "99"]
         if len(words) < 2:
             continue
+        two_char = [index for index in words
+                    if len(lines[index].split("\t")[1]) == 2]
+        if not two_char:
+            continue  # 纯简词组无二字真词，整组保持继承序
         freqs = {
             index: exact.get((code, lines[index].split("\t")[1]),
                              by_text.get(lines[index].split("\t")[1], 0))
             for index in words
         }
-        order = sorted(words, key=lambda index: (-freqs[index], index))
+        # 二字全码词按词频升到词层顶部；>2 字声母简词保持原相对序。
+        head = sorted(two_char, key=lambda index: (-freqs[index], index))
+        tail = [index for index in words if index not in set(two_char)]
+        order = head + tail
         if order == words:
             continue
         changed += 1
@@ -94,7 +102,7 @@ def main() -> int:
             fields = lines[source_index].split("\t")
             fields[2] = str(slot)
             lines[source_index] = "\t".join(fields)
-        # 词行整行置换到词行槽位：行序、rank 序、词频序三者一致。
+        # 词行整行置换到词行槽位：行序、rank 序一致。
         reordered = [lines[source_index] for source_index in order]
         for slot_position, source_index in enumerate(words):
             lines[source_index] = reordered[slot_position]

@@ -122,7 +122,9 @@ class BuildStats:
     source_anomalies: list[str] = field(default_factory=list)
     long_word_rows: int = 0
     lexicon_rows: int = 0
+    lexicon_injected_chars: int = 0  # 码表独有字注入引擎词表
     chars_rows: int = 0
+    table_only_chars: int = 0  # 码表独有字（主码表未收，物化进派生表）
     shortcode_rows: int = 0      # 码表自带简码物化行数
     user_word_rows: int = 0      # 码表自带词库：生成词行数
     user_word_skipped: int = 0   # 码表自带词库：跳过的词（含引擎外字）
@@ -294,7 +296,8 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
                    character_syllables: dict | None = None,
                    char_order: dict[tuple[str, str], int] | None = None,
                    keep_flykeys: bool = False,
-                   explicit_shortcodes: list[tuple[str, str]] | None = None) -> str:
+                   explicit_shortcodes: list[tuple[str, str]] | None = None,
+                   materialize_aux: dict | None = None) -> str:
     text = replace_dictionary_name(text, f"mohu_{scheme}")
     lines = []
     in_body = False
@@ -339,6 +342,31 @@ def convert_master(text: str, scheme: str, converter, base_aux, merged_aux, stat
 
     # 简码无重是唯一行为：导入的简码必须在这里参与竞争，不允许事后经
     # 更高优先级的自定义短语翻译器绕过胜出者。
+    # 码表独有字物化：用户表有辅码、而主码表整个没有行的字（mohu 主表
+    # 只收部分字集，派生表此前照抄导致近半码表字在表层缺席——桜 判例
+    # 2026-10-23）。按「本方案双拼 + 本表辅码」生成四码全码行，插入
+    # 单字区尾部；四码行不参与简码无重竞争。
+    if materialize_aux and character_syllables:
+        master_chars = set()
+        for raw in lines:
+            fields = raw.rstrip("\n").split("\t")
+            if len(fields) >= 2 and _is_single_han(fields[0]):
+                master_chars.add(fields[0])
+        materialized: list[str] = []
+        materialized_chars = set()
+        for char, entry in materialize_aux.items():
+            if char in master_chars or not getattr(entry, "normal", ""):
+                continue
+            for syllable in sorted(character_syllables.get(char, ())):
+                materialized.append(f"{char}\t{converter(syllable) + entry.normal}\n")
+                materialized_chars.add(char)
+        if materialized:
+            stats.table_only_chars = len(materialized_chars)
+            materialized.sort(key=lambda row: row.split("\t")[1])
+            insert_at = _char_section_tail(lines)
+            lines[insert_at:insert_at] = (
+                ["# 码表独有字（主码表未收）：本方案双拼+本表辅码物化，四码全码\n"]
+                + materialized)
     if explicit_shortcodes:
         insert_at = _char_section_tail(lines)
         lines[insert_at:insert_at] = sorted(
@@ -1119,9 +1147,10 @@ def run(args) -> int:
     master_converted = convert_master(master_text, name, converter, base_aux, merged_aux, stats,
                                       character_syllables=load_character_syllables(ZRM_CHARS_DICT),
                                       char_order=coded.order if coded else None,
-                                      keep_flykeys=keep_flykeys,
-                                      explicit_shortcodes=(coded.shortcodes
-                                          if coded and args.keep_shortcodes else None))
+                                          keep_flykeys=keep_flykeys,
+                                          explicit_shortcodes=(coded.shortcodes
+                                              if coded and args.keep_shortcodes else None),
+                                          materialize_aux=(coded.aux if coded else None))
     if coded and args.keep_shortcodes:
         stats.shortcode_rows = len(coded.shortcodes)
     master_path = output / f"mohu_{name}.dict.yaml"
@@ -1207,6 +1236,20 @@ def run(args) -> int:
         if aux_customized:
             tiger_rows = remap_lexicon_rows(tiger_rows, base_aux, merged_aux)
         zrm_syllables = load_character_syllables(ZRM_CHARS_DICT)
+        # 码表独有字注入引擎词表（rank 99 注入层）：mohu_tiger 词表同样
+        # 未收这些字（桜 判例），整句层会整个打不出——与主表物化同源补齐。
+        # 行保持自然码形态（音节+辅码），由 build_rows 统一转换布局。
+        if coded is not None:
+            lexicon_chars = {row[1] for row in tiger_rows if len(row[1]) == 1}
+            injected = []
+            for char, entry in coded.aux.items():
+                if char in lexicon_chars or not entry.normal:
+                    continue
+                for syllable in sorted(zrm_syllables.get(char, ())):
+                    injected.append((syllable + entry.normal, char, "99", "0", "", ""))
+            if injected:
+                stats.lexicon_injected_chars = len({row[1] for row in injected})
+                tiger_rows = tiger_rows + injected
         inject_words = load_inject_words(source_specs["base"])
         lexicon_rows = build_rows(
             tiger_rows, name,
@@ -1343,6 +1386,15 @@ def build_report(name, layout, aux_source, scheme_display, outcome, stats, alias
             lines.append(
                 "- 被推字参与的码位已按字频重排（否则按虎码辅码序，常用字会沉底）"
             )
+    if stats.table_only_chars:
+        lines.append(
+            f"- 码表独有字物化：主码表未收 {stats.table_only_chars} 字，"
+            "已按本方案双拼+本表辅码物化四码全码行"
+        )
+    if stats.lexicon_injected_chars:
+        lines.append(
+            f"- 码表独有字注入引擎词表：{stats.lexicon_injected_chars} 字（rank 99 注入层）"
+        )
     if stats.master_unconverted:
         lines.extend(f"  {row}" for row in stats.master_unconverted[:10])
     lines += [

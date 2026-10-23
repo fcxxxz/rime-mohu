@@ -809,6 +809,30 @@ print(hashlib.sha256(result.encode()).hexdigest())
         self.assertLess(out.index("吧\tbad\n"), out.index("白的\tbad\n"))
         self.assertEqual(out[-1], "白的\tbad\n")
 
+    def test_table_only_chars_materialized_into_master(self) -> None:
+        # 码表独有字（主码表未收，桜 判例）：按本方案双拼+本表辅码物化
+        # 四码全码行进单字区；主表已有的字不重复物化。
+        from tools.custom import build_custom_scheme as builder
+        from tools.custom.custom_aux import CodedCharTable
+        from tiger_aux import AuxiliaryEntry
+
+        coded = CodedCharTable()
+        coded.aux = {"樱": AuxiliaryEntry("wu"), "桜": AuxiliaryEntry("wu")}
+        source = ("---\nname: mohu_zrm\n...\n"
+                  "樱\tyyv\n"
+                  "#----------词库----------#\n"
+                  "经常\tji\n")
+        stats = self.stats_cls()
+        out = builder.convert_master(
+            source, "materialize", lambda code: code, {"樱": AuxiliaryEntry("vv")},
+            {"樱": AuxiliaryEntry("wu"), "桜": AuxiliaryEntry("wu")}, stats,
+            character_syllables={"樱": {"yy"}, "桜": {"yy"}},
+            materialize_aux=coded.aux)
+        self.assertIn("桜\tyywu\n", out)
+        self.assertNotIn("樱\tyywu\n", out)   # 主表已有的字不重复物化
+        self.assertEqual(stats.table_only_chars, 1)
+        self.assertLess(out.index("桜\tyywu\n"), out.index("#----------词库"))
+
 
 class CharTableCliTest(unittest.TestCase):
     """--char-table 的错误路径（重活开始前即失败）。"""

@@ -7,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "7ae0b85d1a27"
+version: "53de56c599df"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -1809,6 +1809,7 @@ columns:
 一条水	yi;fi tc;he uv;ks	828
 一条直径	yi;fi tc;he vi;nq jy;wr	428
 一条索	yi;fi tc;he so;nw	396
+一条绳上	yi;fi tc;he ug;id uh;yf	129
 一条鱼儿	yi;fi tc;he yu;wv er;pe	328
 一条鳗鱼	yi;fi tc;he mj;wo yu;wv	346
 一条黑色	yi;fi tc;he hz;ph se;xm	837
@@ -14051,7 +14052,7 @@ columns:
 丝般柔顺	si;ii bj;ir rb;it up;ow	252
 丝茅冲	si;ii mk;li is;wd	310
 丝蕴	si;ii yp;li	526
-丝血反杀	si;ii xx;ta fj;xr ua;be	324
+丝血反杀	si;ii xt;ta fj;xr ua;be	324
 丝袜花	si;ii wa;tf hw;lj	324
 丝质外衣	si;ii vi;xn wl;ly yi;ti	171
 丝质绷带	si;ii vi;xn bg;iv dl;lw	230
@@ -49403,6 +49404,7 @@ columns:
 令狐滈	ly;jk hu;my hk;kg	212
 令狐行达	ly;jk hu;my xy;px da;mu	153
 令诸众生	ly;jk vu;sq vs;jj ug;ls	346
+令读者	ly;jk du;sn ve;qo	108
 以一人	yi;vj yi;fi rf;jr	206
 以一当千	yi;vj yi;fi dh;yb qm;lq	243
 以一时	yi;vj yi;fi ui;ok	543
@@ -89774,7 +89776,7 @@ columns:
 全推	qr;jn tv;uu	818
 全推力版	qr;jn tv;uu li;sl bj;ax	266
 全推在	qr;jn tv;uu zl;ng	320
-全搞	qr;jn gk;ug	1287
+全搞	qr;jn gk;ug	923
 全撤	qr;jn ie;ub	896
 全收	qr;jn ub;ih	1048
 全收了	qr;jn ub;ih le;rl	554
@@ -90165,7 +90167,7 @@ columns:
 全餐	qr;jn cj;gr	738
 全马	qr;jn ma;nm	602
 全驴宴	qr;jn lv;nm yj;wo	378
-全高	qr;jn gk;gg	984
+全高	qr;jn gk;gg	384
 全鱼	qr;jn yu;wv	188
 全鸭	qr;jn ya;sx	104
 全鸭季	qr;jn ya;sx ji;xh	522
@@ -102367,6 +102369,7 @@ columns:
 前提交	qm;hv ti;uo jc;ab	806
 前提吧	qm;hv ti;uo ba;dm	432
 前提啊	qm;hv ti;uo aa;dt	356
+前摄	qm;hv ue;uq	819
 前摄干扰	qm;hv ue;uq gj;eg rk;uo	162
 前摄抑制	qm;hv ue;uq yi;ub vi;qr	369
 前摇过长	qm;hv yk;uy go;ku ih;pc	117
@@ -107385,6 +107388,7 @@ columns:
 十多吧	ui;ns do;ll ba;dm	558
 十多天呢	ui;ns do;ll tm;fm ne;dc	162
 十多年的	ui;ns do;ll nm;ev de;ue	1242
+十多款	ui;ns do;ll kr;gf	176
 十多页	ui;ns do;ll ye;wy	788
 十夜不醒	ui;ns ye;zj bu;cb xy;yo	220
 十大剧院	ui;ns da;md ju;cc yr;tw	256
@@ -124274,6 +124278,7 @@ columns:
 后推式	hb;xf tv;uu ui;pu	175
 后推杆	hb;xf tv;uu gj;ee	238
 后援站	hb;xf yr;uy vj;iy	310
+后摄	hb;xf ue;uq	600
 后摄影	hb;xf ue;uq yy;og	644
 后摄抑制	hb;xf ue;uq yi;ub vi;qr	171
 后摆臂	hb;xf bl;uy bi;cd	333
@@ -134961,6 +134966,7 @@ columns:
 圆角的吗	yr;rd jc;xt de;ue ma;dn	130
 圆贝	yr;rd bz;ob	289
 圆蹄角端	yr;rd ti;pi jc;xt dr;iv	117
+圆边	yr;rd bm;su	576
 圆通殿	yr;rd ts;kt dm;cl	302
 圆通街	yr;rd ts;kt jx;pg	428
 圆钝	yr;rd dp;zf	675
@@ -189553,6 +189559,7 @@ columns:
 廉义自立	lm;xh yi;ib zi;oi li;il	153
 廉价了	lm;xh jw;jj le;rl	670
 廉价吧	lm;xh jw;jj ba;dm	248
+廉价的	lm;xh jw;jj de;ue	634
 廉价超市	lm;xh jw;jj ik;pp ui;zr	369
 廉基勋	lm;xh ji;zh xp;do	202
 廉士重名	lm;xh ui;gs is;ld my;ld	117
@@ -205396,6 +205403,7 @@ columns:
 懒姑娘	lj;hx gu;bc nd;bi	616
 懒字	lj;hx zi;wh	158
 懒尿虾	lj;hx nc;ck xw;cf	495
+懒得养	lj;hx de;wo yh;gi	102
 懒得出奇	lj;hx de;wo iu;sm qi;mz	374
 懒得动换	lj;hx de;wo ds;bs hr;ux	194
 懒得动看	lj;hx de;wo ds;bs kj;uq	130
@@ -244349,6 +244357,7 @@ columns:
 搞一套	gk;ug yi;fi tk;mp	688
 搞一搞	gk;ug yi;fi gk;ug	716
 搞一盘	gk;ug yi;fi pj;ia	248
+搞一种	gk;ug yi;fi vs;xd	237
 搞七搞八	gk;ug qi;rq gk;ug ba;hb	364
 搞上了	gk;ug uh;yf le;rl	824
 搞下	gk;ug xw;fy	1372
@@ -294450,6 +294459,7 @@ columns:
 淑安公主	uu;ky an;wb gs;hk vu;in	256
 淑明公主	uu;ky my;ov gs;hk vu;in	162
 淑芳姐	uu;ky fh;ll jx;bf	238
+淘一个	tk;kn yi;fi ge;jg	139
 淘一些	tk;kn yi;fi xx;sv	711
 淘了一下	tk;kn le;rl yi;fi xw;fy	194
 淘公仔	tk;kn gs;hk zl;jh	374
@@ -298560,7 +298570,7 @@ columns:
 潜在蒸发	qm;kh zl;ng vg;la fa;sr	117
 潜在震源	qm;kh zl;ng vf;tf yr;kx	130
 潜地导弹	qm;kh di;ge dk;vk dj;bh	315
-潜射	qm;kh ue;zk	769
+潜射	qm;kh ue;zk	511
 潜射型	qm;kh ue;zk xy;fl	446
 潜心悟道	qm;kh xn;hx wu;hw dk;ho	171
 潜望深度	qm;kh wh;fv uf;kw du;xl	162
@@ -334267,6 +334277,7 @@ columns:
 红叶里	hs;iu ye;dn li;dl	198
 红叶飘飘	hs;iu ye;dn pc;vf pc;vf	324
 红叶飘香	hs;iu ye;dn pc;vf xd;xo	153
+红吗	hs;iu ma;dn	124
 红哥	hs;iu ge;zz	310
 红唇皓齿	hs;iu ip;fd hk;uq ii;lc	261
 红嘴	hs;iu zv;ds	932
@@ -339362,7 +339373,6 @@ columns:
 缘起即灭	yr;ib qi;pv ji;iz mx;fc	266
 缘起楼	yr;ib qi;pv lb;ep	310
 缘起论	yr;ib qi;pv lp;sj	194
-缘边	yr;ib bm;su	576
 缘饭店	yr;ib fj;qx dm;xy	212
 缙云寺	jn;if yp;by si;gk	234
 缙云的	jn;if yp;by de;ue	306
@@ -348342,7 +348352,7 @@ columns:
 膜平衡	mo;vl py;eh hg;pw	238
 膜应力	mo;vl yy;xk li;sl	130
 膜性痛经	mo;vl xy;hl ts;ak jy;ir	180
-膜性结构	mo;vl xy;hl jx;ig gb;en	1251
+膜性结构	mo;vl xy;hl jx;ig gb;en	163
 膜抗原	mo;vl kh;uz yr;xu	279
 膜拜了	mo;vl bl;uf le;rl	657
 膜拜吧	mo;vl bl;uf ba;dm	436
@@ -373517,6 +373527,7 @@ columns:
 调料时	tc;sm lc;pj ui;ok	423
 调日期	tc;sm ri;or qi;zh	392
 调景岭站	dc;sm jy;og ly;vj vj;iy	576
+调最大	tc;sm zv;oq da;md	109
 调最高	tc;sm zv;oq gk;gg	531
 调机	dc;sm ji;eo	868
 调来了	dc;sm ll;ah le;rl	616
@@ -377625,7 +377636,7 @@ columns:
 赵志浩	vk;pb vi;gh hk;kq	116
 赵志芳	vk;pb vi;gh fh;ll	112
 赵志荣	vk;pb vi;gh rs;lw	114
-赵思	vk;pb si;qh	1441
+赵思	vk;pb si;qh	455
 赵惠文	vk;pb hv;nq wf;vw	144
 赵成	vk;pb ig;na	321
 赵振江	vk;pb vf;uf jd;ku	112
@@ -377696,7 +377707,7 @@ columns:
 赵让	vk;pb rh;sy	435
 赵记老铺	vk;pb ji;sv lk;ql pu;zn	428
 赵超	vk;pb ik;pp	1915
-赵轩	vk;pb xr;ye	7726
+赵轩	vk;pb xr;ye	772
 赵辛庄	vk;pb xn;nx vd;xg	178
 赵达	vk;pb da;mu	622
 赵运恒	vk;pb yp;bu hg;hf	153
@@ -400880,7 +400891,6 @@ columns:
 链复形	lm;zy fu;eo xy;fl	464
 链子崖	lm;zy zi;hi ya;vx	378
 链家在线	lm;zy jw;wj zl;ng xm;if	284
-链家的	lm;zy jw;wj de;ue	634
 链异构	lm;zy yi;vl gb;en	266
 链异构体	lm;zy yi;vl gb;en ti;je	180
 链式赋值	lm;zy ui;pu fu;of vi;jn	117

@@ -1,7 +1,7 @@
 {
   "repository": "amzxyz/rime-wanxiang",
   "branch": "wanxiang",
-  "revision": "7ae0b85d1a275698fdf3798a9a850445ddbba0c4",
+  "revision": "53de56c599dfa384fa05c322533ab1898b63de87",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "source_url": "https://github.com/amzxyz/rime-wanxiang",
@@ -9,7 +9,7 @@
     "jichu": {
       "path": "dicts/jichu.dict.yaml",
       "raw_path": "raw/jichu.dict.yaml",
-      "sha256": "81418b9438184269365af1ebe1c1b28c98ed3fd5295a8fed18b91bbbd71d7af0"
+      "sha256": "ab00cdeb43a69a79acedf3b1a5337b6d57bc70818e24ea17bef533ff5f5e77e1"
     },
     "lianxiang": {
       "path": "dicts/lianxiang.dict.yaml",
@@ -25,7 +25,7 @@
     "duoyin": {
       "path": "dicts/duoyin.dict.yaml",
       "raw_path": "raw/duoyin.dict.yaml",
-      "sha256": "84b0cf443f722d6d01dd49c96ad692589c1f6b0f8fdbdcc20cda99d00104039a"
+      "sha256": "f89a50949e93ac60746aa3058f67bc3a6bbd4a9a5c2d43652df0cb2ae973d555"
     },
     "shici": {
       "path": "dicts/shici.dict.yaml",
@@ -59,12 +59,12 @@
     "mingren": {
       "path": "dicts/mingren.dict.yaml",
       "raw_path": "raw/mingren.dict.yaml",
-      "sha256": "eb955a0854f8b5a162cef137deb404e448c287ec9e119467073f25c391edcbef"
+      "sha256": "56f0bd033383f669511ee741ab0a7db240693ef51f8696f0e51fd098e1b86ea7"
     },
     "yiren": {
       "path": "dicts/yiren.dict.yaml",
       "raw_path": "raw/yiren.dict.yaml",
-      "sha256": "11cffb9e712bed1c6f922eebdbb2d5e8218ca1ae58eef5d1815ded3c0b82679e"
+      "sha256": "77affd433bc53d2293e6930c185ac0ce1f1c4e6ca1dcc8602ba32e4df8266a95"
     },
     "wuzhong": {
       "path": "dicts/wuzhong.dict.yaml",

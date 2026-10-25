@@ -7,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "53de56c599df"
+version: "b7d4ee298c0c"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -105409,6 +105409,7 @@ columns:
 包间啊	bk;nv jm;ao aa;dt	364
 包间里面	bk;nv jm;ao li;dl mm;bm	806
 包阳台	bk;nv yh;to tl;kd	243
+包集	bk;nv ji;ue	492
 包颖	bk;nv yy;vx	168
 包食住	bk;nv ui;qs vu;ji	284
 包餐	bk;nv cj;gr	981
@@ -265521,6 +265522,7 @@ columns:
 机选了	ji;eo xr;qp le;rl	508
 机遇吧	ji;eo yu;qv ba;dm	205
 机遇啊	ji;eo yu;qv aa;dt	436
+机铠	ji;eo kl;zv	126
 机长吧	ji;eo vh;pc ba;dm	117
 机麻	ji;eo ma;zm	639
 机鼻	ji;eo bi;oq	212
@@ -286089,6 +286091,7 @@ columns:
 没提到的	mz;kr ti;uo dk;yp de;ue	675
 没提前	mz;kr ti;uo qm;hv	752
 没提及	mz;kr ti;uo ji;cj	945
+没提取	mz;kr ti;uo qu;qr	504
 没提名	mz;kr ti;uo my;ld	392
 没提我	mz;kr ti;uo wo;tu	450
 没提这	mz;kr ti;uo ve;vu	572
@@ -329781,6 +329784,7 @@ columns:
 笑惨了	xc;rt cj;hk le;rl	558
 笑成了	xc;rt ig;na le;rl	706
 笑我了	xc;rt wo;tu le;rl	612
+笑掉	xc;rt dc;uy	697
 笑掉了	xc;rt dc;uy le;rl	278
 笑料吧	xc;rt lc;pj ba;dm	190
 笑晕了	xc;rt yp;ow le;rl	544
@@ -359738,7 +359742,7 @@ columns:
 行范围	xy;px fj;lk wz;rg	801
 行菩提心	xy;px pu;li ti;uo xn;hx	256
 行藏在我	xy;px ch;ln zl;ng wo;tu	279
-行行如也	xy;px xy;px ru;bd ye;ey	117
+行行如也	hh;px hh;px ru;bd ye;ey	117
 行街	xy;px jx;pg	1454
 行衰运	xy;px uy;td yp;bu	261
 行被删除	xy;px bz;tr uj;ip iu;tj	189
@@ -381535,6 +381539,7 @@ columns:
 轻载运行	qy;yr zl;np yp;bu xy;px	117
 轻透倍护	qy;yr tb;xv bz;ji hu;um	230
 轻酒吧	qy;yr jq;ky ba;dm	171
+轻量模式	qy;yr ld;of mo;el ui;pu	131
 轻量的	qy;yr ld;of de;ue	496
 轻钢盔	qy;yr gh;zm kv;nc	234
 轻铁	qy;yr tx;zt	212
@@ -384324,6 +384329,7 @@ columns:
 还得早起	hl;cu dz;wo zk;on qi;pv	436
 还得病了	hl;cu de;wo by;af le;rl	117
 还得睡	hl;cu dz;wo uv;ql	346
+还得重做	hl;cu dz;wo is;ld zo;jc	433
 还得靠我	hl;cu dz;wo kk;qd wo;tu	423
 还忘了	hl;cu wh;fh le;rl	688
 还忙得很	hl;cu mh;hf de;wo hf;wi	162
@@ -394263,6 +394269,7 @@ columns:
 都神经了	db;qo uf;fo jy;ir le;rl	212
 都离了	db;qo li;zb le;rl	391
 都种了	db;qo vs;xd le;rl	289
+都移除	db;qo yi;xl iu;tj	125
 都稀罕	db;qo xi;xb hj;wh	459
 都空了	db;qo ks;eu le;rl	724
 都空的	db;qo ks;eu de;ue	378
@@ -409818,6 +409825,7 @@ columns:
 非常吧	fz;rf ih;sr ba;dm	266
 非常咸鱼	fz;rf ih;sr xm;nf yu;wv	153
 非常啊	fz;rf ih;sr aa;dt	396
+非常地妖	fz;rf ih;sr de;ge yk;bt	207
 非常夫妻	fz;rf ih;sr fu;hf qi;fb	163
 非常少的	fz;rf ih;sr uk;yt de;ue	783
 非常平	fz;rf ih;sr py;eh	1035
@@ -409831,7 +409839,6 @@ columns:
 非常泰	fz;rf ih;sr tl;ai	178
 非常熟	fz;rf ih;sr ub;gh	637
 非常熟悉	fz;rf ih;sr uu;gh xi;tp	1107
-非常的妖	fz;rf ih;sr de;ue yk;bt	207
 非常知名	fz;rf ih;sr vi;od my;ld	670
 非常腻	fz;rf ih;sr ni;vp	558
 非常艰深	fz;rf ih;sr jm;ri uf;kw	252

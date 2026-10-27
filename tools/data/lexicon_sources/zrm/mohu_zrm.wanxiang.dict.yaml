@@ -7,7 +7,7 @@
 
 ---
 name: mohu_zrm.wanxiang
-version: "b7d4ee298c0c"
+version: "d8fffe138bfc"
 sort: by_weight
 use_preset_vocabulary: false
 columns:
@@ -38371,7 +38371,7 @@ columns:
 他家配	ta;je jw;wj pz;yv	518
 他家量	ta;je jw;wj ld;of	414
 他家锅	ta;je jw;wj go;zd	612
-他家长	ta;je jw;wj ih;pc	850
+他家长	ta;je jw;wj vh;pc	850
 他家门	ta;je jw;wj mf;am	986
 他家面	ta;je jw;wj mm;bm	774
 他家饭	ta;je jw;wj fj;qx	594
@@ -173530,7 +173530,7 @@ columns:
 小家居	xc;yx jw;wj ju;cc	184
 小家的	xc;yx jw;wj de;ue	644
 小家败气	xc;yx jw;wj bl;oh qi;vq	194
-小家长	xc;yx jw;wj ih;pc	558
+小家长	xc;yx jw;wj vh;pc	558
 小容	xc;yx rs;wh	903
 小宽	xc;yx kr;wl	760
 小宽面	xc;yx kr;wl mm;bm	405
@@ -200368,7 +200368,7 @@ columns:
 快说我	ky;hn uo;sh wo;tu	392
 快说明	ky;hn uo;sh my;ov	554
 快说说	ky;hn uo;sh uo;sh	652
-快调整	ky;hn dc;sm vg;xh	788
+快调整	ky;hn tc;sm vg;xh	788
 快谢谢	ky;hn xx;sz xx;sz	644
 快贬值	ky;hn bm;ot vi;jn	472
 快贴在	ky;hn tx;oy zl;ng	342
@@ -213462,7 +213462,7 @@ columns:
 我家那	wo;tu jw;wj na;au	1040
 我家都	wo;tu jw;wj db;qo	742
 我家里了	wo;tu jw;wj li;dl le;rl	364
-我家长	wo;tu jw;wj ih;pc	752
+我家长	wo;tu jw;wj vh;pc	752
 我家门	wo;tu jw;wj mf;am	1048
 我家闹	wo;tu jw;wj nk;az	486
 我家院子	wo;tu jw;wj yr;tw zi;hi	639
@@ -231714,7 +231714,7 @@ columns:
 把家族	ba;um jw;wj zu;le	554
 把家电	ba;um jw;wj dm;oa	378
 把家装	ba;um jw;wj vd;ag	518
-把家长	ba;um jw;wj ih;pc	670
+把家长	ba;um jw;wj vh;pc	670
 把家风	ba;um jw;wj fg;ob	324
 把容器	ba;um rs;wh qi;dd	495
 把容易	ba;um rs;wh yi;on	526
@@ -232624,7 +232624,7 @@ columns:
 把投影	ba;um tb;ur yy;og	400
 把投票	ba;um tb;ur pc;vf	464
 把投篮	ba;um tb;ur lj;rp	346
-把投行	ba;um tb;ur xy;px	342
+把投行	ba;um tb;ur hh;px	342
 把投诉	ba;um tb;ur su;st	387
 把投资	ba;um tb;ur zi;we	878
 把折叠	ba;um ve;ut dx;rr	594
@@ -236733,10 +236733,9 @@ columns:
 投胎时	tb;ur tl;vk ui;ok	378
 投脾气	tb;ur pi;vu qi;vq	346
 投融服务	tb;ur rs;nc fu;vz wu;hs	238
-投行吧	tb;ur xy;px ba;dm	248
-投行啊	tb;ur xy;px aa;dt	346
-投行时	tb;ur xy;px ui;ok	446
-投行风云	tb;ur xy;px fg;ob yp;by	171
+投行吧	tb;ur hh;px ba;dm	248
+投行啊	tb;ur hh;px aa;dt	346
+投行风云	tb;ur hh;px fg;ob yp;by	171
 投诉了	tb;ur su;st le;rl	914
 投诉啊	tb;ur su;st aa;dt	508
 投诉工单	tb;ur su;st gs;ug dj;hq	256
@@ -332853,6 +332852,7 @@ columns:
 粮油学会	ld;pi yb;kd xt;kw hv;jb	477
 粮油控股	ld;pi yb;kd ks;ue gu;vr	189
 粮油糖	ld;pi yb;kd th;px	180
+粮米	ld;pi mi;pm	134
 粮草补给	ld;pi ck;lo bu;ty ji;ij	274
 粮贸公司	ld;pi mk;bo gs;hk si;af	130
 粮运不继	ld;pi yp;bu bu;cb ji;ip	256
@@ -368571,7 +368571,7 @@ columns:
 该抓紧	gl;sk vw;uy jn;pr	608
 该投入	gl;sk tb;ur ru;ju	648
 该投票	gl;sk tb;ur pc;vf	464
-该投行	gl;sk tb;ur xy;px	410
+该投行	gl;sk tb;ur hh;px	410
 该投诉	gl;sk tb;ur su;st	549
 该投资	gl;sk tb;ur zi;we	986
 该抗体	gl;sk kh;uz ti;je	369
@@ -371780,7 +371780,7 @@ columns:
 请说实话	qy;sa uo;sh ui;ww hw;sa	320
 请请我	qy;sa qy;sa wo;tu	288
 请调报告	qy;sa dc;sm bk;uz gk;qd	189
-请调整	qy;sa dc;sm vg;xh	608
+请调整	qy;sa tc;sm vg;xh	608
 请购	qy;sa gb;on	878
 请贵公司	qy;sa gv;co gs;hk si;af	486
 请走了	qy;sa zb;pz le;rl	468
@@ -386119,6 +386119,7 @@ columns:
 这心	ve;vu xn;hx	1120
 这心啊	ve;vu xn;hx aa;dt	382
 这心思	ve;vu xn;hx si;qh	630
+这快递	ve;vu ky;hn di;ht	606
 这怎么了	ve;vu zf;wh me;tk le;rl	459
 这怎么会	ve;vu zf;wh me;tk hv;jb	576
 这怎么办	ve;vu zf;wh me;tk bj;sh	724
